@@ -1,0 +1,428 @@
+/**
+ * @file Gfx.cpp
+ * @brief The renderer: targets, shadow passes, light uniforms, post chain.
+ * @author Rene Weller
+ */
+#include "Gfx.h"
+
+#include "Shaders.h"
+
+#include <raymath.h>
+#include <rlgl.h>
+
+#include <algorithm>
+#include <cmath>
+#include <string>
+
+namespace spaceopera
+{
+
+namespace
+{
+
+constexpr int SunUnit = 12;      ///< texture unit of the sun's shadow map
+constexpr int SpotUnit = 13;     ///< texture unit of the lamp's shadow map
+constexpr int BloomLevels = 6;   ///< levels of the bloom chain
+
+/** @brief Linear filtering and clamping for a target's texture. */
+void linearClamp( unsigned int id )
+{
+    rlTextureParameters( id, RL_TEXTURE_MIN_FILTER, RL_TEXTURE_FILTER_LINEAR );
+    rlTextureParameters( id, RL_TEXTURE_MAG_FILTER, RL_TEXTURE_FILTER_LINEAR );
+    rlTextureParameters( id, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_CLAMP );
+    rlTextureParameters( id, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_CLAMP );
+}
+
+}   // namespace
+
+Shader Gfx::load( const char *vs, const char *fs )
+{
+    return LoadShaderFromMemory( vs, fs );
+}
+
+Gfx::CommonLocs Gfx::locate( Shader s )
+{
+    CommonLocs l;
+    l.m_viewPos = GetShaderLocation( s, "viewPos" );
+    l.m_time = GetShaderLocation( s, "time" );
+    l.m_frame = GetShaderLocation( s, "frame" );
+    l.m_sunDir = GetShaderLocation( s, "sunDir" );
+    l.m_sunColor = GetShaderLocation( s, "sunColor" );
+    l.m_sunVP = GetShaderLocation( s, "sunVP" );
+    l.m_sunShadow = GetShaderLocation( s, "sunShadow" );
+    l.m_sunTexel = GetShaderLocation( s, "sunTexel" );
+    l.m_spotPos = GetShaderLocation( s, "spotPos" );
+    l.m_spotDir = GetShaderLocation( s, "spotDir" );
+    l.m_spotColor = GetShaderLocation( s, "spotColor" );
+    l.m_spotCos = GetShaderLocation( s, "spotCos" );
+    l.m_spotRange = GetShaderLocation( s, "spotRange" );
+    l.m_spotVP = GetShaderLocation( s, "spotVP" );
+    l.m_spotShadow = GetShaderLocation( s, "spotShadow" );
+    l.m_spotNF = GetShaderLocation( s, "spotNF" );
+    l.m_lightCount = GetShaderLocation( s, "lightCount" );
+    l.m_lightPos = GetShaderLocation( s, "lightPos" );
+    l.m_lightColor = GetShaderLocation( s, "lightColor" );
+    l.m_ambUp = GetShaderLocation( s, "ambUp" );
+    l.m_ambDown = GetShaderLocation( s, "ambDown" );
+    l.m_fogParams = GetShaderLocation( s, "fogParams" );
+    l.m_fogColor = GetShaderLocation( s, "fogColor" );
+    l.m_roomMin = GetShaderLocation( s, "roomMin" );
+    l.m_roomMax = GetShaderLocation( s, "roomMax" );
+    int unit = SunUnit;
+    SetShaderValue( s, l.m_sunShadow, &unit, SHADER_UNIFORM_INT );
+    unit = SpotUnit;
+    SetShaderValue( s, l.m_spotShadow, &unit, SHADER_UNIFORM_INT );
+    return l;
+}
+
+void Gfx::upload( Shader s, const CommonLocs &l )
+{
+    const Lighting &L = m_lights;
+    SetShaderValue( s, l.m_viewPos, &m_cam.position, SHADER_UNIFORM_VEC3 );
+    SetShaderValue( s, l.m_time, &m_time, SHADER_UNIFORM_FLOAT );
+    SetShaderValue( s, l.m_frame, &m_frame, SHADER_UNIFORM_FLOAT );
+    SetShaderValue( s, l.m_sunDir, &L.m_sunDir, SHADER_UNIFORM_VEC3 );
+    SetShaderValue( s, l.m_sunColor, &L.m_sunColor, SHADER_UNIFORM_VEC3 );
+    SetShaderValueMatrix( s, l.m_sunVP, m_sunVP );
+    float texel = 1.0f / m_sunSize;
+    SetShaderValue( s, l.m_sunTexel, &texel, SHADER_UNIFORM_FLOAT );
+    SetShaderValue( s, l.m_spotPos, &L.m_spotPos, SHADER_UNIFORM_VEC3 );
+    SetShaderValue( s, l.m_spotDir, &L.m_spotDir, SHADER_UNIFORM_VEC3 );
+    SetShaderValue( s, l.m_spotColor, &L.m_spotColor, SHADER_UNIFORM_VEC3 );
+    Vector2 cosines = { cosf( L.m_spotOuter * DEG2RAD ), cosf( L.m_spotInner * DEG2RAD ) };
+    SetShaderValue( s, l.m_spotCos, &cosines, SHADER_UNIFORM_VEC2 );
+    SetShaderValue( s, l.m_spotRange, &L.m_spotRange, SHADER_UNIFORM_FLOAT );
+    SetShaderValueMatrix( s, l.m_spotVP, m_spotVP );
+    SetShaderValue( s, l.m_spotNF, &m_spotNF, SHADER_UNIFORM_VEC2 );
+    int     count = (int)std::min( L.m_points.size(), (size_t)MaxLights );
+    Vector4 pos[MaxLights];
+    Vector4 col[MaxLights];
+    for ( int i = 0; i < count; ++i )
+    {
+        const PointLight &p = L.m_points[i];
+        pos[i] = { p.m_pos.x, p.m_pos.y, p.m_pos.z, p.m_radius };
+        col[i] = { p.m_color.x, p.m_color.y, p.m_color.z, p.m_halo };
+    }
+    SetShaderValue( s, l.m_lightCount, &count, SHADER_UNIFORM_INT );
+    if ( count > 0 )
+    {
+        SetShaderValueV( s, l.m_lightPos, pos, SHADER_UNIFORM_VEC4, count );
+        SetShaderValueV( s, l.m_lightColor, col, SHADER_UNIFORM_VEC4, count );
+    }
+    SetShaderValue( s, l.m_ambUp, &L.m_ambUp, SHADER_UNIFORM_VEC3 );
+    SetShaderValue( s, l.m_ambDown, &L.m_ambDown, SHADER_UNIFORM_VEC3 );
+    SetShaderValue( s, l.m_fogParams, &L.m_fog, SHADER_UNIFORM_VEC4 );
+    SetShaderValue( s, l.m_fogColor, &L.m_fogColor, SHADER_UNIFORM_VEC3 );
+    SetShaderValue( s, l.m_roomMin, &L.m_roomMin, SHADER_UNIFORM_VEC3 );
+    SetShaderValue( s, l.m_roomMax, &L.m_roomMax, SHADER_UNIFORM_VEC3 );
+}
+
+RenderTexture2D Gfx::hdrTarget( int w, int h, bool depth )
+{
+    RenderTexture2D t = {};
+    t.id = rlLoadFramebuffer();
+    rlEnableFramebuffer( t.id );
+    t.texture.id = rlLoadTexture( nullptr, w, h, PIXELFORMAT_UNCOMPRESSED_R16G16B16A16, 1 );
+    t.texture.width = w;
+    t.texture.height = h;
+    t.texture.format = PIXELFORMAT_UNCOMPRESSED_R16G16B16A16;
+    t.texture.mipmaps = 1;
+    rlFramebufferAttach( t.id, t.texture.id, RL_ATTACHMENT_COLOR_CHANNEL0, RL_ATTACHMENT_TEXTURE2D, 0 );
+    if ( depth )
+    {
+        t.depth.id = rlLoadTextureDepth( w, h, true );
+        t.depth.width = w;
+        t.depth.height = h;
+        rlFramebufferAttach( t.id, t.depth.id, RL_ATTACHMENT_DEPTH, RL_ATTACHMENT_RENDERBUFFER, 0 );
+    }
+    if ( !rlFramebufferComplete( t.id ) ) TraceLog( LOG_ERROR, "GFX: HDR target %dx%d incomplete", w, h );
+    rlDisableFramebuffer();
+    linearClamp( t.texture.id );
+    return t;
+}
+
+RenderTexture2D Gfx::depthTarget( int size )
+{
+    RenderTexture2D t = {};
+    t.id = rlLoadFramebuffer();
+    rlEnableFramebuffer( t.id );
+    t.texture.width = size;
+    t.texture.height = size;
+    t.depth.id = rlLoadTextureDepth( size, size, false );
+    t.depth.width = size;
+    t.depth.height = size;
+    t.depth.format = 19;   // DEPTH_COMPONENT_24BIT
+    t.depth.mipmaps = 1;
+    rlFramebufferAttach( t.id, t.depth.id, RL_ATTACHMENT_DEPTH, RL_ATTACHMENT_TEXTURE2D, 0 );
+    if ( !rlFramebufferComplete( t.id ) ) TraceLog( LOG_ERROR, "GFX: shadow map %d incomplete", size );
+    rlDisableFramebuffer();
+    rlTextureParameters( t.depth.id, RL_TEXTURE_MIN_FILTER, RL_TEXTURE_FILTER_NEAREST );
+    rlTextureParameters( t.depth.id, RL_TEXTURE_MAG_FILTER, RL_TEXTURE_FILTER_NEAREST );
+    rlTextureParameters( t.depth.id, RL_TEXTURE_WRAP_S, RL_TEXTURE_WRAP_CLAMP );
+    rlTextureParameters( t.depth.id, RL_TEXTURE_WRAP_T, RL_TEXTURE_WRAP_CLAMP );
+    return t;
+}
+
+void Gfx::init( int width, int height, float ss )
+{
+    m_width = width;
+    m_height = height;
+    // Both sides everywhere: the fullscreen quads are wound backwards, and shadows must not leak through a face.
+    rlDisableBackfaceCulling();
+    int         w = (int)( width * ss );
+    int         h = (int)( height * ss );
+    std::string common = CommonFs;
+    m_lit = load( LitVs, ( common + LitFs ).c_str() );
+    m_glassShader = load( LitVs, ( common + GlassFs ).c_str() );
+    m_sky = load( FullscreenVs, ( common + SkyFs ).c_str() );
+    m_planet = load( LitVs, ( common + PlanetFs ).c_str() );
+    m_particle = load( ParticleVs, ( common + ParticleFs ).c_str() );
+    m_depth = load( DepthVs, DepthFs );
+    m_prefilter = load( FullscreenVs, PrefilterFs );
+    m_down = load( FullscreenVs, DownFs );
+    m_up = load( FullscreenVs, UpFs );
+    m_final = load( FullscreenVs, FinalFs );
+
+    m_lit.locs[SHADER_LOC_MAP_EMISSION] = GetShaderLocation( m_lit, "emissionMap" );
+    m_litLocs = locate( m_lit );
+    m_glassLocs = locate( m_glassShader );
+    m_skyLocs = locate( m_sky );
+    m_planetLocs = locate( m_planet );
+    m_particleLocs = locate( m_particle );
+    m_litUv = GetShaderLocation( m_lit, "uvScale" );
+    m_litParams = GetShaderLocation( m_lit, "matParams" );
+    m_litEmissive = GetShaderLocation( m_lit, "emissive" );
+    m_litMask = GetShaderLocation( m_lit, "emissiveMask" );
+    m_litVariation = GetShaderLocation( m_lit, "variation" );
+
+    m_depthMat = LoadMaterialDefault();
+    m_depthMat.shader = m_depth;
+    m_glassMat = LoadMaterialDefault();
+    m_glassMat.shader = m_glassShader;
+    m_planetMat = LoadMaterialDefault();
+    m_planetMat.shader = m_planet;
+
+    m_hdr = hdrTarget( w, h, true );
+    for ( int i = 0; i < BloomLevels; ++i )
+    {
+        w = std::max( w / 2, 1 );
+        h = std::max( h / 2, 1 );
+        m_bloomLevels.push_back( hdrTarget( w, h, false ) );
+    }
+    m_sunMap = depthTarget( m_sunSize );
+    m_spotMap = depthTarget( m_spotSize );
+}
+
+Surface Gfx::surface( Texture2D albedo, Texture2D orm, Texture2D normal, Texture2D emission )
+{
+    Surface s;
+    s.m_material = LoadMaterialDefault();
+    s.m_material.shader = m_lit;
+    s.m_material.maps[MATERIAL_MAP_ALBEDO].texture = albedo;
+    s.m_material.maps[MATERIAL_MAP_METALNESS].texture = orm;
+    s.m_material.maps[MATERIAL_MAP_NORMAL].texture = normal;
+    if ( emission.id > 0 ) s.m_material.maps[MATERIAL_MAP_EMISSION].texture = emission;
+    return s;
+}
+
+void Gfx::bindShadows( bool on )
+{
+    rlActiveTextureSlot( SunUnit );
+    if ( on )
+        rlEnableTexture( m_sunMap.depth.id );
+    else
+        rlDisableTexture();
+    rlActiveTextureSlot( SpotUnit );
+    if ( on )
+        rlEnableTexture( m_spotMap.depth.id );
+    else
+        rlDisableTexture();
+    rlActiveTextureSlot( 0 );
+}
+
+void Gfx::shadows( const Lighting &lights, Vector3 centre, const std::vector<const std::vector<Drawable> *> &lists )
+{
+    bindShadows( false );
+    m_lights = lights;
+
+    Camera3D sun = {};
+    sun.target = centre;
+    sun.position = Vector3Subtract( centre, Vector3Scale( lights.m_sunDir, 70.0f ) );
+    sun.up = { 0.0f, 1.0f, 0.0f };
+    sun.fovy = m_sunExtent;
+    sun.projection = CAMERA_ORTHOGRAPHIC;
+    BeginTextureMode( m_sunMap );
+    rlClearScreenBuffers();
+    rlSetClipPlanes( 1.0, 160.0 );
+    BeginMode3D( sun );
+    m_sunVP = MatrixMultiply( rlGetMatrixModelview(), rlGetMatrixProjection() );
+    for ( const auto *list : lists )
+        for ( const Drawable &d : *list )
+            if ( d.m_sunShadow ) DrawMesh( d.m_mesh, m_depthMat, d.m_transform );
+    EndMode3D();
+    EndTextureMode();
+
+    Camera3D spot = {};
+    spot.position = lights.m_spotPos;
+    spot.target = Vector3Add( lights.m_spotPos, lights.m_spotDir );
+    spot.up = fabsf( lights.m_spotDir.y ) > 0.95f ? Vector3{ 0.0f, 0.0f, 1.0f } : Vector3{ 0.0f, 1.0f, 0.0f };
+    spot.fovy = lights.m_spotOuter * 2.0f + 6.0f;
+    spot.projection = CAMERA_PERSPECTIVE;
+    m_spotNF = { 0.1f, lights.m_spotRange };
+    BeginTextureMode( m_spotMap );
+    rlClearScreenBuffers();
+    rlSetClipPlanes( m_spotNF.x, m_spotNF.y );
+    BeginMode3D( spot );
+    m_spotVP = MatrixMultiply( rlGetMatrixModelview(), rlGetMatrixProjection() );
+    for ( const auto *list : lists )
+        for ( const Drawable &d : *list )
+            if ( d.m_spotShadow ) DrawMesh( d.m_mesh, m_depthMat, d.m_transform );
+    EndMode3D();
+    EndTextureMode();
+}
+
+void Gfx::fullscreen( Shader s, Texture2D src, int w, int h, Texture2D extra, int extraLoc )
+{
+    BeginShaderMode( s );
+    // After BeginShaderMode: its batch flush forgets the extra texture slots.
+    if ( extraLoc >= 0 ) SetShaderValueTexture( s, extraLoc, extra );
+    DrawTexturePro( src, { 0.0f, 0.0f, (float)src.width, (float)src.height }, { 0.0f, 0.0f, (float)w, (float)h },
+                    { 0.0f, 0.0f }, 0.0f, WHITE );
+    EndShaderMode();
+}
+
+void Gfx::beginScene( const Camera3D &cam, const Lighting &lights, float time, Texture2D sky )
+{
+    m_cam = cam;
+    m_lights = lights;
+    m_time = time;
+    m_frame += 1.0f;
+    int w = m_hdr.texture.width;
+    int h = m_hdr.texture.height;
+    BeginTextureMode( m_hdr );
+    ClearBackground( BLACK );
+    upload( m_lit, m_litLocs );
+    upload( m_glassShader, m_glassLocs );
+    upload( m_sky, m_skyLocs );
+    upload( m_planet, m_planetLocs );
+    upload( m_particle, m_particleLocs );
+    bindShadows( true );
+
+    Matrix view = MatrixLookAt( cam.position, cam.target, cam.up );
+    Matrix proj = MatrixPerspective( cam.fovy * DEG2RAD, (double)w / h, 0.5, 30000.0 );
+    Matrix inv = MatrixInvert( MatrixMultiply( view, proj ) );
+    SetShaderValueMatrix( m_sky, GetShaderLocation( m_sky, "invViewProj" ), inv );
+    float nebula = 0.8f;
+    SetShaderValue( m_sky, GetShaderLocation( m_sky, "nebula" ), &nebula, SHADER_UNIFORM_FLOAT );
+    rlDisableDepthMask();
+    rlDisableDepthTest();
+    fullscreen( m_sky, sky, w, h );
+    rlEnableDepthTest();
+    rlEnableDepthMask();
+
+    rlSetClipPlanes( 0.5, 30000.0 );
+    BeginMode3D( cam );
+}
+
+void Gfx::draw( const std::vector<Drawable> &list, const std::vector<Surface> &surfaces )
+{
+    for ( const Drawable &d : list )
+    {
+        if ( !d.m_visible ) continue;
+        const Surface &s = surfaces[d.m_surface];
+        SetShaderValue( m_lit, m_litUv, &s.m_uvScale, SHADER_UNIFORM_FLOAT );
+        SetShaderValue( m_lit, m_litParams, &s.m_params, SHADER_UNIFORM_VEC4 );
+        const Vector4 &em = d.m_emissive.x >= 0.0f ? d.m_emissive : s.m_emissive;
+        SetShaderValue( m_lit, m_litEmissive, &em, SHADER_UNIFORM_VEC4 );
+        SetShaderValue( m_lit, m_litMask, &s.m_mask, SHADER_UNIFORM_VEC2 );
+        SetShaderValue( m_lit, m_litVariation, &s.m_variation, SHADER_UNIFORM_FLOAT );
+        s.m_material.maps[MATERIAL_MAP_ALBEDO].color = s.m_tint;
+        DrawMesh( d.m_mesh, s.m_material, d.m_transform );
+    }
+}
+
+void Gfx::planet( const Mesh &mesh, const Matrix &transform, Texture2D map, float spin )
+{
+    m_planetMat.maps[MATERIAL_MAP_ALBEDO].texture = map;
+    SetShaderValue( m_planet, GetShaderLocation( m_planet, "spin" ), &spin, SHADER_UNIFORM_FLOAT );
+    DrawMesh( mesh, m_planetMat, transform );
+}
+
+void Gfx::glass( const Mesh &mesh, const Matrix &transform )
+{
+    BeginBlendMode( BLEND_ALPHA_PREMULTIPLY );
+    rlDisableDepthMask();
+    DrawMesh( mesh, m_glassMat, transform );
+    rlEnableDepthMask();
+    EndBlendMode();
+}
+
+void Gfx::beginParticles( float boost, bool lit )
+{
+    rlDrawRenderBatchActive();
+    BeginShaderMode( m_particle );
+    int litFlag = lit ? 1 : 0;
+    SetShaderValue( m_particle, GetShaderLocation( m_particle, "boost" ), &boost, SHADER_UNIFORM_FLOAT );
+    SetShaderValue( m_particle, GetShaderLocation( m_particle, "lit" ), &litFlag, SHADER_UNIFORM_INT );
+    BeginBlendMode( BLEND_ADDITIVE );
+    rlDisableDepthMask();
+}
+
+void Gfx::endParticles()
+{
+    rlDrawRenderBatchActive();
+    rlEnableDepthMask();
+    EndBlendMode();
+    EndShaderMode();
+}
+
+void Gfx::endScene()
+{
+    EndMode3D();
+    EndTextureMode();
+}
+
+void Gfx::post( const RenderTexture2D *out )
+{
+    Texture2D src = m_hdr.texture;
+    float     threshold = 1.2f;
+    BeginTextureMode( m_bloomLevels[0] );
+    Vector2 texel = { 1.0f / src.width, 1.0f / src.height };
+    SetShaderValue( m_prefilter, GetShaderLocation( m_prefilter, "texel" ), &texel, SHADER_UNIFORM_VEC2 );
+    SetShaderValue( m_prefilter, GetShaderLocation( m_prefilter, "threshold" ), &threshold, SHADER_UNIFORM_FLOAT );
+    fullscreen( m_prefilter, src, m_bloomLevels[0].texture.width, m_bloomLevels[0].texture.height );
+    EndTextureMode();
+    for ( size_t i = 1; i < m_bloomLevels.size(); ++i )
+    {
+        Texture2D from = m_bloomLevels[i - 1].texture;
+        texel = { 1.0f / from.width, 1.0f / from.height };
+        BeginTextureMode( m_bloomLevels[i] );
+        SetShaderValue( m_down, GetShaderLocation( m_down, "texel" ), &texel, SHADER_UNIFORM_VEC2 );
+        fullscreen( m_down, from, m_bloomLevels[i].texture.width, m_bloomLevels[i].texture.height );
+        EndTextureMode();
+    }
+    for ( size_t i = m_bloomLevels.size() - 1; i > 0; --i )
+    {
+        Texture2D from = m_bloomLevels[i].texture;
+        texel = { 1.0f / from.width, 1.0f / from.height };
+        BeginTextureMode( m_bloomLevels[i - 1] );
+        BeginBlendMode( BLEND_ADDITIVE );
+        SetShaderValue( m_up, GetShaderLocation( m_up, "texel" ), &texel, SHADER_UNIFORM_VEC2 );
+        fullscreen( m_up, from, m_bloomLevels[i - 1].texture.width, m_bloomLevels[i - 1].texture.height );
+        EndBlendMode();
+        EndTextureMode();
+    }
+
+    int w = out ? out->texture.width : GetScreenWidth();
+    int h = out ? out->texture.height : GetScreenHeight();
+    if ( out ) BeginTextureMode( *out );
+    Vector2 res = { (float)w, (float)h };
+    SetShaderValue( m_final, GetShaderLocation( m_final, "exposure" ), &m_exposure, SHADER_UNIFORM_FLOAT );
+    SetShaderValue( m_final, GetShaderLocation( m_final, "bloom" ), &m_bloom, SHADER_UNIFORM_FLOAT );
+    SetShaderValue( m_final, GetShaderLocation( m_final, "time" ), &m_time, SHADER_UNIFORM_FLOAT );
+    SetShaderValue( m_final, GetShaderLocation( m_final, "resolution" ), &res, SHADER_UNIFORM_VEC2 );
+    fullscreen( m_final, src, w, h, m_bloomLevels[0].texture, GetShaderLocation( m_final, "bloomTex" ) );
+    if ( out ) EndTextureMode();
+}
+
+}   // namespace spaceopera

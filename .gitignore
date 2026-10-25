@@ -1,0 +1,7 @@
+build/
+.vs/
+*.user
+# bin/<preset> what can be started, work/ local pictures and logs.
+bin/
+work/
+__pycache__/
