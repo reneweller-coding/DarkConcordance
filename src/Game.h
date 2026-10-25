@@ -1,7 +1,7 @@
 /**
  * @file Game.h
- * @brief A playable level: Corvin with the Gauss rifle (auto-aim as in Brotherhood of Steel, mouse or right-stick aim),
- *        low gravity with jumps and recoil, rust lice and welder lice on a flow field, the drone press as boss, rescue
+ * @brief A playable level: Corvin with the Gauss rifle (auto-aim as in Brotherhood of Steel, mouse aim on the PC),
+ *        a camera turning about him, low gravity with jumps and recoil, rust lice and welder lice on a flow field, the drone press as boss, rescue
  *        capsules (and the hidden death counter), scrap and stims, spoken lines and hints, the HUD, the camera, and
  *        an autopilot that plays the level for tests.
  * @author Rene Weller
@@ -26,14 +26,17 @@ namespace spaceopera
 /** @brief What the player does this frame. */
 struct GameInput
 {
-    Vector2 m_move = { 0.0f, 0.0f };    ///< wanted direction (x east, y south), length up to 1
+    Vector2 m_move = { 0.0f, 0.0f };    ///< wanted direction on screen (x right, y down), length up to 1
     bool    m_fire = false;             ///< trigger held
     bool    m_jump = false;             ///< jump pressed this frame
     bool    m_stim = false;             ///< stim pressed this frame
     bool    m_confirm = false;          ///< confirm pressed this frame (restart after the end)
     bool    m_mouseAim = false;         ///< the mouse aims (it moved or a button is held)
+    bool    m_strafe = false;           ///< keep facing where Corvin looks (left trigger, Shift)
+    bool    m_cameraReset = false;      ///< camera back behind the start's view (right stick click)
+    float   m_cameraTurn = 0.0f;        ///< camera turn this frame (radians; right stick, right mouse button)
     Vector2 m_mouse = { 0.0f, 0.0f };   ///< mouse position (window pixels)
-    Vector2 m_stick = { 0.0f, 0.0f };   ///< right stick
+    Vector2 m_stick = { 0.0f, 0.0f };   ///< aim direction in the world (the autopilot's; players aim automatically)
 };
 
 /** @brief How hard the game is. */
@@ -113,6 +116,7 @@ public:
     float       m_zoom = 1.0f;                        ///< camera distance factor
     float       m_time = 0.0f;                        ///< seconds played
     float       m_brightness = 1.0f;                  ///< exposure factor (the menus' brightness)
+    float       m_camYaw = 0.0f;                      ///< camera turned about Corvin (radians, 0 = looking north)
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
 
 private:

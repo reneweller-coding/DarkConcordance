@@ -501,7 +501,8 @@ void Game::putHero( float x, float z, float yaw )
     m_hero.animate( 0.0f, m_pos, { 0, 0 }, m_yaw, false, 0.0f, m_time );
     m_camTarget = Vector3Add( m_pos, { 0.0f, 1.0f, 0.0f } );
     m_cam.target = m_camTarget;
-    m_cam.position = Vector3Add( m_camTarget, Vector3Scale( { 0.0f, 11.5f, 8.1f }, m_zoom ) );
+    m_cam.position =
+        Vector3Add( m_camTarget, Vector3Scale( { 8.1f * sinf( m_camYaw ), 11.5f, 8.1f * cosf( m_camYaw ) }, m_zoom ) );
     m_cam.up = { 0.0f, 1.0f, 0.0f };
     m_cam.fovy = 38.0f;
     m_cam.projection = CAMERA_PERSPECTIVE;
@@ -866,7 +867,8 @@ void Game::updateHero( float dt, const GameInput &in )
             TraceLog( LOG_WARNING, "JUMP at %.1f,%.1f v=%.1f,%.1f t=%.1f", m_pos.x, m_pos.z, m_vel.x, m_vel.z, m_time );
     }
 
-    // Aim: mouse or right stick for a while after they are used, else where Corvin runs; the rifle finds targets.
+    // Aim: the mouse for a while after it moved (the autopilot names a direction), else where Corvin runs, or where he
+    // faces while strafing; the rifle finds the targets.
     Vector3 chest = Vector3Add( m_pos, { 0.0f, 1.25f, 0.0f } );
     bool    manual = false;
     if ( in.m_mouseAim )
@@ -894,6 +896,8 @@ void Game::updateHero( float dt, const GameInput &in )
         m_aimTimer -= dt;
         manual = true;
     }
+    else if ( in.m_strafe )
+        m_aimYaw = m_yaw;   // holding the facing: Corvin backs off or sidesteps while he shoots
     else if ( Vector2Length( move ) > 0.2f )
         m_aimYaw = atan2f( move.x, move.y );
     Vector3 aimDir = { sinf( m_aimYaw ), 0.0f, cosf( m_aimYaw ) };
@@ -905,7 +909,7 @@ void Game::updateHero( float dt, const GameInput &in )
         Vector3 p = targetPoint( m_target );
         faceYaw = atan2f( p.x - m_pos.x, p.z - m_pos.z );
     }
-    else if ( !manual && !m_firing && Vector2Length( move ) > 0.2f )
+    else if ( !manual && !m_firing && !in.m_strafe && Vector2Length( move ) > 0.2f )
         faceYaw = atan2f( move.x, move.y );
     float turn = ( m_firing || manual ? 16.0f : 11.0f ) * dt;
     m_yaw += Clamp( angleTo( m_yaw, faceYaw ), -turn, turn );
@@ -1774,7 +1778,18 @@ void Game::update( float dt, const GameInput &inRaw )
     if ( m_finished ) m_endTimer += dt;
     m_time += dt;
     m_titleTimer = fmaxf( 0.0f, m_titleTimer - dt );
-    if ( m_autoplay ) autopilot( dt, in );
+    // The camera turns about Corvin; the sticks and keys move him relative to it (the autopilot thinks in the world).
+    m_camYaw += in.m_cameraTurn;
+    if ( in.m_cameraReset ) m_camYaw = 0.0f;
+    m_audio.m_yaw = m_camYaw;
+    if ( m_autoplay )
+        autopilot( dt, in );
+    else
+    {
+        float   c = cosf( m_camYaw ), s = sinf( m_camYaw );
+        Vector2 m = in.m_move;
+        in.m_move = { m.x * c + m.y * s, -m.x * s + m.y * c };
+    }
     updateHero( dt, in );
     updateFoes( dt );
     updatePress( dt );
@@ -1827,7 +1842,8 @@ void Game::update( float dt, const GameInput &inRaw )
     Vector3 shake = { ( rnd() - 0.5f ) * m_shake * 0.5f, ( rnd() - 0.5f ) * m_shake * 0.3f,
                       ( rnd() - 0.5f ) * m_shake * 0.5f };
     m_cam.target = Vector3Add( m_camTarget, shake );
-    m_cam.position = Vector3Add( m_cam.target, Vector3Scale( { 0.0f, 11.5f, 8.1f }, m_zoom * m_camPull ) );
+    m_cam.position = Vector3Add(
+        m_cam.target, Vector3Scale( { 8.1f * sinf( m_camYaw ), 11.5f, 8.1f * cosf( m_camYaw ) }, m_zoom * m_camPull ) );
     m_cam.up = { 0.0f, 1.0f, 0.0f };
     m_cam.fovy = 38.0f;
     m_cam.projection = CAMERA_PERSPECTIVE;

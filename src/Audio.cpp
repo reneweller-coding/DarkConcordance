@@ -325,7 +325,8 @@ void Audio::play( SfxE s, Vector3 at, Vector3 listener, float volume )
     m_next[i] = ( m_next[i] + 1 ) % Voices;
     SetSoundVolume( snd, Clamp( v, 0.0f, 1.0f ) );
     SetSoundPitch( snd, 0.94f + 0.12f * ( rand() % 100 ) / 100.0f );
-    SetSoundPan( snd, Clamp( 0.5f - d.x / 30.0f, 0.15f, 0.85f ) );
+    float right = d.x * cosf( m_yaw ) - d.z * sinf( m_yaw );
+    SetSoundPan( snd, Clamp( 0.5f - right / 30.0f, 0.15f, 0.85f ) );
     PlaySound( snd );
 }
 

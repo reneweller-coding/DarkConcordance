@@ -88,7 +88,9 @@ l1_exit     | bossdead | Corvin | Die Spur führt weiter nach unten. Zum Knochen
 [hints]
 # id | Auslöser | Text
 h_jump     | a        | Wenig Schwerkraft: Sprünge tragen weit (Leertaste / A). Jeder Schuss schiebt dich zurück.
-h_fire     | b        | Schießen: linke Maustaste oder rechter Trigger. Ohne Zielen nimmt das Gewehr das nächste Ziel vor dir.
+h_camera   | a        | Kamera drehen: rechter Stick oder rechte Maustaste ziehen. Stick-Klick / Rücktaste stellt sie zurück.
+h_fire     | b        | Schießen: rechter Trigger oder linke Maustaste. Das Gewehr nimmt das nächste Ziel vor dir.
+h_strafe   | b        | Linker Trigger / Umschalt hält die Blickrichtung: rückwärts laufen und weiterfeuern.
 h_gap      | e        | Mit Anlauf springen. In der Luft treibt dich der Rückstoß weg.
 h_stim     | hurt     | Q / Y: Stim injizieren (+40 Leben).
 h_heat     | overheat | Das Gewehr ist überhitzt. Kurz absetzen.

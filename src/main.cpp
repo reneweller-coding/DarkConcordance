@@ -55,9 +55,11 @@ struct Options
     bool        m_lookdev = false;               ///< the look test
     float       m_warm = 4.0f;                   ///< seconds simulated before the picture
     float       m_exposure = -1.0f;              ///< exposure (negative: the renderer's)
-    int         m_bench = 0;      ///< with --shot: render this many frames first and log the time per frame
-    std::string m_difficulty;     ///< leicht, normal, schwer (else the saved setting)
-    bool        m_menu = false;   ///< with --shot: the title menu over the picture
+    int         m_bench = 0;               ///< with --shot: render this many frames first and log the time per frame
+    std::string m_difficulty;              ///< leicht, normal, schwer (else the saved setting)
+    bool        m_menu = false;            ///< with --shot: the title menu over the picture
+    float       m_camYaw = 0.0f;           ///< camera turned about the hero (degrees)
+    Vector2     m_move = { 0.0f, 0.0f };   ///< with --shot: the left stick held during the warm-up
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -119,6 +121,10 @@ Options parse( int argc, char **argv )
             o.m_difficulty = next();
         else if ( a == "--menu" )
             o.m_menu = true;
+        else if ( a == "--camyaw" )
+            o.m_camYaw = (float)atof( next().c_str() );
+        else if ( a == "--move" )
+            sscanf( next().c_str(), "%f,%f", &o.m_move.x, &o.m_move.y );
     }
     return o;
 }
@@ -156,8 +162,11 @@ void bench( Gfx &gfx, int frames, const Options &o, const std::function<void( co
     UnloadRenderTexture( rt );
 }
 
-/** @brief The player's input from keyboard, mouse and gamepad. */
-GameInput readInput( Vector2 &lastMouse )
+/**
+ * @brief The player's input from keyboard, mouse and gamepad (one stick moves, the other turns the camera, as on the
+ *        Steam Deck; the rifle aims itself, the mouse can aim on the PC).
+ */
+GameInput readInput( Vector2 &lastMouse, float dt )
 {
     GameInput in;
     if ( IsKeyDown( KEY_W ) || IsKeyDown( KEY_UP ) ) in.m_move.y -= 1.0f;
@@ -168,28 +177,38 @@ GameInput readInput( Vector2 &lastMouse )
     in.m_jump = IsKeyPressed( KEY_SPACE );
     in.m_stim = IsKeyPressed( KEY_Q );
     in.m_confirm = IsKeyPressed( KEY_ENTER );
+    in.m_strafe = IsKeyDown( KEY_LEFT_SHIFT ) || IsKeyDown( KEY_RIGHT_SHIFT );
+    in.m_cameraReset = IsKeyPressed( KEY_BACKSPACE );
     Vector2 mouse = GetMousePosition();
     in.m_mouse = mouse;
-    in.m_mouseAim = Vector2Distance( mouse, lastMouse ) > 2.0f || IsMouseButtonDown( MOUSE_BUTTON_LEFT );
+    if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) )
+        in.m_cameraTurn += ( mouse.x - lastMouse.x ) * 0.006f;   // dragging turns the camera and does not aim
+    else
+        in.m_mouseAim = Vector2Distance( mouse, lastMouse ) > 2.0f || IsMouseButtonDown( MOUSE_BUTTON_LEFT );
     lastMouse = mouse;
     if ( IsGamepadAvailable( 0 ) )
     {
         Vector2 stick = { GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_X ),
                           GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_Y ) };
-        if ( Vector2Length( stick ) > 0.2f ) in.m_move = Vector2Add( in.m_move, stick );
-        in.m_stick = { GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_X ),
-                       GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_Y ) };
+        if ( Vector2Length( stick ) > 0.2f )
+        {
+            in.m_move = Vector2Add( in.m_move, stick );
+            in.m_mouseAim = false;
+        }
+        float turn = GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_X );
+        if ( fabsf( turn ) > 0.2f ) in.m_cameraTurn += ( turn - copysignf( 0.2f, turn ) ) / 0.8f * 2.4f * dt;
+        in.m_cameraReset = in.m_cameraReset || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_THUMB );
+        in.m_strafe = in.m_strafe || GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_TRIGGER ) > 0.3f;
         in.m_fire = in.m_fire || GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_TRIGGER ) > 0.3f ||
                     IsGamepadButtonDown( 0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT );
         in.m_jump = in.m_jump || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN );
         in.m_stim = in.m_stim || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_UP );
         in.m_confirm = in.m_confirm || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT );
-        if ( Vector2Length( in.m_stick ) > 0.3f ) in.m_mouseAim = false;
     }
     return in;
 }
 
-/** @brief Zoom from the mouse wheel and the shoulder buttons. */
+/** @brief Zoom from the mouse wheel, the shoulder buttons and the right stick's up and down. */
 float zoomStep( float dt )
 {
     float zoom = -GetMouseWheelMove() * 0.08f;
@@ -197,6 +216,8 @@ float zoomStep( float dt )
     {
         if ( IsGamepadButtonDown( 0, GAMEPAD_BUTTON_LEFT_TRIGGER_1 ) ) zoom -= dt;
         if ( IsGamepadButtonDown( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 ) ) zoom += dt;
+        float pull = GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_Y );
+        if ( fabsf( pull ) > 0.3f ) zoom += pull * 0.8f * dt;
     }
     return zoom;
 }
@@ -392,6 +413,7 @@ int runGame( const Options &o, Gfx &gfx )
     game->setDifficulty( settings.m_difficulty );
     game->m_brightness = settings.m_brightness;
     game->m_autoplay = o.m_autoplay;
+    game->m_camYaw = o.m_camYaw * DEG2RAD;
     if ( o.m_hasAt ) game->putHero( o.m_x, o.m_z, o.m_face );
     if ( o.m_awake ) game->wakeAll();
     auto draw = [&]( const RenderTexture2D *rt ) { game->render( gfx, rt ); };
@@ -404,6 +426,7 @@ int runGame( const Options &o, Gfx &gfx )
         {
             GameInput in;
             in.m_fire = o.m_fire && i >= frames - 20;
+            in.m_move = o.m_move;
             game->update( dt, in );
         }
         if ( o.m_report ) TraceLog( LOG_WARNING, "RUN: %s", game->report().c_str() );
@@ -458,7 +481,7 @@ int runGame( const Options &o, Gfx &gfx )
         float dt = fminf( GetFrameTime(), 0.05f );
         if ( mode == PLAY )
         {
-            GameInput in = readInput( lastMouse );
+            GameInput in = readInput( lastMouse, dt );
             bool      pause = IsKeyPressed( KEY_ESCAPE ) ||
                               ( IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT ) );
             if ( pause && !game->finished() )

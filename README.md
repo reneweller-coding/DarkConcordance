@@ -1,6 +1,6 @@
 # SpaceOpera (working title)
 
-A dark space opera action RPG in the manner of *Baldur's Gate: Dark Alliance*: fixed three-quarter camera, gamepad,
+A dark space opera action RPG in the manner of *Baldur's Gate: Dark Alliance*: three-quarter camera, gamepad,
 ranged combat aimed as in *Fallout: Brotherhood of Steel*, pools of light in the dark. The story is the user's outline
 (*DARK CONCORDANCE* / *KATABASIS*); the production plan is in [docs/PLAN.md](docs/PLAN.md).
 
@@ -11,8 +11,11 @@ against rust lice and welder lice, across a cooling shaft, past the cold store w
 press that builds new lice from scrap.
 
 - **Low gravity:** long jumps; every shot pushes Corvin back, on the ground a little, in the air a lot.
-- **Aiming:** without aiming the rifle takes the nearest target ahead (as in Brotherhood of Steel); the mouse or the
-  right stick aim by hand, with a little assist. The rifle heats up.
+- **Aiming:** the rifle takes the nearest target ahead (as in Brotherhood of Steel); on the gamepad that is all, since
+  the right stick turns the camera (as on the Steam Deck); on the PC the mouse can aim by hand, with a little assist.
+  Holding the left trigger or Shift keeps Corvin's facing, so he can back off firing. The rifle heats up.
+- **Camera:** turns about Corvin with the right stick or by dragging with the right mouse button, the stick's up and
+  down zoom; moving is always relative to the screen; a stick click or Backspace turns it back.
 - **Enemies:** rust lice (six legs in a tripod gait, they crouch and leap), welder lice (keep their distance, spit
   molten metal in arcs); they find their way on a flow field.
 - **The drone press:** a ram that slams on its anvil (klaxon first, the anvil glows red), hatches that spit new lice,
@@ -27,9 +30,10 @@ press that builds new lice from scrap.
   menu; both kept in `settings.txt` beside the program.
 - **Sound** is synthesised at start (rifle, hits, lice, press, steam, hum); `--mute` silences it.
 
-Move with WASD, the arrows or the left stick; jump with Space or A; shoot with the left mouse button, the right trigger
-or X; Q or Y injects a stim; the mouse wheel or the shoulder buttons zoom; Esc or Start pauses (difficulty,
-brightness, restart, quit); F1 frame rate, F12 picture.
+Move with WASD, the arrows or the left stick; turn the camera with the right stick or the right mouse button held;
+jump with Space or A; shoot with the left mouse button, the right trigger or X; hold the facing with the left trigger
+or Shift; Q or Y injects a stim; the mouse wheel, the shoulder buttons or the right stick's up and down zoom; Esc or
+Start pauses (difficulty, brightness, restart, quit); F1 frame rate, F12 picture.
 
 The level is a text file, [assets/levels/kuehlgedaerme.txt](assets/levels/kuehlgedaerme.txt): an ASCII map of 2 m
 cells (legend at its top), zones with their themes, signs, the spoken lines and the hints with their triggers.
@@ -55,7 +59,8 @@ Tests and pictures without a window (always silent):
     bin\msvc\SpaceOpera.exe --lookdev --shot work\c.png --at 0.6,-4.3 --face 145 --walk
 
 `--report` writes the run (finished, time, deaths, kills, shots) into `spaceopera.log` beside the program; `--bench n`
-renders n frames first and logs the time per frame. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture.
+renders n frames first and logs the time per frame. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
+`--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up.
 
 ## Textures
 
