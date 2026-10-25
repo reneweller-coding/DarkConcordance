@@ -554,7 +554,8 @@ void main()
             float d = length( lightPos[i].xyz - fragPos );
             if( d < lightPos[i].w ) light += lightColor[i].rgb * atten( d, lightPos[i].w );
         }
-        c *= light;
+        // Capped: a cloud of steam beside a lamp must not add up to white.
+        c *= min( light, vec3( 2.5 ) );
     }
     finalColor = vec4( c, 1.0 );
 }

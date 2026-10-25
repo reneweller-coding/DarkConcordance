@@ -3,16 +3,30 @@
 #
 #   #  Fels      .  Boden      1-9  Boden so viele halbe Meter höher      ~  Schacht      =  Gitterbrücke
 #   F  Wärmetauscher (2,5 m hoch, Deckung, man kann hinaufspringen)        P  Start      C  Rettungskapsel
-#   L  Rostlaus  W  Schweißlaus  B  Drohnenpresse  X  Ausgang  H  Stim  S  Schrott  K  die Körper
-#   D  Tropfenschwarm  R  rotes Notlicht  A  Arbeitslicht  V  Dampfventil  a-z  Auslöser der Zeilen unten
+#   L  Rostlaus  W  Schweißlaus  B  Drohnenpresse  H  Stim  S  Schrott  K  die Körper
+#   D  Tropfenschwarm  R  rotes Notlicht  A  Arbeitslicht  V  Dampfventil  G  Tor (öffnet nach dem Boss)
+#   X  Lastenaufzug (seine Nachbarn ~ sind der Schacht)   a-z  Auslöser der Zeilen unten
+#
+#   zone r0 c0 r1 c1 thema   (service, exchanger, shaft, coldstore, works)   sign r c textur
 
 name     Die Kühlgedärme
 act      Akt I · Velm
 gravity  3.2
-fog      0.008 0.035 0.6 1.2
+fog      0.006 0.025 0.6 1.2
 fogcolor 0.004 0.0012 0.0009
-ambient  0.012 0.010 0.010 0.008 0.006 0.006
+ambient  0.03 0.026 0.026 0.02 0.016 0.016
 walls    4.5
+zone     17 1 37 14 service
+zone     2 1 16 25 exchanger
+zone     3 26 13 41 shaft
+zone     1 42 15 53 coldstore
+zone     16 39 38 62 works
+sign     29 11 sign_k7
+sign     3 10 sign_exchanger
+sign     8 27 sign_shaft
+sign     2 44 sign_coldstore
+sign     16 41 sign_works
+sign     32 54 sign_lift
 
 [map]
 ################################################################
@@ -48,11 +62,11 @@ walls    4.5
 ##.H........V.##########################.H.......22222......S.##
 ##............##########################.........22222........##
 ##............##########################R....................R##
-##.C..aaa.....####################################...###########
-##...Paaa.....####################################...###########
-##....aaa.11..####################################R..###########
-##........11VR####################################.X.###########
-##################################################...###########
+##.C..aaa.....####################################.G.###########
+##...Paaa.....####################################R..###########
+##....aaa.11..####################################~~~###########
+##........11VR####################################~X~###########
+################################################################
 ################################################################
 ################################################################
 
@@ -65,6 +79,9 @@ l1_droplets | c        | Corvin | Kondenswasser. Sieht aus wie ein Sternhaufen. 
 l1_shaft    | e        | Corvin | Ein Kühlschacht. Bei der Schwerkraft schafft man das mit Anlauf. Nur nicht in der Luft schießen.
 l1_bodies   | f        | Corvin | Da sind sie. Kein Kratzer an ihnen. Nur der Kopf ist leer. Sauber gestapelt, wie Ware, die auf Abholung wartet.
 l1_press    | g        | Corvin | Eine Drohnenpresse. Baut aus Schrott neue Läuse. Und irgendwer füttert sie.
+l1_tanks    | bossstart | Corvin | Die Tanks an den Seiten! Wenn die platzen, kocht das Ding über.
+l1_tank1    | tank1    | Corvin | Einer ist hin. Noch einer.
+l1_core     | coreopen | Corvin | Der Kern liegt frei. Jetzt!
 l1_pressend | bossdead | Corvin | Das war die Fabrik. Fehlt nur noch, wer die Rechnungen bezahlt.
 l1_exit     | bossdead | Corvin | Die Spur führt weiter nach unten. Zum Knochenmarkt.
 
@@ -75,4 +92,8 @@ h_fire     | b        | Schießen: linke Maustaste oder rechter Trigger. Ohne Zi
 h_gap      | e        | Mit Anlauf springen. In der Luft treibt dich der Rückstoß weg.
 h_stim     | hurt     | Q / Y: Stim injizieren (+40 Leben).
 h_heat     | overheat | Das Gewehr ist überhitzt. Kurz absetzen.
-h_tanks    | g        | Die Kühltanks an den Seiten sind die Schwachstelle der Presse.
+h_tanks    | bossstart | Schwachstellen: erst die zwei Kühltanks links und rechts, dann der Kern hinter dem Stempel.
+h_anvil    | ramwarn  | Fährt der Stempel hoch: runter vom Amboss!
+h_core     | coreopen | Der Kern ist offen. Auf das Glühen hinter dem Stempel schießen.
+h_armour   | armour   | Die Panzerung hält. Auf die blau leuchtenden Tanks zielen.
+h_lift     | bossdead | Das Tor ist offen. Der Lastenaufzug dahinter führt nach unten.

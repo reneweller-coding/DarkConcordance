@@ -86,6 +86,40 @@ struct LevelSurfaces
     int m_rust;     ///< rusty steel
     int m_foil;     ///< thermal foil (the bodies)
     int m_glow;     ///< lamps
+    int m_crate;    ///< painted crates
+};
+
+/** @brief The character of an area: colours, lining, pipes, props. */
+enum class ThemeE : uint8_t
+{
+    SERVICE,     ///< maintenance access: clean panels, crates
+    EXCHANGER,   ///< heat exchangers: cold blue, many pipes, puddles
+    SHAFT,       ///< the cooling shaft: raw rock, rust, cable drums
+    COLDSTORE,   ///< the cold store: pale frosted panels, frost
+    WORKS,       ///< the drone works: hazard paint, scrap, barrels
+    COUNT        ///< number of themes
+};
+
+/** @brief A rectangle of the map with a theme. */
+struct Zone
+{
+    int    m_r0, m_c0, m_r1, m_c1;   ///< rows and columns (inclusive)
+    ThemeE m_theme;                  ///< its character
+};
+
+/** @brief A sign on a wall or on posts. */
+struct Sign
+{
+    std::string m_texture;     ///< picture (assets/textures/<name>.png)
+    Vector3     m_corner[4];   ///< top left, top right, bottom right, bottom left
+    Vector3     m_lamp;        ///< the small lamp above it
+};
+
+/** @brief A solid prop on the floor (crates, barrels, scrap): a circle that blocks. */
+struct Prop
+{
+    Vector3 m_pos;      ///< on the floor
+    float   m_radius;   ///< what it blocks
 };
 
 /** @brief A level. */
@@ -170,18 +204,37 @@ public:
      */
     bool walkable( int r, int c ) const;
 
-    std::string             m_name;                                    ///< shown at the start
-    std::string             m_act;                                     ///< the act
-    float                   m_gravity = 9.81f;                         ///< m/s²
-    Vector4                 m_fog = { 0.01f, 0.05f, 0.5f, 1.0f };      ///< fog as in Lighting
-    Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };   ///< the fog's own glow
-    Vector3                 m_ambUp = { 0.01f, 0.01f, 0.01f };         ///< ambient from above
-    Vector3                 m_ambDown = { 0.01f, 0.01f, 0.01f };       ///< ambient from below
-    float                   m_wallHeight = 4.5f;                       ///< wall height
-    std::vector<Marker>     m_markers;                                 ///< spawns, lights, pickups
-    std::vector<Line>       m_lines;                                   ///< spoken lines
-    std::vector<Hint>       m_hints;                                   ///< hints
-    std::vector<LevelLight> m_lights;                                  ///< fixed lights (after build)
+    /**
+     * @brief Turns a cell into a shaft (before build(); the exit lift's well).
+     * @param[in] r  row
+     * @param[in] c  column
+     */
+    void setVoid( int r, int c );
+
+    /**
+     * @brief The theme of a cell.
+     * @param[in] r  row
+     * @param[in] c  column
+     * @return the zone's theme (SERVICE outside every zone)
+     */
+    ThemeE theme( int r, int c ) const;
+
+    std::string             m_name;                                            ///< shown at the start
+    std::string             m_act;                                             ///< the act
+    float                   m_gravity = 9.81f;                                 ///< m/s²
+    Vector4                 m_fog = { 0.01f, 0.05f, 0.5f, 1.0f };              ///< fog as in Lighting
+    Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };           ///< the fog's own glow
+    Vector3                 m_ambUp = { 0.01f, 0.01f, 0.01f };                 ///< ambient from above
+    Vector3                 m_ambDown = { 0.01f, 0.01f, 0.01f };               ///< ambient from below
+    float                   m_wallHeight = 4.5f;                               ///< wall height
+    std::vector<Marker>     m_markers;                                         ///< spawns, lights, pickups
+    std::vector<Line>       m_lines;                                           ///< spoken lines
+    std::vector<Hint>       m_hints;                                           ///< hints
+    std::vector<LevelLight> m_lights;                                          ///< fixed lights (after build)
+    std::vector<Zone>       m_zones;                                           ///< areas with their themes
+    std::vector<Sign>       m_signs;                                           ///< signs (after build)
+    std::vector<Prop>       m_props;                                           ///< solid props (after build)
+    std::vector<std::pair<std::string, std::pair<int, int>>> m_signRequests;   ///< "sign" lines: texture, cell
 
 private:
     int               m_rows = 0;

@@ -1,6 +1,7 @@
 /**
  * @file Level.cpp
- * @brief Reading a level file, the grid's queries, and the geometry with its dressing.
+ * @brief Reading a level file, the grid's queries, and the geometry with its dressing (per zone's theme), props and
+ *        signs.
  * @author Rene Weller
  */
 #include "Level.h"
@@ -29,6 +30,12 @@ unsigned hashCell( int r, int c, int salt )
     return h ^ ( h >> 15 );
 }
 
+/** @brief The hash as a number in 0..1. */
+float hash01( int r, int c, int salt )
+{
+    return ( hashCell( r, c, salt ) & 0xffff ) / 65535.0f;
+}
+
 /** @brief Cuts the blanks off both ends. */
 std::string trim( const std::string &s )
 {
@@ -49,6 +56,72 @@ std::vector<std::string> fields( const std::string &s )
 
 const int DR[4] = { -1, 0, 1, 0 };   ///< north, east, south, west
 const int DC[4] = { 0, 1, 0, -1 };
+
+/** @brief How a theme dresses its cells. */
+struct Look
+{
+    Color m_lining;         ///< colour of the wall panels
+    float m_liningChance;   ///< share of wall faces with panels
+    float m_hazardChance;   ///< share of panels with a hazard band
+    int   m_pipes;          ///< rows of pipes along the walls
+    Color m_pipe;           ///< their colour
+    Color m_floor;          ///< colour of the floors
+    Color m_rock;           ///< colour of the rock
+    float m_propChance;     ///< share of wall-side cells with a prop
+};
+
+const Look Looks[(int)ThemeE::COUNT] = {
+    { { 215, 205, 190, 255 },
+      0.85f,
+      0.15f,
+      2,
+      { 255, 255, 255, 255 },
+      { 255, 248, 236, 255 },
+      { 255, 255, 255, 255 },
+      0.18f },
+    { { 150, 178, 210, 255 },
+      0.7f,
+      0.1f,
+      3,
+      { 175, 205, 240, 255 },
+      { 195, 212, 235, 255 },
+      { 185, 198, 220, 255 },
+      0.14f },
+    { { 215, 140, 95, 255 },
+      0.3f,
+      0.3f,
+      1,
+      { 255, 195, 150, 255 },
+      { 255, 228, 205, 255 },
+      { 255, 210, 180, 255 },
+      0.1f },
+    { { 236, 244, 252, 255 },
+      1.0f,
+      0.05f,
+      2,
+      { 220, 232, 250, 255 },
+      { 222, 234, 248, 255 },
+      { 210, 222, 240, 255 },
+      0.16f },
+    { { 220, 168, 112, 255 },
+      0.6f,
+      0.5f,
+      2,
+      { 255, 205, 160, 255 },
+      { 220, 196, 170, 255 },
+      { 255, 232, 210, 255 },
+      0.24f },
+};
+
+/** @brief A theme's name in the level file. */
+ThemeE themeOf( const std::string &name )
+{
+    if ( name == "exchanger" ) return ThemeE::EXCHANGER;
+    if ( name == "shaft" ) return ThemeE::SHAFT;
+    if ( name == "coldstore" ) return ThemeE::COLDSTORE;
+    if ( name == "works" ) return ThemeE::WORKS;
+    return ThemeE::SERVICE;
+}
 
 }   // namespace
 
@@ -127,6 +200,21 @@ bool Level::load( const std::string &path )
             kv >> m_ambUp.x >> m_ambUp.y >> m_ambUp.z >> m_ambDown.x >> m_ambDown.y >> m_ambDown.z;
         else if ( key == "walls" )
             kv >> m_wallHeight;
+        else if ( key == "zone" )
+        {
+            Zone        z;
+            std::string theme;
+            kv >> z.m_r0 >> z.m_c0 >> z.m_r1 >> z.m_c1 >> theme;
+            z.m_theme = themeOf( theme );
+            m_zones.push_back( z );
+        }
+        else if ( key == "sign" )
+        {
+            int         r = 0, c = 0;
+            std::string texture;
+            kv >> r >> c >> texture;
+            m_signRequests.push_back( { texture, { r, c } } );
+        }
     }
 
     m_rows = (int)map.size();
@@ -162,6 +250,22 @@ const Cell &Level::cell( int r, int c ) const
     static const Cell rock;
     if ( r < 0 || c < 0 || r >= m_rows || c >= m_cols ) return rock;
     return m_cells[(size_t)r * m_cols + c];
+}
+
+void Level::setVoid( int r, int c )
+{
+    if ( r < 0 || c < 0 || r >= m_rows || c >= m_cols ) return;
+    Cell &k = m_cells[(size_t)r * m_cols + c];
+    k.m_kind = CellE::VOID;
+    k.m_height = 0.0f;
+    k.m_trigger = 0;
+}
+
+ThemeE Level::theme( int r, int c ) const
+{
+    for ( const Zone &z : m_zones )
+        if ( r >= z.m_r0 && r <= z.m_r1 && c >= z.m_c0 && c <= z.m_c1 ) return z.m_theme;
+    return ThemeE::SERVICE;
 }
 
 void Level::cellOf( Vector3 p, int &r, int &c ) const
@@ -245,6 +349,20 @@ bool Level::collide( Vector3 &pos, float radius, float step ) const
                 touched = true;
             }
     }
+    // Crates, barrels, scrap.
+    for ( const Prop &p : m_props )
+    {
+        if ( pos.y > p.m_pos.y + 1.4f ) continue;
+        float dx = pos.x - p.m_pos.x, dz = pos.z - p.m_pos.z;
+        float d = sqrtf( dx * dx + dz * dz );
+        float min = radius + p.m_radius;
+        if ( d < min && d > 1e-4f )
+        {
+            pos.x = p.m_pos.x + dx / d * min;
+            pos.z = p.m_pos.z + dz / d * min;
+            touched = true;
+        }
+    }
     return touched;
 }
 
@@ -291,7 +409,7 @@ bool Level::raycast( Vector3 from, Vector3 to, Vector3 &hit, Vector3 &normal ) c
 
 void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
 {
-    MeshBuilder rock, floor, grate, metal, hazard, rust, foil, fins;
+    MeshBuilder rock, floor, grate, metal, hazard, rust, foil, fins, crate;
     struct Glow
     {
         Vector3 m_at;
@@ -309,11 +427,19 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 if ( isVoid( r + dr, c + dc ) ) return true;
         return false;
     };
+    // Props keep away from markers (spawns, capsules, doors, the swarms) and from shafts.
+    auto nearMarker = [&]( int r, int c )
+    {
+        for ( const Marker &m : m_markers )
+            if ( m.m_kind != 'R' && m.m_kind != 'A' && abs( m.m_row - r ) <= 1 && abs( m.m_col - c ) <= 1 ) return true;
+        return false;
+    };
 
     for ( int r = 0; r < m_rows; ++r )
         for ( int c = 0; c < m_cols; ++c )
         {
             const Cell &k = cell( r, c );
+            const Look &look = Looks[(int)theme( r, c )];
             float       x0 = c * CellSize;
             float       z0 = r * CellSize;
             Vector3     mid = { x0 + CellSize * 0.5f, 0.0f, z0 + CellSize * 0.5f };
@@ -325,7 +451,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 rock.m_color = { 70, 66, 64, 255 };
                 rock.box( place( { mid.x, m_wallHeight + 0.01f, mid.z } ),
                           { CellSize * 0.5f, 0.01f, CellSize * 0.5f } );
-                rock.m_color = WHITE;
+                rock.m_color = look.m_rock;
                 if ( border )
                 {
                     float bottom = nearVoid( r, c ) ? -PitDepth : -0.5f;
@@ -363,7 +489,8 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             else if ( k.m_kind == CellE::FIN )
             {
                 // A heat exchanger: plates between a base and a grating top, pipes through them.
-                metal.box( place( { mid.x, -0.25f + 0.25f, mid.z } ), { CellSize * 0.5f, 0.25f, CellSize * 0.5f } );
+                metal.m_color = look.m_lining;
+                metal.box( place( { mid.x, 0.25f, mid.z } ), { CellSize * 0.5f, 0.25f, CellSize * 0.5f } );
                 for ( int i = 0; i < 9; ++i )
                     fins.box( place( { x0 + 0.12f + i * 0.22f, 1.35f, mid.z } ),
                               { 0.025f, 1.0f, CellSize * 0.5f - 0.06f } );
@@ -372,12 +499,15 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     rust.cylinder( place( { x0, y, mid.z }, { 0.0f, 0.0f, -PI * 0.5f } ), 0.09f, CellSize, 10 );
                 for ( float dx : { 0.05f, CellSize - 0.05f } )
                     metal.box( place( { x0 + dx, 1.25f, mid.z } ), { 0.05f, 1.25f, CellSize * 0.5f } );
+                metal.m_color = WHITE;
             }
             else
             {
                 float h = k.m_height;
+                floor.m_color = look.m_floor;
                 floor.box( place( { mid.x, ( h - 0.5f ) * 0.5f, mid.z } ),
                            { CellSize * 0.5f, ( h + 0.5f ) * 0.5f, CellSize * 0.5f } );
+                floor.m_color = WHITE;
                 if ( hashCell( r, c, 3 ) % 9 == 0 )
                     grate.box( place( { mid.x, h + 0.01f, mid.z } ), { 0.7f, 0.012f, 0.7f } );
             }
@@ -400,17 +530,19 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                                 { DC[d] ? 0.18f : CellSize * 0.5f, 0.008f, DR[d] ? 0.18f : CellSize * 0.5f } );
                 }
                 if ( open( nr, nc ) ) continue;
-                // A wall face: lining, ribs, pipes.
-                Vector3  n = { (float)-DC[d], 0.0f, (float)-DR[d] };   // into this cell
-                Vector3  face = { mid.x + DC[d] * CellSize * 0.5f, 0.0f, mid.z + DR[d] * CellSize * 0.5f };
-                float    yaw = DC[d] != 0 ? PI * 0.5f : 0.0f;   // a box's x along the face
-                unsigned hh = hashCell( r, c, 11 + d );
-                float    y0 = k.m_kind == CellE::VOID ? -PitDepth + 2.0f : base;
-                if ( k.m_kind != CellE::VOID && hh % 3 != 0 )
+                // A wall face: lining, ribs, pipes (as the zone's theme has them).
+                Vector3 n = { (float)-DC[d], 0.0f, (float)-DR[d] };   // into this cell
+                Vector3 face = { mid.x + DC[d] * CellSize * 0.5f, 0.0f, mid.z + DR[d] * CellSize * 0.5f };
+                float   yaw = DC[d] != 0 ? PI * 0.5f : 0.0f;   // a box's x along the face
+                float   y0 = k.m_kind == CellE::VOID ? -PitDepth + 2.0f : base;
+                if ( k.m_kind != CellE::VOID && hash01( r, c, 11 + d ) < look.m_liningChance )
                 {
-                    Vector3 p = Vector3Add( face, Vector3Scale( n, 0.05f ) );
-                    metal.box( place( { p.x, y0 + 1.25f, p.z }, { 0.0f, yaw, 0.0f } ), { 0.93f, 1.15f, 0.04f } );
-                    if ( hh % 5 == 0 )
+                    Vector3      p = Vector3Add( face, Vector3Scale( n, 0.05f ) );
+                    MeshBuilder &lining = theme( r, c ) == ThemeE::SHAFT ? rust : metal;
+                    lining.m_color = look.m_lining;
+                    lining.box( place( { p.x, y0 + 1.25f, p.z }, { 0.0f, yaw, 0.0f } ), { 0.93f, 1.15f, 0.04f } );
+                    lining.m_color = WHITE;
+                    if ( hash01( r, c, 21 + d ) < look.m_hazardChance )
                         hazard.box( place( { p.x + n.x * 0.02f, y0 + 0.15f, p.z + n.z * 0.02f }, { 0.0f, yaw, 0.0f } ),
                                     { 0.93f, 0.15f, 0.04f } );
                 }
@@ -425,13 +557,117 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 Vector3 along = { DR[d] != 0 ? 1.0f : 0.0f, 0.0f, DC[d] != 0 ? 1.0f : 0.0f };
                 Vector3 start = Vector3Subtract( face, Vector3Scale( along, CellSize * 0.5f ) );
                 Matrix  axis = DR[d] != 0 ? MatrixRotateZ( -PI * 0.5f ) : MatrixRotateX( PI * 0.5f );
-                for ( int i = 0; i < 2; ++i )
+                rust.m_color = look.m_pipe;
+                for ( int i = 0; i < look.m_pipes; ++i )
                 {
-                    float   y = k.m_kind == CellE::VOID ? -2.0f - i * 0.45f : base + ( i ? 3.75f : 3.35f );
-                    float   rad = i ? 0.07f : 0.11f;
+                    float   y = k.m_kind == CellE::VOID ? -2.0f - i * 0.45f
+                                                        : base + 3.35f + i * 0.38f - ( i == 2 ? 1.35f : 0.0f );
+                    float   rad = i == 1 ? 0.07f : 0.11f;
                     Vector3 p = Vector3Add( start, Vector3Scale( n, 0.28f + rad ) );
                     rust.cylinder( MatrixMultiply( axis, MatrixTranslate( p.x, y, p.z ) ), rad, CellSize, 10 );
                 }
+                rust.m_color = WHITE;
+            }
+
+            // Props by the walls, as the theme has them.
+            if ( k.m_kind != CellE::FLOOR || k.m_height != 0.0f || k.m_trigger || nearVoid( r, c ) ||
+                 nearMarker( r, c ) )
+                continue;
+            int wall = -1, walk = 0;
+            for ( int d = 0; d < 4; ++d )
+            {
+                if ( !open( r + DR[d], c + DC[d] ) && wall < 0 ) wall = d;
+                if ( walkable( r + DR[d], c + DC[d] ) ) ++walk;
+            }
+            if ( wall < 0 || walk < 3 || hash01( r, c, 31 ) >= look.m_propChance ) continue;
+            Vector3 n = { (float)-DC[wall], 0.0f, (float)-DR[wall] };
+            Vector3 at = Vector3Subtract( mid, Vector3Scale( n, 0.35f ) );
+            float   turn = hash01( r, c, 33 ) * 0.6f - 0.3f;
+            switch ( theme( r, c ) )
+            {
+            case ThemeE::SERVICE:
+                crate.roundedBox( place( { at.x, 0.42f, at.z }, { 0.0f, turn, 0.0f } ), { 0.5f, 0.42f, 0.45f }, 0.04f,
+                                  2 );
+                if ( hash01( r, c, 34 ) < 0.5f )
+                    crate.roundedBox( place( { at.x, 1.08f, at.z }, { 0.0f, -turn, 0.0f } ), { 0.36f, 0.24f, 0.32f },
+                                      0.04f, 2 );
+                metal.box( place( { at.x, 0.42f, at.z }, { 0.0f, turn, 0.0f } ), { 0.52f, 0.05f, 0.47f } );
+                m_props.push_back( { at, 0.6f } );
+                break;
+            case ThemeE::EXCHANGER:
+                // A valve stand and a puddle of condensate.
+                metal.cylinder( place( { at.x, 0.0f, at.z } ), 0.1f, 1.3f, 10 );
+                rust.lathe( place( { at.x, 1.15f, at.z }, { PI * 0.5f, 0.0f, 0.0f } ),
+                            { { 0.25f, -0.03f },
+                              { 0.3f, -0.03f },
+                              { 0.3f, -0.03f },
+                              { 0.3f, 0.03f },
+                              { 0.3f, 0.03f },
+                              { 0.25f, 0.03f } },
+                            16 );
+                floor.m_color = { 30, 36, 46, 255 };
+                floor.lathe( place( { mid.x, 0.006f, mid.z } ), { { 0.0f, 0.0f }, { 0.75f, 0.0f } }, 18 );
+                floor.m_color = WHITE;
+                m_props.push_back( { at, 0.25f } );
+                break;
+            case ThemeE::SHAFT:
+                rust.lathe( place( { at.x, 0.0f, at.z }, { 0.0f, turn, PI * 0.5f } ),
+                            { { 0.0f, -0.4f },
+                              { 0.55f, -0.4f },
+                              { 0.55f, -0.4f },
+                              { 0.55f, -0.32f },
+                              { 0.3f, -0.32f },
+                              { 0.3f, 0.32f },
+                              { 0.55f, 0.32f },
+                              { 0.55f, 0.32f },
+                              { 0.55f, 0.4f },
+                              { 0.0f, 0.4f } },
+                            18 );
+                m_props.push_back( { at, 0.55f } );
+                break;
+            case ThemeE::COLDSTORE:
+                foil.roundedBox( place( { at.x, 0.4f, at.z }, { 0.0f, turn, 0.0f } ), { 0.45f, 0.4f, 0.4f }, 0.12f, 3 );
+                floor.m_color = { 235, 245, 255, 255 };
+                floor.lathe( place( { mid.x + 0.3f, 0.006f, mid.z }, { 0.0f, turn, 0.0f } ),
+                             { { 0.0f, 0.0f }, { 0.6f, 0.0f } }, 7 );
+                floor.m_color = WHITE;
+                m_props.push_back( { at, 0.55f } );
+                break;
+            case ThemeE::WORKS:
+            default:
+                if ( hash01( r, c, 35 ) < 0.5f )
+                {
+                    // Barrels.
+                    for ( int i = 0; i < 3; ++i )
+                    {
+                        float   a = turn + i * 2.1f;
+                        Vector3 b = { at.x + cosf( a ) * 0.32f, 0.0f, at.z + sinf( a ) * 0.32f };
+                        ( i == 1 ? hazard : rust )
+                            .lathe( place( b ),
+                                    { { 0.0f, 0.0f },
+                                      { 0.28f, 0.0f },
+                                      { 0.28f, 0.0f },
+                                      { 0.3f, 0.45f },
+                                      { 0.28f, 0.9f },
+                                      { 0.28f, 0.9f },
+                                      { 0.0f, 0.9f } },
+                                    14 );
+                    }
+                    m_props.push_back( { at, 0.65f } );
+                }
+                else
+                {
+                    // A heap of scrap.
+                    for ( int i = 0; i < 9; ++i )
+                    {
+                        float a = hash01( r, c, 40 + i ) * 6.28f, d = hash01( r, c, 50 + i ) * 0.45f;
+                        rust.box( place( { at.x + cosf( a ) * d, 0.12f + ( i % 3 ) * 0.14f, at.z + sinf( a ) * d },
+                                         { hash01( r, c, 60 + i ), a, hash01( r, c, 70 + i ) } ),
+                                  { 0.18f, 0.06f, 0.12f } );
+                    }
+                    m_props.push_back( { at, 0.55f } );
+                }
+                break;
             }
         }
 
@@ -471,10 +707,13 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             glows.push_back( { Vector3Add( at, Vector3Scale( n, 0.1f ) ),
                                { fabsf( n.x ) > 0.5f ? 0.02f : 0.15f, 0.1f, fabsf( n.z ) > 0.5f ? 0.02f : 0.15f },
                                glow } );
+            // The lamp's colour follows the zone: cold light in the exchangers and the cold store.
+            ThemeE  t = theme( m.m_row, m.m_col );
+            Vector3 colour = red ? Vector3{ 30.0f, 3.4f, 1.4f } : Vector3{ 34.0f, 21.0f, 8.5f };
+            if ( !red && ( t == ThemeE::EXCHANGER || t == ThemeE::COLDSTORE ) ) colour = { 18.0f, 26.0f, 36.0f };
             unsigned h = hashCell( m.m_row, m.m_col, 5 );
-            m_lights.push_back( { Vector3Add( at, Vector3Scale( n, 0.6f ) ),
-                                  red ? Vector3{ 22.0f, 2.5f, 1.0f } : Vector3{ 26.0f, 16.0f, 6.5f },
-                                  red ? 9.5f : 11.0f, h % 4 == 0 ? 0.7f : 0.0f } );
+            m_lights.push_back(
+                { Vector3Add( at, Vector3Scale( n, 0.6f ) ), colour, red ? 10.0f : 12.5f, h % 4 == 0 ? 0.7f : 0.0f } );
         }
         else if ( m.m_kind == 'V' )
         {
@@ -495,6 +734,44 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                                  { 0.27f, 0.16f, 0.88f }, 0.12f, 3 );
             }
         }
+    }
+
+    // Signs: on the wall north of their cell (the camera sees those faces), else on two posts facing the camera.
+    for ( const auto &req : m_signRequests )
+    {
+        int     r = req.second.first, c = req.second.second;
+        Vector3 mid = centre( r, c );
+        float   w = 2.4f, h = w * 9.0f / 21.0f;
+        Sign    sign;
+        sign.m_texture = req.first;
+        float z, y;
+        if ( !open( r - 1, c ) )
+        {
+            z = r * CellSize + 0.34f;   // in front of the ribs
+            y = mid.y + 2.75f;
+            metal.box( place( { mid.x, y, z - 0.04f } ), { w * 0.5f + 0.06f, h * 0.5f + 0.06f, 0.03f } );
+            for ( float side : { -1.0f, 1.0f } )
+                metal.box( place( { mid.x + side * ( w * 0.5f - 0.2f ), y, z - 0.2f } ), { 0.04f, 0.04f, 0.16f } );
+        }
+        else
+        {
+            z = mid.z;
+            y = mid.y + 2.0f;
+            for ( float side : { -1.0f, 1.0f } )
+                metal.box( place( { mid.x + side * ( w * 0.5f - 0.15f ), y * 0.5f, z - 0.06f } ),
+                           { 0.05f, y * 0.5f, 0.05f } );
+            metal.box( place( { mid.x, y, z - 0.05f } ), { w * 0.5f + 0.06f, h * 0.5f + 0.06f, 0.03f } );
+        }
+        sign.m_corner[0] = { mid.x - w * 0.5f, y + h * 0.5f, z };
+        sign.m_corner[1] = { mid.x + w * 0.5f, y + h * 0.5f, z };
+        sign.m_corner[2] = { mid.x + w * 0.5f, y - h * 0.5f, z };
+        sign.m_corner[3] = { mid.x - w * 0.5f, y - h * 0.5f, z };
+        sign.m_lamp = { mid.x, y + h * 0.5f + 0.25f, z + 0.25f };
+        metal.box( place( { mid.x, y + h * 0.5f + 0.18f, z + 0.12f } ), { 0.3f, 0.04f, 0.12f } );
+        glows.push_back(
+            { { mid.x, y + h * 0.5f + 0.14f, z + 0.14f }, { 0.25f, 0.01f, 0.08f }, { 6.0f, 4.5f, 2.5f, 0.0f } } );
+        m_lights.push_back( { sign.m_lamp, { 7.0f, 5.5f, 3.5f }, 3.2f, 0.0f } );
+        m_signs.push_back( sign );
     }
 
     auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f } )
@@ -518,6 +795,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     add( rust, s.m_rust, true );
     add( foil, s.m_foil, false );
     add( fins, s.m_metal, true );
+    add( crate, s.m_crate, false );
     // Glowing boxes of one colour go into one mesh.
     while ( !glows.empty() )
     {

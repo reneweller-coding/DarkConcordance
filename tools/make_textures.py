@@ -26,6 +26,11 @@ MODELS = ["gemini-3-pro-image", "gemini-3.1-flash-image"]
 FLAT = ("flat uniform lighting, no shadows, no perspective, no text, no logos, "
         "photorealistic PBR material scan, highly detailed")
 
+SIGN = ("A weathered industrial sign plate on a space station wall, flat straight front view filling the whole frame, "
+        "dark grey painted steel with a rivet in each corner, large white stencilled block letters reading exactly "
+        "\"{}\", below them a smaller line reading exactly \"{}\", a yellow and black hazard stripe along the bottom "
+        "edge, scratches, grime and rust streaks, no other text, no logos, no wall around it")
+
 # name: (kind, aspect, prompt, metallic, roughness, normal strength)
 TEXTURES = {
     "floor": ("tile", "1:1",
@@ -74,6 +79,13 @@ TEXTURES = {
              "Seamless tileable texture, heavily rusted and pitted steel plating with flaking orange-brown rust, "
              "patches of old yellow paint, scratches, oily grime, " + FLAT,
              0.5, 0.7, 2.5),
+    # Signs of Velm's cooling sector (wall plates, read from the game camera; German as the story).
+    "sign_k7": ("picture", "21:9", SIGN.format( "KÜHLSEKTOR K-7", "WARTUNGSZUGANG" ), 0, 0, 0),
+    "sign_exchanger": ("picture", "21:9", SIGN.format( "WÄRMETAUSCHER 3", "KONDENSAT · RUTSCHGEFAHR" ), 0, 0, 0),
+    "sign_shaft": ("picture", "21:9", SIGN.format( "KÜHLSCHACHT", "ABSTURZGEFAHR · NUR MIT SICHERUNG" ), 0, 0, 0),
+    "sign_coldstore": ("picture", "21:9", SIGN.format( "KÜHLLAGER B", "ZUTRITT NUR FÜR PERSONAL" ), 0, 0, 0),
+    "sign_works": ("picture", "21:9", SIGN.format( "DROHNENWERK", "PRESSE · ZUTRITT VERBOTEN" ), 0, 0, 0),
+    "sign_lift": ("picture", "21:9", SIGN.format( "LASTENAUFZUG ↓", "KNOCHENMARKT · AGRARTROMMEL" ), 0, 0, 0),
     "screen": ("picture", "16:9",
                "Retro-futuristic spaceship computer terminal screen filling the whole frame, amber and cyan vector "
                "graphics, orbital diagrams, waveform readouts, warning glyphs, dark background, glowing CRT phosphor, "

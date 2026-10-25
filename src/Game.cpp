@@ -56,6 +56,7 @@ enum SurfE
     S_GLOW,
     S_ARMOR,
     S_DARK,
+    S_CRATE,
     S_COUNT
 };
 
@@ -207,6 +208,7 @@ void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
     tile( S_GLOW, "metal", 0.5f, { 0.5f, 0.0f, 0.0f, 0.0f }, 0.0f, { 25, 25, 25, 255 } );
     tile( S_ARMOR, "armor", 1.6f, { 1.0f, 1.0f, 1.5f, 0.0f }, 0.15f, { 132, 104, 78, 255 } );
     tile( S_DARK, "armor", 1.6f, { 0.9f, 1.0f, 1.5f, 0.0f }, 0.15f, { 46, 44, 48, 255 } );
+    tile( S_CRATE, "crate", 0.6f, { 1.0f, 1.0f, 1.0f, 0.0f }, 0.4f );
 }
 
 bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound )
@@ -214,7 +216,33 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     m_assets = assets;
     if ( !m_level.load( assets + "/levels/" + level ) ) return false;
     loadSurfaces( gfx, assets );
-    m_level.build( { S_ROCK, S_FLOOR, S_GRATE, S_METAL, S_HAZARD, S_RUST, S_FOIL, S_GLOW }, m_static );
+    // The lift's cell is part of its well.
+    for ( const Marker &m : m_level.m_markers )
+        if ( m.m_kind == 'X' ) m_level.setVoid( m.m_row, m.m_col );
+    m_level.build( { S_ROCK, S_FLOOR, S_GRATE, S_METAL, S_HAZARD, S_RUST, S_FOIL, S_GLOW, S_CRATE }, m_static );
+
+    // Signs: each picture its own surface, lit a little from within so it reads in the dark.
+    for ( const Sign &sign : m_level.m_signs )
+    {
+        Texture2D tex = loadTexture( assets + "/textures/" + sign.m_texture + ".png" );
+        Surface   surf = gfx.surface( tex, m_surfaces[S_METAL].m_material.maps[MATERIAL_MAP_METALNESS].texture,
+                                      m_surfaces[S_METAL].m_material.maps[MATERIAL_MAP_NORMAL].texture, tex );
+        surf.m_uvScale = 1.0f;
+        surf.m_params = { 0.8f, 0.3f, 0.0f, 1.0f };
+        surf.m_emissive = { 0.22f, 0.21f, 0.2f, 2.0f };
+        surf.m_variation = 0.0f;
+        m_surfaces.push_back( surf );
+        MeshBuilder b;
+        b.quad( sign.m_corner[0], sign.m_corner[1], sign.m_corner[2], sign.m_corner[3] );
+        for ( Mesh mesh : b.build() )
+        {
+            Drawable d;
+            d.m_mesh = mesh;
+            d.m_surface = (int)m_surfaces.size() - 1;
+            d.m_transform = MatrixIdentity();
+            m_static.push_back( d );
+        }
+    }
 
     FigureSurfaces fs = { S_ARMOR, S_DARK, S_METAL, S_GLOW };
     fs.m_visor = { 3.2f, 1.6f, 0.3f, 0.0f };   // Corvin's visor: amber
@@ -312,6 +340,9 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         {
             Vector3 o = { p.x, 0.0f, m.m_row * CellSize };
             m_pressModel.build( o, S_METAL, S_HAZARD, S_RUST, S_GLOW );
+            MeshBuilder anvil;
+            anvil.box( place( { 0.0f, 0.25f, 2.2f } ), { 2.25f, 0.008f, 1.95f } );
+            m_anvilGlow = anvil.build().front();
             // The cells the housing, the tanks and the gantry's legs stand on are no way through.
             for ( int r = 0; r < m_level.rows(); ++r )
                 for ( int c = 0; c < m_level.cols(); ++c )
@@ -328,6 +359,42 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
             break;
         }
         case 'X':
+        {
+            // The freight lift: a platform over its well (the X cell and the shaft cells beside and before it).
+            int c0 = m.m_col, c1 = m.m_col;
+            while ( m_level.cell( m.m_row, c0 - 1 ).m_kind == CellE::VOID ) --c0;
+            while ( m_level.cell( m.m_row, c1 + 1 ).m_kind == CellE::VOID ) ++c1;
+            int r0 = m.m_row;
+            while ( m_level.cell( r0 - 1, m.m_col ).m_kind == CellE::VOID ) --r0;
+            m_liftMin = { c0 * CellSize, 0.0f, r0 * CellSize };
+            m_liftMax = { ( c1 + 1 ) * CellSize, 0.0f, ( m.m_row + 1 ) * CellSize };
+            MeshBuilder deck;
+            Vector3     mid = Vector3Scale( Vector3Add( m_liftMin, m_liftMax ), 0.5f );
+            Vector3     half = Vector3Scale( Vector3Subtract( m_liftMax, m_liftMin ), 0.5f );
+            deck.box( place( { 0.0f, -0.12f, 0.0f } ), { half.x - 0.05f, 0.12f, half.z - 0.05f } );
+            for ( float sx : { -1.0f, 1.0f } )
+                for ( float sz : { -1.0f, 1.0f } )
+                    deck.box( place( { sx * ( half.x - 0.2f ), 1.6f, sz * ( half.z - 0.2f ) } ),
+                              { 0.08f, 1.6f, 0.08f } );
+            deck.box( place( { 0.0f, 3.2f, -( half.z - 0.2f ) } ), { half.x - 0.1f, 0.08f, 0.08f } );
+            deck.box( place( { 0.0f, 3.2f, half.z - 0.2f } ), { half.x - 0.1f, 0.08f, 0.08f } );
+            m_liftDeck = deck.build();
+            MeshBuilder rim;
+            for ( float sz : { -1.0f, 1.0f } )
+                rim.box( place( { 0.0f, 0.01f, sz * ( half.z - 0.25f ) } ), { half.x - 0.1f, 0.012f, 0.2f } );
+            for ( float sx : { -1.0f, 1.0f } )
+                rim.box( place( { sx * ( half.x - 0.25f ), 0.01f, 0.0f } ), { 0.2f, 0.012f, half.z - 0.1f } );
+            m_liftRim = rim.build();
+            MeshBuilder beacons;
+            for ( float sx : { -1.0f, 1.0f } )
+                for ( float sz : { -1.0f, 1.0f } )
+                    beacons.roundedBox( place( { sx * ( half.x - 0.2f ), 3.3f, sz * ( half.z - 0.2f ) } ),
+                                        { 0.12f, 0.1f, 0.12f }, 0.05f, 2 );
+            m_liftBeacons = beacons.build();
+            m_lift = mid;
+            break;
+        }
+        case 'G':
         {
             int c0 = m.m_col, c1 = m.m_col;
             while ( m_level.walkable( m.m_row, c0 - 1 ) ) --c0;
@@ -375,12 +442,49 @@ void Game::shutdown()
     if ( m_ownFont ) UnloadFont( m_font );
 }
 
+const char *difficultyName( DifficultyE d )
+{
+    switch ( d )
+    {
+    case DifficultyE::EASY: return "Leicht";
+    case DifficultyE::HARD: return "Schwer";
+    default: return "Normal";
+    }
+}
+
+namespace
+{
+
+/** @brief How much an enemy can take, by difficulty. */
+float toughness( DifficultyE d )
+{
+    return d == DifficultyE::EASY ? 0.75f : ( d == DifficultyE::HARD ? 1.3f : 1.0f );
+}
+
+/** @brief How hard Corvin is hit, by difficulty. */
+float harm( DifficultyE d )
+{
+    return d == DifficultyE::EASY ? 0.55f : ( d == DifficultyE::HARD ? 1.35f : 1.0f );
+}
+
+}   // namespace
+
+void Game::setDifficulty( DifficultyE d )
+{
+    float scale = toughness( d ) / toughness( m_difficulty );
+    for ( Foe &f : m_foes ) f.m_hp *= scale;
+    m_tank[0] *= scale;
+    m_tank[1] *= scale;
+    m_core *= scale;
+    m_difficulty = d;
+}
+
 void Game::spawnFoe( FoeE kind, Vector3 pos, bool awake )
 {
     Foe f;
     f.m_kind = kind;
     f.m_pos = pos;
-    f.m_hp = kind == FoeE::LOUSE ? LouseHp : WelderHp;
+    f.m_hp = ( kind == FoeE::LOUSE ? LouseHp : WelderHp ) * toughness( m_difficulty );
     f.m_awake = awake;
     f.m_yaw = rnd() * 6.28f;
     f.m_id = (int)m_foes.size();
@@ -396,6 +500,11 @@ void Game::putHero( float x, float z, float yaw )
     m_yaw = m_aimYaw = yaw * DEG2RAD;
     m_hero.animate( 0.0f, m_pos, { 0, 0 }, m_yaw, false, 0.0f, m_time );
     m_camTarget = Vector3Add( m_pos, { 0.0f, 1.0f, 0.0f } );
+    m_cam.target = m_camTarget;
+    m_cam.position = Vector3Add( m_camTarget, Vector3Scale( { 0.0f, 11.5f, 8.1f }, m_zoom ) );
+    m_cam.up = { 0.0f, 1.0f, 0.0f };
+    m_cam.fovy = 38.0f;
+    m_cam.projection = CAMERA_PERSPECTIVE;
 }
 
 void Game::wakeAll()
@@ -405,6 +514,9 @@ void Game::wakeAll()
 
 float Game::groundAt( Vector3 p ) const
 {
+    // The lift's platform covers its well.
+    if ( m_liftMax.x > m_liftMin.x && p.x > m_liftMin.x && p.x < m_liftMax.x && p.z > m_liftMin.z && p.z < m_liftMax.z )
+        return m_liftY;
     return m_level.floorAt( p.x, p.z );
 }
 
@@ -438,6 +550,15 @@ void Game::fire( const std::string &trigger )
 {
     if ( m_fired.count( trigger ) ) return;
     m_fired.insert( trigger );
+    // The press's moments go before everything waiting: they matter now.
+    bool urgent = trigger == "bossstart" || trigger == "ramwarn" || trigger == "coreopen" || trigger == "tank1" ||
+                  trigger == "armour";
+    if ( urgent )
+    {
+        m_hintQueue.clear();
+        m_hint = nullptr;
+        m_hintTimer = 0.0f;
+    }
     for ( const Line &l : m_level.m_lines )
         if ( l.m_trigger == trigger ) m_lineQueue.push_back( &l );
     for ( const Hint &h : m_level.m_hints )
@@ -446,7 +567,9 @@ void Game::fire( const std::string &trigger )
 
 void Game::hurtHero( float amount, Vector3 push )
 {
-    if ( m_dead || m_invuln > 0.0f || m_finished ) return;
+    if ( m_dead || m_invuln > 0.0f || m_finished || m_liftGoing ) return;
+    amount *= harm( m_difficulty );
+    m_sinceHurt = 0.0f;
     m_hp -= amount;
     m_invuln = 0.45f;
     m_hurtFlash = 1.0f;
@@ -657,6 +780,7 @@ void Game::shoot()
             explode( tp, 2.0f );
             m_audio.play( SfxE::BURST, tp, m_camTarget, 1.0f );
             m_shake = 0.8f;
+            if ( m_tank[1 - side] > 0.0f ) fire( "tank1" );
         }
     }
     else if ( kind == 3 )
@@ -665,8 +789,14 @@ void Game::shoot()
         m_pressPose.m_coreFlash = 1.0f;
         sparks( at, Vector3Negate( dir ), 12, { 255, 160, 60, 255 }, 4.0f );
     }
+    else if ( kind == 4 )
+    {
+        // The press's armour: grey sparks that bounce off, and a ring for "this does nothing".
+        sparks( at, Vector3Negate( dir ), 6, { 150, 150, 150, 255 }, 2.0f );
+        m_armourHint += 1.0f;
+    }
     else
-        sparks( at, kind == 4 ? Vector3Negate( dir ) : normal, 9, { 200, 225, 255, 255 }, 3.0f );
+        sparks( at, normal, 9, { 200, 225, 255, 255 }, 3.0f );
     m_tracers.push_back( { muzzle, at, 0.08f } );
     m_flashes.push_back( { muzzle, { 10.0f, 16.0f, 24.0f }, 5.0f, 0.06f, 0.06f } );
     m_flashes.push_back( { Vector3Add( at, Vector3Scale( dir, -0.3f ) ), { 6.0f, 9.0f, 14.0f }, 3.5f, 0.1f, 0.1f } );
@@ -718,7 +848,7 @@ void Game::updateHero( float dt, const GameInput &in )
         return;
     }
 
-    Vector2 move = in.m_move;
+    Vector2 move = m_liftGoing ? Vector2{ 0.0f, 0.0f } : in.m_move;
     if ( Vector2Length( move ) > 1.0f ) move = Vector2Normalize( move );
     Vector2 want = Vector2Scale( move, RunSpeed );
     Vector2 v = { m_vel.x, m_vel.z };
@@ -834,7 +964,7 @@ void Game::updateHero( float dt, const GameInput &in )
     }
     else if ( m_pos.y > floor + 0.08f )
         m_ground = false;
-    if ( m_pos.y < -10.0f )
+    if ( m_pos.y < -10.0f && !m_liftGoing )
     {
         m_hp = 0.0f;
         m_dead = true;
@@ -844,6 +974,35 @@ void Game::updateHero( float dt, const GameInput &in )
     }
     m_invuln -= dt;
     m_hurtFlash = fmaxf( 0.0f, m_hurtFlash - dt * 2.5f );
+    // On the easiest level health comes back slowly once nothing has hit for a while.
+    m_sinceHurt += dt;
+    if ( m_difficulty == DifficultyE::EASY && m_sinceHurt > 4.0f ) m_hp = fminf( 100.0f, m_hp + 2.5f * dt );
+
+    // The lift: once the press is dead, standing on it a moment takes it down; the level ends below.
+    bool onLift = m_liftMax.x > m_liftMin.x && m_pos.x > m_liftMin.x && m_pos.x < m_liftMax.x &&
+                  m_pos.z > m_liftMin.z && m_pos.z < m_liftMax.z && m_ground;
+    if ( m_pressDead && onLift && !m_liftGoing )
+    {
+        m_liftWait += dt;
+        if ( m_liftWait > 0.8f )
+        {
+            m_liftGoing = true;
+            m_audio.play( SfxE::KLAXON, m_lift, m_camTarget, 0.6f );
+        }
+    }
+    else if ( !onLift )
+        m_liftWait = 0.0f;
+    if ( m_liftGoing )
+    {
+        m_liftY -= dt * fminf( 2.2f, 0.4f + m_liftY * -0.4f + 0.6f );
+        if ( onLift || m_pos.y > m_liftY - 0.5f )
+        {
+            m_pos.y = m_liftY;
+            m_vel = { 0, 0, 0 };
+            m_ground = true;
+        }
+        if ( m_liftY < -11.0f ) m_finished = true;
+    }
 
     // Capsules, pickups, triggers, the exit.
     for ( Capsule &c : m_capsules )
@@ -876,9 +1035,6 @@ void Game::updateHero( float dt, const GameInput &in )
     m_level.cellOf( m_pos, r, c );
     char trig = m_level.cell( r, c ).m_trigger;
     if ( trig ) fire( std::string( 1, trig ) );
-    if ( m_pressDead && m_doorOpen > 0.8f && Vector3Distance( m_pos, m_door ) < m_doorHalf + 0.6f &&
-         fabsf( m_pos.z - m_door.z ) < 1.5f )
-        m_finished = true;
 
     m_hero.animate( dt, m_pos, { m_vel.x, m_vel.z }, m_yaw, !m_ground, 0.0f, m_time );
 }
@@ -1167,9 +1323,11 @@ void Game::updatePress( float dt )
         {
             m_pressActive = true;
             m_audio.play( SfxE::KLAXON, o, m_camTarget, 1.0f );
+            fire( "bossstart" );
         }
         return;
     }
+    if ( m_armourHint > 6.0f && ( m_tank[0] > 0.0f || m_tank[1] > 0.0f ) ) fire( "armour" );
     if ( m_pressDying )
     {
         m_deathTimer += dt;
@@ -1190,6 +1348,7 @@ void Game::updatePress( float dt )
     }
     bool open = m_tank[0] <= 0.0f && m_tank[1] <= 0.0f;
     m_pressPose.m_shutter = open ? fminf( 1.0f, m_pressPose.m_shutter + dt * 0.7f ) : 0.0f;
+    if ( m_pressPose.m_shutter > 0.9f ) fire( "coreopen" );
     if ( m_core <= 0.0f )
     {
         m_core = 0.0f;
@@ -1211,6 +1370,7 @@ void Game::updatePress( float dt )
             m_pressState = 1;
             m_pressTimer = 1.4f;
             m_audio.play( SfxE::KLAXON, o, m_camTarget, 0.8f );
+            if ( fabsf( m_pos.x - o.x ) < 6.0f && m_pos.z < o.z + 9.0f ) fire( "ramwarn" );
         }
         break;
     case 1:
@@ -1423,14 +1583,15 @@ void Game::updateEffects( float dt )
         if ( v.m_burst > 0.0f )
         {
             v.m_burst -= dt;
-            for ( int k = 0; k < 2; ++k )
+            // Few, large and faint: many puffs on top of each other add up to a white blot.
+            if ( rnd() < dt * 12.0f )
                 m_particles.push_back(
                     { Vector3Add( v.m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.1f, ( rnd() - 0.5f ) * 0.6f } ),
                       { ( rnd() - 0.5f ) * 0.6f, 1.4f + rnd() * 1.2f, ( rnd() - 0.5f ) * 0.6f },
                       2.2f,
                       2.2f,
-                      0.25f,
-                      { 200, 205, 215, 60 },
+                      0.4f,
+                      { 200, 205, 215, 5 },
                       1 } );
         }
     }
@@ -1451,9 +1612,13 @@ void Game::plan()
         m_level.cellOf( { o.x, 0.0f, o.z + 13.0f }, gr, gc );
         goal = gr * cols + gc;
     }
-    else
-        for ( const Marker &m : m_level.m_markers )
-            if ( m.m_kind == 'X' ) goal = m.m_row * cols + m.m_col;
+    else if ( m_liftMax.x > m_liftMin.x )
+    {
+        // The cell before the lift; the last steps onto its platform go straight.
+        int gr, gc;
+        m_level.cellOf( { m_lift.x, 0.0f, m_liftMin.z - 1.0f }, gr, gc );
+        goal = gr * cols + gc;
+    }
     std::vector<int> prev( (size_t)rows * cols, -2 );
     std::deque<int>  q;
     if ( !m_level.walkable( sr, sc ) ) return;
@@ -1560,7 +1725,12 @@ void Game::autopilot( float dt, GameInput &in )
             return;
         }
     }
-    if ( m_path.empty() ) return;
+    if ( m_path.empty() )
+    {
+        if ( m_pressDead && m_doorOpen > 0.9f && Vector3Distance( m_pos, m_lift ) < 6.0f )
+            in.m_move = Vector2Normalize( { m_lift.x - m_pos.x, m_lift.z - m_pos.z } );
+        return;
+    }
     int     next = m_path.front();
     Vector3 to = m_level.centre( next / cols, next % cols );
     Vector2 d = { to.x - m_pos.x, to.z - m_pos.z };
@@ -1636,12 +1806,23 @@ void Game::update( float dt, const GameInput &inRaw )
     }
 
     // The camera follows a little ahead of where Corvin aims.
-    // In the press's arena it draws back and takes the press into the picture.
-    Vector3 want = Vector3Add( Vector3Add( m_pos, { 0.0f, 1.0f, 0.0f } ), Vector3Scale( m_aimDir, 1.2f ) );
+    // Ahead of where Corvin aims and runs. In the press's arena (only while he is inside it) it draws back and takes
+    // the press into the picture -- but never so far that he would leave it.
+    Vector3 hero = Vector3Add( m_pos, { 0.0f, 1.0f, 0.0f } );
+    Vector3 lead = { Clamp( m_vel.x * 0.35f, -1.5f, 1.5f ), 0.0f, Clamp( m_vel.z * 0.35f, -1.5f, 1.5f ) };
+    Vector3 want = Vector3Add( Vector3Add( hero, Vector3Scale( m_aimDir, 1.2f ) ), lead );
     Vector3 o = m_pressModel.m_origin;
-    bool    arena = o.x != 0.0f && m_pressActive && !m_pressDead && Vector3Distance( m_pos, o ) < 34.0f;
-    if ( arena ) want = Vector3Lerp( want, { o.x, 1.0f, o.z + 4.0f }, 0.55f );
+    bool    arena = o.x != 0.0f && m_pressActive && !m_pressDead && fabsf( m_pos.x - o.x ) < 21.0f && m_pos.z > o.z &&
+                    m_pos.z < o.z + 30.0f;
+    if ( arena ) want = Vector3Lerp( want, { o.x, 1.0f, o.z + 4.0f }, 0.5f );
+    Vector3 off = Vector3Subtract( want, hero );
+    float   reach = arena ? 7.0f : 3.0f;
+    if ( Vector3Length( off ) > reach ) want = Vector3Add( hero, Vector3Scale( Vector3Normalize( off ), reach ) );
     m_camTarget = Vector3Lerp( m_camTarget, want, 1.0f - expf( -dt * 4.0f ) );
+    // However the target lags, Corvin stays within the middle of the picture.
+    Vector3 lag = Vector3Subtract( m_camTarget, hero );
+    float   keep = arena ? 8.0f : 4.0f;
+    if ( Vector3Length( lag ) > keep ) m_camTarget = Vector3Add( hero, Vector3Scale( Vector3Normalize( lag ), keep ) );
     m_camPull += ( ( arena ? 1.45f : 1.0f ) - m_camPull ) * fminf( 1.0f, dt * 1.5f );
     Vector3 shake = { ( rnd() - 0.5f ) * m_shake * 0.5f, ( rnd() - 0.5f ) * m_shake * 0.3f,
                       ( rnd() - 0.5f ) * m_shake * 0.5f };
@@ -1660,10 +1841,10 @@ Lighting Game::lighting() const
     L.m_sunColor = { 0, 0, 0 };
     L.m_spotPos = m_hero.lampPos();
     L.m_spotDir = m_hero.lampDir();
-    L.m_spotColor = m_dead ? Vector3{ 0, 0, 0 } : Vector3{ 34.0f, 30.0f, 24.0f };
-    L.m_spotOuter = 26.0f;
-    L.m_spotInner = 12.0f;
-    L.m_spotRange = 22.0f;
+    L.m_spotColor = m_dead ? Vector3{ 0, 0, 0 } : Vector3{ 48.0f, 43.0f, 35.0f };
+    L.m_spotOuter = 30.0f;
+    L.m_spotInner = 14.0f;
+    L.m_spotRange = 26.0f;
     L.m_ambUp = m_level.m_ambUp;
     L.m_ambDown = m_level.m_ambDown;
     L.m_fog = m_level.m_fog;
@@ -1672,7 +1853,13 @@ Lighting Game::lighting() const
     L.m_roomMax = { m_level.cols() * CellSize, m_level.m_wallHeight, m_level.rows() * CellSize };
 
     std::vector<PointLight> all;
-    all.push_back( { Vector3Add( m_pos, { 0.4f, 3.0f, 1.0f } ), 8.0f, { 7.0f, 6.0f, 5.0f }, 0.0f } );
+    all.push_back( { Vector3Add( m_pos, { 0.4f, 3.2f, 1.2f } ), 11.0f, { 13.0f, 11.5f, 10.0f }, 0.0f } );
+    // The lift: red while the gate is shut, green when it waits.
+    if ( m_liftMax.x > m_liftMin.x )
+        all.push_back( { { m_lift.x, m_liftY + 3.0f, m_lift.z },
+                         9.0f,
+                         m_pressDead ? Vector3{ 4.0f, 22.0f, 9.0f } : Vector3{ 14.0f, 2.0f, 1.0f },
+                         1.0f } );
     for ( size_t i = 0; i < m_level.m_lights.size(); ++i )
     {
         const LevelLight &l = m_level.m_lights[i];
@@ -1694,11 +1881,16 @@ Lighting Game::lighting() const
     if ( o.x != 0.0f && !m_pressDead )
     {
         if ( m_pressPose.m_warn > 0.05f )
+        {
             for ( float side : { -1.0f, 1.0f } )
                 all.push_back( { { o.x + side * 7.5f, 7.0f, o.z + 0.4f },
                                  12.0f,
                                  Vector3Scale( { 20.0f, 1.5f, 0.6f }, m_pressPose.m_warn ),
                                  1.0f } );
+            // The anvil itself glows red while the ram is up.
+            all.push_back(
+                { { o.x, 0.8f, o.z + 2.2f }, 6.0f, Vector3Scale( { 18.0f, 1.2f, 0.4f }, m_pressPose.m_warn ), 0.6f } );
+        }
         for ( int s = 0; s < 2; ++s )
         {
             if ( m_tank[s] > 0.0f )
@@ -1914,12 +2106,46 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
         d.m_spotShadow = false;
         m_dynamic.push_back( d );
     }
+    // The lift: deck, posts and rails, its hazard rim, beacons red while the gate is shut, green when it waits.
+    if ( m_liftMax.x > m_liftMin.x )
+    {
+        Matrix  at = MatrixTranslate( m_lift.x, m_liftY, m_lift.z );
+        Vector4 beacon = m_pressDead ? Vector4{ 0.6f, 5.0f, 1.6f, 0.0f } : Vector4{ 5.0f, 0.4f, 0.2f, 0.0f };
+        if ( m_pressDead && fmodf( m_time, 1.0f ) > 0.6f && !m_liftGoing ) beacon = { 0.1f, 1.0f, 0.3f, 0.0f };
+        auto add = [&]( const std::vector<Mesh> &meshes, int surface, Vector4 glow )
+        {
+            for ( Mesh m : meshes )
+            {
+                Drawable d;
+                d.m_mesh = m;
+                d.m_surface = surface;
+                d.m_transform = at;
+                d.m_emissive = glow;
+                m_dynamic.push_back( d );
+            }
+        };
+        add( m_liftDeck, S_METAL, { -1, 0, 0, 0 } );
+        add( m_liftRim, S_HAZARD, { -1, 0, 0, 0 } );
+        add( m_liftBeacons, S_GLOW, beacon );
+    }
+    // The anvil glows red while the ram is up.
+    Vector3 po = m_pressModel.m_origin;
+    if ( po.x != 0.0f && m_pressPose.m_warn > 0.05f && !m_pressDead )
+    {
+        Drawable d;
+        d.m_mesh = m_anvilGlow;
+        d.m_surface = S_GLOW;
+        d.m_transform = MatrixTranslate( po.x, 0.0f, po.z );
+        float w = m_pressPose.m_warn;
+        d.m_emissive = { 3.5f * w, 0.25f * w, 0.1f * w, 0.0f };
+        m_dynamic.push_back( d );
+    }
 
     Lighting L = lighting();
     gfx.m_sunShadows = false;
     gfx.m_cutCentre = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
     gfx.m_cutRadius = 2.6f;
-    gfx.m_exposure = 1.35f;
+    gfx.m_exposure = 1.7f * m_brightness;
     gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );
     gfx.beginScene( m_cam, L, m_time, m_dot );
     gfx.draw( m_static, m_surfaces );
@@ -2020,22 +2246,52 @@ void Game::drawHud( int w, int h )
     snprintf( buf, sizeof( buf ), "Stims %d      Schrott %d", m_stims, m_scrap );
     text( buf, x, y + 72 * s, 20, { 200, 220, 210, 230 } );
 
-    // The press.
+    // The press: its bar in three parts (tank, core, tank), and a marker over each weak spot that can be hit now.
     if ( m_pressActive && !m_pressDead )
     {
-        float total = ( m_tank[0] + m_tank[1] + m_core ) / ( 2.0f * TankHp + CoreHp );
-        float pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s;
+        float tough = toughness( m_difficulty );
+        float pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s, gap = 10.0f * s;
+        float part = ( pw - 2.0f * gap ) / 3.0f;
         text( "DROHNENPRESSE", w * 0.5f, py - 4 * s, 24, { 255, 210, 150, 240 }, true );
-        DrawRectangle( (int)px, (int)( py + 26 * s ), (int)pw, (int)( 12 * s ), { 30, 10, 0, 200 } );
-        DrawRectangleGradientH( (int)px, (int)( py + 26 * s ), (int)( pw * total ), (int)( 12 * s ),
-                                { 200, 80, 20, 255 }, { 255, 170, 60, 255 } );
+        const float fill[3] = { m_tank[0] / ( TankHp * tough ), m_core / ( CoreHp * tough ),
+                                m_tank[1] / ( TankHp * tough ) };
+        const char *names[3] = { "TANK", "KERN", "TANK" };
+        bool        coreOpen = m_pressPose.m_shutter > 0.85f;
+        for ( int i = 0; i < 3; ++i )
+        {
+            float bx = px + i * ( part + gap );
+            bool  hittable = i == 1 ? coreOpen : fill[i] > 0.0f;
+            Color lo = i == 1 ? Color{ 200, 80, 20, 255 } : Color{ 40, 120, 220, 255 };
+            Color hi = i == 1 ? Color{ 255, 170, 60, 255 } : Color{ 120, 200, 255, 255 };
+            DrawRectangle( (int)bx, (int)( py + 26 * s ), (int)part, (int)( 12 * s ), { 30, 10, 0, 200 } );
+            DrawRectangleGradientH( (int)bx, (int)( py + 26 * s ), (int)( part * Clamp( fill[i], 0.0f, 1.0f ) ),
+                                    (int)( 12 * s ), lo, hi );
+            if ( i == 1 && !coreOpen )
+                DrawRectangle( (int)bx, (int)( py + 26 * s ), (int)part, (int)( 12 * s ), { 0, 0, 0, 150 } );
+            text( names[i], bx + part * 0.5f, py + 42 * s, 16,
+                  hittable ? Color{ 230, 230, 230, 220 } : Color{ 120, 120, 120, 180 }, true );
+        }
+        Vector3 o = m_pressModel.m_origin;
+        float   pulse = 0.6f + 0.4f * sinf( m_time * 6.0f );
+        auto    marker = [&]( Vector3 p, Color c )
+        {
+            Vector2 q = GetWorldToScreenEx( p, m_cam, w, h );
+            float   r = ( 16.0f + 6.0f * pulse ) * s;
+            DrawPolyLinesEx( q, 4, r, 45.0f, 3.0f * s, c );
+            DrawPolyLinesEx( q, 4, r * 0.45f, 45.0f, 2.0f * s, c );
+        };
+        for ( int side = 0; side < 2; ++side )
+            if ( m_tank[side] > 0.0f )
+                marker( { o.x + ( side ? 9.2f : -9.2f ), 5.4f, o.z + 0.5f },
+                        { 120, 200, 255, (unsigned char)( 255 * pulse ) } );
+        if ( coreOpen ) marker( { o.x, 3.4f, o.z }, { 255, 170, 60, (unsigned char)( 255 * pulse ) } );
     }
 
     // A hint, the level's title, the subtitles.
     if ( m_hint )
     {
         float   a = Clamp( m_hintTimer * 2.0f, 0.0f, 1.0f );
-        float   hy = ( m_pressActive && !m_pressDead ? 110.0f : 50.0f ) * s;
+        float   hy = ( m_pressActive && !m_pressDead ? 125.0f : 50.0f ) * s;
         Vector2 m = MeasureTextEx( m_font, m_hint->m_text.c_str(), 24 * s, 1.0f );
         DrawRectangle( (int)( w * 0.5f - m.x * 0.5f - 18 * s ), (int)( hy - 10 * s ), (int)( m.x + 36 * s ),
                        (int)( m.y + 20 * s ), { 0, 0, 0, (unsigned char)( 150 * a ) } );
@@ -2058,12 +2314,19 @@ void Game::drawHud( int w, int h )
         wrapped( m_line->m_text, w * 0.5f, ly + 30 * s, 28, w * 0.55f, { 245, 242, 236, (unsigned char)( 255 * a ) } );
     }
 
-    // Death and the end.
+    // Death, the way down, and the end.
     if ( m_dead )
     {
         float a = Clamp( ( m_deadTimer - 0.5f ) / 1.2f, 0.0f, 1.0f );
         DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 255 * a ) } );
     }
+    if ( m_liftGoing && !m_finished )
+    {
+        float a = Clamp( ( -m_liftY - 4.0f ) / 6.0f, 0.0f, 1.0f );
+        DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 255 * a ) } );
+    }
+    if ( !m_finished && m_pressDead && !m_liftGoing && m_liftWait > 0.0f )
+        text( "Lastenaufzug fährt an …", w * 0.5f, h * 0.62f, 26, { 160, 255, 190, 230 }, true );
     if ( m_finished )
     {
         float a = Clamp( m_endTimer / 2.0f, 0.0f, 1.0f );

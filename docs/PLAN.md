@@ -28,7 +28,9 @@ on the RTX 5090 (the Steam Deck needs half-resolution fog); the 3D generator is 
 
 Built with level 1: grid levels, low gravity with jumps and recoil, ranged combat with auto-aim and mouse/right-stick
 aim, flow-field pathing, enemy state machines, boss with weak points, rescue capsules as checkpoints, the hidden death
-counter, pickups (scrap, stims), subtitles and hints, HUD, wall cut-away around the hero, synthesised sound.
+counter, pickups (scrap, stims), subtitles and hints, HUD, wall cut-away around the hero, synthesised sound; after the
+user's first play (25.10.2026): zones with themes, signs, solid props, a freight lift as the end, difficulty levels
+(Leicht with slow regeneration), brightness, title and pause menus, the boss's weak points marked and announced.
 
 Still to come, by first use:
 

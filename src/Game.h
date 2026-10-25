@@ -36,6 +36,22 @@ struct GameInput
     Vector2 m_stick = { 0.0f, 0.0f };   ///< right stick
 };
 
+/** @brief How hard the game is. */
+enum class DifficultyE : int
+{
+    EASY,     ///< less damage, weaker enemies, health returns slowly
+    NORMAL,   ///< as designed
+    HARD,     ///< more damage, tougher enemies
+    COUNT     ///< number of levels
+};
+
+/**
+ * @brief The name of a difficulty (German, for the menus).
+ * @param[in] d  the difficulty
+ * @return its name
+ */
+const char *difficultyName( DifficultyE d );
+
 /** @brief The level being played. */
 class Game
 {
@@ -84,9 +100,20 @@ public:
     /** @return a line about the run (autopilot) */
     std::string report() const;
 
-    bool  m_autoplay = false;   ///< the autopilot plays
-    float m_zoom = 1.0f;        ///< camera distance factor
-    float m_time = 0.0f;        ///< seconds played
+    /**
+     * @brief Sets the difficulty (enemies already there are scaled too).
+     * @param[in] d  the difficulty
+     */
+    void setDifficulty( DifficultyE d );
+
+    /** @return the HUD's font (the menus use it too) */
+    const Font &font() const { return m_font; }
+
+    bool        m_autoplay = false;                   ///< the autopilot plays
+    float       m_zoom = 1.0f;                        ///< camera distance factor
+    float       m_time = 0.0f;                        ///< seconds played
+    float       m_brightness = 1.0f;                  ///< exposure factor (the menus' brightness)
+    DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
 
 private:
     enum class FoeE : uint8_t
@@ -221,6 +248,13 @@ private:
     std::vector<Mesh>     m_capsuleMeshes;
     std::vector<int>      m_capsuleSurfaces;
     std::vector<Mesh>     m_doorFrame, m_doorPanel;
+    std::vector<Mesh>     m_liftDeck, m_liftRim, m_liftBeacons;
+    Vector3               m_lift = { 0, 0, 0 }, m_liftMin = { 0, 0, 0 }, m_liftMax = { 0, 0, 0 };
+    float                 m_liftY = 0.0f, m_liftWait = 0.0f;
+    bool                  m_liftGoing = false;
+    float                 m_sinceHurt = 0.0f;
+    float                 m_armourHint = 0.0f;   ///< shots wasted on the press's armour (they bring up a hint)
+    Mesh                  m_anvilGlow = {};      ///< the red warning on the anvil
     Texture2D             m_dot = {};
     Font                  m_font = {};
     bool                  m_ownFont = false;

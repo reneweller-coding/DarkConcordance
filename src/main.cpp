@@ -55,7 +55,9 @@ struct Options
     bool        m_lookdev = false;               ///< the look test
     float       m_warm = 4.0f;                   ///< seconds simulated before the picture
     float       m_exposure = -1.0f;              ///< exposure (negative: the renderer's)
-    int         m_bench = 0;   ///< with --shot: render this many frames first and log the time per frame
+    int         m_bench = 0;      ///< with --shot: render this many frames first and log the time per frame
+    std::string m_difficulty;     ///< leicht, normal, schwer (else the saved setting)
+    bool        m_menu = false;   ///< with --shot: the title menu over the picture
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -113,6 +115,10 @@ Options parse( int argc, char **argv )
             o.m_exposure = (float)atof( next().c_str() );
         else if ( a == "--bench" )
             o.m_bench = atoi( next().c_str() );
+        else if ( a == "--difficulty" )
+            o.m_difficulty = next();
+        else if ( a == "--menu" )
+            o.m_menu = true;
     }
     return o;
 }
@@ -225,6 +231,7 @@ int runLookdev( const Options &o, Gfx &gfx )
     int  shots = 0;
     while ( !WindowShouldClose() )
     {
+        if ( IsKeyPressed( KEY_ESCAPE ) ) break;
         float    dt = fminf( GetFrameTime(), 0.05f );
         Controls c;
         if ( IsKeyDown( KEY_W ) || IsKeyDown( KEY_UP ) ) c.m_move.y -= 1.0f;
@@ -245,6 +252,128 @@ int runLookdev( const Options &o, Gfx &gfx )
     return 0;
 }
 
+/** @brief What the player set in the menus; kept in settings.txt beside the program. */
+struct Settings
+{
+    DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
+    float       m_brightness = 1.0f;                  ///< exposure factor
+};
+
+/** @brief Where the settings live. */
+std::string settingsPath()
+{
+    return std::string( GetApplicationDirectory() ) + "settings.txt";
+}
+
+/** @brief Reads the settings (defaults if there are none). */
+Settings loadSettings()
+{
+    Settings s;
+    FILE    *f = fopen( settingsPath().c_str(), "r" );
+    if ( !f ) return s;
+    int   d = 1;
+    float b = 1.0f;
+    if ( fscanf( f, "difficulty %d\nbrightness %f", &d, &b ) >= 1 )
+    {
+        s.m_difficulty = (DifficultyE)Clamp( (float)d, 0.0f, 2.0f );
+        s.m_brightness = Clamp( b, 0.6f, 2.0f );
+    }
+    fclose( f );
+    return s;
+}
+
+/** @brief Writes the settings. */
+void saveSettings( const Settings &s )
+{
+    FILE *f = fopen( settingsPath().c_str(), "w" );
+    if ( !f ) return;
+    fprintf( f, "difficulty %d\nbrightness %.2f\n", (int)s.m_difficulty, s.m_brightness );
+    fclose( f );
+}
+
+/** @brief Navigation in a menu: up, down, left, right, confirm, back (keyboard, gamepad, left stick). */
+struct MenuKeys
+{
+    int  m_move = 0;          ///< -1 up, 1 down
+    int  m_change = 0;        ///< -1 left, 1 right
+    bool m_confirm = false;   ///< Enter, Space, A
+    bool m_back = false;      ///< Esc, B, Start
+};
+
+/** @brief Reads the menu keys; the stick repeats slowly. */
+MenuKeys menuKeys( float dt )
+{
+    static float repeat = 0.0f;
+    MenuKeys     k;
+    if ( IsKeyPressed( KEY_UP ) || IsKeyPressed( KEY_W ) ) k.m_move = -1;
+    if ( IsKeyPressed( KEY_DOWN ) || IsKeyPressed( KEY_S ) ) k.m_move = 1;
+    if ( IsKeyPressed( KEY_LEFT ) || IsKeyPressed( KEY_A ) ) k.m_change = -1;
+    if ( IsKeyPressed( KEY_RIGHT ) || IsKeyPressed( KEY_D ) ) k.m_change = 1;
+    k.m_confirm = IsKeyPressed( KEY_ENTER ) || IsKeyPressed( KEY_SPACE );
+    k.m_back = IsKeyPressed( KEY_ESCAPE );
+    if ( IsGamepadAvailable( 0 ) )
+    {
+        if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_UP ) ) k.m_move = -1;
+        if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_DOWN ) ) k.m_move = 1;
+        if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_LEFT ) ) k.m_change = -1;
+        if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT ) ) k.m_change = 1;
+        k.m_confirm = k.m_confirm || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN );
+        k.m_back = k.m_back || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT ) ||
+                   IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT );
+        float x = GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_X ),
+              y = GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_Y );
+        repeat -= dt;
+        if ( fabsf( x ) < 0.5f && fabsf( y ) < 0.5f )
+            repeat = 0.0f;
+        else if ( repeat <= 0.0f )
+        {
+            if ( fabsf( y ) > fabsf( x ) )
+                k.m_move = y < 0.0f ? -1 : 1;
+            else
+                k.m_change = x < 0.0f ? -1 : 1;
+            repeat = 0.25f;
+        }
+    }
+    return k;
+}
+
+/** @brief Draws a menu over the frame: a title, a subtitle, items, the chosen one marked. */
+void drawMenu( const Font &font, const char *title, const char *subtitle, const std::vector<std::string> &items,
+               int chosen )
+{
+    int   w = GetScreenWidth(), h = GetScreenHeight();
+    float s = h / 1080.0f;
+    DrawRectangle( 0, 0, w, h, { 0, 0, 0, 150 } );
+    auto text = [&]( const char *t, float y, float size, Color c )
+    {
+        Vector2 m = MeasureTextEx( font, t, size * s, 1.0f );
+        DrawTextEx( font, t, { w * 0.5f - m.x * 0.5f + 2 * s, y + 2 * s }, size * s, 1.0f, { 0, 0, 0, 200 } );
+        DrawTextEx( font, t, { w * 0.5f - m.x * 0.5f, y }, size * s, 1.0f, c );
+    };
+    text( title, h * 0.2f, 84, { 245, 236, 222, 255 } );
+    text( subtitle, h * 0.2f + 96 * s, 28, { 255, 190, 120, 230 } );
+    for ( size_t i = 0; i < items.size(); ++i )
+    {
+        bool  on = (int)i == chosen;
+        float y = h * 0.46f + i * 58 * s;
+        if ( on )
+            DrawRectangle( (int)( w * 0.5f - 260 * s ), (int)( y - 8 * s ), (int)( 520 * s ), (int)( 50 * s ),
+                           { 255, 170, 80, 40 } );
+        text( items[i].c_str(), y, 34, on ? Color{ 255, 205, 140, 255 } : Color{ 200, 200, 200, 220 } );
+    }
+    text( "Oben/Unten: wählen    Links/Rechts: ändern    Enter / A: bestätigen    Esc / Start: Pause", h - 70 * s, 20,
+          { 150, 150, 150, 200 } );
+}
+
+/** @brief A brightness bar as text. */
+std::string brightnessBar( float b )
+{
+    int         n = (int)roundf( ( b - 0.6f ) / 0.1f );
+    std::string bar = "Helligkeit  ";
+    for ( int i = 0; i <= 14; ++i ) bar += i <= n ? "|" : ".";
+    return bar;
+}
+
 /** @brief The level. */
 int runGame( const Options &o, Gfx &gfx )
 {
@@ -255,6 +384,13 @@ int runGame( const Options &o, Gfx &gfx )
         TraceLog( LOG_ERROR, "LEVEL: %s not found", o.m_level.c_str() );
         return 1;
     }
+    Settings settings = loadSettings();
+    if ( !o.m_difficulty.empty() )
+        settings.m_difficulty = o.m_difficulty == "leicht"
+                                    ? DifficultyE::EASY
+                                    : ( o.m_difficulty == "schwer" ? DifficultyE::HARD : DifficultyE::NORMAL );
+    game->setDifficulty( settings.m_difficulty );
+    game->m_brightness = settings.m_brightness;
     game->m_autoplay = o.m_autoplay;
     if ( o.m_hasAt ) game->putHero( o.m_x, o.m_z, o.m_face );
     if ( o.m_awake ) game->wakeAll();
@@ -272,7 +408,24 @@ int runGame( const Options &o, Gfx &gfx )
         }
         if ( o.m_report ) TraceLog( LOG_WARNING, "RUN: %s", game->report().c_str() );
         if ( o.m_bench > 0 ) bench( gfx, o.m_bench, o, draw );
-        savePicture( gfx, o.m_shot, draw );
+        if ( o.m_menu )
+        {
+            // The title menu over the frame (to look at it without a window).
+            std::vector<std::string> items = { "Spiel starten",
+                                               std::string( "Schwierigkeit  " ) +
+                                                   difficultyName( settings.m_difficulty ),
+                                               brightnessBar( settings.m_brightness ), "Beenden" };
+            savePicture( gfx, o.m_shot,
+                         [&]( const RenderTexture2D *rt )
+                         {
+                             game->render( gfx, rt );
+                             BeginTextureMode( *rt );
+                             drawMenu( game->font(), "DARK CONCORDANCE", "Akt I · Velm  —  Die Kühlgedärme", items, 0 );
+                             EndTextureMode();
+                         } );
+        }
+        else
+            savePicture( gfx, o.m_shot, draw );
         game->shutdown();
         return 0;
     }
@@ -280,29 +433,105 @@ int runGame( const Options &o, Gfx &gfx )
     bool    showFps = false;
     int     shots = 0;
     Vector2 lastMouse = GetMousePosition();
-    while ( !WindowShouldClose() )
+    // The title menu first (not when the autopilot shows off), Esc or Start pauses.
+    enum
     {
-        float     dt = fminf( GetFrameTime(), 0.05f );
-        GameInput in = readInput( lastMouse );
-        game->update( dt, in );
-        game->m_zoom = Clamp( game->m_zoom * ( 1.0f + zoomStep( dt ) ), 0.55f, 1.7f );
+        TITLE,
+        PLAY,
+        PAUSE
+    } mode = o.m_autoplay ? PLAY : TITLE;
+    int  chosen = 0;
+    bool quit = false;
+    auto restart = [&]()
+    {
+        float zoom = game->m_zoom;
+        game->shutdown();
+        game = std::make_unique<Game>();
+        game->load( gfx, assetsDir(), o.m_level, sound );
+        game->setDifficulty( settings.m_difficulty );
+        game->m_brightness = settings.m_brightness;
+        game->m_autoplay = o.m_autoplay;
+        game->m_zoom = zoom;
+    };
+    while ( !WindowShouldClose() && !quit )
+    {
+        float dt = fminf( GetFrameTime(), 0.05f );
+        if ( mode == PLAY )
+        {
+            GameInput in = readInput( lastMouse );
+            bool      pause = IsKeyPressed( KEY_ESCAPE ) ||
+                              ( IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT ) );
+            if ( pause && !game->finished() )
+            {
+                mode = PAUSE;
+                chosen = 0;
+            }
+            else
+            {
+                game->update( dt, in );
+                game->m_zoom = Clamp( game->m_zoom * ( 1.0f + zoomStep( dt ) ), 0.55f, 1.7f );
+                if ( game->finished() && in.m_confirm ) restart();
+            }
+        }
+        else
+        {
+            // Title: start, difficulty, brightness, quit. Pause: resume, difficulty, brightness, restart, quit.
+            MenuKeys k = menuKeys( dt );
+            int      count = mode == TITLE ? 4 : 5;
+            chosen = ( chosen + k.m_move + count ) % count;
+            int diffItem = 1, brightItem = 2;
+            if ( chosen == diffItem && k.m_change )
+            {
+                settings.m_difficulty = (DifficultyE)( ( (int)settings.m_difficulty + k.m_change + 3 ) % 3 );
+                game->setDifficulty( settings.m_difficulty );
+                saveSettings( settings );
+            }
+            if ( chosen == brightItem && k.m_change )
+            {
+                settings.m_brightness = Clamp( settings.m_brightness + 0.1f * k.m_change, 0.6f, 2.0f );
+                game->m_brightness = settings.m_brightness;
+                saveSettings( settings );
+            }
+            if ( k.m_confirm )
+            {
+                if ( chosen == 0 )
+                    mode = PLAY;
+                else if ( chosen == diffItem )
+                {
+                    settings.m_difficulty = (DifficultyE)( ( (int)settings.m_difficulty + 1 ) % 3 );
+                    game->setDifficulty( settings.m_difficulty );
+                    saveSettings( settings );
+                }
+                else if ( mode == PAUSE && chosen == 3 )
+                {
+                    restart();
+                    mode = PLAY;
+                }
+                else if ( chosen == count - 1 )
+                    quit = true;
+            }
+            if ( k.m_back && mode == PAUSE ) mode = PLAY;
+            lastMouse = GetMousePosition();
+        }
         if ( IsKeyPressed( KEY_F1 ) ) showFps = !showFps;
         if ( IsKeyPressed( KEY_F12 ) )
             savePicture( gfx, std::string( GetApplicationDirectory() ) + TextFormat( "shot_%03d.png", ++shots ), draw );
         BeginDrawing();
         game->render( gfx, nullptr );
+        if ( mode != PLAY )
+        {
+            std::vector<std::string> items;
+            items.push_back( mode == TITLE ? "Spiel starten" : "Weiter" );
+            items.push_back( std::string( "Schwierigkeit  " ) + difficultyName( settings.m_difficulty ) );
+            items.push_back( brightnessBar( settings.m_brightness ) );
+            if ( mode == PAUSE ) items.push_back( "Level neu starten" );
+            items.push_back( "Beenden" );
+            drawMenu( game->font(), mode == TITLE ? "DARK CONCORDANCE" : "PAUSE",
+                      mode == TITLE ? "Akt I · Velm  —  Die Kühlgedärme" : difficultyName( settings.m_difficulty ),
+                      items, chosen );
+        }
         if ( showFps ) DrawFPS( 10, 10 );
         EndDrawing();
-        if ( game->finished() && in.m_confirm )
-        {
-            // Once more from the start.
-            float zoom = game->m_zoom;
-            game->shutdown();
-            game = std::make_unique<Game>();
-            game->load( gfx, assetsDir(), o.m_level, sound );
-            game->m_autoplay = o.m_autoplay;
-            game->m_zoom = zoom;
-        }
     }
     game->shutdown();
     return 0;
@@ -322,7 +551,7 @@ int main( int argc, char **argv )
     if ( !o.m_shot.empty() ) flags |= FLAG_WINDOW_HIDDEN;
     SetConfigFlags( flags );
     InitWindow( o.m_width, o.m_height, "SpaceOpera" );
-    SetExitKey( KEY_ESCAPE );
+    SetExitKey( KEY_NULL );   // Esc pauses; the menu quits
 
     Gfx gfx;
     gfx.init( o.m_width, o.m_height, o.m_ss );
