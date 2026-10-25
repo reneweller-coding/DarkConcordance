@@ -62,6 +62,18 @@ TEXTURES = {
                  "Seamless tileable texture, polished black obsidian stone with deeply carved alien glyphs and "
                  "geometric runes, subtle violet sheen, " + FLAT,
                  0.0, 0.15, 4.0),
+    "rock": ("tile", "1:1",
+             "Seamless tileable texture, orthographic front view of rough nickel-iron asteroid rock face cut by "
+             "mining tools, dark grey with metallic glints, drill marks, cracks, frost in the crevices, " + FLAT,
+             0.35, 0.75, 4.0),
+    "grate": ("tile", "1:1",
+              "Seamless tileable texture, top-down orthographic view of a rusty industrial steel floor grating with "
+              "deep dark gaps between the bars, heavy corrosion, condensation droplets, grime, " + FLAT,
+              0.8, 0.6, 5.0),
+    "rust": ("tile", "1:1",
+             "Seamless tileable texture, heavily rusted and pitted steel plating with flaking orange-brown rust, "
+             "patches of old yellow paint, scratches, oily grime, " + FLAT,
+             0.5, 0.7, 2.5),
     "screen": ("picture", "16:9",
                "Retro-futuristic spaceship computer terminal screen filling the whole frame, amber and cyan vector "
                "graphics, orbital diagrams, waveform readouts, warning glyphs, dark background, glowing CRT phosphor, "

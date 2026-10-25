@@ -249,7 +249,27 @@ uniform vec4 matParams;    // roughness scale, metallic scale, normal strength, 
 uniform vec4 emissive;     // rgb, mode (0 plain, 1 grooves glow, 2 emission map)
 uniform vec2 emissiveMask; // the grooves' smoothstep
 uniform float variation;
+uniform float cutaway;     // 1: dissolves between the camera and the hero
+uniform vec3 cutCentre;    // the hero (chest)
+uniform float cutRadius;   // radius of the hole at the hero
 out vec4 finalColor;
+
+// Walls between the camera and the hero dissolve in a cone around the line of sight (ordered dither).
+void cutAway()
+{
+    vec3 toHero = cutCentre - viewPos;
+    float dist = length( toHero );
+    vec3 dir = toHero / dist;
+    vec3 rel = fragPos - viewPos;
+    float t = dot( rel, dir );
+    if( t <= 0.0 || t >= dist - 0.6 || fragPos.y < cutCentre.y - 0.9 ) return;
+    float r = cutRadius * t / dist;
+    float d = length( rel - dir * t );
+    float keep = smoothstep( r * 0.65, r, d );
+    const float Bayer[16] = float[]( 0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0 );
+    ivec2 q = ivec2( gl_FragCoord.xy ) & 3;
+    if( keep < ( Bayer[q.y * 4 + q.x] + 0.5 ) / 16.0 ) discard;
+}
 
 void triplanar( vec3 p, vec3 n, out vec3 albedo, out vec3 orm, out vec3 nrm )
 {
@@ -279,6 +299,7 @@ void triplanar( vec3 p, vec3 n, out vec3 albedo, out vec3 orm, out vec3 nrm )
 
 void main()
 {
+    if( cutaway > 0.5 ) cutAway();
     vec3 n0 = normalize( objNormal );
     vec3 albedo;
     vec3 orm;
@@ -528,6 +549,11 @@ void main()
         vec3 L;
         vec3 sc = spotLight( fragPos, L );
         if( sc.r + sc.g + sc.b > 0.0 ) light += sc * spotShadowAt( fragPos, vec3( 0.0 ), 1 );
+        for( int i = 0; i < lightCount; i++ )
+        {
+            float d = length( lightPos[i].xyz - fragPos );
+            if( d < lightPos[i].w ) light += lightColor[i].rgb * atten( d, lightPos[i].w );
+        }
         c *= light;
     }
     finalColor = vec4( c, 1.0 );

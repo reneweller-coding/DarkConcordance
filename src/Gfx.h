@@ -67,6 +67,7 @@ struct Drawable
     bool    m_visible = true;               ///< drawn (false: it only casts shadows, like the ceiling)
     bool    m_sunShadow = true;             ///< casts a sun shadow
     bool    m_spotShadow = true;            ///< casts a lamp shadow
+    bool    m_cutaway = false;              ///< dissolves where it stands between the camera and the hero
 };
 
 /** @brief The renderer. */
@@ -150,10 +151,13 @@ public:
      */
     void post( const RenderTexture2D *out );
 
-    float m_exposure = 1.0f;   ///< exposure before tone mapping
-    float m_bloom = 0.08f;     ///< how much bloom is mixed in
-    int   m_width = 0;         ///< picture width
-    int   m_height = 0;        ///< picture height
+    float   m_exposure = 1.0f;                        ///< exposure before tone mapping
+    float   m_bloom = 0.08f;                          ///< how much bloom is mixed in
+    bool    m_sunShadows = true;                      ///< render the sun's shadow map (off where there is no sun)
+    Vector3 m_cutCentre = { 0.0f, -1000.0f, 0.0f };   ///< the hero, whom walls in front of dissolve around
+    float   m_cutRadius = 2.2f;                       ///< radius of that hole at the hero's distance (m)
+    int     m_width = 0;                              ///< picture width
+    int     m_height = 0;                             ///< picture height
 
 private:
     /** @brief Uniform locations every lit shader shares. */
@@ -181,7 +185,7 @@ private:
 
     Shader     m_lit, m_glassShader, m_sky, m_planet, m_particle, m_depth, m_prefilter, m_down, m_up, m_final;
     CommonLocs m_litLocs, m_glassLocs, m_skyLocs, m_planetLocs, m_particleLocs;
-    int        m_litUv, m_litParams, m_litEmissive, m_litMask, m_litVariation;
+    int        m_litUv, m_litParams, m_litEmissive, m_litMask, m_litVariation, m_litCutaway;
     Material   m_depthMat;
     Material   m_glassMat;
     Material   m_planetMat;

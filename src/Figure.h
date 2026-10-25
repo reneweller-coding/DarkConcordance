@@ -38,10 +38,11 @@ enum class BoneE : int
 /** @brief Which surfaces the figure uses (indices into the scene's list). */
 struct FigureSurfaces
 {
-    int m_armor;   ///< the light armour plates
-    int m_dark;    ///< dark plates
-    int m_metal;   ///< joints, belts, the rifle's metal
-    int m_glow;    ///< glowing parts (visor, lamp, status lights)
+    int     m_armor;                                 ///< the light armour plates
+    int     m_dark;                                  ///< dark plates
+    int     m_metal;                                 ///< joints, belts, the rifle's metal
+    int     m_glow;                                  ///< glowing parts (visor, lamp, status lights)
+    Vector4 m_visor = { 0.35f, 2.4f, 3.2f, 0.0f };   ///< the visor's glow
 };
 
 /** @brief The hero. */
@@ -61,6 +62,18 @@ public:
      * @param[in] time    seconds since start (idle motion)
      */
     void update( float dt, Vector2 wanted, float time );
+
+    /**
+     * @brief Sets the pose's inputs from outside (the game moves the figure, the figure only animates).
+     * @param[in] dt    seconds since the last call
+     * @param[in] pos   feet
+     * @param[in] vel   velocity on the ground
+     * @param[in] yaw   heading (radians)
+     * @param[in] air   in the air (jump pose)
+     * @param[in] down  0 standing .. 1 fallen over
+     * @param[in] time  seconds since start
+     */
+    void animate( float dt, Vector3 pos, Vector2 vel, float yaw, bool air, float down, float time );
 
     /** @brief Kicks the rifle back (a shot). */
     void recoil() { m_recoil = 1.0f; }
@@ -102,6 +115,8 @@ private:
     std::vector<Part> m_parts;
     Matrix            m_bones[(int)BoneE::COUNT];
     float             m_recoil = 0.0f;
+    bool              m_air = false;
+    float             m_down = 0.0f;
     Vector3           m_lampPos = { 0.0f, 0.0f, 0.0f };
     Vector3           m_lampDir = { 0.0f, 0.0f, 1.0f };
     Vector3           m_muzzle = { 0.0f, 0.0f, 0.0f };

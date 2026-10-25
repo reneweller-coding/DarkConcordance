@@ -1,0 +1,192 @@
+/**
+ * @file Level.h
+ * @brief A level from an ASCII map (2 m cells): walls, floors at heights, shafts, grating bridges, heat exchangers as
+ *        cover, and markers for spawns, lights, pickups and triggers; plus its spoken lines and hints. Answers the
+ *        game's questions (floor height, walls, rays) and builds the geometry with its dressing.
+ * @author Rene Weller
+ */
+#pragma once
+
+#include "Gfx.h"
+
+#include <raylib.h>
+
+#include <cstdint>
+#include <string>
+#include <vector>
+
+namespace spaceopera
+{
+
+constexpr float CellSize = 2.0f;    ///< metres per map cell
+constexpr float FinHeight = 2.5f;   ///< height of a heat exchanger block
+constexpr float PitDepth = 30.0f;   ///< how deep the shafts go
+
+/** @brief What a cell is. */
+enum class CellE : uint8_t
+{
+    ROCK,    ///< solid
+    FLOOR,   ///< walkable at its height
+    VOID,    ///< a shaft: no floor
+    GRATE,   ///< a grating bridge over a shaft
+    FIN      ///< a heat exchanger block: cover, its top walkable
+};
+
+/** @brief One map cell. */
+struct Cell
+{
+    CellE m_kind = CellE::ROCK;   ///< what it is
+    float m_height = 0.0f;        ///< floor height (m)
+    char  m_trigger = 0;          ///< trigger letter (a-z) or 0
+};
+
+/** @brief Something placed in the map (an upper-case letter). */
+struct Marker
+{
+    char    m_kind;   ///< the letter
+    int     m_row;    ///< map row
+    int     m_col;    ///< map column
+    Vector3 m_pos;    ///< centre of the cell on its floor
+};
+
+/** @brief A spoken line. */
+struct Line
+{
+    std::string m_id;        ///< file name of its voice (assets/voice/<id>.ogg)
+    std::string m_trigger;   ///< trigger letter or event name
+    std::string m_speaker;   ///< who speaks
+    std::string m_text;      ///< what is said
+};
+
+/** @brief A hint on screen. */
+struct Hint
+{
+    std::string m_id;        ///< name
+    std::string m_trigger;   ///< trigger letter or event name
+    std::string m_text;      ///< the hint
+};
+
+/** @brief A fixed light of the level. */
+struct LevelLight
+{
+    Vector3 m_pos;       ///< where
+    Vector3 m_color;     ///< colour times intensity
+    float   m_radius;    ///< reach
+    float   m_flicker;   ///< 0 steady .. 1 failing
+};
+
+/** @brief Surfaces the level geometry uses. */
+struct LevelSurfaces
+{
+    int m_rock;     ///< rock walls
+    int m_floor;    ///< deck plates
+    int m_grate;    ///< grating
+    int m_metal;    ///< steel
+    int m_hazard;   ///< hazard stripes
+    int m_rust;     ///< rusty steel
+    int m_foil;     ///< thermal foil (the bodies)
+    int m_glow;     ///< lamps
+};
+
+/** @brief A level. */
+class Level
+{
+public:
+    /**
+     * @brief Reads a level file.
+     * @param[in] path  the file
+     * @return false if it cannot be read
+     */
+    bool load( const std::string &path );
+
+    /**
+     * @brief Builds the geometry: walls, floors, dressing, lamps; adds the level's lights.
+     * @param[in]  s    the surfaces
+     * @param[out] out  the drawables
+     */
+    void build( const LevelSurfaces &s, std::vector<Drawable> &out );
+
+    /** @return rows of the map */
+    int rows() const { return m_rows; }
+    /** @return columns of the map */
+    int cols() const { return m_cols; }
+
+    /**
+     * @brief A cell (outside the map: rock).
+     * @param[in] r  row
+     * @param[in] c  column
+     * @return the cell
+     */
+    const Cell &cell( int r, int c ) const;
+
+    /**
+     * @brief The cell a point lies in.
+     * @param[in]  p  the point
+     * @param[out] r  row
+     * @param[out] c  column
+     */
+    void cellOf( Vector3 p, int &r, int &c ) const;
+
+    /**
+     * @brief The centre of a cell on its floor.
+     * @param[in] r  row
+     * @param[in] c  column
+     * @return the point
+     */
+    Vector3 centre( int r, int c ) const;
+
+    /**
+     * @brief The floor under a point.
+     * @param[in] x  east (m)
+     * @param[in] z  south (m)
+     * @return its height; -1000 over a shaft, 1000 in rock
+     */
+    float floorAt( float x, float z ) const;
+
+    /**
+     * @brief Pushes a circle out of what blocks it at its height.
+     * @param[in,out] pos     the feet
+     * @param[in]     radius  the circle
+     * @param[in]     step    the highest step it walks up without jumping
+     * @return true if it touched something
+     */
+    bool collide( Vector3 &pos, float radius, float step ) const;
+
+    /**
+     * @brief Follows a ray to the first wall, block or floor.
+     * @param[in]  from    start
+     * @param[in]  to      end
+     * @param[out] hit     where it stops
+     * @param[out] normal  the surface's normal there
+     * @return true if something was hit before `to`
+     */
+    bool raycast( Vector3 from, Vector3 to, Vector3 &hit, Vector3 &normal ) const;
+
+    /**
+     * @brief Whether a cell can be walked on by something that climbs up to `climb`.
+     * @param[in] r      row
+     * @param[in] c      column
+     * @return true for floors, gratings and heat exchanger tops
+     */
+    bool walkable( int r, int c ) const;
+
+    std::string             m_name;                                    ///< shown at the start
+    std::string             m_act;                                     ///< the act
+    float                   m_gravity = 9.81f;                         ///< m/s²
+    Vector4                 m_fog = { 0.01f, 0.05f, 0.5f, 1.0f };      ///< fog as in Lighting
+    Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };   ///< the fog's own glow
+    Vector3                 m_ambUp = { 0.01f, 0.01f, 0.01f };         ///< ambient from above
+    Vector3                 m_ambDown = { 0.01f, 0.01f, 0.01f };       ///< ambient from below
+    float                   m_wallHeight = 4.5f;                       ///< wall height
+    std::vector<Marker>     m_markers;                                 ///< spawns, lights, pickups
+    std::vector<Line>       m_lines;                                   ///< spoken lines
+    std::vector<Hint>       m_hints;                                   ///< hints
+    std::vector<LevelLight> m_lights;                                  ///< fixed lights (after build)
+
+private:
+    int               m_rows = 0;
+    int               m_cols = 0;
+    std::vector<Cell> m_cells;
+};
+
+}   // namespace spaceopera

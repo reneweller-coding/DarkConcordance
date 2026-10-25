@@ -1,0 +1,78 @@
+# Level 1: Die Kühlgedärme (Akt I, Velm). Wärmetauscher-Tunnel nahe der Rotationsachse: kaum Schwerkraft,
+# Nebel, rostrotes Notlicht. Eine Zelle sind 2 m; Norden ist oben.
+#
+#   #  Fels      .  Boden      1-9  Boden so viele halbe Meter höher      ~  Schacht      =  Gitterbrücke
+#   F  Wärmetauscher (2,5 m hoch, Deckung, man kann hinaufspringen)        P  Start      C  Rettungskapsel
+#   L  Rostlaus  W  Schweißlaus  B  Drohnenpresse  X  Ausgang  H  Stim  S  Schrott  K  die Körper
+#   D  Tropfenschwarm  R  rotes Notlicht  A  Arbeitslicht  V  Dampfventil  a-z  Auslöser der Zeilen unten
+
+name     Die Kühlgedärme
+act      Akt I · Velm
+gravity  3.2
+fog      0.008 0.035 0.6 1.2
+fogcolor 0.004 0.0012 0.0009
+ambient  0.012 0.010 0.010 0.008 0.006 0.006
+walls    4.5
+
+[map]
+################################################################
+################################################################
+##########################################R..fff...A.###########
+##RH..........R.......W333################...fff.K...###########
+##........L............333###~~~~~~~~~~~##...L..FFF..###########
+##...FFFF...FFFF...FFFF...###~~~~..~~~.A##..S...FFF..###########
+##...FFFF.A.FFFF...FFFF...###..~~.L~~~.........L.....###########
+##........V...ccccc.......###.A~~..~~~...............###########
+##S...........ccDcc.A..L.....e.~~~~~~~.W..........L..###########
+##R...........ccccc......R.R.e.~~~~~~~..##.C.......H.###########
+##..FFFF...FFFF...FFFF.....C...~~~..~~..##R..........###########
+##..FFFF...FFFF...FFFF....###..===.A~~..##...###################
+##.....A.D................###~~~~~..~~~~##...###################
+##............A.....L.FFFF###~~~~~~~~~~~##R..###################
+##....L..........V....FFFF################...###################
+##.S...........L..........################ggg###################
+##R.........R............R##############......................##
+######...###############################...........B..........##
+######R..###############################......................##
+######...###############################......................##
+######..L###############################....A.............A...##
+######..R###############################......................##
+######.L.###############################R....................R##
+######..V###############################......................##
+######L..###############################......................##
+######bbb###############################....FF..........FF....##
+######bbb###############################....FF..........FF....##
+######R..###############################......................##
+######...###############################R....................R##
+##R..........R##########################.....A...22222...A....##
+##.H........V.##########################.H.......22222......S.##
+##............##########################.........22222........##
+##............##########################R....................R##
+##.C..aaa.....####################################...###########
+##...Paaa.....####################################...###########
+##....aaa.11..####################################R..###########
+##........11VR####################################.X.###########
+##################################################...###########
+################################################################
+################################################################
+
+[lines]
+# id | Auslöser | Sprecher | Text   (assets/voice/<id>.ogg wird gespielt, wenn es sie gibt)
+l1_start    | a        | Corvin | Die Kühlgedärme. Kaum Schwerkraft, viel Nebel – und irgendwo hier unten verschwinden seit Monaten Leute.
+l1_capsule  | capsule  | Corvin | Eine Rettungskapsel. Gespendet von einem Hilfswerk. Sehr großzügig, so weit draußen.
+l1_lice     | b        | Corvin | Rostläuse. Wartungsdrohnen, die seit Jahren keiner mehr wartet. Die fressen alles, was nach Metall riecht.
+l1_droplets | c        | Corvin | Kondenswasser. Sieht aus wie ein Sternhaufen. Solange man nicht fragt, woher die Wärme kommt.
+l1_shaft    | e        | Corvin | Ein Kühlschacht. Bei der Schwerkraft schafft man das mit Anlauf. Nur nicht in der Luft schießen.
+l1_bodies   | f        | Corvin | Da sind sie. Kein Kratzer an ihnen. Nur der Kopf ist leer. Sauber gestapelt, wie Ware, die auf Abholung wartet.
+l1_press    | g        | Corvin | Eine Drohnenpresse. Baut aus Schrott neue Läuse. Und irgendwer füttert sie.
+l1_pressend | bossdead | Corvin | Das war die Fabrik. Fehlt nur noch, wer die Rechnungen bezahlt.
+l1_exit     | bossdead | Corvin | Die Spur führt weiter nach unten. Zum Knochenmarkt.
+
+[hints]
+# id | Auslöser | Text
+h_jump     | a        | Wenig Schwerkraft: Sprünge tragen weit (Leertaste / A). Jeder Schuss schiebt dich zurück.
+h_fire     | b        | Schießen: linke Maustaste oder rechter Trigger. Ohne Zielen nimmt das Gewehr das nächste Ziel vor dir.
+h_gap      | e        | Mit Anlauf springen. In der Luft treibt dich der Rückstoß weg.
+h_stim     | hurt     | Q / Y: Stim injizieren (+40 Leben).
+h_heat     | overheat | Das Gewehr ist überhitzt. Kurz absetzen.
+h_tanks    | g        | Die Kühltanks an den Seiten sind die Schwachstelle der Presse.

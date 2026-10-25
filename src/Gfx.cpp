@@ -194,6 +194,7 @@ void Gfx::init( int width, int height, float ss )
     m_litEmissive = GetShaderLocation( m_lit, "emissive" );
     m_litMask = GetShaderLocation( m_lit, "emissiveMask" );
     m_litVariation = GetShaderLocation( m_lit, "variation" );
+    m_litCutaway = GetShaderLocation( m_lit, "cutaway" );
 
     m_depthMat = LoadMaterialDefault();
     m_depthMat.shader = m_depth;
@@ -256,9 +257,10 @@ void Gfx::shadows( const Lighting &lights, Vector3 centre, const std::vector<con
     rlSetClipPlanes( 1.0, 160.0 );
     BeginMode3D( sun );
     m_sunVP = MatrixMultiply( rlGetMatrixModelview(), rlGetMatrixProjection() );
-    for ( const auto *list : lists )
-        for ( const Drawable &d : *list )
-            if ( d.m_sunShadow ) DrawMesh( d.m_mesh, m_depthMat, d.m_transform );
+    if ( m_sunShadows )
+        for ( const auto *list : lists )
+            for ( const Drawable &d : *list )
+                if ( d.m_sunShadow ) DrawMesh( d.m_mesh, m_depthMat, d.m_transform );
     EndMode3D();
     EndTextureMode();
 
@@ -307,6 +309,8 @@ void Gfx::beginScene( const Camera3D &cam, const Lighting &lights, float time, T
     upload( m_planet, m_planetLocs );
     upload( m_particle, m_particleLocs );
     bindShadows( true );
+    SetShaderValue( m_lit, GetShaderLocation( m_lit, "cutCentre" ), &m_cutCentre, SHADER_UNIFORM_VEC3 );
+    SetShaderValue( m_lit, GetShaderLocation( m_lit, "cutRadius" ), &m_cutRadius, SHADER_UNIFORM_FLOAT );
 
     Matrix view = MatrixLookAt( cam.position, cam.target, cam.up );
     Matrix proj = MatrixPerspective( cam.fovy * DEG2RAD, (double)w / h, 0.5, 30000.0 );
@@ -336,6 +340,8 @@ void Gfx::draw( const std::vector<Drawable> &list, const std::vector<Surface> &s
         SetShaderValue( m_lit, m_litEmissive, &em, SHADER_UNIFORM_VEC4 );
         SetShaderValue( m_lit, m_litMask, &s.m_mask, SHADER_UNIFORM_VEC2 );
         SetShaderValue( m_lit, m_litVariation, &s.m_variation, SHADER_UNIFORM_FLOAT );
+        float cut = d.m_cutaway ? 1.0f : 0.0f;
+        SetShaderValue( m_lit, m_litCutaway, &cut, SHADER_UNIFORM_FLOAT );
         s.m_material.maps[MATERIAL_MAP_ALBEDO].color = s.m_tint;
         DrawMesh( d.m_mesh, s.m_material, d.m_transform );
     }

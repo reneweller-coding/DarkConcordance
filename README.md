@@ -1,46 +1,58 @@
-# SpaceOpera (working title) — look test
+# SpaceOpera (working title)
 
 A dark space opera action RPG in the manner of *Baldur's Gate: Dark Alliance*: fixed three-quarter camera, gamepad,
-ranged combat as in *Fallout: Brotherhood of Steel*, pools of light in the dark. This is the look test: one room of an
-abandoned station, nothing of the game yet.
+ranged combat aimed as in *Fallout: Brotherhood of Steel*, pools of light in the dark. The story is the user's outline
+(*DARK CONCORDANCE* / *KATABASIS*); the production plan is in [docs/PLAN.md](docs/PLAN.md).
+
+## Level 1 „Die Kühlgedärme“ (playable prototype)
+
+Heat-exchanger tunnels near Velm's axis: little gravity, fog, rust-red emergency light. Corvin Aske with his Gauss rifle
+against rust lice and welder lice, across a cooling shaft, past the cold store with the empty bodies, to the drone
+press that builds new lice from scrap.
+
+- **Low gravity:** long jumps; every shot pushes Corvin back, on the ground a little, in the air a lot.
+- **Aiming:** without aiming the rifle takes the nearest target ahead (as in Brotherhood of Steel); the mouse or the
+  right stick aim by hand, with a little assist. The rifle heats up.
+- **Enemies:** rust lice (six legs in a tripod gait, they crouch and leap), welder lice (keep their distance, spit
+  molten metal in arcs); they find their way on a flow field.
+- **The drone press:** a ram that slams on its anvil (klaxon first), hatches that spit new lice, two coolant tanks as
+  weak points; with both burst, the shutters open on the core.
+- **Rescue capsules** are checkpoints (and count the deaths, quietly); scrap and stims to pick up; spoken lines as
+  subtitles (voices from `assets/voice/<id>.ogg` once they exist); hints; walls dissolve where they hide Corvin.
+- **Sound** is synthesised at start (rifle, hits, lice, press, steam, hum); `--mute` silences it.
+
+Move with WASD, the arrows or the left stick; jump with Space or A; shoot with the left mouse button, the right trigger
+or X; Q or Y injects a stim; the mouse wheel or the shoulder buttons zoom; F1 frame rate, F12 picture.
+
+The level is a text file, [assets/levels/kuehlgedaerme.txt](assets/levels/kuehlgedaerme.txt): an ASCII map of 2 m
+cells (legend at its top), the spoken lines and the hints with their triggers.
+
+![The shaft](docs/screenshots/l1_jump.jpg)
+![The condensate swarm](docs/screenshots/l1_drops.jpg)
+![The drone press](docs/screenshots/l1_press.jpg)
+
+## Look test (`--lookdev`)
+
+The first room: an observation deck with a glass floor over a gas giant and a nebula, sun shafts, a monolith.
 
 ![Monolith and the glass floor](docs/screenshots/final_a.jpg)
-![Sun shafts through the west windows, a plasma bolt](docs/screenshots/final_b.jpg)
-![Cryo pods, the wrecked robot, a shot across the deck](docs/screenshots/final_c.jpg)
-
-## What is in it
-
-- **Room:** an observation deck with a glass floor over a gas giant and a nebula, seven narrow windows the sun falls
-  through in bars, a reactor behind cooling fins, cryo pods, consoles, crates, a wrecked maintenance robot and an alien
-  monolith with orbiting shards on a platform. Everything is built in code from boxes, rounded boxes and lathed
-  profiles; no modelled assets.
-- **Textures:** generated with Gemini's image model on Vertex AI (`tools/make_textures.py`), made seamless, the baked
-  light removed, normal, roughness, metal and occlusion maps derived. The raw pictures are in `assets/raw/`.
-- **Renderer** (`src/Gfx.*`, `src/Shaders.h`): forward PBR (GGX), triplanar texturing with normal maps, shadow maps for
-  the sun and the suit lamp, up to 32 point lights, volumetric fog raymarched through both shadow maps (light shafts,
-  the lamp's beam) plus analytic halos of the point lights, a bloom chain, ACES, a split tone, vignette, grain.
-- **Hero** (`src/Figure.*`): a hardsuit soldier from rounded boxes, walk cycle, rifle held with two-bone IK, recoil,
-  a shoulder lamp, a blob shadow and a warm light that follows him.
-- **Effects:** plasma bolts with light and impact sparks, a broken conduit raining sparks, motes rising around the
-  monolith, dust that glitters where light reaches.
 
 ## Build and run
 
     .\build.ps1          # msvc Release; the game lands in bin\msvc\SpaceOpera.exe
 
-Walk with WASD, the arrows or the left stick; shoot with Space, the left mouse button, A or the right trigger. The
-mouse wheel or the shoulder buttons zoom, F1 shows the frame rate, F12 saves a picture next to the program.
+Tests and pictures without a window (always silent):
 
-Pictures without a window:
+    bin\msvc\SpaceOpera.exe --shot work\a.png --autoplay --report --warm 900   # the autopilot plays the level
+    bin\msvc\SpaceOpera.exe --shot work\b.png --at 25,25 --face 180 --awake --fire --warm 4
+    bin\msvc\SpaceOpera.exe --lookdev --shot work\c.png --at 0.6,-4.3 --face 145 --walk
 
-    bin\msvc\SpaceOpera.exe --shot work\a.png --w 1920 --h 1080 --ss 2 --at 0.6,-4.3 --face 145 --walk
-    bin\msvc\SpaceOpera.exe --shot work\b.png --at -8,-1.2 --face 250 --fire --bench 120
+`--report` writes the run (finished, time, deaths, kills, shots) into `spaceopera.log` beside the program; `--bench n`
+renders n frames first and logs the time per frame. `--autoplay` without `--shot` lets the autopilot play in the window.
 
-`--bench n` renders n frames first and writes the time per frame to `spaceopera.log` beside the program.
-
-## Textures again
+## Textures
 
     G:\Tools\ImageGeneration\venv\Scripts\python.exe tools\make_textures.py [--force NAME ...] [--only NAME ...]
 
-Needs the PC's gcloud application default credentials (project `plenary-office-432719-u6`). Imagen 3 and 4 are gone
-from Vertex (404); the script asks `gemini-3-pro-image` and falls back to `gemini-3.1-flash-image` (on 429).
+Gemini's image model on Vertex AI (the PC's gcloud ADC, project `plenary-office-432719-u6`); Imagen 3 and 4 are gone
+(404). The pictures are made seamless, the baked light removed, normal, roughness, metal and occlusion maps derived.

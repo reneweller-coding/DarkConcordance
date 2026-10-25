@@ -1,0 +1,2092 @@
+/**
+ * @file Game.cpp
+ * @brief Level 1 played: Corvin, the lice, the press, effects, story, HUD, camera, autopilot.
+ * @author Rene Weller
+ */
+#include "Game.h"
+
+#include "MeshBuilder.h"
+#include "Rig.h"
+
+#include <raymath.h>
+#include <rlgl.h>
+
+#include <algorithm>
+#include <cctype>
+#include <cmath>
+#include <cstdio>
+#include <cstdlib>
+#include <deque>
+
+namespace spaceopera
+{
+
+namespace
+{
+
+// Corvin and his rifle.
+constexpr float RunSpeed = 4.2f;
+constexpr float GroundAccel = 22.0f;
+constexpr float AirAccel = 7.0f;
+constexpr float JumpSpeed = 4.3f;
+constexpr float HeroRadius = 0.38f;
+constexpr float StepUp = 0.55f;
+constexpr float FireInterval = 0.17f;
+constexpr float ShotDamage = 20.0f;
+constexpr float HeatPerShot = 7.5f;
+constexpr float Range = 30.0f;
+constexpr float AutoCone = 0.7f;      ///< auto-aim looks this far either side (radians)
+constexpr float AssistCone = 0.22f;   ///< aim assist around a manual aim
+constexpr float StimHeal = 40.0f;
+// The enemies.
+constexpr float LouseHp = 36.0f;
+constexpr float WelderHp = 110.0f;
+constexpr float TankHp = 450.0f;
+constexpr float CoreHp = 700.0f;
+
+enum SurfE
+{
+    S_ROCK,
+    S_FLOOR,
+    S_GRATE,
+    S_METAL,
+    S_HAZARD,
+    S_RUST,
+    S_FOIL,
+    S_GLOW,
+    S_ARMOR,
+    S_DARK,
+    S_COUNT
+};
+
+/** @brief Loads a texture with mipmaps and anisotropic filtering (a grey checker if it is missing). */
+Texture2D loadTexture( const std::string &path )
+{
+    Texture2D t = FileExists( path.c_str() ) ? LoadTexture( path.c_str() ) : Texture2D{};
+    if ( t.id == 0 )
+    {
+        Image i = GenImageChecked( 64, 64, 8, 8, GRAY, DARKGRAY );
+        t = LoadTextureFromImage( i );
+        UnloadImage( i );
+    }
+    GenTextureMipmaps( &t );
+    SetTextureFilter( t, TEXTURE_FILTER_TRILINEAR );
+    SetTextureFilter( t, TEXTURE_FILTER_ANISOTROPIC_16X );
+    return t;
+}
+
+/** @brief Ray against a sphere: the distance along the ray, or -1. */
+float raySphere( Vector3 o, Vector3 d, Vector3 c, float r )
+{
+    Vector3 m = Vector3Subtract( o, c );
+    float   b = Vector3DotProduct( m, d );
+    float   cc = Vector3DotProduct( m, m ) - r * r;
+    if ( cc > 0.0f && b > 0.0f ) return -1.0f;
+    float disc = b * b - cc;
+    if ( disc < 0.0f ) return -1.0f;
+    float t = -b - sqrtf( disc );
+    return t < 0.0f ? 0.0f : t;
+}
+
+/** @brief Ray against an upright cylinder: the distance along the ray, or -1. */
+float rayCylinder( Vector3 o, Vector3 d, Vector3 base, float r, float h )
+{
+    float dx = d.x, dz = d.z;
+    float ox = o.x - base.x, oz = o.z - base.z;
+    float a = dx * dx + dz * dz;
+    if ( a < 1e-8f ) return -1.0f;
+    float b = ox * dx + oz * dz;
+    float c = ox * ox + oz * oz - r * r;
+    float disc = b * b - a * c;
+    if ( disc < 0.0f ) return -1.0f;
+    float t = ( -b - sqrtf( disc ) ) / a;
+    if ( t < 0.0f ) return -1.0f;
+    float y = o.y + d.y * t;
+    return ( y >= base.y && y <= base.y + h ) ? t : -1.0f;
+}
+
+/** @brief Ray against a box: the distance along the ray, or -1. */
+float rayBox( Vector3 o, Vector3 d, Vector3 lo, Vector3 hi )
+{
+    float       tmin = 0.0f, tmax = 1e9f;
+    const float oo[3] = { o.x, o.y, o.z }, dd[3] = { d.x, d.y, d.z }, l[3] = { lo.x, lo.y, lo.z },
+                h[3] = { hi.x, hi.y, hi.z };
+    for ( int i = 0; i < 3; ++i )
+    {
+        if ( fabsf( dd[i] ) < 1e-8f )
+        {
+            if ( oo[i] < l[i] || oo[i] > h[i] ) return -1.0f;
+            continue;
+        }
+        float t1 = ( l[i] - oo[i] ) / dd[i];
+        float t2 = ( h[i] - oo[i] ) / dd[i];
+        if ( t1 > t2 ) std::swap( t1, t2 );
+        tmin = std::max( tmin, t1 );
+        tmax = std::min( tmax, t2 );
+        if ( tmin > tmax ) return -1.0f;
+    }
+    return tmin;
+}
+
+/** @brief A cheap hash for flicker. */
+float hash1( int n )
+{
+    n = ( n << 13 ) ^ n;
+    return ( ( n * ( n * n * 15731 + 789221 ) + 1376312589 ) & 0x7fffffff ) / 2147483647.0f;
+}
+
+/** @brief Pushes a circle out of an axis-aligned rectangle on the ground. */
+void pushOutRect( Vector3 &p, float r, float x0, float x1, float z0, float z1 )
+{
+    float cx = Clamp( p.x, x0, x1 ), cz = Clamp( p.z, z0, z1 );
+    float dx = p.x - cx, dz = p.z - cz;
+    float d2 = dx * dx + dz * dz;
+    if ( d2 >= r * r ) return;
+    if ( d2 > 1e-8f )
+    {
+        float d = sqrtf( d2 );
+        p.x = cx + dx / d * r;
+        p.z = cz + dz / d * r;
+        return;
+    }
+    float m = std::min( std::min( p.x - x0, x1 - p.x ), std::min( p.z - z0, z1 - p.z ) );
+    if ( m == p.x - x0 )
+        p.x = x0 - r;
+    else if ( m == x1 - p.x )
+        p.x = x1 + r;
+    else if ( m == p.z - z0 )
+        p.z = z0 - r;
+    else
+        p.z = z1 + r;
+}
+
+/** @brief Pushes a circle out of a circle. */
+void pushOutCircle( Vector3 &p, float r, float cx, float cz, float cr )
+{
+    float dx = p.x - cx, dz = p.z - cz;
+    float d = sqrtf( dx * dx + dz * dz );
+    float min = r + cr;
+    if ( d < min && d > 1e-4f )
+    {
+        p.x = cx + dx / d * min;
+        p.z = cz + dz / d * min;
+    }
+}
+
+}   // namespace
+
+float Game::rnd()
+{
+    m_seed = m_seed * 1664525u + 1013904223u;
+    return ( m_seed >> 8 ) * ( 1.0f / 16777216.0f );
+}
+
+void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
+{
+    std::string dir = assets + "/textures/";
+    m_surfaces.resize( S_COUNT );
+    auto tile = [&]( int s, const char *name, float uv, Vector4 params, float variation, Color tint = WHITE )
+    {
+        Texture2D a = loadTexture( dir + name + "_albedo.png" );
+        Texture2D o = loadTexture( dir + name + "_orm.png" );
+        Texture2D n = loadTexture( dir + name + "_normal.png" );
+        Surface   surf = gfx.surface( a, o, n, Texture2D{} );
+        surf.m_uvScale = uv;
+        surf.m_params = params;
+        surf.m_variation = variation;
+        surf.m_tint = tint;
+        m_surfaces[s] = surf;
+    };
+    tile( S_ROCK, "rock", 0.22f, { 1.0f, 1.0f, 1.3f, 0.0f }, 0.6f );
+    tile( S_FLOOR, "floor", 0.25f, { 1.0f, 1.0f, 1.0f, 0.0f }, 0.6f, { 200, 190, 185, 255 } );
+    tile( S_GRATE, "grate", 0.5f, { 1.0f, 1.0f, 1.2f, 0.0f }, 0.4f );
+    tile( S_METAL, "wall", 0.35f, { 1.0f, 1.0f, 1.1f, 0.0f }, 0.5f );
+    tile( S_HAZARD, "hazard", 0.7f, { 1.0f, 1.0f, 1.0f, 0.0f }, 0.3f );
+    tile( S_RUST, "rust", 0.6f, { 1.0f, 1.0f, 1.0f, 0.0f }, 0.4f );
+    tile( S_FOIL, "metal", 1.2f, { 0.35f, 1.0f, 2.0f, 0.0f }, 0.2f, { 235, 215, 150, 255 } );
+    tile( S_GLOW, "metal", 0.5f, { 0.5f, 0.0f, 0.0f, 0.0f }, 0.0f, { 25, 25, 25, 255 } );
+    tile( S_ARMOR, "armor", 1.6f, { 1.0f, 1.0f, 1.5f, 0.0f }, 0.15f, { 132, 104, 78, 255 } );
+    tile( S_DARK, "armor", 1.6f, { 0.9f, 1.0f, 1.5f, 0.0f }, 0.15f, { 46, 44, 48, 255 } );
+}
+
+bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound )
+{
+    m_assets = assets;
+    if ( !m_level.load( assets + "/levels/" + level ) ) return false;
+    loadSurfaces( gfx, assets );
+    m_level.build( { S_ROCK, S_FLOOR, S_GRATE, S_METAL, S_HAZARD, S_RUST, S_FOIL, S_GLOW }, m_static );
+
+    FigureSurfaces fs = { S_ARMOR, S_DARK, S_METAL, S_GLOW };
+    fs.m_visor = { 3.2f, 1.6f, 0.3f, 0.0f };   // Corvin's visor: amber
+    m_hero.build( fs );
+    m_louse.build( S_RUST, S_METAL, S_GLOW, false );
+    m_welder.build( S_RUST, S_METAL, S_GLOW, true );
+
+    MeshBuilder chunk;
+    chunk.box( MatrixIdentity(), { 0.07f, 0.04f, 0.09f } );
+    m_chunk = chunk.build().front();
+    MeshBuilder scrap;
+    scrap.box( place( { 0.0f, 0.06f, 0.0f }, { 0.0f, 0.4f, 0.0f } ), { 0.1f, 0.05f, 0.07f } );
+    scrap.box( place( { 0.08f, 0.1f, 0.05f }, { 0.3f, 1.1f, 0.2f } ), { 0.06f, 0.03f, 0.09f } );
+    scrap.box( place( { -0.07f, 0.12f, -0.04f }, { 0.0f, 2.0f, 0.5f } ), { 0.05f, 0.05f, 0.05f } );
+    m_scrapMesh = scrap.build().front();
+    MeshBuilder stim;
+    stim.cylinder( place( { 0.0f, 0.05f, 0.0f } ), 0.07f, 0.22f, 12 );
+    m_stimMesh = stim.build().front();
+    MeshBuilder cap;
+    cap.cylinder( place( { 0.0f, 0.0f, 0.0f } ), 0.08f, 0.05f, 12 );
+    cap.cylinder( place( { 0.0f, 0.27f, 0.0f } ), 0.08f, 0.05f, 12 );
+    m_stimCap = cap.build().front();
+
+    // The rescue capsule: base, pod, a window that glows when it wakes.
+    {
+        MeshBuilder base;
+        base.roundedBox( place( { 0.0f, 0.15f, 0.0f } ), { 0.75f, 0.15f, 0.75f }, 0.05f, 2 );
+        base.lathe( place( { 0.0f, 0.3f, 0.0f } ),
+                    { { 0.0f, 0.0f },
+                      { 0.55f, 0.0f },
+                      { 0.55f, 0.0f },
+                      { 0.62f, 0.2f },
+                      { 0.62f, 2.0f },
+                      { 0.45f, 2.35f },
+                      { 0.0f, 2.45f } },
+                    28 );
+        for ( Mesh m : base.build() ) m_capsuleMeshes.push_back( m ), m_capsuleSurfaces.push_back( S_METAL );
+        MeshBuilder stripe;
+        stripe.lathe( place( { 0.0f, 0.35f, 0.0f } ), { { 0.63f, 0.0f }, { 0.63f, 0.25f } }, 28 );
+        for ( Mesh m : stripe.build() ) m_capsuleMeshes.push_back( m ), m_capsuleSurfaces.push_back( S_HAZARD );
+        MeshBuilder window;
+        window.lathe( place( { 0.0f, 0.3f, 0.0f } ), { { 0.635f, 0.6f }, { 0.635f, 1.9f } }, 12, PI * 0.5f - 0.7f,
+                      PI * 0.5f + 0.7f );
+        for ( Mesh m : window.build() )
+            m_capsuleMeshes.push_back( m ), m_capsuleSurfaces.push_back( -1 );   // -1: the glow
+    }
+
+    Image dot = GenImageGradientRadial( 64, 64, 0.0f, WHITE, BLANK );
+    m_dot = LoadTextureFromImage( dot );
+    UnloadImage( dot );
+
+    // Markers: Corvin, enemies, capsules, pickups, the swarms, vents, the press, the door.
+    const int DR[4] = { 1, 0, 0, -1 }, DC[4] = { 0, 1, -1, 0 };
+    for ( const Marker &m : m_level.m_markers )
+    {
+        Vector3 p = m.m_pos;
+        switch ( m.m_kind )
+        {
+        case 'P':
+            m_pos = p;
+            m_respawn = p;
+            break;
+        case 'L': spawnFoe( FoeE::LOUSE, p, false ); break;
+        case 'W': spawnFoe( FoeE::WELDER, p, false ); break;
+        case 'H': m_pickups.push_back( { 1, 1, p, { 0, 0, 0 } } ); break;
+        case 'S': m_pickups.push_back( { 0, 10, p, { 0, 0, 0 } } ); break;
+        case 'C':
+        {
+            // The capsule faces where there is most room.
+            int best = 0, bestRoom = -1;
+            for ( int d = 0; d < 4; ++d )
+            {
+                int room = 0;
+                for ( int k = 1; k <= 3 && m_level.walkable( m.m_row + DR[d] * k, m.m_col + DC[d] * k ); ++k ) ++room;
+                if ( room > bestRoom ) bestRoom = room, best = d;
+            }
+            Vector3 dir = { (float)DC[best], 0.0f, (float)DR[best] };
+            m_capsules.push_back( { p, Vector3Add( p, Vector3Scale( dir, 1.4f ) ), atan2f( dir.x, dir.z ) } );
+            m_blocked.insert( m.m_row * m_level.cols() + m.m_col );
+            break;
+        }
+        case 'D':
+            for ( int i = 0; i < 900; ++i )
+            {
+                Vector3 o = { rnd() - 0.5f, rnd() - 0.5f, rnd() - 0.5f };
+                o = Vector3Scale( Vector3Normalize( o ), 3.2f * powf( rnd(), 0.5f ) );
+                o.y *= 0.45f;
+                m_drops.push_back(
+                    { { p.x, p.y + 2.0f, p.z }, o, 0.03f + rnd() * 0.08f, rnd() * 6.28f, 0.012f + rnd() * 0.02f } );
+            }
+            break;
+        case 'V': m_vents.push_back( { p, 1.0f + rnd() * 4.0f, 0.0f } ); break;
+        case 'K': m_blocked.insert( m.m_row * m_level.cols() + m.m_col ); break;
+        case 'B':
+        {
+            Vector3 o = { p.x, 0.0f, m.m_row * CellSize };
+            m_pressModel.build( o, S_METAL, S_HAZARD, S_RUST, S_GLOW );
+            // The cells the housing, the tanks and the gantry's legs stand on are no way through.
+            for ( int r = 0; r < m_level.rows(); ++r )
+                for ( int c = 0; c < m_level.cols(); ++c )
+                {
+                    Vector3 q = m_level.centre( r, c );
+                    bool    taken = q.x > o.x - 8.8f && q.x < o.x + 8.8f && q.z > o.z - 5.0f && q.z < o.z + 0.9f;
+                    for ( float side : { -1.0f, 1.0f } )
+                    {
+                        taken = taken || Vector2Distance( { q.x, q.z }, { o.x + side * 9.2f, o.z + 0.5f } ) < 1.9f;
+                        taken = taken || Vector2Distance( { q.x, q.z }, { o.x + side * 2.6f, o.z + 4.3f } ) < 1.0f;
+                    }
+                    if ( taken ) m_blocked.insert( r * m_level.cols() + c );
+                }
+            break;
+        }
+        case 'X':
+        {
+            int c0 = m.m_col, c1 = m.m_col;
+            while ( m_level.walkable( m.m_row, c0 - 1 ) ) --c0;
+            while ( m_level.walkable( m.m_row, c1 + 1 ) ) ++c1;
+            m_door = { ( c0 + c1 + 1 ) * 0.5f * CellSize, 0.0f, p.z };
+            m_doorHalf = ( c1 - c0 + 1 ) * 0.5f * CellSize;
+            MeshBuilder frame;
+            for ( float side : { -1.0f, 1.0f } )
+                frame.box( place( { m_door.x + side * ( m_doorHalf + 0.2f ), 2.0f, m_door.z } ),
+                           { 0.25f, 2.0f, 0.35f } );
+            frame.box( place( { m_door.x, 4.2f, m_door.z } ), { m_doorHalf + 0.45f, 0.25f, 0.35f } );
+            m_doorFrame = frame.build();
+            MeshBuilder panel;
+            panel.box( place( { 0.0f, 1.9f, 0.0f } ), { m_doorHalf * 0.5f, 1.9f, 0.12f } );
+            m_doorPanel = panel.build();
+            break;
+        }
+        default: break;
+        }
+    }
+    m_hero.animate( 0.0f, m_pos, { 0, 0 }, 0.0f, false, 0.0f, 0.0f );
+    m_yaw = m_aimYaw = 0.0f;
+
+    // Bahnschrift has the umlauts and the dashes of the subtitles; raylib's font if it is not there.
+    std::vector<int> cps;
+    for ( int c = 32; c < 256; ++c ) cps.push_back( c );
+    for ( int c : { 0x2013, 0x2014, 0x2018, 0x2019, 0x201C, 0x201D, 0x201E, 0x2026 } ) cps.push_back( c );
+    const char *fontPath = "C:/Windows/Fonts/bahnschrift.ttf";
+    if ( FileExists( fontPath ) )
+    {
+        m_font = LoadFontEx( fontPath, 48, cps.data(), (int)cps.size() );
+        SetTextureFilter( m_font.texture, TEXTURE_FILTER_BILINEAR );
+        m_ownFont = m_font.texture.id > 0;
+    }
+    if ( !m_ownFont ) m_font = GetFontDefault();
+
+    m_audio.init( sound );
+    putHero( m_pos.x, m_pos.z, 0.0f );
+    return true;
+}
+
+void Game::shutdown()
+{
+    m_audio.shutdown();
+    if ( m_ownFont ) UnloadFont( m_font );
+}
+
+void Game::spawnFoe( FoeE kind, Vector3 pos, bool awake )
+{
+    Foe f;
+    f.m_kind = kind;
+    f.m_pos = pos;
+    f.m_hp = kind == FoeE::LOUSE ? LouseHp : WelderHp;
+    f.m_awake = awake;
+    f.m_yaw = rnd() * 6.28f;
+    f.m_id = (int)m_foes.size();
+    f.m_spit = 1.5f + rnd() * 1.5f;
+    m_foes.push_back( f );
+}
+
+void Game::putHero( float x, float z, float yaw )
+{
+    m_pos = { x, m_level.floorAt( x, z ), z };
+    if ( m_pos.y > 100.0f || m_pos.y < -100.0f ) m_pos.y = 0.0f;
+    m_vel = { 0, 0, 0 };
+    m_yaw = m_aimYaw = yaw * DEG2RAD;
+    m_hero.animate( 0.0f, m_pos, { 0, 0 }, m_yaw, false, 0.0f, m_time );
+    m_camTarget = Vector3Add( m_pos, { 0.0f, 1.0f, 0.0f } );
+}
+
+void Game::wakeAll()
+{
+    for ( Foe &f : m_foes ) f.m_awake = true;
+}
+
+float Game::groundAt( Vector3 p ) const
+{
+    return m_level.floorAt( p.x, p.z );
+}
+
+bool Game::los( Vector3 a, Vector3 b ) const
+{
+    Vector3 hit, n;
+    return !m_level.raycast( a, b, hit, n );
+}
+
+void Game::blockHero( Vector3 &p ) const
+{
+    for ( const Capsule &c : m_capsules ) pushOutCircle( p, HeroRadius, c.m_pos.x, c.m_pos.z, 0.75f );
+    for ( const Marker &m : m_level.m_markers )
+        if ( m.m_kind == 'K' ) pushOutCircle( p, HeroRadius, m.m_pos.x, m.m_pos.z - 0.2f, 1.0f );
+    if ( m_doorHalf > 0.0f && m_doorOpen < 0.8f && fabsf( p.x - m_door.x ) < m_doorHalf + 0.5f )
+        pushOutRect( p, HeroRadius, m_door.x - m_doorHalf - 0.5f, m_door.x + m_doorHalf + 0.5f, m_door.z - 0.2f,
+                     m_door.z + 0.2f );
+    Vector3 o = m_pressModel.m_origin;
+    if ( o.x != 0.0f )
+    {
+        pushOutRect( p, HeroRadius, o.x - 8.0f, o.x + 8.0f, o.z - 4.4f, o.z + 0.25f );
+        for ( float side : { -1.0f, 1.0f } )
+        {
+            pushOutCircle( p, HeroRadius, o.x + side * 2.6f, o.z + 4.3f, 0.35f );
+            pushOutCircle( p, HeroRadius, o.x + side * 9.2f, o.z + 0.5f, 1.2f );
+        }
+    }
+}
+
+void Game::fire( const std::string &trigger )
+{
+    if ( m_fired.count( trigger ) ) return;
+    m_fired.insert( trigger );
+    for ( const Line &l : m_level.m_lines )
+        if ( l.m_trigger == trigger ) m_lineQueue.push_back( &l );
+    for ( const Hint &h : m_level.m_hints )
+        if ( h.m_trigger == trigger ) m_hintQueue.push_back( &h );
+}
+
+void Game::hurtHero( float amount, Vector3 push )
+{
+    if ( m_dead || m_invuln > 0.0f || m_finished ) return;
+    m_hp -= amount;
+    m_invuln = 0.45f;
+    m_hurtFlash = 1.0f;
+    m_vel = Vector3Add( m_vel, push );
+    if ( push.y > 0.5f ) m_ground = false;
+    m_audio.play( SfxE::HURT, m_pos, m_camTarget, 0.8f );
+    if ( m_hp < 50.0f ) fire( "hurt" );
+    if ( m_hp <= 0.0f )
+    {
+        m_hp = 0.0f;
+        m_dead = true;
+        m_deadTimer = 0.0f;
+        ++m_deaths;
+        if ( m_autoplay ) TraceLog( LOG_WARNING, "DEATH: hit at %.1f,%.1f t=%.0f", m_pos.x, m_pos.z, m_time );
+    }
+}
+
+void Game::sparks( Vector3 p, Vector3 n, int count, Color c, float speed )
+{
+    for ( int i = 0; i < count; ++i )
+    {
+        Vector3 r = Vector3Normalize( { rnd() - 0.5f, rnd() - 0.5f, rnd() - 0.5f } );
+        Vector3 v =
+            Vector3Scale( Vector3Normalize( Vector3Add( n, Vector3Scale( r, 0.95f ) ) ), speed * ( 0.3f + rnd() ) );
+        float life = 0.3f + rnd() * 0.6f;
+        m_particles.push_back( { p, v, life, life, 0.01f + rnd() * 0.012f, c, 0 } );
+    }
+}
+
+void Game::explode( Vector3 p, float size )
+{
+    sparks( p, { 0, 1, 0 }, (int)( 40 * size ), { 255, 170, 80, 255 }, 5.0f * size );
+    m_particles.push_back( { p, { 0, 0, 0 }, 0.18f, 0.18f, 0.9f * size, { 255, 190, 120, 255 }, 2 } );
+    for ( int i = 0; i < (int)( 8 * size ); ++i )
+    {
+        Vector3 v = { ( rnd() - 0.5f ) * 5.0f, 1.5f + rnd() * 3.5f, ( rnd() - 0.5f ) * 5.0f };
+        m_debris.push_back( { p,
+                              Vector3Scale( v, size ),
+                              { rnd() * 6, rnd() * 6, rnd() * 6 },
+                              { rnd() * 8 - 4, rnd() * 8 - 4, rnd() * 8 - 4 },
+                              5.0f } );
+    }
+    m_flashes.push_back( { Vector3Add( p, { 0, 0.5f, 0 } ), { 30.0f, 16.0f, 6.0f }, 7.0f * size, 0.25f, 0.25f } );
+    m_audio.play( size > 1.5f ? SfxE::BOOM : SfxE::POP, p, m_camTarget, 1.0f );
+}
+
+void Game::killFoe( Foe &f, bool drops )
+{
+    f.m_alive = false;
+    ++m_kills;
+    float size = f.m_kind == FoeE::WELDER ? 1.4f : 0.8f;
+    explode( Vector3Add( f.m_pos, { 0, 0.4f, 0 } ), size );
+    if ( !drops ) return;
+    float   r = rnd();
+    Vector3 v = { ( rnd() - 0.5f ) * 2.0f, 2.5f, ( rnd() - 0.5f ) * 2.0f };
+    if ( f.m_kind == FoeE::WELDER )
+    {
+        m_pickups.push_back( { 0, 15, Vector3Add( f.m_pos, { 0, 0.5f, 0 } ), v } );
+        if ( r < 0.4f ) m_pickups.push_back( { 1, 1, Vector3Add( f.m_pos, { 0, 0.5f, 0 } ), Vector3Negate( v ) } );
+    }
+    else if ( r < 0.6f )
+        m_pickups.push_back( { 0, 3 + (int)( rnd() * 6 ), Vector3Add( f.m_pos, { 0, 0.4f, 0 } ), v } );
+    else if ( r < 0.72f )
+        m_pickups.push_back( { 1, 1, Vector3Add( f.m_pos, { 0, 0.4f, 0 } ), v } );
+}
+
+void Game::hurtFoe( Foe &f, float amount, Vector3 dir )
+{
+    if ( !f.m_alive ) return;
+    f.m_hp -= amount;
+    f.m_flash = 1.0f;
+    if ( !f.m_awake ) m_audio.play( SfxE::CHITTER, f.m_pos, m_camTarget, 0.6f );
+    f.m_awake = true;
+    // Low gravity: a hit lifts a louse off its feet.
+    float push = f.m_kind == FoeE::LOUSE ? 1.8f : 0.5f;
+    f.m_vel = Vector3Add( f.m_vel, { dir.x * push, push * 0.45f, dir.z * push } );
+    if ( f.m_kind == FoeE::LOUSE ) f.m_ground = false;
+    if ( f.m_hp <= 0.0f ) killFoe( f, true );
+}
+
+Vector3 Game::targetPoint( const Target &t ) const
+{
+    Vector3 o = m_pressModel.m_origin;
+    switch ( t.m_kind )
+    {
+    case 0:
+    {
+        const Foe &f = m_foes[t.m_index];
+        float      h = f.m_kind == FoeE::WELDER ? 0.75f : 0.45f;
+        return Vector3Add( f.m_pos, { 0.0f, h, 0.0f } );
+    }
+    case 1: return { o.x - 9.2f, 2.3f, o.z + 0.5f };
+    case 2: return { o.x + 9.2f, 2.3f, o.z + 0.5f };
+    case 3: return { o.x, 3.4f, o.z - 0.4f };
+    default: return { 0, 0, 0 };
+    }
+}
+
+Game::Target Game::findTarget( Vector3 from, Vector3 dir, float cone ) const
+{
+    Target best;
+    float  bestScore = 1e9f;
+    auto   consider = [&]( Target t )
+    {
+        Vector3 p = targetPoint( t );
+        Vector3 d = Vector3Subtract( p, from );
+        float   dist = sqrtf( d.x * d.x + d.z * d.z );
+        if ( dist > 24.0f || dist < 0.3f ) return;
+        float a = acosf( Clamp(
+            ( d.x * dir.x + d.z * dir.z ) / ( dist * sqrtf( dir.x * dir.x + dir.z * dir.z ) + 1e-6f ), -1.0f, 1.0f ) );
+        if ( a > cone ) return;
+        if ( !los( from, p ) ) return;
+        float score = a * 2.0f + dist * 0.03f;
+        if ( score < bestScore )
+        {
+            bestScore = score;
+            best = t;
+            best.m_point = p;
+        }
+    };
+    for ( int i = 0; i < (int)m_foes.size(); ++i )
+        if ( m_foes[i].m_alive ) consider( { 0, i, {} } );
+    if ( m_pressActive && !m_pressDead && !m_pressDying )
+    {
+        if ( m_tank[0] > 0.0f ) consider( { 1, 0, {} } );
+        if ( m_tank[1] > 0.0f ) consider( { 2, 0, {} } );
+        if ( m_pressPose.m_shutter > 0.85f && m_core > 0.0f ) consider( { 3, 0, {} } );
+    }
+    return best;
+}
+
+void Game::shoot()
+{
+    Vector3 fwd = { sinf( m_yaw ), 0.0f, cosf( m_yaw ) };
+    Vector3 right = { -fwd.z, 0.0f, fwd.x };
+    Vector3 muzzle = Vector3Add( Vector3Add( m_pos, { 0.0f, 1.3f, 0.0f } ),
+                                 Vector3Add( Vector3Scale( fwd, 0.75f ), Vector3Scale( right, 0.06f ) ) );
+    Vector3 dir = m_target.m_kind >= 0 ? Vector3Normalize( Vector3Subtract( targetPoint( m_target ), muzzle ) ) : fwd;
+    dir = Vector3Normalize(
+        Vector3Add( dir, { ( rnd() - 0.5f ) * 0.024f, ( rnd() - 0.5f ) * 0.02f, ( rnd() - 0.5f ) * 0.024f } ) );
+    ++m_shots;
+
+    Vector3 end = Vector3Add( muzzle, Vector3Scale( dir, Range ) );
+    Vector3 hit, normal;
+    m_level.raycast( muzzle, end, hit, normal );
+    float tBest = Vector3Distance( muzzle, hit );
+    int   kind = -1, index = -1;   // -1 wall, 0 foe, 1/2 tank, 3 core, 4 armour of the press
+    for ( int i = 0; i < (int)m_foes.size(); ++i )
+    {
+        const Foe &f = m_foes[i];
+        if ( !f.m_alive ) continue;
+        float r = f.m_kind == FoeE::WELDER ? 0.85f : 0.5f;
+        float t = raySphere( muzzle, dir,
+                             Vector3Add( f.m_pos, { 0.0f, f.m_kind == FoeE::WELDER ? 0.75f : 0.45f, 0.0f } ), r );
+        if ( t >= 0.0f && t < tBest ) tBest = t, kind = 0, index = i;
+    }
+    Vector3 o = m_pressModel.m_origin;
+    if ( o.x != 0.0f )
+    {
+        for ( int side = 0; side < 2; ++side )
+        {
+            float t = rayCylinder( muzzle, dir, { o.x + ( side ? 9.2f : -9.2f ), 0.0f, o.z + 0.5f }, 1.15f,
+                                   m_tank[side] > 0.0f ? 4.7f : 1.9f );
+            if ( t >= 0.0f && t < tBest ) tBest = t, kind = m_tank[side] > 0.0f ? 1 + side : 4;
+        }
+        if ( m_pressPose.m_shutter > 0.85f && m_core > 0.0f )
+        {
+            float t = raySphere( muzzle, dir, { o.x, 3.4f, o.z - 1.0f }, 0.95f );
+            if ( t >= 0.0f && t < tBest ) tBest = t, kind = 3;
+        }
+        struct Box
+        {
+            Vector3 lo, hi;
+        };
+        float     shutter = m_pressPose.m_shutter;
+        float     ram = m_pressPose.m_ram;
+        const Box boxes[] = { { { o.x - 8.0f, 0.0f, o.z - 4.4f }, { o.x + 8.0f, 6.5f, o.z - 1.6f } },
+                              { { o.x - 8.0f, 0.0f, o.z - 1.6f }, { o.x - 1.6f, 6.5f, o.z } },
+                              { { o.x + 1.6f, 0.0f, o.z - 1.6f }, { o.x + 8.0f, 6.5f, o.z } },
+                              { { o.x - 1.6f, 0.0f, o.z - 1.6f }, { o.x + 1.6f, 2.2f, o.z } },
+                              { { o.x - 1.6f, 4.6f, o.z - 1.6f }, { o.x + 1.6f, 6.5f, o.z } },
+                              { { o.x - 1.6f + shutter * 1.55f, 2.2f, o.z },
+                                { o.x + 1.6f - shutter * 1.55f, 4.6f, o.z + 0.14f } },
+                              { { o.x - 2.0f, ram - 0.8f, o.z + 0.35f }, { o.x + 2.0f, ram + 0.8f, o.z + 4.05f } } };
+        for ( const Box &b : boxes )
+        {
+            if ( b.lo.x >= b.hi.x ) continue;
+            float t = rayBox( muzzle, dir, b.lo, b.hi );
+            if ( t >= 0.0f && t < tBest ) tBest = t, kind = 4;
+        }
+    }
+    Vector3 at = Vector3Add( muzzle, Vector3Scale( dir, tBest ) );
+    if ( kind == 0 )
+    {
+        hurtFoe( m_foes[index], ShotDamage, dir );
+        sparks( at, Vector3Negate( dir ), 10, { 255, 200, 120, 255 }, 3.5f );
+    }
+    else if ( kind == 1 || kind == 2 )
+    {
+        int side = kind - 1;
+        m_tank[side] -= ShotDamage;
+        m_pressPose.m_tankFlash[side] = 1.0f;
+        sparks( at, Vector3Negate( dir ), 8, { 140, 200, 255, 255 }, 3.0f );
+        if ( m_tank[side] <= 0.0f )
+        {
+            m_tank[side] = 0.0f;
+            Vector3 tp = { o.x + ( side ? 9.2f : -9.2f ), 2.0f, o.z + 0.5f };
+            explode( tp, 2.0f );
+            m_audio.play( SfxE::BURST, tp, m_camTarget, 1.0f );
+            m_shake = 0.8f;
+        }
+    }
+    else if ( kind == 3 )
+    {
+        m_core -= ShotDamage;
+        m_pressPose.m_coreFlash = 1.0f;
+        sparks( at, Vector3Negate( dir ), 12, { 255, 160, 60, 255 }, 4.0f );
+    }
+    else
+        sparks( at, kind == 4 ? Vector3Negate( dir ) : normal, 9, { 200, 225, 255, 255 }, 3.0f );
+    m_tracers.push_back( { muzzle, at, 0.08f } );
+    m_flashes.push_back( { muzzle, { 10.0f, 16.0f, 24.0f }, 5.0f, 0.06f, 0.06f } );
+    m_flashes.push_back( { Vector3Add( at, Vector3Scale( dir, -0.3f ) ), { 6.0f, 9.0f, 14.0f }, 3.5f, 0.1f, 0.1f } );
+    m_audio.play( SfxE::SHOT, muzzle, m_camTarget, 0.85f );
+    m_audio.play( SfxE::HIT, at, m_camTarget, 0.5f );
+
+    // Recoil: on the ground a nudge, in the air a shove.
+    float kick = m_ground ? 0.5f : 1.3f;
+    m_vel.x -= dir.x * kick;
+    m_vel.z -= dir.z * kick;
+    m_hero.recoil();
+}
+
+void Game::updateHero( float dt, const GameInput &in )
+{
+    if ( m_finished )
+    {
+        m_vel = { 0, 0, 0 };
+        m_hero.animate( dt, m_pos, { 0, 0 }, m_yaw, false, 0.0f, m_time );
+        return;
+    }
+    if ( m_dead )
+    {
+        m_deadTimer += dt;
+        m_vel.x *= 0.9f;
+        m_vel.z *= 0.9f;
+        m_hero.animate( dt, m_pos, { 0, 0 }, m_yaw, false, fminf( 1.0f, m_deadTimer / 0.5f ), m_time );
+        if ( m_deadTimer > 2.4f )
+        {
+            // Back at the last capsule.
+            m_dead = false;
+            m_hp = 100.0f;
+            m_heat = 0.0f;
+            m_overheat = false;
+            m_pos = m_respawn;
+            m_vel = { 0, 0, 0 };
+            m_invuln = 1.5f;
+            for ( int i = 0; i < 30; ++i )
+                m_particles.push_back(
+                    { Vector3Add( m_pos, { ( rnd() - 0.5f ) * 0.8f, rnd() * 2.0f, ( rnd() - 0.5f ) * 0.8f } ),
+                      { 0, 0.6f, 0 },
+                      1.0f,
+                      1.0f,
+                      0.02f,
+                      { 120, 255, 160, 255 },
+                      3 } );
+            m_audio.play( SfxE::CAPSULE, m_pos, m_camTarget, 0.8f );
+        }
+        return;
+    }
+
+    Vector2 move = in.m_move;
+    if ( Vector2Length( move ) > 1.0f ) move = Vector2Normalize( move );
+    Vector2 want = Vector2Scale( move, RunSpeed );
+    Vector2 v = { m_vel.x, m_vel.z };
+    Vector2 dv = Vector2Subtract( want, v );
+    float   step = ( m_ground ? GroundAccel : AirAccel ) * dt;
+    if ( Vector2Length( dv ) > step ) dv = Vector2Scale( Vector2Normalize( dv ), step );
+    m_vel.x += dv.x;
+    m_vel.z += dv.y;
+    if ( in.m_jump && m_ground )
+    {
+        m_vel.y = JumpSpeed;
+        m_ground = false;
+        m_audio.play( SfxE::JUMP, m_pos, m_camTarget, 0.6f );
+        if ( m_autoplay )
+            TraceLog( LOG_WARNING, "JUMP at %.1f,%.1f v=%.1f,%.1f t=%.1f", m_pos.x, m_pos.z, m_vel.x, m_vel.z, m_time );
+    }
+
+    // Aim: mouse or right stick for a while after they are used, else where Corvin runs; the rifle finds targets.
+    Vector3 chest = Vector3Add( m_pos, { 0.0f, 1.25f, 0.0f } );
+    bool    manual = false;
+    if ( in.m_mouseAim )
+    {
+        Ray   ray = GetScreenToWorldRay( in.m_mouse, m_cam );
+        float plane = chest.y;
+        if ( fabsf( ray.direction.y ) > 1e-3f )
+        {
+            float   t = ( plane - ray.position.y ) / ray.direction.y;
+            Vector3 p = Vector3Add( ray.position, Vector3Scale( ray.direction, t ) );
+            if ( t > 0.0f && Vector3Distance( p, chest ) > 0.4f )
+            {
+                m_aimYaw = atan2f( p.x - chest.x, p.z - chest.z );
+                m_aimTimer = 2.0f;
+            }
+        }
+    }
+    if ( Vector2Length( in.m_stick ) > 0.3f )
+    {
+        m_aimYaw = atan2f( in.m_stick.x, in.m_stick.y );
+        m_aimTimer = 2.0f;
+    }
+    if ( m_aimTimer > 0.0f )
+    {
+        m_aimTimer -= dt;
+        manual = true;
+    }
+    else if ( Vector2Length( move ) > 0.2f )
+        m_aimYaw = atan2f( move.x, move.y );
+    Vector3 aimDir = { sinf( m_aimYaw ), 0.0f, cosf( m_aimYaw ) };
+    m_target = findTarget( chest, aimDir, manual ? AssistCone : AutoCone );
+    m_firing = in.m_fire;
+    float faceYaw = m_aimYaw;
+    if ( m_firing && m_target.m_kind >= 0 )
+    {
+        Vector3 p = targetPoint( m_target );
+        faceYaw = atan2f( p.x - m_pos.x, p.z - m_pos.z );
+    }
+    else if ( !manual && !m_firing && Vector2Length( move ) > 0.2f )
+        faceYaw = atan2f( move.x, move.y );
+    float turn = ( m_firing || manual ? 16.0f : 11.0f ) * dt;
+    m_yaw += Clamp( angleTo( m_yaw, faceYaw ), -turn, turn );
+    m_aimDir = aimDir;
+
+    m_fireTimer -= dt;
+    if ( m_firing && !m_overheat && m_fireTimer <= 0.0f )
+    {
+        shoot();
+        m_fireTimer = FireInterval;
+        m_heat += HeatPerShot;
+        m_coolDelay = 0.3f;
+        if ( m_heat >= 100.0f )
+        {
+            m_heat = 100.0f;
+            m_overheat = true;
+            fire( "overheat" );
+            m_audio.play( SfxE::OVERHEAT, m_pos, m_camTarget, 0.8f );
+        }
+    }
+    if ( m_coolDelay > 0.0f )
+        m_coolDelay -= dt;
+    else
+        m_heat = fmaxf( 0.0f, m_heat - ( m_overheat ? 55.0f : 45.0f ) * dt );
+    if ( m_overheat && m_heat < 25.0f ) m_overheat = false;
+
+    if ( in.m_stim && m_stims > 0 && m_hp < 100.0f )
+    {
+        m_hp = fminf( 100.0f, m_hp + StimHeal );
+        --m_stims;
+        m_audio.play( SfxE::STIM, m_pos, m_camTarget, 0.8f );
+        for ( int i = 0; i < 16; ++i )
+            m_particles.push_back(
+                { Vector3Add( m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.5f + rnd() * 1.2f, ( rnd() - 0.5f ) * 0.6f } ),
+                  { 0, 0.8f, 0 },
+                  0.8f,
+                  0.8f,
+                  0.015f,
+                  { 120, 255, 140, 255 },
+                  3 } );
+    }
+
+    // Move, collide, land.
+    bool wasAir = !m_ground;
+    m_vel.y -= m_level.m_gravity * dt;
+    m_pos = Vector3Add( m_pos, Vector3Scale( m_vel, dt ) );
+    m_level.collide( m_pos, HeroRadius, StepUp );
+    blockHero( m_pos );
+    float floor = groundAt( m_pos );
+    if ( m_pos.y <= floor && m_vel.y <= 0.0f && floor > -100.0f )
+    {
+        if ( wasAir && m_vel.y < -1.5f ) m_audio.play( SfxE::LAND, m_pos, m_camTarget, 0.6f );
+        m_pos.y = floor;
+        m_vel.y = 0.0f;
+        m_ground = true;
+    }
+    else if ( m_pos.y > floor + 0.08f )
+        m_ground = false;
+    if ( m_pos.y < -10.0f )
+    {
+        m_hp = 0.0f;
+        m_dead = true;
+        m_deadTimer = 1.0f;
+        ++m_deaths;
+        if ( m_autoplay ) TraceLog( LOG_WARNING, "DEATH: fall at %.1f,%.1f t=%.0f", m_pos.x, m_pos.z, m_time );
+    }
+    m_invuln -= dt;
+    m_hurtFlash = fmaxf( 0.0f, m_hurtFlash - dt * 2.5f );
+
+    // Capsules, pickups, triggers, the exit.
+    for ( Capsule &c : m_capsules )
+        if ( !c.m_active && Vector3Distance( c.m_pos, m_pos ) < 2.6f )
+        {
+            for ( Capsule &o : m_capsules ) o.m_active = false;
+            c.m_active = true;
+            m_respawn = c.m_front;
+            fire( "capsule" );
+            m_audio.play( SfxE::CAPSULE, c.m_pos, m_camTarget, 0.9f );
+        }
+    for ( Pickup &p : m_pickups )
+    {
+        if ( !p.m_alive ) continue;
+        Vector3 d = Vector3Subtract( Vector3Add( m_pos, { 0, 0.6f, 0 } ), p.m_pos );
+        float   dist = Vector3Length( d );
+        if ( dist < 2.6f && ( p.m_kind == 0 || m_stims < 9 ) )
+            p.m_pos = Vector3Add( p.m_pos, Vector3Scale( d, fminf( 1.0f, dt * 6.0f ) ) );
+        if ( dist < 0.8f )
+        {
+            p.m_alive = false;
+            if ( p.m_kind == 0 )
+                m_scrap += p.m_amount;
+            else
+                ++m_stims;
+            m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.7f );
+        }
+    }
+    int r, c;
+    m_level.cellOf( m_pos, r, c );
+    char trig = m_level.cell( r, c ).m_trigger;
+    if ( trig ) fire( std::string( 1, trig ) );
+    if ( m_pressDead && m_doorOpen > 0.8f && Vector3Distance( m_pos, m_door ) < m_doorHalf + 0.6f &&
+         fabsf( m_pos.z - m_door.z ) < 1.5f )
+        m_finished = true;
+
+    m_hero.animate( dt, m_pos, { m_vel.x, m_vel.z }, m_yaw, !m_ground, 0.0f, m_time );
+}
+
+void Game::flow( int r, int c )
+{
+    int rows = m_level.rows(), cols = m_level.cols();
+    m_flowDist.assign( (size_t)rows * cols, -1 );
+    if ( !m_level.walkable( r, c ) ) return;
+    std::deque<int> q;
+    m_flowDist[(size_t)r * cols + c] = 0;
+    q.push_back( r * cols + c );
+    const int DR[4] = { -1, 0, 1, 0 }, DC[4] = { 0, 1, 0, -1 };
+    while ( !q.empty() )
+    {
+        int cur = q.front();
+        q.pop_front();
+        int   cr = cur / cols, cc = cur % cols;
+        float h = m_level.centre( cr, cc ).y;
+        for ( int d = 0; d < 4; ++d )
+        {
+            int nr = cr + DR[d], nc = cc + DC[d];
+            if ( !m_level.walkable( nr, nc ) || m_blocked.count( nr * cols + nc ) ) continue;
+            if ( fabsf( m_level.centre( nr, nc ).y - h ) > 1.1f ) continue;
+            int n = nr * cols + nc;
+            if ( m_flowDist[n] >= 0 ) continue;
+            m_flowDist[n] = m_flowDist[cur] + 1;
+            q.push_back( n );
+        }
+    }
+}
+
+Vector3 Game::flowDir( Vector3 from ) const
+{
+    int r, c;
+    m_level.cellOf( from, r, c );
+    int cols = m_level.cols();
+    if ( m_flowDist.empty() || r < 0 || c < 0 || r >= m_level.rows() || c >= cols ) return { 0, 0, 0 };
+    int here = m_flowDist[(size_t)r * cols + c];
+    if ( here < 0 ) return { 0, 0, 0 };
+    int bestR = r, bestC = c, best = here;
+    for ( int dr = -1; dr <= 1; ++dr )
+        for ( int dc = -1; dc <= 1; ++dc )
+        {
+            int nr = r + dr, nc = c + dc;
+            if ( nr < 0 || nc < 0 || nr >= m_level.rows() || nc >= cols ) continue;
+            int d = m_flowDist[(size_t)nr * cols + nc];
+            if ( d < 0 || d >= best ) continue;
+            if ( dr && dc && ( m_flowDist[(size_t)r * cols + nc] < 0 || m_flowDist[(size_t)nr * cols + c] < 0 ) )
+                continue;
+            best = d, bestR = nr, bestC = nc;
+        }
+    if ( best == here ) return { 0, 0, 0 };
+    Vector3 to = m_level.centre( bestR, bestC );
+    Vector3 d = { to.x - from.x, 0.0f, to.z - from.z };
+    return Vector3Normalize( d );
+}
+
+void Game::updateFoes( float dt )
+{
+    int hr, hc;
+    m_level.cellOf( m_pos, hr, hc );
+    m_flowTimer -= dt;
+    if ( hr != m_flowR || hc != m_flowC || m_flowTimer <= 0.0f )
+    {
+        flow( hr, hc );
+        m_flowR = hr, m_flowC = hc;
+        m_flowTimer = 1.0f;
+    }
+    Vector3 chest = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
+    float   g = m_level.m_gravity;
+    for ( Foe &f : m_foes )
+    {
+        if ( !f.m_alive ) continue;
+        bool    welder = f.m_kind == FoeE::WELDER;
+        Vector3 eye = Vector3Add( f.m_pos, { 0.0f, welder ? 0.9f : 0.5f, 0.0f } );
+        Vector3 to = Vector3Subtract( m_pos, f.m_pos );
+        float   dist = sqrtf( to.x * to.x + to.z * to.z );
+        Vector3 dir = dist > 1e-3f ? Vector3{ to.x / dist, 0.0f, to.z / dist } : Vector3{ 0, 0, 1 };
+        f.m_losTimer -= dt;
+        if ( f.m_losTimer <= 0.0f && dist < 26.0f )
+        {
+            f.m_los = los( eye, chest );
+            f.m_losTimer = 0.2f + rnd() * 0.1f;
+        }
+        if ( !f.m_awake && !m_dead && ( ( dist < 13.0f && f.m_los ) || dist < 4.0f ) )
+        {
+            f.m_awake = true;
+            m_audio.play( SfxE::CHITTER, f.m_pos, m_camTarget, 0.7f );
+            for ( Foe &o : m_foes )
+                if ( o.m_alive && Vector3Distance( o.m_pos, f.m_pos ) < 7.0f ) o.m_awake = true;
+        }
+
+        Vector3 want = { 0, 0, 0 };
+        float   faceYaw = f.m_yaw;
+        bool    chase = f.m_awake && !m_dead && !m_finished;
+        f.m_timer -= dt;
+        if ( chase )
+        {
+            Vector3 path = ( f.m_los && dist < 9.0f ) ? dir : flowDir( f.m_pos );
+            if ( Vector3Length( path ) < 0.5f ) path = dir;
+            if ( !welder )
+            {
+                switch ( f.m_state )
+                {
+                case FoeStateE::CHASE:
+                    want = Vector3Scale( path, 3.4f );
+                    faceYaw = atan2f( path.x, path.z );
+                    if ( dist < 3.8f && f.m_los && f.m_ground && fabsf( m_pos.y - f.m_pos.y ) < 1.5f )
+                    {
+                        f.m_state = FoeStateE::WINDUP;
+                        f.m_timer = 0.35f;
+                    }
+                    break;
+                case FoeStateE::WINDUP:
+                    faceYaw = atan2f( dir.x, dir.z );
+                    f.m_crouch = fminf( 1.0f, f.m_crouch + dt * 4.0f );
+                    if ( f.m_timer <= 0.0f )
+                    {
+                        f.m_state = FoeStateE::LEAP;
+                        f.m_vel = { dir.x * 6.5f, 2.4f, dir.z * 6.5f };
+                        f.m_ground = false;
+                        f.m_timer = 3.0f;
+                        m_audio.play( SfxE::LEAP, f.m_pos, m_camTarget, 0.7f );
+                    }
+                    break;
+                case FoeStateE::LEAP:
+                    faceYaw = atan2f( f.m_vel.x, f.m_vel.z );
+                    if ( Vector3Distance( Vector3Add( f.m_pos, { 0, 0.4f, 0 } ), chest ) < 1.05f )
+                    {
+                        hurtHero( 10.0f, { dir.x * 2.5f, 1.0f, dir.z * 2.5f } );
+                        f.m_vel = { -dir.x * 2.0f, 1.0f, -dir.z * 2.0f };
+                    }
+                    if ( f.m_ground )
+                    {
+                        f.m_state = FoeStateE::RECOVER;
+                        f.m_timer = 0.55f;
+                    }
+                    break;
+                case FoeStateE::RECOVER:
+                default:
+                    f.m_crouch = fmaxf( 0.0f, f.m_crouch - dt * 3.0f );
+                    if ( f.m_timer <= 0.0f ) f.m_state = FoeStateE::CHASE;
+                    break;
+                }
+                if ( f.m_state != FoeStateE::WINDUP ) f.m_crouch = fmaxf( 0.0f, f.m_crouch - dt * 3.0f );
+            }
+            else
+            {
+                // The welder keeps its distance, circles, and spits molten metal in arcs.
+                faceYaw = atan2f( dir.x, dir.z );
+                if ( f.m_state == FoeStateE::WINDUP )
+                {
+                    f.m_torch = fminf( 1.0f, f.m_torch + dt * 2.0f );
+                    f.m_crouch = fminf( 0.6f, f.m_crouch + dt * 2.0f );
+                    if ( f.m_timer <= 0.0f )
+                    {
+                        Vector3 nozzle = Vector3Add( f.m_pos, { dir.x * 1.4f, 0.75f, dir.z * 1.4f } );
+                        for ( int i = 0; i < 3; ++i )
+                        {
+                            Vector3 aim = Vector3Add( m_pos, { m_vel.x * 0.6f + ( rnd() - 0.5f ) * 1.5f, 1.0f,
+                                                               m_vel.z * 0.6f + ( rnd() - 0.5f ) * 1.5f } );
+                            Vector3 d = Vector3Subtract( aim, nozzle );
+                            float   flat = sqrtf( d.x * d.x + d.z * d.z );
+                            float   t = fmaxf( 0.6f, flat / 9.0f );
+                            Vector3 vel = { d.x / t, ( d.y + 0.5f * g * t * t ) / t, d.z / t };
+                            m_blobs.push_back( { nozzle, vel, 4.0f } );
+                        }
+                        m_audio.play( SfxE::SPIT, nozzle, m_camTarget, 0.8f );
+                        f.m_state = FoeStateE::RECOVER;
+                        f.m_timer = 0.6f;
+                        f.m_spit = 2.4f + rnd();
+                    }
+                }
+                else
+                {
+                    f.m_torch = fmaxf( 0.0f, f.m_torch - dt * 1.5f );
+                    f.m_crouch = fmaxf( 0.0f, f.m_crouch - dt * 2.0f );
+                    if ( f.m_state == FoeStateE::RECOVER && f.m_timer <= 0.0f ) f.m_state = FoeStateE::CHASE;
+                    if ( !f.m_los || dist > 9.0f )
+                        want = Vector3Scale( path, 1.7f );
+                    else if ( dist < 5.0f )
+                        want = Vector3Scale( dir, -1.6f );
+                    else
+                    {
+                        float side = ( f.m_id % 2 ) ? 1.0f : -1.0f;
+                        want = { -dir.z * side * 1.2f, 0.0f, dir.x * side * 1.2f };
+                    }
+                    f.m_spit -= dt;
+                    if ( f.m_spit <= 0.0f && f.m_los && dist < 15.0f && f.m_state == FoeStateE::CHASE )
+                    {
+                        f.m_state = FoeStateE::WINDUP;
+                        f.m_timer = 0.6f;
+                    }
+                }
+            }
+        }
+        // Physics: walk on the ground, fly in a leap or when hit.
+        if ( f.m_ground )
+        {
+            Vector3 dv = { want.x - f.m_vel.x, 0.0f, want.z - f.m_vel.z };
+            float   len = sqrtf( dv.x * dv.x + dv.z * dv.z );
+            float   step = 14.0f * dt;
+            if ( len > step ) dv = Vector3Scale( dv, step / len );
+            f.m_vel.x += dv.x;
+            f.m_vel.z += dv.z;
+        }
+        f.m_vel.y -= g * dt;
+        f.m_pos = Vector3Add( f.m_pos, Vector3Scale( f.m_vel, dt ) );
+        m_level.collide( f.m_pos, welder ? 0.7f : 0.42f, welder ? 0.6f : 1.1f );
+        float floor = groundAt( f.m_pos );
+        if ( f.m_pos.y <= floor && f.m_vel.y <= 0.0f && floor > -100.0f )
+        {
+            f.m_pos.y = floor;
+            f.m_vel.y = 0.0f;
+            f.m_ground = true;
+        }
+        else if ( f.m_pos.y > floor + 0.1f )
+            f.m_ground = false;
+        if ( f.m_pos.y < -12.0f )
+        {
+            f.m_alive = false;   // fell into a shaft
+            ++m_kills;
+            continue;
+        }
+        Vector3 o = m_pressModel.m_origin;
+        if ( o.x != 0.0f ) pushOutRect( f.m_pos, 0.4f, o.x - 8.0f, o.x + 8.0f, o.z - 4.4f, o.z + 0.25f );
+        f.m_yaw += Clamp( angleTo( f.m_yaw, faceYaw ), -8.0f * dt, 8.0f * dt );
+        f.m_flash = fmaxf( 0.0f, f.m_flash - dt * 5.0f );
+    }
+    // Keep apart.
+    for ( size_t i = 0; i < m_foes.size(); ++i )
+        for ( size_t j = i + 1; j < m_foes.size(); ++j )
+        {
+            Foe &a = m_foes[i], &b = m_foes[j];
+            if ( !a.m_alive || !b.m_alive ) continue;
+            float   min = ( a.m_kind == FoeE::WELDER ? 0.8f : 0.45f ) + ( b.m_kind == FoeE::WELDER ? 0.8f : 0.45f );
+            Vector3 d = Vector3Subtract( a.m_pos, b.m_pos );
+            d.y = 0.0f;
+            float len = Vector3Length( d );
+            if ( len < min && len > 1e-4f )
+            {
+                Vector3 push = Vector3Scale( d, ( min - len ) * 0.5f / len );
+                a.m_pos = Vector3Add( a.m_pos, push );
+                b.m_pos = Vector3Subtract( b.m_pos, push );
+            }
+        }
+    // Feet.
+    for ( Foe &f : m_foes )
+    {
+        if ( !f.m_alive ) continue;
+        const LouseModel &model = f.m_kind == FoeE::WELDER ? m_welder : m_louse;
+        LousePose         pose;
+        pose.m_pos = f.m_pos;
+        pose.m_yaw = f.m_yaw;
+        pose.m_air = !f.m_ground;
+        pose.m_crouch = f.m_crouch;
+        model.stepLegs( f.m_legs, pose, f.m_vel, f.m_ground ? f.m_pos.y : groundAt( f.m_pos ), dt );
+    }
+}
+
+void Game::updatePress( float dt )
+{
+    Vector3 o = m_pressModel.m_origin;
+    if ( o.x == 0.0f ) return;
+    m_pressPose.m_time = m_time;
+    for ( int i = 0; i < 2; ++i )
+    {
+        m_pressPose.m_tankFlash[i] = fmaxf( 0.0f, m_pressPose.m_tankFlash[i] - dt * 6.0f );
+        m_pressPose.m_tank[i] = m_tank[i] > 0.0f;
+        m_pressPose.m_hatch[i] = fmaxf( 0.0f, m_pressPose.m_hatch[i] - dt * 0.8f );
+    }
+    m_pressPose.m_coreFlash = fmaxf( 0.0f, m_pressPose.m_coreFlash - dt * 6.0f );
+    if ( m_pressDead )
+    {
+        m_pressPose.m_dead = true;
+        m_pressPose.m_ram = fmaxf( 1.05f, m_pressPose.m_ram - dt * 3.0f );
+        m_pressPose.m_warn = 0.0f;
+        m_doorOpen = fminf( 1.0f, m_doorOpen + dt * 0.5f );
+        return;
+    }
+    if ( !m_pressActive )
+    {
+        // It wakes when Corvin steps into the arena (south of the housing, within its walls).
+        if ( m_pos.z > o.z - 2.0f && m_pos.z < o.z + 30.0f && fabsf( m_pos.x - o.x ) < 22.0f )
+        {
+            m_pressActive = true;
+            m_audio.play( SfxE::KLAXON, o, m_camTarget, 1.0f );
+        }
+        return;
+    }
+    if ( m_pressDying )
+    {
+        m_deathTimer += dt;
+        if ( rnd() < dt * 7.0f )
+            explode( { o.x + ( rnd() - 0.5f ) * 14.0f, 1.0f + rnd() * 5.0f, o.z + rnd() * 1.0f }, 0.8f + rnd() );
+        m_pressPose.m_ram = fmaxf( 1.05f, m_pressPose.m_ram - dt * 4.0f );
+        m_shake = fmaxf( m_shake, 0.3f );
+        if ( m_deathTimer > 3.0f )
+        {
+            m_pressDead = true;
+            explode( { o.x, 3.4f, o.z }, 2.5f );
+            m_shake = 1.0f;
+            fire( "bossdead" );
+            for ( Foe &f : m_foes )
+                if ( f.m_alive && Vector3Distance( f.m_pos, o ) < 30.0f ) killFoe( f, false );
+        }
+        return;
+    }
+    bool open = m_tank[0] <= 0.0f && m_tank[1] <= 0.0f;
+    m_pressPose.m_shutter = open ? fminf( 1.0f, m_pressPose.m_shutter + dt * 0.7f ) : 0.0f;
+    if ( m_core <= 0.0f )
+    {
+        m_core = 0.0f;
+        m_pressDying = true;
+        m_deathTimer = 0.0f;
+        return;
+    }
+
+    // The ram's cycle: rest, rise with the klaxon, hold, slam.
+    m_pressTimer -= dt;
+    float rest = open ? 1.0f : 1.8f;
+    switch ( m_pressState )
+    {
+    case 0:
+        m_pressPose.m_ram = fmaxf( 1.05f, m_pressPose.m_ram - dt * 2.0f );
+        m_pressPose.m_warn = fmaxf( 0.0f, m_pressPose.m_warn - dt * 2.0f );
+        if ( m_pressTimer <= 0.0f )
+        {
+            m_pressState = 1;
+            m_pressTimer = 1.4f;
+            m_audio.play( SfxE::KLAXON, o, m_camTarget, 0.8f );
+        }
+        break;
+    case 1:
+        m_pressPose.m_ram = fminf( 5.0f, m_pressPose.m_ram + dt * 3.0f );
+        m_pressPose.m_warn = 0.5f + 0.5f * sinf( m_time * 14.0f );
+        if ( m_pressTimer <= 0.0f )
+        {
+            m_pressState = 2;
+            m_pressTimer = 0.7f;
+        }
+        break;
+    case 2:
+        m_pressPose.m_warn = 1.0f;
+        m_pressPose.m_ram = 5.0f + 0.05f * sinf( m_time * 40.0f );
+        if ( m_pressTimer <= 0.0f )
+        {
+            m_pressState = 3;
+            m_pressTimer = 0.12f;
+        }
+        break;
+    case 3:
+        m_pressPose.m_ram = fmaxf( 1.05f, m_pressPose.m_ram - dt * 40.0f );
+        if ( m_pressTimer <= 0.0f )
+        {
+            m_pressPose.m_ram = 1.05f;
+            m_pressState = 0;
+            m_pressTimer = rest;
+            m_shake = 0.7f;
+            m_audio.play( SfxE::SLAM, { o.x, 0.0f, o.z + 2.2f }, m_camTarget, 1.0f );
+            for ( int i = 0; i < 2; ++i )
+                sparks( { o.x + ( i ? 2.0f : -2.0f ), 0.3f, o.z + 2.2f }, { i ? 1.0f : -1.0f, 0.3f, 0.0f }, 30,
+                        { 255, 190, 110, 255 }, 6.0f );
+            m_flashes.push_back( { { o.x, 0.6f, o.z + 2.5f }, { 30.0f, 18.0f, 8.0f }, 9.0f, 0.2f, 0.2f } );
+            // Whatever stands on the anvil.
+            auto onAnvil = [&]( Vector3 p )
+            { return fabsf( p.x - o.x ) < 2.4f && p.z > o.z && p.z < o.z + 4.4f && p.y < 2.2f; };
+            if ( onAnvil( m_pos ) ) hurtHero( 35.0f, { ( m_pos.x - o.x ) * 1.5f, 4.0f, 5.0f } );
+            for ( Foe &f : m_foes )
+                if ( f.m_alive && onAnvil( f.m_pos ) ) killFoe( f, false );
+        }
+        break;
+    default: break;
+    }
+
+    // New lice from the hatches.
+    m_spawnTimer -= dt;
+    int alive = 0;
+    for ( const Foe &f : m_foes )
+        if ( f.m_alive && Vector3Distance( f.m_pos, o ) < 32.0f ) ++alive;
+    if ( m_spawnHatch < 0 && m_spawnTimer <= 0.8f && alive < 5 ) m_spawnHatch = (int)( rnd() * 2.0f ) & 1;
+    if ( m_spawnHatch >= 0 ) m_pressPose.m_hatch[m_spawnHatch] = 1.0f;
+    if ( m_spawnTimer <= 0.0f )
+    {
+        if ( m_spawnHatch >= 0 && alive < 5 )
+        {
+            ++m_spawns;
+            FoeE kind = ( open && m_spawns % 3 == 0 ) ? FoeE::WELDER : FoeE::LOUSE;
+            spawnFoe( kind, { o.x + ( m_spawnHatch ? 4.6f : -4.6f ), 0.0f, o.z + 1.3f }, true );
+            m_foes.back().m_yaw = 0.0f;
+            m_audio.play( SfxE::CHITTER, m_foes.back().m_pos, m_camTarget, 0.8f );
+        }
+        m_spawnHatch = -1;
+        m_spawnTimer = open ? 5.0f : 6.5f;
+    }
+}
+
+void Game::updateEffects( float dt )
+{
+    float g = m_level.m_gravity;
+    for ( size_t i = 0; i < m_particles.size(); )
+    {
+        Particle &p = m_particles[i];
+        p.m_life -= dt;
+        if ( p.m_kind == 0 )
+        {
+            p.m_vel.y -= g * 1.5f * dt;
+            p.m_pos = Vector3Add( p.m_pos, Vector3Scale( p.m_vel, dt ) );
+            float floor = groundAt( p.m_pos );
+            if ( p.m_pos.y < floor && floor > -100.0f )
+            {
+                p.m_pos.y = floor;
+                p.m_vel = { p.m_vel.x * 0.5f, -p.m_vel.y * 0.35f, p.m_vel.z * 0.5f };
+            }
+        }
+        else if ( p.m_kind == 1 )
+        {
+            p.m_pos = Vector3Add( p.m_pos, Vector3Scale( p.m_vel, dt ) );
+            p.m_vel = Vector3Scale( p.m_vel, 1.0f - dt * 0.6f );
+            p.m_size += dt * 0.5f;
+        }
+        else if ( p.m_kind == 3 )
+            p.m_pos = Vector3Add( p.m_pos, Vector3Scale( p.m_vel, dt ) );
+        if ( p.m_life <= 0.0f )
+        {
+            m_particles[i] = m_particles.back();
+            m_particles.pop_back();
+        }
+        else
+            ++i;
+    }
+    for ( size_t i = 0; i < m_debris.size(); )
+    {
+        Debris &d = m_debris[i];
+        d.m_life -= dt;
+        d.m_vel.y -= g * dt;
+        d.m_pos = Vector3Add( d.m_pos, Vector3Scale( d.m_vel, dt ) );
+        d.m_rot = Vector3Add( d.m_rot, Vector3Scale( d.m_spin, dt ) );
+        float floor = groundAt( d.m_pos );
+        if ( d.m_pos.y < floor + 0.04f && floor > -100.0f )
+        {
+            d.m_pos.y = floor + 0.04f;
+            d.m_vel = { d.m_vel.x * 0.6f, -d.m_vel.y * 0.3f, d.m_vel.z * 0.6f };
+            d.m_spin = Vector3Scale( d.m_spin, 0.6f );
+        }
+        if ( d.m_life <= 0.0f || d.m_pos.y < -20.0f )
+        {
+            m_debris[i] = m_debris.back();
+            m_debris.pop_back();
+        }
+        else
+            ++i;
+    }
+    for ( size_t i = 0; i < m_blobs.size(); )
+    {
+        Blob   &b = m_blobs[i];
+        Vector3 prev = b.m_pos;
+        b.m_vel.y -= g * dt;
+        b.m_pos = Vector3Add( b.m_pos, Vector3Scale( b.m_vel, dt ) );
+        b.m_life -= dt;
+        Vector3 hit, n;
+        bool    done = b.m_life <= 0.0f;
+        if ( !done && Vector3Distance( b.m_pos, Vector3Add( m_pos, { 0, 1.0f, 0 } ) ) < 0.75f && !m_dead )
+        {
+            hurtHero( 14.0f, { b.m_vel.x * 0.15f, 0.5f, b.m_vel.z * 0.15f } );
+            done = true;
+        }
+        if ( !done && m_level.raycast( prev, b.m_pos, hit, n ) )
+        {
+            sparks( hit, n, 14, { 255, 140, 50, 255 }, 2.0f );
+            m_flashes.push_back(
+                { Vector3Add( hit, Vector3Scale( n, 0.3f ) ), { 14.0f, 6.0f, 1.5f }, 4.0f, 0.4f, 0.4f } );
+            m_audio.play( SfxE::SIZZLE, hit, m_camTarget, 0.5f );
+            done = true;
+        }
+        if ( rnd() < dt * 30.0f )
+            m_particles.push_back( { b.m_pos,
+                                     { ( rnd() - 0.5f ) * 0.5f, 0.3f, ( rnd() - 0.5f ) * 0.5f },
+                                     0.4f,
+                                     0.4f,
+                                     0.03f,
+                                     { 255, 150, 60, 255 },
+                                     3 } );
+        if ( done )
+        {
+            m_blobs[i] = m_blobs.back();
+            m_blobs.pop_back();
+        }
+        else
+            ++i;
+    }
+    for ( size_t i = 0; i < m_tracers.size(); )
+    {
+        m_tracers[i].m_life -= dt;
+        if ( m_tracers[i].m_life <= 0.0f )
+        {
+            m_tracers[i] = m_tracers.back();
+            m_tracers.pop_back();
+        }
+        else
+            ++i;
+    }
+    for ( size_t i = 0; i < m_flashes.size(); )
+    {
+        m_flashes[i].m_life -= dt;
+        if ( m_flashes[i].m_life <= 0.0f )
+        {
+            m_flashes[i] = m_flashes.back();
+            m_flashes.pop_back();
+        }
+        else
+            ++i;
+    }
+    for ( Pickup &p : m_pickups )
+    {
+        if ( !p.m_alive ) continue;
+        p.m_t += dt;
+        float floor = groundAt( p.m_pos );
+        if ( p.m_pos.y > floor + 0.3f || p.m_vel.y > 0.0f )
+        {
+            p.m_vel.y -= g * dt;
+            p.m_pos = Vector3Add( p.m_pos, Vector3Scale( p.m_vel, dt ) );
+        }
+        if ( floor > -100.0f && p.m_pos.y < floor + 0.3f )
+        {
+            p.m_pos.y = floor + 0.3f;
+            p.m_vel = { 0, 0, 0 };
+        }
+        if ( p.m_pos.y < -20.0f ) p.m_alive = false;
+    }
+    // Steam from the vents.
+    for ( Vent &v : m_vents )
+    {
+        v.m_timer -= dt;
+        if ( v.m_timer <= 0.0f )
+        {
+            v.m_burst = 1.6f;
+            v.m_timer = 4.0f + rnd() * 4.0f;
+            m_audio.play( SfxE::BURST, v.m_pos, m_camTarget, 0.35f );
+        }
+        if ( v.m_burst > 0.0f )
+        {
+            v.m_burst -= dt;
+            for ( int k = 0; k < 2; ++k )
+                m_particles.push_back(
+                    { Vector3Add( v.m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.1f, ( rnd() - 0.5f ) * 0.6f } ),
+                      { ( rnd() - 0.5f ) * 0.6f, 1.4f + rnd() * 1.2f, ( rnd() - 0.5f ) * 0.6f },
+                      2.2f,
+                      2.2f,
+                      0.25f,
+                      { 200, 205, 215, 60 },
+                      1 } );
+        }
+    }
+    m_shake = fmaxf( 0.0f, m_shake - dt * 1.8f );
+}
+
+void Game::plan()
+{
+    // Breadth first over walkable cells; across a shaft, a straight jump of up to three cells.
+    int rows = m_level.rows(), cols = m_level.cols();
+    int sr, sc;
+    m_level.cellOf( m_pos, sr, sc );
+    int     goal = -1;
+    Vector3 o = m_pressModel.m_origin;
+    if ( m_pressActive && !m_pressDead )
+    {
+        int gr, gc;
+        m_level.cellOf( { o.x, 0.0f, o.z + 13.0f }, gr, gc );
+        goal = gr * cols + gc;
+    }
+    else
+        for ( const Marker &m : m_level.m_markers )
+            if ( m.m_kind == 'X' ) goal = m.m_row * cols + m.m_col;
+    std::vector<int> prev( (size_t)rows * cols, -2 );
+    std::deque<int>  q;
+    if ( !m_level.walkable( sr, sc ) ) return;
+    prev[(size_t)sr * cols + sc] = -1;
+    q.push_back( sr * cols + sc );
+    const int DR[4] = { -1, 0, 1, 0 }, DC[4] = { 0, 1, 0, -1 };
+    while ( !q.empty() )
+    {
+        int cur = q.front();
+        q.pop_front();
+        if ( cur == goal ) break;
+        int   cr = cur / cols, cc = cur % cols;
+        float h = m_level.centre( cr, cc ).y;
+        for ( int d = 0; d < 4; ++d )
+        {
+            int nr = cr + DR[d], nc = cc + DC[d];
+            int n = -1;
+            if ( m_level.walkable( nr, nc ) && !m_blocked.count( nr * cols + nc ) &&
+                 m_level.centre( nr, nc ).y - h <= StepUp )
+                n = nr * cols + nc;
+            else if ( m_level.cell( nr, nc ).m_kind == CellE::VOID )
+                for ( int k = 2; k <= 4; ++k )
+                {
+                    int jr = cr + DR[d] * k, jc = cc + DC[d] * k;
+                    if ( m_level.cell( jr, jc ).m_kind == CellE::VOID ) continue;
+                    if ( m_level.walkable( jr, jc ) && m_level.centre( jr, jc ).y - h <= 0.6f ) n = jr * cols + jc;
+                    break;
+                }
+            if ( n < 0 || prev[n] != -2 ) continue;
+            prev[n] = cur;
+            q.push_back( n );
+        }
+    }
+    m_path.clear();
+    if ( goal < 0 || prev[goal] == -2 ) return;
+    for ( int c = goal; c >= 0; c = prev[c] ) m_path.push_back( c );
+    std::reverse( m_path.begin(), m_path.end() );
+    if ( !m_path.empty() ) m_path.erase( m_path.begin() );
+}
+
+void Game::autopilot( float dt, GameInput &in )
+{
+    in = GameInput();
+    if ( m_dead || m_finished ) return;
+    m_planTimer -= dt;
+    if ( m_planTimer <= 0.0f )
+    {
+        plan();
+        m_planTimer = 0.5f;
+    }
+    int cols = m_level.cols();
+    int r, c;
+    m_level.cellOf( m_pos, r, c );
+    while ( m_ground && !m_path.empty() && m_path.front() == r * cols + c ) m_path.erase( m_path.begin() );
+
+    // Fight: aim at the nearest thing worth shooting, fire from the ground.
+    Vector3 chest = Vector3Add( m_pos, { 0, 1.25f, 0 } );
+    Target  best;
+    float   bestDist = 1e9f;
+    for ( int i = 0; i < (int)m_foes.size(); ++i )
+    {
+        const Foe &f = m_foes[i];
+        if ( !f.m_alive || !f.m_awake ) continue;
+        float d = Vector3Distance( f.m_pos, m_pos );
+        if ( d < bestDist && d < 18.0f && los( chest, targetPoint( { 0, i, {} } ) ) ) bestDist = d, best = { 0, i, {} };
+    }
+    // At the press the weak spots come first, unless a louse is close.
+    if ( ( best.m_kind < 0 || bestDist > 6.0f ) && m_pressActive && !m_pressDead && !m_pressDying )
+        for ( int k = 1; k <= 3; ++k )
+        {
+            if ( k == 1 ) bestDist = 1e9f;
+            if ( ( k == 1 && m_tank[0] <= 0.0f ) || ( k == 2 && m_tank[1] <= 0.0f ) ||
+                 ( k == 3 && ( m_pressPose.m_shutter < 0.9f || m_core <= 0.0f ) ) )
+                continue;
+            Target t = { k, 0, {} };
+            float  d = Vector3Distance( targetPoint( t ), m_pos );
+            if ( d < bestDist && los( chest, targetPoint( t ) ) ) bestDist = d, best = t;
+        }
+    if ( best.m_kind >= 0 )
+    {
+        Vector3 p = targetPoint( best );
+        in.m_stick = Vector2Normalize( { p.x - m_pos.x, p.z - m_pos.z } );
+        in.m_fire = m_ground && ( !m_overheat ) && m_heat < 92.0f;
+    }
+    if ( m_hp < 40.0f && m_stims > 0 ) in.m_stim = true;
+
+    // Move along the path; keep off the anvil while the ram is up; back off from a louse in the face.
+    Vector3 o = m_pressModel.m_origin;
+    bool    anvilDanger =
+        m_pressActive && !m_pressDead && m_pressState >= 1 && fabsf( m_pos.x - o.x ) < 3.6f && m_pos.z < o.z + 6.0f;
+    if ( anvilDanger )
+    {
+        in.m_move = { m_pos.x < o.x ? -1.0f : 1.0f, 1.0f };
+        return;
+    }
+    if ( best.m_kind == 0 && bestDist < 2.5f && m_ground )
+    {
+        // Back off, but never towards a shaft.
+        Vector3 f = m_foes[best.m_index].m_pos;
+        Vector2 away = Vector2Normalize( { m_pos.x - f.x, m_pos.z - f.z } );
+        if ( groundAt( { m_pos.x + away.x * 1.2f, 0.0f, m_pos.z + away.y * 1.2f } ) > -100.0f )
+        {
+            in.m_move = away;
+            return;
+        }
+    }
+    if ( m_path.empty() ) return;
+    int     next = m_path.front();
+    Vector3 to = m_level.centre( next / cols, next % cols );
+    Vector2 d = { to.x - m_pos.x, to.z - m_pos.z };
+    float   len = Vector2Length( d );
+    if ( len > 1e-3f ) in.m_move = Vector2Scale( d, 1.0f / len );
+    // A jump edge: take a run-up, jump at the brink, and do not shoot in the air.
+    int nr = next / cols, nc = next % cols;
+    if ( abs( nr - r ) + abs( nc - c ) > 1 && m_ground )
+    {
+        in.m_fire = false;
+        Vector3 ahead = Vector3Add( m_pos, { in.m_move.x * 0.6f, 0.0f, in.m_move.y * 0.6f } );
+        float   speed = sqrtf( m_vel.x * m_vel.x + m_vel.z * m_vel.z );
+        if ( m_runup > 0.0f )
+        {
+            m_runup -= dt;
+            in.m_move = Vector2Negate( in.m_move );
+        }
+        else if ( groundAt( ahead ) < -100.0f )
+        {
+            if ( speed > 3.3f )
+                in.m_jump = true;
+            else
+                m_runup = 0.45f;
+        }
+    }
+    if ( !m_ground ) in.m_fire = false;
+    // Unstick.
+    m_stuckTimer += dt;
+    if ( m_stuckTimer > 2.5f )
+    {
+        if ( Vector3Distance( m_pos, m_lastPos ) < 0.4f )
+            in.m_move = { rnd() - 0.5f, rnd() - 0.5f }, m_planTimer = 0.0f;
+        m_lastPos = m_pos;
+        m_stuckTimer = 0.0f;
+    }
+}
+
+void Game::update( float dt, const GameInput &inRaw )
+{
+    GameInput in = inRaw;
+    if ( m_finished ) m_endTimer += dt;
+    m_time += dt;
+    m_titleTimer = fmaxf( 0.0f, m_titleTimer - dt );
+    if ( m_autoplay ) autopilot( dt, in );
+    updateHero( dt, in );
+    updateFoes( dt );
+    updatePress( dt );
+    updateEffects( dt );
+
+    // Lines and hints, one at a time.
+    m_lineTimer -= dt;
+    if ( m_lineTimer <= 0.0f )
+    {
+        m_line = nullptr;
+        if ( !m_lineQueue.empty() )
+        {
+            m_line = m_lineQueue.front();
+            m_lineQueue.erase( m_lineQueue.begin() );
+            float spoken = m_audio.voice( m_assets + "/voice/" + m_line->m_id );
+            m_lineTimer = spoken > 0.0f ? spoken + 0.4f : 1.5f + 0.055f * (float)m_line->m_text.size();
+        }
+    }
+    m_hintTimer -= dt;
+    if ( m_hintTimer <= 0.0f )
+    {
+        m_hint = nullptr;
+        if ( !m_hintQueue.empty() )
+        {
+            m_hint = m_hintQueue.front();
+            m_hintQueue.erase( m_hintQueue.begin() );
+            m_hintTimer = 6.5f;
+        }
+    }
+
+    // The camera follows a little ahead of where Corvin aims.
+    // In the press's arena it draws back and takes the press into the picture.
+    Vector3 want = Vector3Add( Vector3Add( m_pos, { 0.0f, 1.0f, 0.0f } ), Vector3Scale( m_aimDir, 1.2f ) );
+    Vector3 o = m_pressModel.m_origin;
+    bool    arena = o.x != 0.0f && m_pressActive && !m_pressDead && Vector3Distance( m_pos, o ) < 34.0f;
+    if ( arena ) want = Vector3Lerp( want, { o.x, 1.0f, o.z + 4.0f }, 0.55f );
+    m_camTarget = Vector3Lerp( m_camTarget, want, 1.0f - expf( -dt * 4.0f ) );
+    m_camPull += ( ( arena ? 1.45f : 1.0f ) - m_camPull ) * fminf( 1.0f, dt * 1.5f );
+    Vector3 shake = { ( rnd() - 0.5f ) * m_shake * 0.5f, ( rnd() - 0.5f ) * m_shake * 0.3f,
+                      ( rnd() - 0.5f ) * m_shake * 0.5f };
+    m_cam.target = Vector3Add( m_camTarget, shake );
+    m_cam.position = Vector3Add( m_cam.target, Vector3Scale( { 0.0f, 11.5f, 8.1f }, m_zoom * m_camPull ) );
+    m_cam.up = { 0.0f, 1.0f, 0.0f };
+    m_cam.fovy = 38.0f;
+    m_cam.projection = CAMERA_PERSPECTIVE;
+    m_audio.update();
+}
+
+Lighting Game::lighting() const
+{
+    Lighting L;
+    L.m_sunDir = Vector3Normalize( { 0.3f, -1.0f, 0.2f } );
+    L.m_sunColor = { 0, 0, 0 };
+    L.m_spotPos = m_hero.lampPos();
+    L.m_spotDir = m_hero.lampDir();
+    L.m_spotColor = m_dead ? Vector3{ 0, 0, 0 } : Vector3{ 34.0f, 30.0f, 24.0f };
+    L.m_spotOuter = 26.0f;
+    L.m_spotInner = 12.0f;
+    L.m_spotRange = 22.0f;
+    L.m_ambUp = m_level.m_ambUp;
+    L.m_ambDown = m_level.m_ambDown;
+    L.m_fog = m_level.m_fog;
+    L.m_fogColor = m_level.m_fogColor;
+    L.m_roomMin = { 0.0f, -PitDepth, 0.0f };
+    L.m_roomMax = { m_level.cols() * CellSize, m_level.m_wallHeight, m_level.rows() * CellSize };
+
+    std::vector<PointLight> all;
+    all.push_back( { Vector3Add( m_pos, { 0.4f, 3.0f, 1.0f } ), 8.0f, { 7.0f, 6.0f, 5.0f }, 0.0f } );
+    for ( size_t i = 0; i < m_level.m_lights.size(); ++i )
+    {
+        const LevelLight &l = m_level.m_lights[i];
+        float             f = 1.0f;
+        if ( l.m_flicker > 0.0f && hash1( (int)( m_time * 11.0f ) + (int)i * 31 ) > 0.72f ) f = 0.12f;
+        all.push_back( { l.m_pos, l.m_radius, Vector3Scale( l.m_color, f ), 1.0f } );
+    }
+    for ( const Capsule &c : m_capsules )
+        all.push_back( { Vector3Add( c.m_pos, { 0.0f, 1.6f, 0.0f } ), c.m_active ? 6.0f : 3.0f,
+                         c.m_active ? Vector3{ 2.0f, 9.0f, 4.0f } : Vector3{ 0.3f, 1.5f, 0.6f }, 0.6f } );
+    for ( const Flash &f : m_flashes )
+        all.push_back( { f.m_pos, f.m_radius, Vector3Scale( f.m_color, f.m_life / f.m_max ), 1.0f } );
+    for ( const Blob &b : m_blobs ) all.push_back( { b.m_pos, 4.0f, { 12.0f, 5.0f, 1.2f }, 1.0f } );
+    for ( const Foe &f : m_foes )
+        if ( f.m_alive && f.m_torch > 0.05f )
+            all.push_back( { Vector3Add( f.m_pos, { sinf( f.m_yaw ) * 1.4f, 0.8f, cosf( f.m_yaw ) * 1.4f } ), 4.0f,
+                             Vector3Scale( { 10.0f, 4.0f, 1.0f }, f.m_torch ), 1.0f } );
+    Vector3 o = m_pressModel.m_origin;
+    if ( o.x != 0.0f && !m_pressDead )
+    {
+        if ( m_pressPose.m_warn > 0.05f )
+            for ( float side : { -1.0f, 1.0f } )
+                all.push_back( { { o.x + side * 7.5f, 7.0f, o.z + 0.4f },
+                                 12.0f,
+                                 Vector3Scale( { 20.0f, 1.5f, 0.6f }, m_pressPose.m_warn ),
+                                 1.0f } );
+        for ( int s = 0; s < 2; ++s )
+        {
+            if ( m_tank[s] > 0.0f )
+                all.push_back(
+                    { { o.x + ( s ? 9.2f : -9.2f ), 2.4f, o.z + 2.0f }, 6.0f, { 1.5f, 5.0f, 10.0f }, 0.5f } );
+            if ( m_pressPose.m_hatch[s] > 0.05f )
+                all.push_back( { { o.x + ( s ? 4.6f : -4.6f ), 0.9f, o.z + 0.8f },
+                                 5.0f,
+                                 Vector3Scale( { 12.0f, 5.0f, 1.0f }, m_pressPose.m_hatch[s] ),
+                                 0.8f } );
+        }
+        all.push_back( { { o.x, 3.4f, o.z + 0.8f },
+                         8.0f,
+                         Vector3Scale( { 16.0f, 6.0f, 1.2f }, 0.25f + m_pressPose.m_shutter ),
+                         0.8f } );
+    }
+    Vector3 c = m_camTarget;
+    std::sort( all.begin(), all.end(), [&]( const PointLight &a, const PointLight &b )
+               { return Vector3DistanceSqr( a.m_pos, c ) < Vector3DistanceSqr( b.m_pos, c ); } );
+    if ( all.size() > (size_t)MaxLights ) all.resize( MaxLights );
+    L.m_points = all;
+    return L;
+}
+
+void Game::drawParticles( Gfx &gfx )
+{
+    Vector3 fwd = Vector3Normalize( Vector3Subtract( m_cam.target, m_cam.position ) );
+    Vector3 right = Vector3Normalize( Vector3CrossProduct( fwd, m_cam.up ) );
+    Vector3 up = Vector3CrossProduct( right, fwd );
+    auto    quad = [&]( Vector3 a, Vector3 b, Vector3 c, Vector3 d, Color col )
+    {
+        rlColor4ub( col.r, col.g, col.b, col.a );
+        rlTexCoord2f( 0.0f, 0.0f );
+        rlVertex3f( a.x, a.y, a.z );
+        rlTexCoord2f( 0.0f, 1.0f );
+        rlVertex3f( b.x, b.y, b.z );
+        rlTexCoord2f( 1.0f, 1.0f );
+        rlVertex3f( c.x, c.y, c.z );
+        rlTexCoord2f( 1.0f, 0.0f );
+        rlVertex3f( d.x, d.y, d.z );
+    };
+    auto billboard = [&]( Vector3 p, float s, Color col )
+    {
+        Vector3 r = Vector3Scale( right, s );
+        Vector3 u = Vector3Scale( up, s );
+        quad( Vector3Add( Vector3Subtract( p, r ), u ), Vector3Subtract( Vector3Subtract( p, r ), u ),
+              Vector3Subtract( Vector3Add( p, r ), u ), Vector3Add( Vector3Add( p, r ), u ), col );
+    };
+    auto streak = [&]( Vector3 head, Vector3 tail, float w, Color col )
+    {
+        Vector3 axis = Vector3Subtract( head, tail );
+        Vector3 side = Vector3CrossProduct( axis, fwd );
+        if ( Vector3Length( side ) < 1e-5f ) side = right;
+        side = Vector3Scale( Vector3Normalize( side ), w );
+        Vector3 ext = Vector3Scale( Vector3Normalize( axis ), w );
+        head = Vector3Add( head, ext );
+        tail = Vector3Subtract( tail, ext );
+        quad( Vector3Subtract( tail, side ), Vector3Add( tail, side ), Vector3Add( head, side ),
+              Vector3Subtract( head, side ), col );
+    };
+
+    // Lit: the condensate swarms and the steam.
+    gfx.beginParticles( 6.0f, true );
+    rlSetTexture( m_dot.id );
+    rlBegin( RL_QUADS );
+    for ( const Drop &d : m_drops )
+    {
+        float   a = m_time * d.m_speed;
+        Vector3 o = { d.m_off.x * cosf( a ) - d.m_off.z * sinf( a ),
+                      d.m_off.y + 0.12f * sinf( m_time * 0.7f + d.m_phase ),
+                      d.m_off.x * sinf( a ) + d.m_off.z * cosf( a ) };
+        float   twinkle = 0.55f + 0.45f * sinf( m_time * 3.0f + d.m_phase * 7.0f );
+        billboard( Vector3Add( d.m_centre, o ), d.m_size, { 220, 235, 255, (unsigned char)( 255 * twinkle ) } );
+    }
+    for ( const Particle &p : m_particles )
+        if ( p.m_kind == 1 )
+        {
+            Color c = p.m_color;
+            c.a = (unsigned char)( c.a * sinf( PI * p.m_life / p.m_max ) );
+            billboard( p.m_pos, p.m_size, c );
+        }
+    rlEnd();
+    rlSetTexture( 0 );
+    gfx.endParticles();
+
+    // Glowing: sparks, flashes, embers, tracers, molten blobs.
+    gfx.beginParticles( 6.0f, false );
+    rlSetTexture( m_dot.id );
+    rlBegin( RL_QUADS );
+    for ( const Particle &p : m_particles )
+    {
+        float f = p.m_life / p.m_max;
+        Color c = p.m_color;
+        if ( p.m_kind == 0 )
+        {
+            c.a = (unsigned char)( 255 * fminf( 1.0f, f * 2.0f ) );
+            streak( p.m_pos, Vector3Subtract( p.m_pos, Vector3Scale( p.m_vel, 0.035f ) ), p.m_size, c );
+        }
+        else if ( p.m_kind == 2 )
+        {
+            c.a = (unsigned char)( 255 * f );
+            billboard( p.m_pos, p.m_size * ( 0.6f + 0.4f * f ), c );
+        }
+        else if ( p.m_kind == 3 )
+        {
+            c.a = (unsigned char)( 200 * f );
+            billboard( p.m_pos, p.m_size, c );
+        }
+    }
+    for ( const Tracer &t : m_tracers )
+    {
+        float f = t.m_life / 0.08f;
+        streak( t.m_to, t.m_from, 0.025f, { 230, 245, 255, (unsigned char)( 255 * f ) } );
+        streak( t.m_to, t.m_from, 0.09f, { 90, 160, 255, (unsigned char)( 120 * f ) } );
+    }
+    for ( const Blob &b : m_blobs )
+    {
+        billboard( b.m_pos, 0.12f, { 255, 220, 150, 255 } );
+        billboard( b.m_pos, 0.35f, { 255, 120, 40, 120 } );
+    }
+    rlEnd();
+    rlSetTexture( 0 );
+    gfx.endParticles();
+}
+
+void Game::render( Gfx &gfx, const RenderTexture2D *out )
+{
+    m_dynamic.clear();
+    m_hero.pose( m_dynamic );
+    for ( const Foe &f : m_foes )
+    {
+        if ( !f.m_alive ) continue;
+        LousePose pose;
+        pose.m_pos = f.m_pos;
+        pose.m_yaw = f.m_yaw;
+        pose.m_crouch = f.m_crouch;
+        pose.m_air = !f.m_ground;
+        pose.m_pitch = f.m_ground ? -0.15f * f.m_crouch : Clamp( f.m_vel.y * 0.15f, -0.5f, 0.5f );
+        pose.m_flash = f.m_flash;
+        pose.m_torch = f.m_torch;
+        pose.m_time = m_time + f.m_id;
+        ( f.m_kind == FoeE::WELDER ? m_welder : m_louse ).draw( pose, f.m_legs, m_dynamic );
+    }
+    if ( m_pressModel.m_origin.x != 0.0f ) m_pressModel.draw( m_pressPose, m_dynamic );
+    for ( const Capsule &c : m_capsules )
+    {
+        Matrix at = MatrixMultiply( MatrixRotateY( c.m_yaw ), MatrixTranslate( c.m_pos.x, c.m_pos.y, c.m_pos.z ) );
+        for ( size_t i = 0; i < m_capsuleMeshes.size(); ++i )
+        {
+            Drawable d;
+            d.m_mesh = m_capsuleMeshes[i];
+            d.m_transform = at;
+            d.m_surface = m_capsuleSurfaces[i] < 0 ? S_GLOW : m_capsuleSurfaces[i];
+            if ( m_capsuleSurfaces[i] < 0 )
+                d.m_emissive = c.m_active ? Vector4{ 0.4f, 3.0f, 1.0f, 0.0f } : Vector4{ 0.05f, 0.4f, 0.12f, 0.0f };
+            m_dynamic.push_back( d );
+        }
+    }
+    if ( m_doorHalf > 0.0f )
+    {
+        for ( Mesh m : m_doorFrame )
+        {
+            Drawable d;
+            d.m_mesh = m;
+            d.m_surface = S_HAZARD;
+            d.m_transform = MatrixIdentity();
+            m_dynamic.push_back( d );
+        }
+        for ( float side : { -1.0f, 1.0f } )
+            for ( Mesh m : m_doorPanel )
+            {
+                Drawable d;
+                d.m_mesh = m;
+                d.m_surface = S_METAL;
+                d.m_transform =
+                    MatrixTranslate( m_door.x + side * m_doorHalf * ( 0.5f + m_doorOpen * 0.95f ), 0.0f, m_door.z );
+                m_dynamic.push_back( d );
+            }
+    }
+    for ( const Pickup &p : m_pickups )
+    {
+        if ( !p.m_alive ) continue;
+        Matrix at = MatrixMultiply( MatrixRotateY( p.m_t * 1.5f ),
+                                    MatrixTranslate( p.m_pos.x, p.m_pos.y + 0.08f * sinf( p.m_t * 3.0f ), p.m_pos.z ) );
+        Drawable d;
+        d.m_transform = at;
+        if ( p.m_kind == 0 )
+        {
+            d.m_mesh = m_scrapMesh;
+            d.m_surface = S_METAL;
+            d.m_emissive = { 0.25f, 0.2f, 0.12f, 0.0f };
+            m_dynamic.push_back( d );
+        }
+        else
+        {
+            d.m_mesh = m_stimMesh;
+            d.m_surface = S_GLOW;
+            d.m_emissive = { 0.4f, 3.0f, 0.8f, 0.0f };
+            m_dynamic.push_back( d );
+            d.m_mesh = m_stimCap;
+            d.m_surface = S_METAL;
+            d.m_emissive = { -1, 0, 0, 0 };
+            m_dynamic.push_back( d );
+        }
+    }
+    for ( const Debris &b : m_debris )
+    {
+        Drawable d;
+        d.m_mesh = m_chunk;
+        d.m_surface = S_RUST;
+        d.m_transform =
+            MatrixMultiply( MatrixRotateXYZ( b.m_rot ), MatrixTranslate( b.m_pos.x, b.m_pos.y, b.m_pos.z ) );
+        d.m_spotShadow = false;
+        m_dynamic.push_back( d );
+    }
+
+    Lighting L = lighting();
+    gfx.m_sunShadows = false;
+    gfx.m_cutCentre = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
+    gfx.m_cutRadius = 2.6f;
+    gfx.m_exposure = 1.35f;
+    gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );
+    gfx.beginScene( m_cam, L, m_time, m_dot );
+    gfx.draw( m_static, m_surfaces );
+    gfx.draw( m_dynamic, m_surfaces );
+    drawParticles( gfx );
+    gfx.endScene();
+    gfx.post( out );
+
+    int w = out ? out->texture.width : GetScreenWidth();
+    int h = out ? out->texture.height : GetScreenHeight();
+    if ( out ) BeginTextureMode( *out );
+    drawHud( w, h );
+    if ( out ) EndTextureMode();
+}
+
+void Game::drawHud( int w, int h )
+{
+    float s = h / 1080.0f;
+    auto  text = [&]( const char *t, float x, float y, float size, Color c, bool centre = false )
+    {
+        Vector2 m = MeasureTextEx( m_font, t, size * s, 1.0f );
+        Vector2 p = { centre ? x - m.x * 0.5f : x, y };
+        DrawTextEx( m_font, t, { p.x + 2.0f * s, p.y + 2.0f * s }, size * s, 1.0f,
+                    { 0, 0, 0, (unsigned char)( c.a * 0.8f ) } );
+        DrawTextEx( m_font, t, p, size * s, 1.0f, c );
+    };
+    // Wraps to a width and draws centred lines; returns the height used.
+    auto wrapped = [&]( const std::string &t, float x, float y, float size, float width, Color c )
+    {
+        std::vector<std::string> lines;
+        std::string              line, word;
+        auto                     flush = [&]()
+        {
+            std::string test = line.empty() ? word : line + " " + word;
+            if ( MeasureTextEx( m_font, test.c_str(), size * s, 1.0f ).x > width && !line.empty() )
+            {
+                lines.push_back( line );
+                line = word;
+            }
+            else
+                line = test;
+            word.clear();
+        };
+        for ( char ch : t )
+        {
+            if ( ch == ' ' )
+                flush();
+            else
+                word += ch;
+        }
+        flush();
+        if ( !line.empty() ) lines.push_back( line );
+        for ( size_t i = 0; i < lines.size(); ++i )
+            text( lines[i].c_str(), x, y + i * size * 1.25f * s, size, c, true );
+        return lines.size() * size * 1.25f * s;
+    };
+
+    // Hurt: red at the edges.
+    if ( m_hurtFlash > 0.0f )
+    {
+        unsigned char a = (unsigned char)( 100 * m_hurtFlash );
+        DrawRectangleGradientV( 0, 0, w, h / 4, { 140, 0, 0, a }, { 140, 0, 0, 0 } );
+        DrawRectangleGradientV( 0, h * 3 / 4, w, h / 4, { 140, 0, 0, 0 }, { 140, 0, 0, a } );
+    }
+
+    // The auto-aim's target: four corners.
+    if ( m_target.m_kind >= 0 && !m_dead )
+    {
+        Vector2 p = GetWorldToScreenEx( targetPoint( m_target ), m_cam, w, h );
+        float   r = 22.0f * s, l = 8.0f * s;
+        Color   c = { 255, 190, 80, 200 };
+        for ( int k = 0; k < 4; ++k )
+        {
+            float   sx = k & 1 ? 1.0f : -1.0f, sy = k & 2 ? 1.0f : -1.0f;
+            Vector2 corner = { p.x + sx * r, p.y + sy * r };
+            DrawLineEx( corner, { corner.x - sx * l, corner.y }, 2.0f * s, c );
+            DrawLineEx( corner, { corner.x, corner.y - sy * l }, 2.0f * s, c );
+        }
+    }
+
+    // Corvin: health, heat, stims, scrap.
+    float x = 40.0f * s, y = h - 150.0f * s;
+    DrawRectangle( (int)( x - 14 * s ), (int)( y - 14 * s ), (int)( 360 * s ), (int)( 124 * s ), { 0, 0, 0, 120 } );
+    text( "CORVIN ASKE", x, y, 22, { 255, 200, 120, 230 } );
+    float bw = 320.0f * s, bh = 14.0f * s;
+    DrawRectangle( (int)x, (int)( y + 32 * s ), (int)bw, (int)bh, { 40, 10, 10, 200 } );
+    DrawRectangleGradientH( (int)x, (int)( y + 32 * s ), (int)( bw * m_hp / 100.0f ), (int)bh, { 150, 20, 20, 255 },
+                            { 230, 60, 40, 255 } );
+    DrawRectangle( (int)x, (int)( y + 54 * s ), (int)bw, (int)( 8 * s ), { 10, 20, 30, 200 } );
+    Color heat = m_overheat
+                     ? Color{ 255, 80, 30, 255 }
+                     : Color{ (unsigned char)( 80 + 175 * m_heat / 100 ), (unsigned char)( 200 - 80 * m_heat / 100 ),
+                              (unsigned char)( 255 - 200 * m_heat / 100 ), 255 };
+    DrawRectangle( (int)x, (int)( y + 54 * s ), (int)( bw * m_heat / 100.0f ), (int)( 8 * s ), heat );
+    if ( m_overheat && fmodf( m_time, 0.4f ) < 0.25f )
+        text( "ÜBERHITZT", x + bw - 110 * s, y + 4 * s, 18, { 255, 120, 60, 255 } );
+    char buf[96];
+    snprintf( buf, sizeof( buf ), "Stims %d      Schrott %d", m_stims, m_scrap );
+    text( buf, x, y + 72 * s, 20, { 200, 220, 210, 230 } );
+
+    // The press.
+    if ( m_pressActive && !m_pressDead )
+    {
+        float total = ( m_tank[0] + m_tank[1] + m_core ) / ( 2.0f * TankHp + CoreHp );
+        float pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s;
+        text( "DROHNENPRESSE", w * 0.5f, py - 4 * s, 24, { 255, 210, 150, 240 }, true );
+        DrawRectangle( (int)px, (int)( py + 26 * s ), (int)pw, (int)( 12 * s ), { 30, 10, 0, 200 } );
+        DrawRectangleGradientH( (int)px, (int)( py + 26 * s ), (int)( pw * total ), (int)( 12 * s ),
+                                { 200, 80, 20, 255 }, { 255, 170, 60, 255 } );
+    }
+
+    // A hint, the level's title, the subtitles.
+    if ( m_hint )
+    {
+        float   a = Clamp( m_hintTimer * 2.0f, 0.0f, 1.0f );
+        float   hy = ( m_pressActive && !m_pressDead ? 110.0f : 50.0f ) * s;
+        Vector2 m = MeasureTextEx( m_font, m_hint->m_text.c_str(), 24 * s, 1.0f );
+        DrawRectangle( (int)( w * 0.5f - m.x * 0.5f - 18 * s ), (int)( hy - 10 * s ), (int)( m.x + 36 * s ),
+                       (int)( m.y + 20 * s ), { 0, 0, 0, (unsigned char)( 150 * a ) } );
+        text( m_hint->m_text.c_str(), w * 0.5f, hy, 24, { 230, 235, 240, (unsigned char)( 255 * a ) }, true );
+    }
+    if ( m_titleTimer > 0.0f )
+    {
+        float a = Clamp( fminf( ( 6.0f - m_titleTimer ) * 1.5f, m_titleTimer * 0.8f ), 0.0f, 1.0f );
+        text( m_level.m_act.c_str(), w * 0.5f, h * 0.30f, 26, { 255, 190, 120, (unsigned char)( 220 * a ) }, true );
+        text( m_level.m_name.c_str(), w * 0.5f, h * 0.30f + 36 * s, 64, { 240, 235, 230, (unsigned char)( 255 * a ) },
+              true );
+    }
+    if ( m_line )
+    {
+        float       a = Clamp( m_lineTimer * 3.0f, 0.0f, 1.0f );
+        std::string who = m_line->m_speaker;
+        for ( char &ch : who ) ch = (char)toupper( (unsigned char)ch );
+        float ly = h - 190.0f * s;
+        text( who.c_str(), w * 0.5f, ly, 22, { 255, 190, 110, (unsigned char)( 255 * a ) }, true );
+        wrapped( m_line->m_text, w * 0.5f, ly + 30 * s, 28, w * 0.55f, { 245, 242, 236, (unsigned char)( 255 * a ) } );
+    }
+
+    // Death and the end.
+    if ( m_dead )
+    {
+        float a = Clamp( ( m_deadTimer - 0.5f ) / 1.2f, 0.0f, 1.0f );
+        DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 255 * a ) } );
+    }
+    if ( m_finished )
+    {
+        float a = Clamp( m_endTimer / 2.0f, 0.0f, 1.0f );
+        DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 225 * a ) } );
+        unsigned char ta = (unsigned char)( 255 * Clamp( m_endTimer - 1.0f, 0.0f, 1.0f ) );
+        text( m_level.m_act.c_str(), w * 0.5f, h * 0.34f, 26, { 255, 190, 120, ta }, true );
+        text( m_level.m_name.c_str(), w * 0.5f, h * 0.34f + 36 * s, 60, { 240, 235, 230, ta }, true );
+        snprintf( buf, sizeof( buf ), "Zeit %d:%02d     Schrott %d     Maschinen zerstört %d", (int)m_time / 60,
+                  (int)m_time % 60, m_scrap, m_kills );
+        text( buf, w * 0.5f, h * 0.34f + 120 * s, 26, { 210, 215, 220, ta }, true );
+        text( "Enter oder Start: noch einmal", w * 0.5f, h * 0.34f + 180 * s, 22, { 160, 165, 170, ta }, true );
+    }
+}
+
+std::string Game::report() const
+{
+    char buf[256];
+    snprintf(
+        buf, sizeof( buf ),
+        "finished=%d time=%.0fs deaths=%d kills=%d shots=%d hp=%.0f scrap=%d stims=%d press=%s tanks=%.0f/%.0f core=%.0f",
+        m_finished ? 1 : 0, m_time, m_deaths, m_kills, m_shots, m_hp, m_scrap, m_stims,
+        m_pressDead ? "dead" : ( m_pressActive ? "active" : "asleep" ), m_tank[0], m_tank[1], m_core );
+    return buf;
+}
+
+}   // namespace spaceopera

@@ -6,6 +6,7 @@
 #include "Figure.h"
 
 #include "MeshBuilder.h"
+#include "Rig.h"
 
 #include <raymath.h>
 
@@ -26,48 +27,10 @@ constexpr float Forearm = 0.29f;      ///< elbow to wrist
 constexpr float Stride = 2.0f;        ///< metres a full walk cycle
 constexpr float RunSpeed = 4.2f;      ///< full stride amplitude at this speed
 
-const Vector4 Visor = { 0.35f, 2.4f, 3.2f, 0.0f };   ///< the visor's cyan
 const Vector4 Status = { 0.2f, 2.0f, 0.4f, 0.0f };   ///< the backpack's green
 const Vector4 Alert = { 2.5f, 0.3f, 0.1f, 0.0f };    ///< one red light
 const Vector4 Lens = { 6.0f, 5.5f, 4.6f, 0.0f };     ///< the lamp's lens
 const Vector4 Cell = { 0.3f, 1.6f, 3.0f, 0.0f };     ///< the rifle's energy cell
-
-/** @brief A bone frame from a joint to its child: -y points at the child, z leans towards `hint`. */
-Matrix boneFrame( Vector3 from, Vector3 to, Vector3 hint )
-{
-    Vector3 y = Vector3Normalize( Vector3Subtract( from, to ) );
-    Vector3 x = Vector3CrossProduct( y, hint );
-    if ( Vector3Length( x ) < 1e-3f ) x = Vector3CrossProduct( y, { 1.0f, 0.0f, 0.0f } );
-    x = Vector3Normalize( x );
-    Vector3 z = Vector3CrossProduct( x, y );
-    return frame( x, y, z, from );
-}
-
-/** @brief Two-bone IK: shoulder to wrist with the elbow towards `pole`; the two frames. */
-void twoBone( Vector3 s, Vector3 t, float a, float b, Vector3 pole, Vector3 hint, Matrix &upper, Matrix &fore )
-{
-    Vector3 d = Vector3Subtract( t, s );
-    float   dist = Vector3Length( d );
-    Vector3 dir = Vector3Scale( d, 1.0f / fmaxf( dist, 1e-4f ) );
-    float   len = Clamp( dist, 0.05f, a + b - 0.002f );
-    float   cosA = Clamp( ( a * a + len * len - b * b ) / ( 2.0f * a * len ), -1.0f, 1.0f );
-    float   sinA = sqrtf( 1.0f - cosA * cosA );
-    Vector3 p = Vector3Subtract( pole, Vector3Scale( dir, Vector3DotProduct( pole, dir ) ) );
-    if ( Vector3Length( p ) < 1e-4f ) p = { 0.0f, -1.0f, 0.0f };
-    p = Vector3Normalize( p );
-    Vector3 e = Vector3Add( s, Vector3Add( Vector3Scale( dir, a * cosA ), Vector3Scale( p, a * sinA ) ) );
-    Vector3 wrist = Vector3Add( s, Vector3Scale( dir, len ) );
-    upper = boneFrame( s, e, hint );
-    fore = boneFrame( e, wrist, hint );
-}
-
-/** @brief The shortest way from one angle to another. */
-float angleTo( float from, float to )
-{
-    float d = fmodf( to - from + PI, 2.0f * PI );
-    if ( d < 0.0f ) d += 2.0f * PI;
-    return d - PI;
-}
 
 }   // namespace
 
@@ -130,7 +93,7 @@ void Figure::build( const FigureSurfaces &s )
     // Helmet.
     rbox( BoneE::HEAD, s.m_armor, { 0.0f, 0.14f, 0.0f }, { 0.13f, 0.15f, 0.15f }, 0.09f );
     rbox( BoneE::HEAD, s.m_dark, { 0.0f, 0.11f, 0.12f }, { 0.11f, 0.09f, 0.05f }, 0.04f );
-    rbox( BoneE::HEAD, s.m_glow, { 0.0f, 0.15f, 0.168f }, { 0.095f, 0.016f, 0.012f }, 0.008f, { 0, 0, 0 }, Visor );
+    rbox( BoneE::HEAD, s.m_glow, { 0.0f, 0.15f, 0.168f }, { 0.095f, 0.016f, 0.012f }, 0.008f, { 0, 0, 0 }, s.m_visor );
     rbox( BoneE::HEAD, s.m_armor, { 0.0f, 0.29f, -0.01f }, { 0.025f, 0.03f, 0.13f }, 0.015f );
     for ( float side : { -1.0f, 1.0f } )
         rbox( BoneE::HEAD, s.m_metal, { side * 0.14f, 0.13f, 0.0f }, { 0.02f, 0.05f, 0.05f }, 0.015f );
@@ -204,17 +167,34 @@ void Figure::update( float dt, Vector2 wanted, float time )
     m_recoil = fmaxf( 0.0f, m_recoil - dt * 7.0f );
 }
 
+void Figure::animate( float dt, Vector3 pos, Vector2 vel, float yaw, bool air, float down, float time )
+{
+    m_pos = pos;
+    m_vel = vel;
+    m_yaw = yaw;
+    m_air = air;
+    m_down = down;
+    m_time = time;
+    // Walking backwards runs the cycle backwards.
+    float along = vel.x * sinf( yaw ) + vel.y * cosf( yaw );
+    float speed = Vector2Length( vel ) * ( along < -0.3f ? -1.0f : 1.0f );
+    if ( !air ) m_phase = fmodf( m_phase + speed * dt * 2.0f * PI / Stride + 2.0f * PI, 2.0f * PI );
+    m_recoil = fmaxf( 0.0f, m_recoil - dt * 7.0f );
+}
+
 void Figure::solve()
 {
-    float speed = Vector2Length( m_vel );
+    float speed = m_air ? 0.0f : Vector2Length( m_vel );
     float amp = Clamp( speed / RunSpeed, 0.0f, 1.0f );
     float ph = m_phase;
     float breath = 0.006f * sinf( m_time * 1.8f ) * ( 1.0f - amp );
     float bob = 0.03f * amp * cosf( 2.0f * ph ) + breath;
     float twist = 0.1f * amp * sinf( ph );
-    float lean = 0.15f * amp + 0.03f * m_recoil;
+    float lean = 0.15f * amp + 0.03f * m_recoil + ( m_air ? 0.1f : 0.0f );
 
-    Matrix root = MatrixMultiply( MatrixRotateY( m_yaw ), MatrixTranslate( m_pos.x, m_pos.y, m_pos.z ) );
+    // Falling over (dead): the whole figure tips backwards about its feet.
+    Matrix root = MatrixMultiply( MatrixMultiply( MatrixRotateX( -1.35f * m_down ), MatrixRotateY( m_yaw ) ),
+                                  MatrixTranslate( m_pos.x, m_pos.y, m_pos.z ) );
     Matrix pelvis = MatrixMultiply(
         MatrixMultiply( MatrixRotateY( twist ), MatrixTranslate( 0.0f, HipHeight + bob, 0.0f ) ), root );
     // The chest turns to the right for the rifle stance and against the hips' swing.
@@ -254,9 +234,15 @@ void Figure::solve()
     float a = 0.5f * amp;
     for ( int side = 0; side < 2; ++side )
     {
-        float  p = ph + ( side ? PI : 0.0f );
-        float  s = a * sinf( p );
-        float  k = 0.06f + amp * 1.05f * powf( fmaxf( 0.0f, cosf( p ) ), 1.5f );
+        float p = ph + ( side ? PI : 0.0f );
+        float s = a * sinf( p );
+        float k = 0.06f + amp * 1.05f * powf( fmaxf( 0.0f, cosf( p ) ), 1.5f );
+        if ( m_air )
+        {
+            // In the air: one knee drawn up, the other leg trailing.
+            s = side ? -0.15f : 0.45f;
+            k = side ? 0.5f : 0.95f;
+        }
         float  x = side ? -0.11f : 0.11f;
         Matrix thigh =
             MatrixMultiply( MatrixMultiply( MatrixRotateX( -s ), MatrixTranslate( x, -0.04f, 0.0f ) ), pelvis );
