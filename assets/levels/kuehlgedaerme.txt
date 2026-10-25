@@ -18,6 +18,7 @@ fog      0.006 0.025 0.6 1.2
 fogcolor 0.004 0.0012 0.0009
 ambient  0.03 0.026 0.026 0.02 0.016 0.016
 walls    4.5
+next     velm.txt
 zone     17 1 37 14 service
 zone     2 1 16 25 exchanger
 zone     3 26 13 41 shaft

@@ -65,6 +65,9 @@ struct Options
     float       m_camYaw = 0.0f;           ///< camera turned about the hero (degrees)
     Vector2     m_move = { 0.0f, 0.0f };   ///< with --shot: the left stick held during the warm-up
     std::string m_hero;                    ///< corvin, dorra (else the choice in the menu)
+    std::string m_flags;                   ///< what has happened already (comma-separated; tests)
+    std::string m_talk;                    ///< with --shot: a conversation open in the picture
+    int         m_shop = 0;                ///< with --shot: Ottla's (1) or Kiri's (2) menu open
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -130,6 +133,12 @@ Options parse( int argc, char **argv )
             o.m_language = next();
         else if ( a == "--hero" )
             o.m_hero = next();
+        else if ( a == "--flags" )
+            o.m_flags = next();
+        else if ( a == "--talk" )
+            o.m_talk = next();
+        else if ( a == "--shop" )
+            o.m_shop = atoi( next().c_str() );
         else if ( a == "--camyaw" )
             o.m_camYaw = (float)atof( next().c_str() );
         else if ( a == "--move" )
@@ -186,6 +195,7 @@ GameInput readInput( Vector2 &lastMouse, float dt )
     in.m_jump = IsKeyPressed( KEY_SPACE );
     in.m_stim = IsKeyPressed( KEY_Q );
     in.m_special = IsKeyPressed( KEY_F );
+    in.m_use = IsKeyPressed( KEY_E );
     in.m_confirm = IsKeyPressed( KEY_ENTER );
     in.m_strafe = IsKeyDown( KEY_LEFT_SHIFT ) || IsKeyDown( KEY_RIGHT_SHIFT );
     in.m_cameraReset = IsKeyPressed( KEY_BACKSPACE );
@@ -319,6 +329,51 @@ Settings loadSettings()
     return s;
 }
 
+/** @brief Where the game is saved (the start of the level to play). */
+std::string savePath()
+{
+    return std::string( GetApplicationDirectory() ) + "save.txt";
+}
+
+/** @brief Reads the save; false if there is none. */
+bool loadProgress( Progress &p )
+{
+    FILE *f = fopen( savePath().c_str(), "r" );
+    if ( !f ) return false;
+    char key[32], value[128];
+    p = Progress();
+    while ( fscanf( f, "%31s %127s", key, value ) == 2 )
+    {
+        if ( !strcmp( key, "hero" ) )
+            p.m_hero = !strcmp( value, "dorra" ) ? HeroE::DORRA : HeroE::CORVIN;
+        else if ( !strcmp( key, "level" ) )
+            p.m_level = value;
+        else if ( !strcmp( key, "scrap" ) )
+            p.m_scrap = atoi( value );
+        else if ( !strcmp( key, "stims" ) )
+            p.m_stims = atoi( value );
+        else if ( !strcmp( key, "weapon" ) )
+            p.m_weapon = atoi( value );
+        else if ( !strcmp( key, "armor" ) )
+            p.m_armor = atoi( value );
+        else if ( !strcmp( key, "flag" ) )
+            p.m_flags.insert( value );
+    }
+    fclose( f );
+    return !p.m_level.empty() && FileExists( ( assetsDir() + "/levels/" + p.m_level ).c_str() );
+}
+
+/** @brief Writes the save. */
+void saveProgress( const Progress &p )
+{
+    FILE *f = fopen( savePath().c_str(), "w" );
+    if ( !f ) return;
+    fprintf( f, "hero %s\nlevel %s\nscrap %d\nstims %d\nweapon %d\narmor %d\n", heroKey( p.m_hero ), p.m_level.c_str(),
+             p.m_scrap, p.m_stims, p.m_weapon, p.m_armor );
+    for ( const std::string &flag : p.m_flags ) fprintf( f, "flag %s\n", flag.c_str() );
+    fclose( f );
+}
+
 /** @brief Writes the settings. */
 void saveSettings( const Settings &s )
 {
@@ -415,9 +470,10 @@ std::string brightnessBar( float b )
  * @brief The menu's items. Title: start, difficulty, brightness, language, quit. Pause: resume, difficulty,
  *        brightness, language, restart, quit.
  */
-std::vector<std::string> menuItems( bool title, const Settings &s )
+std::vector<std::string> menuItems( bool title, const Settings &s, bool saved )
 {
     std::vector<std::string> items;
+    if ( title && saved ) items.push_back( tr( "menu.continue" ) );
     items.push_back( tr( title ? "menu.start" : "menu.resume" ) );
     items.push_back( std::string( tr( "menu.difficulty" ) ) + "  " + difficultyName( s.m_difficulty ) );
     items.push_back( brightnessBar( s.m_brightness ) );
@@ -436,8 +492,20 @@ int runGame( const Options &o, Gfx &gfx )
     if ( !loadTexts( assetsDir(), settings.m_language ) ) settings.m_language = "de";
     HeroE       hero = o.m_hero == "dorra" ? HeroE::DORRA : HeroE::CORVIN;
     std::string level = o.m_level;
-    auto        game = std::make_unique<Game>();
+    Progress    progress, saved;
+    bool        hasSave = o.m_shot.empty() && loadProgress( saved );
+    progress.m_hero = hero;
+    progress.m_level = level;
+    for ( size_t at = 0; at < o.m_flags.size(); )
+    {
+        size_t comma = o.m_flags.find( ',', at );
+        if ( comma == std::string::npos ) comma = o.m_flags.size();
+        progress.m_flags.insert( o.m_flags.substr( at, comma - at ) );
+        at = comma + 1;
+    }
+    auto game = std::make_unique<Game>();
     game->m_heroKind = hero;
+    game->m_progress = progress;
     if ( !game->load( gfx, assetsDir(), level, sound ) )
     {
         TraceLog( LOG_ERROR, "LEVEL: %s not found", level.c_str() );
@@ -467,11 +535,12 @@ int runGame( const Options &o, Gfx &gfx )
             game->update( dt, in );
         }
         if ( o.m_report ) TraceLog( LOG_WARNING, "RUN: %s", game->report().c_str() );
+        if ( !o.m_talk.empty() || o.m_shop ) game->openForPicture( o.m_talk, o.m_shop );
         if ( o.m_bench > 0 ) bench( gfx, o.m_bench, o, draw );
         if ( o.m_menu )
         {
             // The title menu over the frame (to look at it without a window).
-            std::vector<std::string> items = menuItems( true, settings );
+            std::vector<std::string> items = menuItems( true, settings, false );
             savePicture( gfx, o.m_shot,
                          [&]( const RenderTexture2D *rt )
                          {
@@ -506,6 +575,7 @@ int runGame( const Options &o, Gfx &gfx )
         game->shutdown();
         game = std::make_unique<Game>();
         game->m_heroKind = hero;
+        game->m_progress = progress;
         game->load( gfx, assetsDir(), level, sound );
         game->setDifficulty( settings.m_difficulty );
         game->m_brightness = settings.m_brightness;
@@ -529,10 +599,17 @@ int runGame( const Options &o, Gfx &gfx )
             {
                 game->update( dt, in );
                 game->m_zoom = Clamp( game->m_zoom * ( 1.0f + zoomStep( dt ) ), 0.55f, 1.7f );
-                if ( game->finished() && in.m_confirm )
+                bool onward = game->autoAdvance() ? game->finishedFor() > 1.2f : in.m_confirm;
+                if ( game->finished() && onward )
                 {
-                    // On to the next level with the same hero (or the same one again at the end).
-                    if ( !game->next().empty() ) level = game->next();
+                    // On to the next level with the same hero and what was gained; saved at its start.
+                    if ( !game->next().empty() )
+                    {
+                        progress = game->progress();
+                        level = game->next();
+                        progress.m_level = level;
+                        if ( o.m_hero.empty() ) saveProgress( progress ), hasSave = true;
+                    }
                     restart();
                 }
             }
@@ -544,7 +621,14 @@ int runGame( const Options &o, Gfx &gfx )
             chosen = ( chosen + k.m_move + 3 ) % 3;
             if ( k.m_confirm && chosen < 2 )
             {
+                // A new game: from the prologue, with nothing.
                 hero = chosen == 0 ? HeroE::DORRA : HeroE::CORVIN;
+                level = o.m_level;
+                progress = Progress();
+                progress.m_hero = hero;
+                progress.m_level = level;
+                saveProgress( progress );
+                hasSave = true;
                 restart();
                 mode = PLAY;
             }
@@ -557,11 +641,12 @@ int runGame( const Options &o, Gfx &gfx )
         }
         else
         {
-            // The items as menuItems lists them.
+            // The items as menuItems lists them (the title's "continue" first when there is a save).
             MenuKeys k = menuKeys( dt );
-            int      count = mode == TITLE ? 5 : 6;
+            int      base = mode == TITLE && hasSave ? 1 : 0;
+            int      count = ( mode == TITLE ? 5 : 6 ) + base;
             chosen = ( chosen + k.m_move + count ) % count;
-            int  diffItem = 1, brightItem = 2, langItem = 3, restartItem = mode == PAUSE ? 4 : -1;
+            int  diffItem = 1 + base, brightItem = 2 + base, langItem = 3 + base, restartItem = mode == PAUSE ? 4 : -1;
             auto nextLanguage = [&]( int step )
             {
                 std::vector<std::string> all = languages( assetsDir() );
@@ -588,9 +673,18 @@ int runGame( const Options &o, Gfx &gfx )
             }
             if ( k.m_confirm )
             {
-                if ( chosen == 0 && mode == TITLE && o.m_hero.empty() )
+                if ( chosen == 0 && base == 1 && loadProgress( saved ) )
+                {
+                    // Continue: the saved level with what was gained.
+                    progress = saved;
+                    hero = saved.m_hero;
+                    level = saved.m_level;
+                    restart();
+                    mode = PLAY;
+                }
+                else if ( chosen == base && mode == TITLE && o.m_hero.empty() )
                     mode = CHOOSE, chosen = hero == HeroE::DORRA ? 0 : 1;
-                else if ( chosen == 0 )
+                else if ( chosen == base )
                     mode = PLAY;
                 else if ( chosen == diffItem )
                 {
@@ -628,7 +722,7 @@ int runGame( const Options &o, Gfx &gfx )
         {
             std::string subtitle = mode == TITLE ? game->title() : difficultyName( settings.m_difficulty );
             drawMenu( game->font(), mode == TITLE ? "DARK CONCORDANCE" : tr( "menu.pause" ), subtitle.c_str(),
-                      menuItems( mode == TITLE, settings ), chosen );
+                      menuItems( mode == TITLE, settings, hasSave ), chosen );
         }
         if ( showFps ) DrawFPS( 10, 10 );
         EndDrawing();

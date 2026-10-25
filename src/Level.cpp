@@ -144,6 +144,15 @@ const Look Looks[(int)ThemeE::COUNT] = {
       { 225, 228, 235, 255 },
       { 255, 255, 255, 255 },
       0.45f },
+    { 2,
+      { 150, 112, 82, 255 },
+      0.9f,
+      0.0f,
+      1,
+      { 200, 150, 110, 255 },
+      { 190, 160, 135, 255 },
+      { 200, 170, 150, 255 },
+      0.35f },
 };
 
 /** @brief Paint colours of the containers in a hold. */
@@ -160,6 +169,7 @@ ThemeE themeOf( const std::string &name )
     if ( name == "cargo" ) return ThemeE::CARGO;
     if ( name == "gangway" ) return ThemeE::GANGWAY;
     if ( name == "bridge" ) return ThemeE::BRIDGE;
+    if ( name == "bar" ) return ThemeE::BAR;
     return ThemeE::SERVICE;
 }
 
@@ -177,7 +187,9 @@ bool Level::load( const std::string &path )
         HEAD,
         MAP,
         LINES,
-        HINTS
+        HINTS,
+        NPCS,
+        TALK
     } section = HEAD;
     std::vector<std::string> map;
     std::string              line;
@@ -198,6 +210,16 @@ bool Level::load( const std::string &path )
         if ( t == "[hints]" )
         {
             section = HINTS;
+            continue;
+        }
+        if ( t == "[npcs]" )
+        {
+            section = NPCS;
+            continue;
+        }
+        if ( t == "[talk]" )
+        {
+            section = TALK;
             continue;
         }
         if ( section == MAP )
@@ -221,6 +243,54 @@ bool Level::load( const std::string &path )
         {
             auto f = fields( t );
             if ( f.size() >= 2 ) m_hints.push_back( { f[0], f[1] } );
+            continue;
+        }
+        if ( section == NPCS )
+        {
+            // name | row col | look | first node | flag:node ...
+            auto f = fields( t );
+            if ( f.size() < 4 ) continue;
+            Npc               n;
+            std::stringstream rc( f[1] );
+            n.m_id = f[0];
+            rc >> n.m_row >> n.m_col;
+            n.m_look = f[2];
+            n.m_start = f[3];
+            if ( f.size() > 4 )
+            {
+                std::stringstream after( f[4] );
+                std::string       pair;
+                while ( after >> pair )
+                {
+                    size_t colon = pair.find( ':' );
+                    if ( colon != std::string::npos )
+                        n.m_after.push_back( { pair.substr( 0, colon ), pair.substr( colon + 1 ) } );
+                }
+            }
+            m_npcs.push_back( n );
+            continue;
+        }
+        if ( section == TALK )
+        {
+            // node | speaker | event | answer>node ...
+            auto f = fields( t );
+            if ( f.size() < 2 ) continue;
+            TalkNode n;
+            n.m_id = f[0];
+            n.m_speaker = f[1];
+            n.m_event = f.size() > 2 && f[2] != "-" ? f[2] : "";
+            if ( f.size() > 3 )
+            {
+                std::stringstream answers( f[3] );
+                std::string       pair;
+                while ( answers >> pair )
+                {
+                    size_t arrow = pair.find( '>' );
+                    if ( arrow != std::string::npos )
+                        n.m_answers.push_back( { pair.substr( 0, arrow ), pair.substr( arrow + 1 ) } );
+                }
+            }
+            m_talk.push_back( n );
             continue;
         }
         std::stringstream kv( t );
@@ -274,6 +344,26 @@ bool Level::load( const std::string &path )
             int r = 0, c = 0;
             while ( kv >> r >> c ) m_route.push_back( { r, c } );
         }
+        else if ( key == "peaceful" )
+        {
+            int on = 0;
+            kv >> on;
+            m_peaceful = on != 0;
+        }
+        else if ( key == "view" )
+            kv >> m_view;
+        else if ( key == "back" )
+            kv >> m_back;
+        else if ( key == "autotalk" )
+            kv >> m_autotalk;
+        else if ( key == "exit" )
+        {
+            std::string to, flag;
+            kv >> to >> flag;
+            m_exits.push_back( { to, flag } );
+        }
+        else if ( key == "board" )
+            kv >> m_boardRow >> m_boardCol >> m_boardWidth;
     }
 
     m_rows = (int)map.size();
@@ -293,6 +383,8 @@ bool Level::load( const std::string &path )
                 cell.m_kind = CellE::GRATE;
             else if ( ch == '_' )
                 cell.m_kind = CellE::GLASS;
+            else if ( ch == '+' )
+                cell.m_kind = CellE::COUNTER;
             else if ( ch == 'F' )
                 cell.m_kind = CellE::FIN, cell.m_height = FinHeight;
             else if ( ch >= '1' && ch <= '9' )
@@ -350,8 +442,16 @@ float Level::floorAt( float x, float z ) const
     case CellE::ROCK: return 1000.0f;
     case CellE::VOID: return -1000.0f;
     case CellE::FIN: return FinHeight;
+    case CellE::COUNTER: return CounterHeight;
     default: return k.m_height;
     }
+}
+
+const TalkNode *Level::talk( const std::string &id ) const
+{
+    for ( const TalkNode &n : m_talk )
+        if ( n.m_id == id ) return &n;
+    return nullptr;
 }
 
 bool Level::walkable( int r, int c ) const
@@ -373,10 +473,11 @@ bool Level::collide( Vector3 &pos, float radius, float step ) const
                 int         r = r0 + dr;
                 int         c = c0 + dc;
                 const Cell &k = cell( r, c );
-                float       top = k.m_kind == CellE::ROCK   ? 1e9f
-                                  : k.m_kind == CellE::VOID ? -1e9f
-                                  : k.m_kind == CellE::FIN  ? FinHeight
-                                                            : k.m_height;
+                float       top = k.m_kind == CellE::ROCK      ? 1e9f
+                                  : k.m_kind == CellE::VOID    ? -1e9f
+                                  : k.m_kind == CellE::FIN     ? FinHeight
+                                  : k.m_kind == CellE::COUNTER ? CounterHeight
+                                                               : k.m_height;
                 if ( top <= pos.y + step ) continue;
                 float x0 = c * CellSize;
                 float z0 = r * CellSize;
@@ -445,6 +546,7 @@ bool Level::raycast( Vector3 from, Vector3 to, Vector3 &hit, Vector3 &normal ) c
                           : k.m_kind == CellE::VOID                              ? -PitDepth
                           : k.m_kind == CellE::FIN                               ? FinHeight
                           : k.m_kind == CellE::GRATE || k.m_kind == CellE::GLASS ? 0.0f
+                          : k.m_kind == CellE::COUNTER                           ? CounterHeight
                                                                                  : k.m_height;
         if ( p.y < top )
         {
@@ -493,6 +595,8 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     {
         for ( const Marker &m : m_markers )
             if ( m.m_kind != 'R' && m.m_kind != 'A' && abs( m.m_row - r ) <= 1 && abs( m.m_col - c ) <= 1 ) return true;
+        for ( const Npc &n : m_npcs )
+            if ( abs( n.m_row - r ) <= 1 && abs( n.m_col - c ) <= 1 ) return true;
         return false;
     };
 
@@ -566,6 +670,25 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 }
                 metal.box( place( { mid.x - CellSize * 0.5f, -0.04f, mid.z } ), { 0.025f, 0.04f, CellSize * 0.5f } );
                 metal.box( place( { mid.x, -0.04f, mid.z - CellSize * 0.5f } ), { CellSize * 0.5f, 0.04f, 0.025f } );
+                continue;
+            }
+            if ( k.m_kind == CellE::COUNTER )
+            {
+                // A bar counter: the deck under it, a dark body, a worn top, a warm strip of light along its front.
+                floor.box( place( { mid.x, -0.25f, mid.z } ), { CellSize * 0.5f, 0.25f, CellSize * 0.5f } );
+                crate.m_color = { 70, 52, 40, 255 };
+                crate.box( place( { mid.x, CounterHeight * 0.5f - 0.03f, mid.z } ),
+                           { CellSize * 0.5f, CounterHeight * 0.5f - 0.03f, CellSize * 0.42f } );
+                crate.m_color = WHITE;
+                metal.m_color = { 120, 105, 90, 255 };
+                metal.box( place( { mid.x, CounterHeight - 0.03f, mid.z } ),
+                           { CellSize * 0.5f, 0.03f, CellSize * 0.47f } );
+                metal.m_color = WHITE;
+                for ( int d = 0; d < 4; ++d )
+                    if ( DR[d] != 0 && walkable( r + DR[d], c ) )
+                        glows.push_back( { { mid.x, 0.9f, mid.z + DR[d] * CellSize * 0.43f },
+                                           { CellSize * 0.5f, 0.015f, 0.01f },
+                                           { 3.0f, 1.6f, 0.6f, 0.0f } } );
                 continue;
             }
             if ( k.m_kind == CellE::VOID )
@@ -804,6 +927,26 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 m_props.push_back( { l, 0.6f } );
                 break;
             }
+            case ThemeE::BAR:
+            {
+                // A round table on one leg, two stools.
+                Vector3 t = Vector3Add( at, Vector3Scale( n, 0.25f ) );
+                rust.cylinder( place( { t.x, 0.0f, t.z } ), 0.07f, 0.95f, 10 );
+                crate.m_color = { 90, 64, 48, 255 };
+                crate.lathe( place( { t.x, 0.95f, t.z } ),
+                             { { 0.0f, 0.0f }, { 0.48f, 0.0f }, { 0.5f, 0.05f }, { 0.0f, 0.05f } }, 20 );
+                crate.m_color = WHITE;
+                for ( float side : { -1.0f, 1.0f } )
+                {
+                    float   a = turn + side * 1.2f;
+                    Vector3 stool = { t.x + cosf( a ) * 0.8f, 0.0f, t.z + sinf( a ) * 0.8f };
+                    rust.cylinder( place( stool ), 0.04f, 0.6f, 8 );
+                    rust.lathe( place( { stool.x, 0.6f, stool.z } ),
+                                { { 0.0f, 0.0f }, { 0.2f, 0.0f }, { 0.2f, 0.05f }, { 0.0f, 0.05f } }, 14 );
+                }
+                m_props.push_back( { t, 0.6f } );
+                break;
+            }
             case ThemeE::WORKS:
             default:
                 if ( hash01( r, c, 35 ) < 0.5f )
@@ -904,6 +1047,26 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 foil.roundedBox( place( { x, y, p.z - 0.2f }, { 0.0f, 0.0f, 0.04f * ( slot - 1 ) } ),
                                  { 0.27f, 0.16f, 0.88f }, 0.12f, 3 );
             }
+        }
+    }
+
+    // The harvest board: a slate on the north wall of its cells, framed, two lamps above it.
+    if ( m_boardRow >= 0 )
+    {
+        float w = m_boardWidth * CellSize - 0.6f, h = fminf( w * 0.5f, 3.2f );
+        float x = ( m_boardCol + m_boardWidth * 0.5f ) * CellSize, z = m_boardRow * CellSize + 0.36f, y = 3.0f;
+        metal.box( place( { x, y, z - 0.05f } ), { w * 0.5f + 0.1f, h * 0.5f + 0.1f, 0.04f } );
+        m_boardCorner[0] = { x - w * 0.5f, y + h * 0.5f, z };
+        m_boardCorner[1] = { x + w * 0.5f, y + h * 0.5f, z };
+        m_boardCorner[2] = { x + w * 0.5f, y - h * 0.5f, z };
+        m_boardCorner[3] = { x - w * 0.5f, y - h * 0.5f, z };
+        for ( float side : { -0.3f, 0.3f } )
+        {
+            Vector3 lamp = { x + side * w, y + h * 0.5f + 0.3f, z + 0.3f };
+            metal.box( place( lamp ), { 0.25f, 0.05f, 0.12f } );
+            glows.push_back(
+                { Vector3Add( lamp, { 0.0f, -0.05f, 0.0f } ), { 0.2f, 0.01f, 0.08f }, { 6.0f, 4.5f, 2.5f, 0.0f } } );
+            m_lights.push_back( { Vector3Add( lamp, { 0.0f, -0.3f, 0.5f } ), { 9.0f, 7.0f, 4.5f }, 4.0f, 0.0f } );
         }
     }
 

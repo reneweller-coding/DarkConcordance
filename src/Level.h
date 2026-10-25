@@ -25,12 +25,36 @@ constexpr float PitDepth = 30.0f;   ///< how deep the shafts go
 /** @brief What a cell is. */
 enum class CellE : uint8_t
 {
-    ROCK,    ///< solid
-    FLOOR,   ///< walkable at its height
-    VOID,    ///< a shaft: no floor
-    GRATE,   ///< a grating bridge over a shaft
-    FIN,     ///< a heat exchanger block: cover, its top walkable
-    GLASS    ///< a window in the floor (walkable; open space under it)
+    ROCK,     ///< solid
+    FLOOR,    ///< walkable at its height
+    VOID,     ///< a shaft: no floor
+    GRATE,    ///< a grating bridge over a shaft
+    FIN,      ///< a heat exchanger block: cover, its top walkable
+    GLASS,    ///< a window in the floor (walkable; open space under it)
+    COUNTER   ///< a bar counter: waist-high, in the way, shots pass over it
+};
+
+constexpr float CounterHeight = 1.1f;   ///< height of a counter cell
+
+/** @brief Someone to talk to (a hub's people). */
+struct Npc
+{
+    std::string                                      m_id;        ///< name (texts: speaker.<id>, portrait_<id>)
+    int                                              m_row = 0;   ///< map row
+    int                                              m_col = 0;   ///< map column
+    std::string                                      m_look;      ///< how they look (ysolde, ottla, kiri, terminal ...)
+    std::string                                      m_start;     ///< the conversation's first node
+    std::vector<std::pair<std::string, std::string>> m_after;     ///< (flag, node): once the flag is set, start there
+};
+
+/** @brief A step of a conversation: what is said, what can be answered. */
+struct TalkNode
+{
+    std::string m_id;        ///< key of its text
+    std::string m_speaker;   ///< who says it
+    std::string m_event;     ///< what it sets off (flags, shop, workshop, scrapN)
+    std::vector<std::pair<std::string, std::string>>
+        m_answers;   ///< (key of the answer, the node it leads to; "-" ends)
 };
 
 /** @brief One map cell. */
@@ -102,6 +126,7 @@ enum class ThemeE : uint8_t
     CARGO,       ///< a ship's hold: walls of stacked containers, tie-down rails, bundles
     GANGWAY,     ///< a ship's gangway: bulkheads, cable trays, lockers
     BRIDGE,      ///< the bridge deck: clean bulkheads, consoles
+    BAR,         ///< a bar: warm panels, round tables with stools
     COUNT        ///< number of themes
 };
 
@@ -246,7 +271,24 @@ public:
     std::string                                              m_gate = "bossdead";   ///< the event that opens the door
     std::string                                              m_ambience = "tunnels";   ///< the background sound
     std::vector<std::pair<int, int>>                         m_route;   ///< the autopilot's waypoints (cells), in order
-    std::vector<std::pair<int, int>> m_glass;   ///< the window cells (after build: the game lays the panes)
+    std::vector<std::pair<int, int>> m_glass;              ///< the window cells (after build: the game lays the panes)
+    bool                             m_peaceful = false;   ///< a hub: no fighting, the trigger and A talk
+    std::string                      m_view;               ///< what the floor windows show: star, drums
+    std::string                      m_back;               ///< with this flag the level starts with "back", not "start"
+    std::string                      m_autotalk;           ///< whom the autopilot talks to
+    std::vector<std::pair<std::string, std::string>>
+                          m_exits;   ///< (level, flag): where the lift goes once the flag is set
+    int                   m_boardRow = -1, m_boardCol = 0, m_boardWidth = 0;   ///< the harvest board
+    Vector3               m_boardCorner[4] = {};                               ///< its picture's corners (after build)
+    std::vector<Npc>      m_npcs;                                              ///< people to talk to
+    std::vector<TalkNode> m_talk;                                              ///< the conversations' steps
+
+    /**
+     * @brief A conversation's step by its key.
+     * @param[in] id  the key
+     * @return the step, or nullptr
+     */
+    const TalkNode *talk( const std::string &id ) const;
 
 private:
     int               m_rows = 0;

@@ -75,6 +75,12 @@ onto a star, the other ships' plumes and the patrol; lines per hero ("<key>.dorr
 painted still; levels that lead to the next; the autopilot's route through a level. The game's code lives in
 Game.cpp (the level, Corvin), GameCrew.cpp (Dorra, the boarders) and GameShip.cpp (aboard a ship).
 
+Built with the Velm hub (25.10.2026): peaceful levels; people with conversations (nodes, answers to choose, the start
+node by what has happened, portraits) and events (flags, scrap, shop, workshop); the trader and the workshop (weapon
+and armour in three levels each); progress carried between levels and saved (`save.txt`, „Fortsetzen“); exits that
+open by event; a board painted at load time in the game's font; the view through the bar's floor onto the cavern and
+the other drums turning with ours. Enemies no longer walk over chasms. The hub's code is GameHub.cpp.
+
 Still to come, by first use:
 
 | System | First needed in |
@@ -83,7 +89,6 @@ Still to come, by first use:
 | Vacuum: oxygen, helmet hits, radiation spikes, only radio and breath | 3 Außenhaut |
 | Floating water spheres: caustics, diving, drowning, current through water | 4 Ertrunkenes Viertel |
 | Fragile targets (core storage), multi-body boss with radio link | 5 Kernbank |
-| Hub: bar, trader, workshop, jobs, the take-down board | Velm hub |
 | Drone swarm control (Ione), hacking machines | class choice |
 | Breaking ice, enemies from below | 6 Seren |
 | Wind, swaying platforms, cutting balloons | 7 Hesper |
@@ -142,7 +147,8 @@ Still to come, by first use:
 
 1. **Level 1 „Die Kühlgedärme“** as the playable prototype with Corvin: does the combat feel right? — done
 2. **Prologue** with Dorra and Corvin to choose — done (25.10.2026; Ione's drones still to come).
-3. Velm as hub (bar, trader, workshop, Ysolde), levels 2–5, Ione, voices: **Act I complete**.
+3. Velm as hub (bar, trader, workshop, Ysolde) — done (25.10.2026); then levels 2–5, Ione, voices: **Act I
+   complete**.
 4. Act II with the ship as hub and the first choices; co-op for two.
 5. Acts III and IV, endings, epilogue cards, flashback levels.
 6. Steam Deck: half-resolution fog, no supersampling, gamepad everywhere.

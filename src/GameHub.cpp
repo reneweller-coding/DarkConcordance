@@ -1,0 +1,628 @@
+/**
+ * @file GameHub.cpp
+ * @brief A hub: the people to talk to and their conversations, Ottla's stims, Kiri's workshop, the harvest board
+ *        drawn with the game's own font (so it speaks every language), the asteroid's cavern and the other drums
+ *        turning past beneath the floor, and the lift out.
+ * @author Rene Weller
+ */
+#include "Game.h"
+#include "GameShared.h"
+
+#include "MeshBuilder.h"
+#include "Rig.h"
+
+#include <raymath.h>
+
+#include <cmath>
+#include <sstream>
+
+namespace spaceopera
+{
+
+using namespace play;
+
+namespace
+{
+
+constexpr float TalkReach = 2.4f;   ///< how near one has to be to talk
+constexpr int   StimPrice = 15;     ///< Ottla's price
+constexpr int   MaxStims = 9;
+const int       WeaponPrice[3] = { 40, 80, 120 };   ///< Kiri's prices, by level
+const int       ArmorPrice[3] = { 30, 60, 90 };
+constexpr float DrumRadius = 280.0f;   ///< our drum: its axis this high above the floor
+
+/** @brief What the Harvest has swallowed (proper names, the same in every language); the newest last. */
+const char *const Harvested[] = {
+    "Mareth",   "Ostgrube",   "Halvar",      "Brennerhang",  "Dorn II",     "Ankerfeld",  "Vellis",  "Sankt Iwo",
+    "Ruhn",     "Morrow",     "Schalk",      "Pell",         "Ivarsheim",   "Kaltbecken", "Nimra",   "Ostar III",
+    "Cassel",   "Grauhafen",  "Lune XVII",   "Varga",        "Feldmark",    "Okana",      "Bettel",  "Silberfaden",
+    "Hollin",   "Weißnarbe",  "Trask",       "Amsel",        "Kerrin",      "Zinnober",   "Lasso",   "Neumond",
+    "Drift",    "Rostgürtel", "Quell",       "Sarai",        "Haken",       "Wendel",     "Beryll",  "Molch",
+    "Fahl VII", "Tannhang",   "Isk",         "Orrin",        "Krähenstein", "Halde IV",   "Moos",    "Ebbe",
+    "Saffran",  "Gallow",     "Kiel",        "Tessa",        "Brandmark",   "Vigil",      "Schlick", "Rade",
+    "Akkra",    "Seren-Süd",  "Hesper-Tief", "Langmut-Dorf", "Talgrund"
+};
+constexpr int HarvestCount = (int)( sizeof( Harvested ) / sizeof( Harvested[0] ) );
+
+}   // namespace
+
+void Game::loadHub( Gfx &gfx, const std::string &assets )
+{
+    // People: a figure by their look (or the station's terminal), and their portrait for the conversations.
+    for ( size_t i = 0; i < m_level.m_npcs.size(); ++i )
+    {
+        const Npc  &n = m_level.m_npcs[i];
+        NpcState    s;
+        std::string look = n.m_look;
+        s.m_def = (int)i;
+        s.m_pos = m_level.centre( n.m_row, n.m_col );
+        s.m_yaw = 0.0f;
+        s.m_look = look == "terminal" ? -1 : look == "ysolde" ? 4 : look == "kiri" ? 5 : look == "ottla" ? 1 : 0;
+        m_npcs.push_back( s );
+        m_blocked.insert( n.m_row * m_level.cols() + n.m_col );
+        std::string portrait = assets + "/textures/portrait_" + n.m_id + ".png";
+        if ( !m_portraits.count( n.m_id ) && FileExists( portrait.c_str() ) )
+        {
+            m_portraits[n.m_id] = LoadTexture( portrait.c_str() );
+            SetTextureFilter( m_portraits[n.m_id], TEXTURE_FILTER_BILINEAR );
+        }
+    }
+    MeshBuilder terminal;
+    terminal.roundedBox( place( { 0.0f, 0.75f, 0.0f } ), { 0.38f, 0.75f, 0.26f }, 0.05f, 2 );
+    terminal.roundedBox( place( { 0.0f, 1.62f, -0.05f }, { -0.3f, 0.0f, 0.0f } ), { 0.42f, 0.3f, 0.2f }, 0.04f, 2 );
+    m_terminalMesh = terminal.build().front();
+    MeshBuilder screen;
+    screen.box( place( { 0.0f, 1.64f, 0.16f }, { -0.3f, 0.0f, 0.0f } ), { 0.34f, 0.22f, 0.01f } );
+    m_screenMesh = screen.build().front();
+    // The lift out: a plate with a hazard rim.
+    for ( const Marker &m : m_level.m_markers )
+        if ( m.m_kind == 'O' )
+        {
+            m_exit = m.m_pos;
+            m_hasExit = true;
+        }
+    MeshBuilder pad;
+    pad.lathe( place( { 0.0f, 0.0f, 0.0f } ), { { 0.0f, 0.03f }, { 0.95f, 0.03f }, { 1.0f, 0.0f } }, 32 );
+    m_padMesh = pad.build().front();
+
+    // The harvest board: its own surface (renderBoard paints it once the font is there).
+    if ( m_level.m_boardRow >= 0 )
+    {
+        Image     blank = GenImageColor( 4, 4, { 30, 32, 32, 255 } );
+        Texture2D tex = LoadTextureFromImage( blank );
+        UnloadImage( blank );
+        Surface surf = gfx.surface( tex, m_surfaces[S_METAL].m_material.maps[MATERIAL_MAP_METALNESS].texture,
+                                    m_surfaces[S_METAL].m_material.maps[MATERIAL_MAP_NORMAL].texture, tex );
+        surf.m_uvScale = 1.0f;
+        surf.m_params = { 0.9f, 0.1f, 0.0f, 1.0f };
+        surf.m_emissive = { 0.18f, 0.18f, 0.17f, 2.0f };
+        surf.m_variation = 0.0f;
+        m_surfaces.push_back( surf );
+        m_boardSurface = (int)m_surfaces.size() - 1;
+        m_boardTex = tex;
+        MeshBuilder    b;
+        const Vector3 *c = m_level.m_boardCorner;
+        b.quad( c[0], c[1], c[2], c[3] );
+        for ( Mesh mesh : b.build() )
+        {
+            Drawable d;
+            d.m_mesh = mesh;
+            d.m_surface = m_boardSurface;
+            d.m_transform = MatrixIdentity();
+            m_static.push_back( d );
+        }
+    }
+
+    // Beneath the floor: the asteroid's cavern and the other two drums, all turning past as ours spins.
+    if ( m_level.m_view != "drums" ) return;
+    Vector3 c = { m_level.cols() * CellSize * 0.5f, 0.0f, m_level.rows() * CellSize * 0.5f };
+    if ( !m_level.m_glass.empty() )
+    {
+        MeshBuilder glass;
+        c = { 0.0f, 0.0f, 0.0f };
+        for ( auto rc : m_level.m_glass )
+        {
+            Vector3 p = { ( rc.second + 0.5f ) * CellSize, 0.0f, ( rc.first + 0.5f ) * CellSize };
+            glass.box( place( { p.x, -0.02f, p.z } ), { CellSize * 0.5f, 0.02f, CellSize * 0.5f } );
+            c = Vector3Add( c, p );
+        }
+        c = Vector3Scale( c, 1.0f / m_level.m_glass.size() );
+        m_glassMesh = glass.build().front();
+    }
+    m_axis = { c.x, DrumRadius, c.z };
+    Matrix along = MatrixRotateZ( -PI * 0.5f );   // a cylinder along +x
+    auto   add = [&]( MeshBuilder &b, int surface, Vector4 glow )
+    {
+        for ( Mesh mesh : b.build() )
+        {
+            Drawable d;
+            d.m_mesh = mesh;
+            d.m_surface = surface;
+            d.m_transform = MatrixIdentity();
+            d.m_emissive = glow;
+            d.m_sunShadow = false;
+            d.m_spotShadow = false;
+            m_drums.push_back( d );
+        }
+    };
+    // The cavern: rock all round, far off; work lights on it.
+    MeshBuilder cavern;
+    cavern.cylinder( MatrixMultiply( along, MatrixTranslate( m_axis.x - 4000.0f, m_axis.y, m_axis.z ) ), 1900.0f,
+                     8000.0f, 64 );
+    add( cavern, S_CAVERN, { 0.012f, 0.011f, 0.01f, 0.0f } );
+    MeshBuilder lights;
+    unsigned    seed = 1234;
+    auto        rand01 = [&]() { return ( ( seed = seed * 1664525u + 1013904223u ) >> 8 ) / 16777216.0f; };
+    for ( int i = 0; i < 700; ++i )
+    {
+        float a = rand01() * 2.0f * PI, x = ( rand01() - 0.5f ) * 6000.0f, r = 1880.0f;
+        lights.box( place( { m_axis.x + x, m_axis.y + r * cosf( a ), m_axis.z + r * sinf( a ) } ),
+                    { 5.0f, 5.0f, 5.0f } );
+    }
+    add( lights, S_GLOW, { 5.0f, 3.6f, 2.0f, 0.0f } );
+    // Girders across the cavern, beacons along them: always something passing beneath.
+    MeshBuilder girders, beacons;
+    for ( int i = 0; i < 14; ++i )
+    {
+        float   a = rand01() * 2.0f * PI, b = a + 0.8f + rand01() * 1.6f, x = ( rand01() - 0.5f ) * 2400.0f;
+        Vector3 p = { m_axis.x + x, m_axis.y + 1850.0f * cosf( a ), m_axis.z + 1850.0f * sinf( a ) };
+        Vector3 q = { m_axis.x + x + ( rand01() - 0.5f ) * 1200.0f, m_axis.y + 1850.0f * cosf( b ),
+                      m_axis.z + 1850.0f * sinf( b ) };
+        Vector3 d = Vector3Subtract( q, p );
+        float   len = Vector3Length( d );
+        Vector3 z = Vector3Scale( d, 1.0f / len );
+        Vector3 xAxis = Vector3Normalize( Vector3CrossProduct( { 0, 1, 0 }, z ) );
+        girders.box( frame( xAxis, Vector3CrossProduct( z, xAxis ), z, Vector3Lerp( p, q, 0.5f ) ),
+                     { 9.0f, 9.0f, len * 0.5f } );
+        for ( int k = 1; k < 12; ++k ) beacons.box( place( Vector3Lerp( p, q, k / 12.0f ) ), { 7.0f, 7.0f, 7.0f } );
+    }
+    add( girders, S_HULL, { 0.02f, 0.02f, 0.025f, 0.0f } );
+    add( beacons, S_GLOW, { 9.0f, 1.2f, 0.6f, 0.0f } );
+    // The other drums: dark hulls, six long window bands glowing warm, a ring of beacons at each end.
+    for ( int k = 0; k < 2; ++k )
+    {
+        float       a = k ? 0.75f + PI : 0.75f, rho = 760.0f;
+        Vector3     centre = { m_axis.x, m_axis.y - rho * cosf( a ), m_axis.z - rho * sinf( a ) };
+        MeshBuilder hull, strips, rings;
+        hull.cylinder( MatrixMultiply( along, MatrixTranslate( centre.x - 1300.0f, centre.y, centre.z ) ), 250.0f,
+                       2600.0f, 48 );
+        add( hull, S_CAVERN, { 0.0f, 0.0f, 0.0f, 0.0f } );   // matte and unlit: metal would mirror the bar's light
+        for ( int s = 0; s < 6; ++s )
+        {
+            float   b = s * PI / 3.0f + k * 0.5f;
+            Vector3 n = { 0.0f, cosf( b ), sinf( b ) };
+            Vector3 p = Vector3Add( centre, Vector3Scale( n, 252.0f ) );
+            Matrix  m = frame( { 1, 0, 0 }, n, Vector3CrossProduct( { 1, 0, 0 }, n ), p );
+            strips.box( m, { 1180.0f, 2.0f, 16.0f } );
+        }
+        add( strips, S_GLOW, { 2.2f, 1.5f, 0.8f, 0.0f } );
+        // Lit rooms all over the hull: people live in there.
+        MeshBuilder rooms;
+        for ( int i = 0; i < 1400; ++i )
+        {
+            float   b = rand01() * 2.0f * PI;
+            Vector3 n = { 0.0f, cosf( b ), sinf( b ) };
+            Vector3 p = Vector3Add(
+                centre, Vector3Add( { ( rand01() - 0.5f ) * 2500.0f, 0.0f, 0.0f }, Vector3Scale( n, 251.0f ) ) );
+            rooms.box( frame( { 1, 0, 0 }, n, Vector3CrossProduct( { 1, 0, 0 }, n ), p ),
+                       { 3.0f + rand01() * 4.0f, 1.0f, 2.5f } );
+        }
+        add( rooms, S_GLOW, { 3.0f, 2.1f, 1.1f, 0.0f } );
+        for ( float end : { -1300.0f, 1300.0f } )
+            for ( int i = 0; i < 16; ++i )
+            {
+                float b = i * PI / 8.0f;
+                rings.box( place( { centre.x + end, centre.y + 256.0f * cosf( b ), centre.z + 256.0f * sinf( b ) } ),
+                           { 8.0f, 8.0f, 8.0f } );
+            }
+        add( rings, S_GLOW, { 8.0f, 6.0f, 4.0f, 0.0f } );
+    }
+}
+
+void Game::renderBoard()
+{
+    if ( m_boardSurface < 0 || m_font.texture.id == 0 ) return;
+    // A slate, chalk on it: the title, and the names in columns, the newest one fresh in red.
+    const int       W = 1600, H = 800;
+    RenderTexture2D rt = LoadRenderTexture( W, H );
+    BeginTextureMode( rt );
+    ClearBackground( { 30, 33, 33, 255 } );
+    unsigned seed = 77;
+    auto     rand01 = [&]() { return ( ( seed = seed * 1664525u + 1013904223u ) >> 8 ) / 16777216.0f; };
+    for ( int i = 0; i < 60; ++i )
+        DrawCircleV( { rand01() * W, rand01() * H }, 30.0f + rand01() * 120.0f, { 255, 255, 255, 5 } );
+    auto chalk = [&]( const char *t, float x, float y, float size, Color c, bool centre )
+    {
+        Vector2 m = MeasureTextEx( m_font, t, size, 1.0f );
+        DrawTextEx( m_font, t, { centre ? x - m.x * 0.5f : x, y }, size, 1.0f, c );
+    };
+    chalk( tr( "board.title" ), W * 0.5f, 26.0f, 84.0f, { 236, 232, 220, 255 }, true );
+    chalk( tr( "board.sub" ), W * 0.5f, 112.0f, 30.0f, { 190, 186, 176, 255 }, true );
+    const char *kinds[4] = { tr( "board.moon" ), tr( "board.ocean" ), tr( "board.settlement" ), tr( "board.belt" ) };
+    int         perColumn = ( HarvestCount + 3 ) / 4;
+    for ( int i = 0; i < HarvestCount; ++i )
+    {
+        float x = 60.0f + ( i / perColumn ) * 390.0f, y = 172.0f + ( i % perColumn ) * 38.0f;
+        bool  newest = i == HarvestCount - 1;
+        Color c = newest ? Color{ 255, 120, 90, 255 } : Color{ 228, 224, 212, 235 };
+        chalk( TextFormat( "%2d  %s", i + 1, Harvested[i] ), x, y, 28.0f, c, false );
+        unsigned kind = ( (unsigned)i * 2654435761u >> 7 ) % 4;
+        if ( newest ) kind = 2;
+        chalk( kinds[kind], x + 245.0f, y + 6.0f, 20.0f, { 160, 158, 150, 220 }, false );
+    }
+    EndTextureMode();
+    Image img = LoadImageFromTexture( rt.texture );
+    ImageFlipVertical( &img );
+    Texture2D tex = LoadTextureFromImage( img );
+    UnloadImage( img );
+    UnloadRenderTexture( rt );
+    GenTextureMipmaps( &tex );
+    SetTextureFilter( tex, TEXTURE_FILTER_TRILINEAR );
+    Material &mat = m_surfaces[m_boardSurface].m_material;
+    if ( m_boardTex.id > 0 ) UnloadTexture( m_boardTex );
+    m_boardTex = tex;
+    mat.maps[MATERIAL_MAP_ALBEDO].texture = tex;
+    mat.maps[MATERIAL_MAP_EMISSION].texture = tex;
+}
+
+int Game::nearNpc() const
+{
+    int   best = -1;
+    float bestDist = TalkReach;
+    for ( size_t i = 0; i < m_npcs.size(); ++i )
+    {
+        float d = Vector2Distance( { m_npcs[i].m_pos.x, m_npcs[i].m_pos.z }, { m_pos.x, m_pos.z } );
+        if ( d < bestDist ) bestDist = d, best = (int)i;
+    }
+    return best;
+}
+
+void Game::openTalk( int npc )
+{
+    // Where the conversation starts depends on what has happened.
+    const Npc  &def = m_level.m_npcs[m_npcs[npc].m_def];
+    std::string node = def.m_start;
+    for ( const auto &after : def.m_after )
+        if ( m_fired.count( after.first ) ) node = after.second;
+    m_talkNpc = npc;
+    m_vel.x = m_vel.z = 0.0f;
+    m_hint = nullptr;
+    m_hintQueue.clear();
+    m_fired.insert( "talked." + def.m_id );
+    enterNode( m_level.talk( node ) );
+}
+
+void Game::openForPicture( const std::string &who, int menu )
+{
+    for ( size_t i = 0; i < m_npcs.size(); ++i )
+        if ( m_level.m_npcs[m_npcs[i].m_def].m_id == who ) openTalk( (int)i );
+    m_menu = menu;
+}
+
+void Game::enterNode( const TalkNode *node )
+{
+    m_talk = node;
+    m_choice = 0;
+    if ( !node || node->m_event.empty() ) return;
+    // A step's own events run as it is shown; the shop and the workshop open once it has been read.
+    std::stringstream events( node->m_event );
+    std::string       e;
+    while ( std::getline( events, e, ',' ) )
+        if ( e != "shop" && e != "workshop" ) runEvent( e );
+}
+
+void Game::runEvent( const std::string &event )
+{
+    if ( event.compare( 0, 5, "scrap" ) == 0 )
+    {
+        m_scrap += atoi( event.c_str() + 5 );
+        m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.8f );
+        return;
+    }
+    // Anything else is something that has happened: it stays, from level to level.
+    fire( event );
+    m_progress.m_flags.insert( event );
+}
+
+void Game::buy( int item )
+{
+    auto pay = [&]( int price )
+    {
+        if ( m_scrap < price ) return false;
+        m_scrap -= price;
+        m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.8f );
+        return true;
+    };
+    if ( m_menu == 1 && item == 0 && m_stims < MaxStims && pay( StimPrice ) ) ++m_stims;
+    if ( m_menu == 2 && item == 0 && m_progress.m_weapon < 3 && pay( WeaponPrice[m_progress.m_weapon] ) )
+        ++m_progress.m_weapon;
+    if ( m_menu == 2 && item == 1 && m_progress.m_armor < 3 && pay( ArmorPrice[m_progress.m_armor] ) )
+    {
+        ++m_progress.m_armor;
+        m_hp = fminf( hpMax(), m_hp + 20.0f );
+    }
+}
+
+bool Game::updateHub( float dt, GameInput &in )
+{
+    if ( !m_level.m_peaceful ) return false;
+    // No fighting here: the trigger does nothing, B goes back in the menus.
+    in.m_fire = false;
+    bool back = in.m_special;
+    in.m_special = false;
+    m_spin += dt * sqrtf( m_level.m_gravity / DrumRadius );
+    // People turn to the hero when near.
+    for ( NpcState &n : m_npcs )
+    {
+        if ( n.m_look < 0 ) continue;
+        Vector3 d = Vector3Subtract( m_pos, n.m_pos );
+        float   want = Vector2Length( { d.x, d.z } ) < 6.0f ? atan2f( d.x, d.z ) : 0.0f;
+        n.m_yaw += Clamp( angleTo( n.m_yaw, want ), -3.0f * dt, 3.0f * dt );
+    }
+    // Menus: the stick's or the arrows' up and down in steps.
+    int step = 0;
+    if ( fabsf( m_rawMove.y ) > 0.5f && fabsf( m_navY ) <= 0.5f ) step = m_rawMove.y > 0.0f ? 1 : -1;
+    m_navY = m_rawMove.y;
+    bool ok = in.m_jump || in.m_confirm || in.m_use;
+    if ( m_menu )
+    {
+        int count = m_menu == 1 ? 2 : 3;
+        m_menuChoice = ( m_menuChoice + step + count ) % count;
+        if ( ok && m_menuChoice == count - 1 )
+            m_menu = 0;
+        else if ( ok )
+            buy( m_menuChoice );
+        if ( back ) m_menu = 0;
+        return true;
+    }
+    if ( m_talk )
+    {
+        int n = (int)m_talk->m_answers.size();
+        if ( n > 0 ) m_choice = ( m_choice + step + n ) % n;
+        if ( back )
+            m_talk = nullptr;
+        else if ( ok && n == 0 )
+        {
+            // Read: the conversation ends; the shop or the workshop opens if it said so.
+            const std::string &e = m_talk->m_event;
+            m_menu = e.find( "workshop" ) != std::string::npos ? 2 : ( e.find( "shop" ) != std::string::npos ? 1 : 0 );
+            m_menuChoice = 0;
+            m_talk = nullptr;
+        }
+        else if ( ok )
+        {
+            const auto &a = m_talk->m_answers[m_choice];
+            if ( a.second == "-" )
+                m_talk = nullptr;
+            else
+                enterNode( m_level.talk( a.second ) );
+        }
+        return true;
+    }
+    // Not talking: A or E near someone starts a conversation (instead of a jump).
+    int near = nearNpc();
+    if ( near >= 0 && ( in.m_jump || in.m_use ) )
+    {
+        openTalk( near );
+        return true;
+    }
+    // The lift out: where to depends on what has happened.
+    if ( m_hasExit && !m_finished )
+    {
+        float d = Vector2Distance( { m_pos.x, m_pos.z }, { m_exit.x, m_exit.z } );
+        if ( d < 1.2f )
+        {
+            std::string to;
+            bool        promised = false;
+            for ( const auto &e : m_level.m_exits )
+            {
+                std::string done = "done." + e.first.substr( 0, e.first.find( '.' ) );
+                if ( m_fired.count( e.second ) ) promised = true;
+                if ( m_fired.count( e.second ) && !m_fired.count( done ) && to.empty() ) to = e.first;
+            }
+            if ( !to.empty() )
+            {
+                m_exitTo = to;
+                m_finished = true;
+                m_audio.play( SfxE::KLAXON, m_exit, m_camTarget, 0.6f );
+            }
+            else
+                fire( promised ? "exitlater" : "exitlocked" );
+        }
+        else if ( d > 3.0f )
+            m_fired.erase( "exitlater" ), m_fired.erase( "exitlocked" );
+    }
+    return false;
+}
+
+void Game::poseHub( std::vector<Drawable> &out )
+{
+    for ( const NpcState &n : m_npcs )
+    {
+        if ( n.m_look >= 0 )
+        {
+            FigurePose p;
+            p.m_pos = n.m_pos;
+            p.m_yaw = n.m_yaw;
+            p.m_time = m_time + n.m_def * 2.3f;
+            m_folk[n.m_look].pose( p, { -1.0f, 0.0f, 0.0f, 0.0f }, out );
+            continue;
+        }
+        // The terminal, its amber screen.
+        Drawable d;
+        d.m_transform = MatrixMultiply( MatrixRotateY( n.m_yaw ), MatrixTranslate( n.m_pos.x, n.m_pos.y, n.m_pos.z ) );
+        d.m_mesh = m_terminalMesh;
+        d.m_surface = S_METAL;
+        out.push_back( d );
+        d.m_mesh = m_screenMesh;
+        d.m_surface = S_GLOW;
+        float flicker = 0.85f + 0.15f * sinf( m_time * 13.0f ) * sinf( m_time * 2.1f );
+        d.m_emissive = { 3.2f * flicker, 1.8f * flicker, 0.4f * flicker, 0.0f };
+        out.push_back( d );
+    }
+    if ( m_hasExit )
+    {
+        // The lift's plate: green once it goes somewhere, red until then.
+        bool     open = false;
+        Drawable d;
+        for ( const auto &e : m_level.m_exits )
+            open = open || ( m_fired.count( e.second ) &&
+                             !m_fired.count( "done." + e.first.substr( 0, e.first.find( '.' ) ) ) );
+        d.m_transform = MatrixTranslate( m_exit.x, m_exit.y + 0.01f, m_exit.z );
+        d.m_mesh = m_padMesh;
+        d.m_surface = S_HAZARD;
+        out.push_back( d );
+        d.m_transform =
+            MatrixMultiply( MatrixScale( 6.0f, 1.0f, 6.0f ), MatrixTranslate( m_exit.x, m_exit.y + 0.03f, m_exit.z ) );
+        d.m_mesh = m_scannerMesh;
+        d.m_surface = S_GLOW;
+        float pulse = 0.6f + 0.4f * sinf( m_time * 3.0f );
+        d.m_emissive =
+            open ? Vector4{ 0.4f * pulse, 3.0f * pulse, 1.0f * pulse, 0.0f } : Vector4{ 2.5f, 0.3f, 0.2f, 0.0f };
+        out.push_back( d );
+    }
+    // The view: everything outside turns about our drum's axis.
+    if ( !m_drums.empty() )
+    {
+        Matrix spin = MatrixMultiply(
+            MatrixMultiply( MatrixTranslate( -m_axis.x, -m_axis.y, -m_axis.z ), MatrixRotateX( m_spin ) ),
+            MatrixTranslate( m_axis.x, m_axis.y, m_axis.z ) );
+        for ( Drawable d : m_drums )
+        {
+            d.m_transform = spin;
+            out.push_back( d );
+        }
+    }
+}
+
+void Game::drawHubHud( int w, int h, float s )
+{
+    if ( !m_level.m_peaceful ) return;
+    auto text = [&]( const char *t, float x, float y, float size, Color c, bool centre = false )
+    {
+        Vector2 m = MeasureTextEx( m_font, t, size * s, 1.0f );
+        Vector2 p = { centre ? x - m.x * 0.5f : x, y };
+        DrawTextEx( m_font, t, { p.x + 2.0f * s, p.y + 2.0f * s }, size * s, 1.0f,
+                    { 0, 0, 0, (unsigned char)( c.a * 0.8f ) } );
+        DrawTextEx( m_font, t, p, size * s, 1.0f, c );
+    };
+    // Lines that wrap at a width; returns the height used.
+    auto wrapped = [&]( const std::string &t, float x, float y, float size, float width, Color c )
+    {
+        std::vector<std::string> lines;
+        std::string              line, word;
+        auto                     flush = [&]()
+        {
+            std::string test = line.empty() ? word : line + " " + word;
+            if ( MeasureTextEx( m_font, test.c_str(), size * s, 1.0f ).x > width && !line.empty() )
+            {
+                lines.push_back( line );
+                line = word;
+            }
+            else
+                line = test;
+            word.clear();
+        };
+        for ( char ch : t )
+            if ( ch == ' ' )
+                flush();
+            else
+                word += ch;
+        flush();
+        if ( !line.empty() ) lines.push_back( line );
+        for ( size_t i = 0; i < lines.size(); ++i ) text( lines[i].c_str(), x, y + i * size * 1.3f * s, size, c );
+        return lines.size() * size * 1.3f * s;
+    };
+    const char *who = heroKey( m_heroKind );
+
+    if ( m_talk )
+    {
+        // The conversation: a panel at the bottom, the portrait on the left, the line, the answers.
+        float x0 = w * 0.1f, x1 = w * 0.9f, ph = 300.0f * s, y0 = h - ph - 30.0f * s;
+        DrawRectangle( (int)x0, (int)y0, (int)( x1 - x0 ), (int)ph, { 8, 10, 12, 225 } );
+        DrawRectangleLinesEx( { x0, y0, x1 - x0, ph }, 2.0f * s, { 255, 190, 120, 120 } );
+        const Npc &def = m_level.m_npcs[m_npcs[m_talkNpc].m_def];
+        float      tx = x0 + 24.0f * s;
+        auto       portrait = m_portraits.find( m_talk->m_speaker );
+        if ( portrait != m_portraits.end() )
+        {
+            float     size = ph - 40.0f * s;
+            Texture2D t = portrait->second;
+            DrawTexturePro( t, { 0, 0, (float)t.width, (float)t.height },
+                            { x0 + 20.0f * s, y0 + 20.0f * s, size, size }, { 0, 0 }, 0.0f, WHITE );
+            tx = x0 + size + 44.0f * s;
+        }
+        (void)def;
+        std::string name = tr( "speaker." + m_talk->m_speaker );
+        text( name.c_str(), tx, y0 + 20.0f * s, 24, { 255, 190, 110, 255 } );
+        float used =
+            wrapped( trAs( m_talk->m_id, who ), tx, y0 + 56.0f * s, 26, x1 - tx - 30.0f * s, { 240, 236, 228, 255 } );
+        float ay = y0 + 66.0f * s + used;
+        if ( m_talk->m_answers.empty() )
+            text( tr( "talk.next" ), x1 - 24.0f * s - MeasureTextEx( m_font, tr( "talk.next" ), 20 * s, 1.0f ).x,
+                  y0 + ph - 40.0f * s, 20, { 170, 170, 170, 220 } );
+        for ( size_t i = 0; i < m_talk->m_answers.size(); ++i )
+        {
+            bool on = (int)i == m_choice;
+            if ( on )
+                DrawRectangle( (int)( tx - 10 * s ), (int)( ay - 4 * s ), (int)( x1 - tx - 20 * s ), (int)( 34 * s ),
+                               { 255, 170, 80, 40 } );
+            text( TextFormat( "%s  %s", on ? ">" : " ", trAs( m_talk->m_answers[i].first, who ) ), tx, ay, 24,
+                  on ? Color{ 255, 210, 150, 255 } : Color{ 200, 200, 200, 230 } );
+            ay += 36.0f * s;
+        }
+        return;
+    }
+    if ( m_menu )
+    {
+        // Ottla's stims or Kiri's workshop: a panel in the middle, the scrap in hand, the items with their prices.
+        float pw = 1000.0f * s, x0 = w * 0.5f - pw * 0.5f, y0 = h * 0.25f;
+        int   count = m_menu == 1 ? 2 : 3;
+        float ph = ( 130.0f + 52.0f * count ) * s;
+        DrawRectangle( (int)x0, (int)y0, (int)pw, (int)ph, { 8, 10, 12, 230 } );
+        DrawRectangleLinesEx( { x0, y0, pw, ph }, 2.0f * s, { 255, 190, 120, 140 } );
+        text( tr( m_menu == 1 ? "shop.title" : "workshop.title" ), w * 0.5f, y0 + 20.0f * s, 32, { 255, 200, 130, 255 },
+              true );
+        text( TextFormat( tr( "shop.have" ), m_scrap ), w * 0.5f, y0 + 62.0f * s, 22, { 200, 220, 210, 230 }, true );
+        for ( int i = 0; i < count; ++i )
+        {
+            float       y = y0 + ( 110.0f + 52.0f * i ) * s;
+            bool        on = i == m_menuChoice;
+            std::string label, price;
+            if ( i == count - 1 )
+                label = tr( "shop.back" );
+            else if ( m_menu == 1 )
+            {
+                label = TextFormat( "%s  (%d/%d)", tr( "shop.stim" ), m_stims, MaxStims );
+                price = TextFormat( tr( "shop.price" ), StimPrice );
+            }
+            else
+            {
+                int         level = i == 0 ? m_progress.m_weapon : m_progress.m_armor;
+                const char *key =
+                    i == 1 ? "workshop.armor" : ( m_heroKind == HeroE::DORRA ? "workshop.hammer" : "workshop.rifle" );
+                label = TextFormat( tr( key ), level < 3 ? level + 1 : 3 );
+                price = level < 3 ? TextFormat( tr( "shop.price" ), ( i == 0 ? WeaponPrice : ArmorPrice )[level] )
+                                  : tr( "workshop.max" );
+            }
+            if ( on )
+                DrawRectangle( (int)( x0 + 16 * s ), (int)( y - 6 * s ), (int)( pw - 32 * s ), (int)( 42 * s ),
+                               { 255, 170, 80, 40 } );
+            text( label.c_str(), x0 + 36.0f * s, y, 24,
+                  on ? Color{ 255, 210, 150, 255 } : Color{ 210, 210, 210, 230 } );
+            if ( !price.empty() )
+                text( price.c_str(), x0 + pw - 36.0f * s - MeasureTextEx( m_font, price.c_str(), 24 * s, 1.0f ).x, y,
+                      24, { 200, 220, 210, 230 } );
+        }
+        return;
+    }
+    // Someone near: the prompt over their head.
+    int near = nearNpc();
+    if ( near >= 0 && !m_finished )
+    {
+        Vector2 p = GetWorldToScreenEx( Vector3Add( m_npcs[near].m_pos, { 0.0f, 2.3f, 0.0f } ), m_cam, w, h );
+        text( tr( "h_talk" ), p.x, p.y, 22, { 255, 220, 160, 240 }, true );
+    }
+}
+
+}   // namespace spaceopera

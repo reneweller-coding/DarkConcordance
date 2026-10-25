@@ -1,0 +1,90 @@
+# Hub: Velm Station, Third Drum (English). Lines, conversations, hints, signs, the harvest board.
+# Conversation nodes: a node's text under its key, answers under theirs; "<key>.dorra" / ".corvin": how this figure
+# says it, or how one talks to them.
+
+velm.name       = Velm, Third Drum
+act.1hub        = Act I · Velm
+
+speaker.ysolde  = Ysolde Varn
+speaker.ottla   = Ottla
+speaker.kiri    = Kiri Anand
+speaker.hausmeister = CARETAKER
+
+v_start         = The Third Drum. Somewhere around here a woman called Ysolde Varn is waiting. She paid my bill.
+v_start.dorra   = The Third Drum. Ysolde Varn paid for me before I was even awake. That kind of thing always costs twice.
+v_back          = Back at the Last Shift. Ysolde will want to know what was in the Cooling Guts.
+
+# Ysolde: the first conversation.
+ys1             = So you're awake. Ysolde Varn. I paid for your treatment – consider it a down payment.
+ys1_a           = A down payment on what?
+ys1_b           = Where is Ilka's core?
+ys2             = On your help. People have been vanishing in the Cooling Guts for months. They turn up again – empty. Like your girl.
+ys2_a           = Who's doing it?
+ys2_b           = And what's in it for you?
+ys2_b.dorra     = And what do you get out of it?
+ys3             = Stolen cores pass through the Cooling Guts to the Core Bank, and from there to anyone who pays. Whoever starts digging there finds the trail.
+ys3.corvin      = You know how it works, Mr Aske. You did it yourself. The cores go through the Cooling Guts to the Core Bank. Start there.
+ys4             = Skimmers. Mother Sevenfold's people. In the Cooling Guts they store what they no longer need – and a drone press keeps the curious away.
+ys4_a           = I'll go.
+ys5             = I deal in information. What you find is worth something to me. I never lie to you. I just never tell you everything.
+ys6             = The freight lift at the end of the alley goes up to the axis. Here, fifty scrap – for Kiri's workshop. Come back alive, then we'll talk about the rest.
+ys7             = The lift at the end of the alley is waiting. So am I.
+
+# Ysolde: after the Cooling Guts.
+ys10            = The press has gone quiet, I hear. And you found the bodies.
+ys10_a          = Stacked like goods. The trail leads to the Marrow Market.
+ys11            = Then it's the Assessor. He prices what a head is worth, and he's rarely wrong. Give me a few days – I'll find out where he buys.
+ys11_a          = Ilka doesn't have a few days.
+ys12            = Ilka has time, believe me. More than you'll like. Get some rest. I'll send for you.
+ys20            = Nothing new yet. Kiri was asking after you, by the way.
+
+# Ottla, the landlady.
+ot1             = Welcome to the Last Shift. What'll it be?
+ot1_a           = The board up there?
+ot1_b           = Stims, if you have any.
+ot1_c           = Nothing. Thanks.
+ot2             = Sixty-one. Every name a moon, an ocean or a settlement the Harvest has swallowed. We chalk them up when the news comes in. The latest was Talgrund.
+ot2_a           = Talgrund. That's where Ilka came from.
+ot3             = Then I'm sorry. Most people in here have a name up there. Have a drink. On the house.
+ot4             = Fifteen scrap apiece. I don't ask where yours comes from, you don't ask where mine does.
+
+# Kiri, the mechanic.
+ki1             = Anand's Workshop. I fix anything that doesn't run away. And some things that try.
+ki1_a           = Show me what you can do.
+ki1_b           = Later.
+ki2             = Take a look. Payment in scrap – I don't take excuses.
+
+# The CARETAKER, the station's administration (it doesn't think, and everyone is proud of that).
+hm1             = CARETAKER. Pressure: nominal. Rotation: nominal. Residents: 401,112. Request?
+hm1_a           = Do you actually think?
+hm1_b           = Nothing.
+hm2             = No. I count. I leave the thinking to the Station Council. The Station Council has not yet agreed on it.
+
+h_talk          = A / E: talk
+h_exitlocked    = The freight lift goes up to the axis. Talk to Ysolde Varn first – in the Last Shift.
+h_exitlater     = The Marrow Market: to be continued.
+h_window        = Velm turns past beneath the floor: the cavern inside the asteroid, the other two drums.
+
+shop.title      = OTTLA'S STIMS
+shop.stim       = Stim (+40 health)
+workshop.title  = ANAND'S WORKSHOP
+workshop.rifle  = Gauss rifle, level %d: more damage, cooler
+workshop.hammer = Ram hammer, level %d: harder, faster bolts
+workshop.armor  = Armour, level %d: +20 health
+workshop.max    = (maxed out)
+shop.price      = %d scrap
+shop.back       = Back
+shop.have       = Scrap: %d
+talk.next       = A / Enter: continue
+
+board.title     = THE HARVEST
+board.sub       = What it has swallowed so far
+board.moon      = moon
+board.ocean     = ocean
+board.settlement = settlement
+board.belt      = belt
+
+sign_bar        = THE LAST SHIFT | BAR · THIRD DRUM
+sign_clinic     = CHARITY CLINIC | THIRD DRUM · OPEN
+sign_shop       = ANAND'S WORKSHOP | REPAIRS · REFITS
+sign_axis       = FREIGHT LIFT ↑ | AXIS · COOLING GUTS

@@ -22,6 +22,7 @@
 #include <raylib.h>
 #include <raymath.h>
 
+#include <map>
 #include <set>
 #include <string>
 #include <vector>
@@ -36,7 +37,8 @@ struct GameInput
     bool    m_fire = false;             ///< trigger held (Dorra: strike)
     bool    m_jump = false;             ///< jump pressed this frame
     bool    m_stim = false;             ///< stim pressed this frame
-    bool    m_special = false;          ///< special pressed this frame (Dorra: throw a blast bolt)
+    bool    m_special = false;          ///< special pressed this frame (Dorra: throw a blast bolt; menus: back)
+    bool    m_use = false;              ///< use pressed this frame (talk; A does it too where there is someone)
     bool    m_confirm = false;          ///< confirm pressed this frame (restart after the end)
     bool    m_mouseAim = false;         ///< the mouse aims (it moved or a button is held)
     bool    m_strafe = false;           ///< keep facing where the hero looks (left trigger, Shift; Dorra: shield up)
@@ -62,6 +64,18 @@ enum class HeroE : int
     DORRA,    ///< melee: ram hammer, shield, blast bolts
     IONE,     ///< drones (not playable yet)
     COUNT     ///< number of heroes
+};
+
+/** @brief What carries over from level to level, and into the save. */
+struct Progress
+{
+    HeroE                 m_hero = HeroE::CORVIN;   ///< who is played
+    std::string           m_level;                  ///< the level to play (next)
+    int                   m_scrap = 0;              ///< scrap
+    int                   m_stims = 1;              ///< stims
+    int                   m_weapon = 0;             ///< the workshop's work on the weapon (0..3)
+    int                   m_armor = 0;              ///< and on the armour (0..3)
+    std::set<std::string> m_flags;                  ///< what has happened (job1, done.<level> ...)
 };
 
 /**
@@ -123,8 +137,24 @@ public:
     /** @return true once the level is over */
     bool finished() const { return m_finished; }
 
-    /** @return the level that follows ("" none) */
-    const std::string &next() const { return m_level.m_next; }
+    /** @return the level that follows ("" none): the level's own, or where the hub's lift goes */
+    const std::string &next() const { return m_exitTo.empty() ? m_level.m_next : m_exitTo; }
+
+    /** @return what carries over now: scrap, stims, the workshop's work, what has happened (and this level done) */
+    Progress progress() const;
+
+    /** @return true if the end goes straight on (a hub's lift), without the summary */
+    bool autoAdvance() const { return m_level.m_peaceful; }
+
+    /** @return seconds since the level ended */
+    float finishedFor() const { return m_endTimer; }
+
+    /**
+     * @brief Opens a conversation, or Ottla's (1) or Kiri's (2) menu (pictures).
+     * @param[in] who   the person's name ("" none)
+     * @param[in] menu  0 none, 1 stims, 2 workshop
+     */
+    void openForPicture( const std::string &who, int menu );
 
     /** @return a line about the run (autopilot) */
     std::string report() const;
@@ -151,6 +181,7 @@ public:
     float       m_camYaw = 0.0f;                      ///< camera turned about the hero (radians, 0 = looking north)
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
     HeroE       m_heroKind = HeroE::CORVIN;           ///< who is played (set before load)
+    Progress    m_progress;                           ///< what the level starts with (set before load)
 
 private:
     enum class FoeE : uint8_t
@@ -301,6 +332,7 @@ private:
     Target findTarget( Vector3 from, Vector3 dir, float cone ) const;
     Vector3 targetPoint( const Target &t ) const;
     bool los( Vector3 a, Vector3 b ) const;
+    bool gapBetween( Vector3 a, Vector3 b ) const;
     void hurtHero( float amount, Vector3 push, Vector3 from );
     void killFoe( Foe &f, bool drops );
     void hurtFoe( Foe &f, float amount, Vector3 dir );
@@ -336,6 +368,20 @@ private:
     void updateShots( float dt );
     void poseCrew( std::vector<Drawable> &out );
     bool autopilotMelee( GameInput &in, const Target &best, float bestDist );
+
+    // GameHub.cpp: people to talk to, the conversations, Ottla's stims, Kiri's workshop, the harvest board, the drums
+    // turning past beneath the floor, the lift out.
+    void loadHub( Gfx &gfx, const std::string &assets );
+    void renderBoard();
+    bool updateHub( float dt, GameInput &in );
+    int nearNpc() const;
+    void openTalk( int npc );
+    void enterNode( const TalkNode *node );
+    void runEvent( const std::string &event );
+    void buy( int item );
+    void poseHub( std::vector<Drawable> &out );
+    void drawHubHud( int w, int h, float s );
+    float weaponBoost() const { return 1.0f + 0.2f * m_progress.m_weapon; }
 
     // GameShip.cpp: the dodges, the cargo, the people, the view, the last scene.
     void loadShip( Gfx &gfx, const std::string &assets );
@@ -415,7 +461,7 @@ private:
     int                   m_flowR = -1, m_flowC = -1;
     float                 m_flowTimer = 0.0f;
     Figure                m_boarderBaton, m_boarderGun;   ///< the boarders (one figure draws them all)
-    Figure                m_folk[4];                      ///< refugees in three kinds of clothes, and Ilka
+    Figure                m_folk[6];   ///< three kinds of worn clothes, Ilka, Ysolde's coat, Kiri's coverall
     Mesh                  m_cargoMesh = {}, m_cargoBand = {}, m_scannerMesh = {};
 
     // The ship.
@@ -433,6 +479,32 @@ private:
     int               m_scene = 0;   ///< the last scene: 0 none, 1 Ilka, 2 the shot, 3 dark, 4 the clinic
     float             m_sceneTimer = 0.0f, m_sceneDown = 0.0f, m_patrolMark = 0.0f;
     Vector3           m_shooter = { 0, 0, 0 };
+
+    // The hub.
+    struct NpcState
+    {
+        int     m_def;    ///< its line in the level
+        Vector3 m_pos;    ///< where it stands
+        float   m_yaw;    ///< where it looks
+        int     m_look;   ///< which figure (-1: the terminal)
+    };
+    std::vector<NpcState>            m_npcs;
+    const TalkNode                  *m_talk = nullptr;   ///< the conversation's step on screen
+    int                              m_talkNpc = -1, m_choice = 0;
+    int                              m_menu = 0, m_menuChoice = 0;   ///< 1 Ottla's stims, 2 Kiri's workshop
+    float                            m_navY = 0.0f;                  ///< the stick's last up and down (menus)
+    std::map<std::string, Texture2D> m_portraits;
+    Texture2D                        m_boardTex = {};
+    int                              m_boardSurface = -1;
+    std::vector<Drawable>            m_drums;   ///< the cavern and the other drums (turned each frame)
+    std::vector<Vector3>             m_cavernLights;
+    Mesh                             m_terminalMesh = {}, m_screenMesh = {}, m_padMesh = {};
+    Vector3                          m_axis = { 0, 0, 0 };   ///< a point on our drum's axis (it runs east-west)
+    Vector2                          m_rawMove = { 0, 0 };   ///< the stick before the camera's turn (menus)
+    Vector3                          m_exit = { 0, 0, 0 };
+    bool                             m_hasExit = false;
+    std::string                      m_exitTo, m_levelFile;
+    float                            m_spin = 0.0f;   ///< how far the drum has turned (radians)
 
     // The press.
     bool      m_pressActive = false, m_pressDead = false, m_pressDying = false;

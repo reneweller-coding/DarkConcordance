@@ -2,7 +2,8 @@
 
 language.name     = English
 
-menu.start        = Start game
+menu.start        = New game
+menu.continue     = Continue
 menu.resume       = Resume
 menu.difficulty   = Difficulty
 menu.brightness   = Brightness

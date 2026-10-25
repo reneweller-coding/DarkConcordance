@@ -41,14 +41,16 @@ void Game::buildCrew( const std::string & )
     FigureSurfaces gun = baton;
     gun.m_weapon = WeaponE::RIFLE;
     m_boarderGun.build( gun );
-    // People without a suit: three kinds of worn clothes, and Ilka in her yellow jacket, nine years old.
-    const int cloth[4] = { S_CLOTH, S_CLOTH2, S_CLOTH3, S_ILKA };
-    for ( int i = 0; i < 4; ++i )
+    // People without a suit: three kinds of worn clothes, Ilka in her yellow jacket (nine years old), Ysolde tall in
+    // her dark violet coat, Kiri in her orange coverall.
+    const int cloth[6] = { S_CLOTH, S_CLOTH2, S_CLOTH3, S_ILKA, S_YSOLDE, S_KIRI };
+    for ( int i = 0; i < 6; ++i )
     {
         FigureSurfaces f = { cloth[i], S_DARK, S_METAL, S_GLOW };
         f.m_suit = false;
         f.m_weapon = WeaponE::NONE;
         if ( i == 3 ) f.m_scale = { 0.62f, 0.62f, 0.62f };
+        if ( i == 4 ) f.m_scale = { 0.95f, 1.06f, 0.95f };
         m_folk[i].build( f );
     }
 }
@@ -116,7 +118,7 @@ void Game::updateMelee( float dt, const GameInput &in, Vector2 move )
     if ( in.m_special && m_boltTimer <= 0.0f && m_scene == 0 )
     {
         throwBolt();
-        m_boltTimer = BoltCooldown;
+        m_boltTimer = BoltCooldown * ( 1.0f - 0.1f * m_progress.m_weapon );
     }
 }
 
@@ -124,7 +126,8 @@ void Game::strike( int swing )
 {
     Vector3 fwd = { sinf( m_yaw ), 0.0f, cosf( m_yaw ) };
     bool    slam = swing == 2;
-    float   reach = slam ? 2.3f : 2.2f, cone = slam ? 0.9f : 1.25f, damage = slam ? SlamDamage : SwingDamage;
+    float   reach = slam ? 2.3f : 2.2f, cone = slam ? 0.9f : 1.25f,
+            damage = ( slam ? SlamDamage : SwingDamage ) * weaponBoost();
     Vector3 head = Vector3Add( m_pos, Vector3Scale( fwd, slam ? 1.3f : 1.1f ) );
     bool    hit = false;
     for ( Foe &f : m_foes )
@@ -238,7 +241,7 @@ void Game::blast( Vector3 p )
         float   dist = Vector3Length( d );
         if ( dist > BlastRadius + foeRadius( f ) ) continue;
         Vector3 dir = dist > 1e-3f ? Vector3Scale( d, 1.0f / dist ) : Vector3{ 0, 1, 0 };
-        hurtFoe( f, BoltDamage * ( 1.0f - 0.5f * fminf( 1.0f, dist / BlastRadius ) ), dir );
+        hurtFoe( f, BoltDamage * weaponBoost() * ( 1.0f - 0.5f * fminf( 1.0f, dist / BlastRadius ) ), dir );
         f.m_vel = Vector3Add( f.m_vel, { dir.x * 3.0f, 1.5f, dir.z * 3.0f } );
         f.m_ground = false;
     }
@@ -249,10 +252,10 @@ void Game::blast( Vector3 p )
         for ( int side = 0; side < 2; ++side )
         {
             float flat = Vector2Distance( { p.x, p.z }, { o.x + ( side ? 9.2f : -9.2f ), o.z + 0.5f } ) - 1.15f;
-            if ( flat < BlastRadius && p.y < 5.2f ) hitTank( side, BoltDamage * 1.3f, p, { 0, 1, 0 } );
+            if ( flat < BlastRadius && p.y < 5.2f ) hitTank( side, BoltDamage * 1.3f * weaponBoost(), p, { 0, 1, 0 } );
         }
         if ( Vector3Distance( p, { o.x, 3.4f, o.z - 0.4f } ) < BlastRadius + 0.4f )
-            hitCore( BoltDamage * 1.3f, p, { 0, 0, 1 } );
+            hitCore( BoltDamage * 1.3f * weaponBoost(), p, { 0, 0, 1 } );
     }
 }
 
@@ -466,7 +469,8 @@ bool Game::autopilotMelee( GameInput &in, const Target &best, float bestDist )
     float reach = best.m_kind == 0 ? 1.6f : 2.9f;
     // Never straight across a shaft: then the path decides (and a bolt flies).
     for ( float step : { 0.8f, 1.6f, 2.4f } )
-        if ( step < dist && groundAt( { m_pos.x + in.m_stick.x * step, 0.0f, m_pos.z + in.m_stick.y * step } ) < -100.0f )
+        if ( step < dist &&
+             groundAt( { m_pos.x + in.m_stick.x * step, 0.0f, m_pos.z + in.m_stick.y * step } ) < -100.0f )
             return false;
     if ( dist > reach )
     {

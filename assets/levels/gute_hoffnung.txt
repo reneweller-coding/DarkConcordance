@@ -24,7 +24,7 @@ walls    5.2
 sky      nebula
 thrust   1
 gate     bridgeclear
-next     kuehlgedaerme.txt
+next     velm.txt
 ambience ship
 zone     0 13 8 38 bridge
 zone     21 0 39 51 cargo

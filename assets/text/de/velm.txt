@@ -1,0 +1,90 @@
+# Hub: Station Velm, Dritte Trommel (Deutsch, die Quelle). Zeilen, Gespräche, Hinweise, Schilder, die Abbautafel.
+# Gesprächsknoten: der Text des Knotens unter seinem Schlüssel, Antworten unter ihrem; "<schlüssel>.dorra" / ".corvin":
+# so sagt es diese Figur, oder so spricht man mit ihr.
+
+velm.name       = Velm, Dritte Trommel
+act.1hub        = Akt I · Velm
+
+speaker.ysolde  = Ysolde Varn
+speaker.ottla   = Ottla
+speaker.kiri    = Kiri Anand
+speaker.hausmeister = HAUSMEISTER
+
+v_start         = Die Dritte Trommel. Irgendwo hier wartet eine Frau namens Ysolde Varn. Sie hat meine Rechnung bezahlt.
+v_start.dorra   = Die Dritte Trommel. Ysolde Varn hat mich bezahlt, bevor ich wach war. So was kostet immer zweimal.
+v_back          = Zurück in der Letzten Schicht. Ysolde wird wissen wollen, was in den Kühlgedärmen war.
+
+# Ysolde: das erste Gespräch.
+ys1             = Sie sind also wach. Ysolde Varn. Ich habe Ihre Behandlung bezahlt – betrachten Sie es als Anzahlung.
+ys1_a           = Anzahlung wofür?
+ys1_b           = Wo ist Ilkas Kern?
+ys2             = Für Ihre Hilfe. In den Kühlgedärmen verschwinden seit Monaten Leute. Sie tauchen wieder auf – leer. Wie Ihr Mädchen.
+ys2_a           = Wer macht das?
+ys2_b           = Und was haben Sie davon?
+ys2_b.dorra     = Und was springt für Sie dabei raus?
+ys3             = Geraubte Kerne gehen durch die Kühlgedärme zur Kernbank, und von dort zu jedem, der zahlt. Wer dort anfängt zu graben, findet die Spur.
+ys3.corvin      = Sie wissen, wie das läuft, Herr Aske. Sie haben es selbst gemacht. Die Kerne gehen durch die Kühlgedärme zur Kernbank. Fangen Sie dort an.
+ys4             = Abschöpfer. Mutter Siebenfachs Leute. In den Kühlgedärmen lagern sie, was sie nicht mehr brauchen – und eine Drohnenpresse hält ihnen die Neugierigen vom Leib.
+ys4_a           = Ich gehe hin.
+ys5             = Ich handle mit Informationen. Was Sie finden, ist für mich etwas wert. Ich lüge Sie nie an. Ich sage Ihnen nur nie alles.
+ys6             = Der Lastenaufzug am Ende der Gasse fährt zur Achse. Hier, fünfzig Schrott – für Kiris Werkstatt. Kommen Sie lebend zurück, dann reden wir über den Rest.
+ys7             = Der Aufzug am Ende der Gasse wartet. Ich auch.
+
+# Ysolde: nach den Kühlgedärmen.
+ys10            = Die Presse ist still, höre ich. Und Sie haben die Körper gefunden.
+ys10_a          = Gestapelt wie Ware. Die Spur führt zum Knochenmarkt.
+ys11            = Dann ist es der Taxator. Er schätzt, was ein Kopf wert ist, und er irrt sich selten. Geben Sie mir ein paar Tage – ich finde heraus, wo er kauft.
+ys11_a          = Ein paar Tage hat Ilka nicht.
+ys12            = Ilka hat Zeit, glauben Sie mir. Mehr, als Ihnen lieb sein wird. Ruhen Sie sich aus. Ich lasse Sie rufen.
+ys20            = Noch nichts Neues. Kiri hat übrigens nach Ihnen gefragt.
+
+# Ottla, die Wirtin.
+ot1             = Willkommen in der Letzten Schicht. Was darf's sein?
+ot1_a           = Die Tafel da oben?
+ot1_b           = Stims, wenn du hast.
+ot1_c           = Nichts. Danke.
+ot2             = Einundsechzig. Jeder Name ein Mond, ein Meer oder eine Siedlung, die die Ernte geschluckt hat. Wir schreiben sie an, wenn die Nachricht kommt. Die letzte war Talgrund.
+ot2_a           = Talgrund. Da kam Ilka her.
+ot3             = Dann tut's mir leid. Die meisten hier haben einen Namen da oben. Trink was. Geht aufs Haus.
+ot4             = Fünfzehn Schrott das Stück. Ich frage nicht, woher du sie hast, du fragst nicht, woher ich meine habe.
+
+# Kiri, die Mechanikerin.
+ki1             = Werkstatt Anand. Ich schraube an allem, was nicht wegläuft. Und an manchem, was es versucht.
+ki1_a           = Zeig mir, was du kannst.
+ki1_b           = Später.
+ki2             = Schau's dir an. Bezahlt wird in Schrott – Ausreden nehme ich nicht.
+
+# HAUSMEISTER, die Verwaltung der Station (denkt nicht, und darauf sind alle stolz).
+hm1             = HAUSMEISTER. Druck: normal. Rotation: normal. Bewohner: 401.112. Anliegen?
+hm1_a           = Denkst du eigentlich?
+hm1_b           = Nichts.
+hm2             = Nein. Ich zähle. Das Denken überlasse ich dem Stationsrat. Der Stationsrat ist sich darüber noch nicht einig.
+
+h_talk          = A / E: sprechen
+h_exitlocked    = Der Lastenaufzug fährt zur Achse. Erst mit Ysolde Varn reden – in der Letzten Schicht.
+h_exitlater     = Der Knochenmarkt: Fortsetzung folgt.
+h_window        = Unter dem Boden dreht sich Velm vorbei: die Höhle im Asteroiden, die anderen beiden Trommeln.
+
+shop.title      = OTTLAS STIMS
+shop.stim       = Stim (+40 Leben)
+workshop.title  = WERKSTATT ANAND
+workshop.rifle  = Gaußgewehr, Stufe %d: mehr Schaden, kühler
+workshop.hammer = Rammhammer, Stufe %d: härter, schnellere Bolzen
+workshop.armor  = Panzerung, Stufe %d: +20 Leben
+workshop.max    = (ausgebaut)
+shop.price      = %d Schrott
+shop.back       = Zurück
+shop.have       = Schrott: %d
+talk.next       = A / Enter: weiter
+
+board.title     = DIE ERNTE
+board.sub       = Was sie bisher geschluckt hat
+board.moon      = Mond
+board.ocean     = Meer
+board.settlement = Siedlung
+board.belt      = Gürtel
+
+sign_bar        = ZUR LETZTEN SCHICHT | BAR · DRITTE TROMMEL
+sign_clinic     = ARMENKLINIK | DRITTE TROMMEL · OFFEN
+sign_shop       = WERKSTATT ANAND | REPARATUR · UMBAU
+sign_axis       = LASTENAUFZUG ↑ | ACHSE · KÜHLGEDÄRME

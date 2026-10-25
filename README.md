@@ -7,8 +7,9 @@ ranged combat aimed as in *Fallout: Brotherhood of Steel*, pools of light in the
 ## Starting the game
 
 „Spiel starten“ asks who you are: **Dorra Vask** (melee: ram hammer, shield, blast bolts) or **Corvin Aske**
-(ranged: the Gauss rifle); Ione follows later. The game begins with the prologue and goes on to level 1 with the same
-hero (Enter or Start after a level's end).
+(ranged: the Gauss rifle); Ione follows later. The game begins with the prologue, wakes up on Station Velm (the hub)
+and goes down to level 1 from there, back to Velm after it; hero, scrap, stims, upgrades and what has happened go along
+and are saved in `save.txt` beside the program at each level's start („Fortsetzen“ in the title menu).
 
 ## Prologue: the lighter „Gute Hoffnung“
 
@@ -31,6 +32,29 @@ Ilka to her aunt on Velm. Skimmers (Abschöpfer) board the ship.
 ![A dodge](docs/screenshots/pro_thrust.jpg)
 ![Ilka](docs/screenshots/pro_ilka.jpg)
 ![The clinic](docs/screenshots/pro_clinic.jpg)
+
+## Hub: Station Velm, the Third Drum
+
+An alley in one of the three habitat drums turning inside the hollowed asteroid. No fighting: A or E talks.
+
+- **The bar „Zur Letzten Schicht“** with Ottla behind the counter (she sells stims), people at the tables, the harvest
+  board on the north wall (61 settlements the Mill has taken, the newest in red, chalked in the game's own font) and a
+  window in the floor: beneath it Velm turns past, the cavern's work lights, girders, the other two drums with their
+  lit rooms and window bands.
+- **Ysolde Varn**, who paid for the clinic: conversations with answers to choose, portraits beside the lines; she gives
+  the first job (and 50 scrap down payment) and has new lines after level 1.
+- **Anand's Workshop** (Kiri): the hero's weapon (more damage, less heat; Dorra's bolts come back sooner) and armour
+  (+20 health) in three levels each, paid in scrap.
+- **HAUSMEISTER**, the station's voice at a terminal; the clinic; the freight lift to the axis, which opens once there
+  is a job to go to.
+
+The conversations are in [assets/levels/velm.txt](assets/levels/velm.txt) (`[npcs]`, `[talk]`: nodes, answers,
+events), their words in `assets/text/<language>/velm.txt`.
+
+![Ysolde Varn](docs/screenshots/hub_ysolde.jpg)
+![Through the window in the bar's floor](docs/screenshots/hub_window.jpg)
+![The harvest board](docs/screenshots/hub_board.jpg)
+![The workshop](docs/screenshots/hub_workshop.jpg)
 
 ## Dorra
 
@@ -98,13 +122,16 @@ Tests and pictures without a window (always silent):
 
     bin\msvc\SpaceOpera.exe --shot work\a.png --autoplay --report --warm 600 --hero dorra     # the prologue
     bin\msvc\SpaceOpera.exe --shot work\a.png --level kuehlgedaerme.txt --autoplay --report --warm 900
+    bin\msvc\SpaceOpera.exe --shot work\a.png --level velm.txt --autoplay --report --warm 120              # the hub
+    bin\msvc\SpaceOpera.exe --shot work\d.png --level velm.txt --flags job1,done.kuehlgedaerme --talk ysolde
     bin\msvc\SpaceOpera.exe --shot work\b.png --level kuehlgedaerme.txt --at 25,25 --face 180 --awake --fire --warm 4
     bin\msvc\SpaceOpera.exe --lookdev --shot work\c.png --at 0.6,-4.3 --face 145 --walk
 
 `--report` writes the run (finished, time, deaths, kills, shots) into `spaceopera.log` beside the program; `--bench n`
 renders n frames first and logs the time per frame. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
 `--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
-language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue.
+language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue; `--flags a,b`
+sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture.
 
 ## Textures
 

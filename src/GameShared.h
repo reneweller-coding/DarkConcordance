@@ -76,6 +76,9 @@ enum SurfE
     S_CLOTH2,
     S_CLOTH3,
     S_ILKA,
+    S_YSOLDE,   ///< Ysolde's dark violet coat
+    S_KIRI,     ///< Kiri's orange coverall
+    S_CAVERN,   ///< the asteroid's cavern, seen from far
     S_COUNT
 };
 

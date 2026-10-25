@@ -1,0 +1,111 @@
+# Hub: Station Velm, Dritte Trommel. Eine Gasse in einer der drei Wohntrommeln, die sich im ausgehöhlten Asteroiden
+# drehen: die Armenklinik, die Bar „Zur Letzten Schicht“ mit der Abbautafel und einem Fenster im Boden (darunter dreht
+# sich Velm vorbei), Kiris Werkstatt, HAUSMEISTERs Terminal, der Lastenaufzug zur Achse. Kein Kampf: A / E spricht.
+#
+#   #  Schott   .  Boden   +  Theke   _  Fenster im Boden   P  Start   O  Lastenaufzug   N  Leute (sitzen)
+#   A  Arbeitslicht   R  Notlicht   V  Dampf   a-z  Auslöser der Zeilen unten
+#
+#   zone r0 c0 r1 c1 thema   (bar, works, coldstore, gangway; die erste passende zählt)
+#   board r c breite         die Abbautafel an der Nordwand dieser Zellen
+#   exit level flag          wohin der Aufzug fährt, sobald das Ereignis geschehen ist (und solange das Level offen ist)
+#   back flag                mit diesem Ereignis beginnt das Level mit "back" statt "start"
+#   [npcs]  Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...  (das letzte zutreffende zählt)
+#   [talk]  Knoten | Sprecher | Ereignis | Antwort>Knoten ...  ("-" beendet; Ereignisse: Merker, scrapN, shop, workshop)
+#   Alle Texte stehen hier als Schlüssel, in assets/text/<sprache>/velm.txt als Text.
+
+name     velm.name
+act      act.1hub
+gravity  7.0
+fog      0.003 0.01 0.6 0.9
+fogcolor 0.004 0.0028 0.0018
+ambient  0.06 0.05 0.045 0.035 0.03 0.028
+walls    4.5
+peaceful 1
+view     drums
+ambience tunnels
+back     done.kuehlgedaerme
+autotalk ysolde
+exit     kuehlgedaerme.txt job1
+exit     knochenmarkt.txt job2
+board    3 17 10
+zone     2 11 14 34 bar
+zone     19 27 27 39 works
+zone     19 2 27 12 coldstore
+zone     0 0 29 43 gangway
+sign     15 19 sign_bar
+sign     18 4 sign_clinic
+sign     20 30 sign_shop
+sign     15 38 sign_axis
+route    19 6  16 10  14 22  11 29  14 22  16 38  16 40
+
+[map]
+############################################
+############################################
+############################################
+############..A................A..##########
+############......................##########
+############....+++++++++++++.....##########
+############A.....................##########
+############.N....wwwwwwwww.....N.##########
+############......_________.......##########
+############..N..._________.......##########
+############......_________.......##########
+############......wwwwwwwww.......##########
+############.N.....N.......N......##########
+############....A.............A...##########
+#####################...####################
+##..A...........A.............A..........R##
+##......................................O.##
+##.............N...........N..............##
+##......................A.............A..R##
+######P.########################..##########
+######..####################.A.........#####
+###.A.......################...........#####
+###.........################...........#####
+###.N.......################...........#####
+###.........################........V..#####
+###.......N.################...........#####
+###........A################.........A.#####
+############################################
+############################################
+############################################
+
+[npcs]
+# Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...
+ysolde      | 11 30 | ysolde   | ys1 | job1:ys7 done.kuehlgedaerme:ys10 l1told:ys20
+ottla       | 4 22  | ottla    | ot1
+kiri        | 23 33 | kiri     | ki1
+hausmeister | 15 9  | terminal | hm1
+
+[talk]
+# Knoten | Sprecher | Ereignis | Antwort>Knoten ...
+ys1  | ysolde      | -            | ys1_a>ys2 ys1_b>ys3
+ys2  | ysolde      | -            | ys2_a>ys4 ys2_b>ys5
+ys3  | ysolde      | -            | ys2_a>ys4
+ys4  | ysolde      | -            | ys4_a>ys6
+ys5  | ysolde      | -            | ys2_a>ys4
+ys6  | ysolde      | job1,scrap50 |
+ys7  | ysolde      | -            |
+ys10 | ysolde      | -            | ys10_a>ys11
+ys11 | ysolde      | -            | ys11_a>ys12
+ys12 | ysolde      | l1told       |
+ys20 | ysolde      | -            |
+ot1  | ottla       | -            | ot1_a>ot2 ot1_b>ot4 ot1_c>-
+ot2  | ottla       | -            | ot2_a>ot3
+ot3  | ottla       | -            |
+ot4  | ottla       | shop         |
+ki1  | kiri        | -            | ki1_a>ki2 ki1_b>-
+ki2  | kiri        | workshop     |
+hm1  | hausmeister | -            | hm1_a>hm2 hm1_b>-
+hm2  | hausmeister | -            |
+
+[lines]
+# Schlüssel | Auslöser | Sprecher
+v_start     | start    | hero
+v_back      | back     | hero
+
+[hints]
+# Schlüssel | Auslöser
+h_window      | w
+h_exitlocked  | exitlocked
+h_exitlater   | exitlater

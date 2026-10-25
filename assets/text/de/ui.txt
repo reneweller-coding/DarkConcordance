@@ -2,7 +2,8 @@
 
 language.name     = Deutsch
 
-menu.start        = Spiel starten
+menu.start        = Neues Spiel
+menu.continue     = Fortsetzen
 menu.resume       = Weiter
 menu.difficulty   = Schwierigkeit
 menu.brightness   = Helligkeit

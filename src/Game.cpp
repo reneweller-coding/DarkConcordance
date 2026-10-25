@@ -63,15 +63,19 @@ void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
     tile( S_HULL, "wall", 0.3f, { 0.9f, 1.0f, 1.1f, 0.0f }, 0.4f, { 160, 168, 178, 255 } );
     tile( S_DORRA, "armor", 1.6f, { 1.1f, 1.0f, 1.5f, 0.0f }, 0.15f, { 196, 150, 40, 255 } );
     tile( S_BOARDER, "armor", 1.6f, { 0.8f, 1.0f, 1.5f, 0.0f }, 0.15f, { 96, 30, 26, 255 } );
-    tile( S_CLOTH, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 120, 128, 140, 255 } );
-    tile( S_CLOTH2, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 132, 110, 84, 255 } );
-    tile( S_CLOTH3, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 92, 112, 96, 255 } );
-    tile( S_ILKA, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 215, 160, 60, 255 } );
+    tile( S_CLOTH, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 84, 90, 100, 255 } );
+    tile( S_CLOTH2, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 96, 78, 60, 255 } );
+    tile( S_CLOTH3, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 64, 80, 68, 255 } );
+    tile( S_ILKA, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 175, 125, 40, 255 } );
+    tile( S_YSOLDE, "fabric", 2.0f, { 0.8f, 0.0f, 1.0f, 0.0f }, 0.1f, { 44, 30, 62, 255 } );
+    tile( S_KIRI, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 160, 75, 25, 255 } );
+    tile( S_CAVERN, "rock", 0.004f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.8f, { 12, 11, 10, 255 } );
 }
 
 bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound )
 {
     m_assets = assets;
+    m_levelFile = level;
     if ( !m_level.load( assets + "/levels/" + level ) ) return false;
     loadSurfaces( gfx, assets );
     // The lift's cell is part of its well.
@@ -311,10 +315,16 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         }
     }
     loadShip( gfx, assets );
+    loadHub( gfx, assets );
     m_hero.animate( 0.0f, m_pos, { 0, 0 }, 0.0f, false, 0.0f, 0.0f );
     m_yaw = m_aimYaw = 0.0f;
+    // What the hero brings along; what has happened (it opens doors and changes what people say, quietly).
+    m_stims = m_progress.m_stims;
+    m_scrap = m_progress.m_scrap;
+    for ( const std::string &f : m_progress.m_flags ) m_fired.insert( f );
 
     loadFont();
+    renderBoard();
     m_audio.init( sound, m_level.m_ambience );
     putHero( m_pos.x, m_pos.z, 0.0f );
     return true;
@@ -347,6 +357,22 @@ void Game::setLanguage()
         m.maps[MATERIAL_MAP_EMISSION].texture = tex;
     }
     loadFont();
+    renderBoard();
+}
+
+Progress Game::progress() const
+{
+    Progress p = m_progress;
+    p.m_hero = m_heroKind;
+    p.m_scrap = m_scrap;
+    p.m_stims = m_stims;
+    p.m_level = m_levelFile;
+    if ( m_finished )
+    {
+        p.m_flags.insert( "done." + m_levelFile.substr( 0, m_levelFile.find( '.' ) ) );
+        p.m_level = next();
+    }
+    return p;
 }
 
 std::string Game::title() const
@@ -382,7 +408,7 @@ const char *heroKey( HeroE h )
 
 float Game::hpMax() const
 {
-    return m_heroKind == HeroE::DORRA ? DorraHp : 100.0f;
+    return ( m_heroKind == HeroE::DORRA ? DorraHp : 100.0f ) + 20.0f * m_progress.m_armor;
 }
 
 float Game::runSpeed() const
@@ -457,6 +483,16 @@ bool Game::los( Vector3 a, Vector3 b ) const
 {
     Vector3 hit, n;
     return !m_level.raycast( a, b, hit, n );
+}
+
+bool Game::gapBetween( Vector3 a, Vector3 b ) const
+{
+    // A shaft anywhere on the straight line between the two (every half metre).
+    float len = Vector2Distance( { a.x, a.z }, { b.x, b.z } );
+    int   steps = (int)( len / 0.5f );
+    for ( int i = 1; i < steps; ++i )
+        if ( groundAt( Vector3Lerp( a, b, (float)i / steps ) ) < -100.0f ) return true;
+    return false;
 }
 
 void Game::blockHero( Vector3 &p ) const
@@ -755,15 +791,16 @@ void Game::shoot()
         }
     }
     Vector3 at = Vector3Add( muzzle, Vector3Scale( dir, tBest ) );
+    float   damage = ShotDamage * weaponBoost();
     if ( kind == 0 )
     {
-        hurtFoe( m_foes[index], ShotDamage, dir );
+        hurtFoe( m_foes[index], damage, dir );
         sparks( at, Vector3Negate( dir ), 10, { 255, 200, 120, 255 }, 3.5f );
     }
     else if ( kind == 1 || kind == 2 )
-        hitTank( kind - 1, ShotDamage, at, Vector3Negate( dir ) );
+        hitTank( kind - 1, damage, at, Vector3Negate( dir ) );
     else if ( kind == 3 )
-        hitCore( ShotDamage, at, Vector3Negate( dir ) );
+        hitCore( damage, at, Vector3Negate( dir ) );
     else if ( kind == 4 )
     {
         // The press's armour: grey sparks that bounce off, and a ring for "this does nothing".
@@ -928,7 +965,7 @@ void Game::updateGunner( float dt, const GameInput &in, Vector2 move )
     {
         shoot();
         m_fireTimer = FireInterval;
-        m_heat += HeatPerShot;
+        m_heat += HeatPerShot * ( 1.0f - 0.12f * m_progress.m_weapon );
         m_coolDelay = 0.3f;
         if ( m_heat >= 100.0f )
         {
@@ -1161,7 +1198,8 @@ void Game::updateFoes( float dt )
                 case FoeStateE::CHASE:
                     want = Vector3Scale( path, 3.4f );
                     faceYaw = atan2f( path.x, path.z );
-                    if ( dist < 3.8f && f.m_los && f.m_ground && fabsf( m_pos.y - f.m_pos.y ) < 1.5f )
+                    if ( dist < 3.8f && f.m_los && f.m_ground && fabsf( m_pos.y - f.m_pos.y ) < 1.5f &&
+                         !gapBetween( f.m_pos, m_pos ) )
                     {
                         f.m_state = FoeStateE::WINDUP;
                         f.m_timer = 0.35f;
@@ -1248,6 +1286,24 @@ void Game::updateFoes( float dt )
                         f.m_timer = 0.6f;
                     }
                 }
+            }
+        }
+        // Nobody walks off an edge: at a shaft the wish to go on stops, or slides along it (a hit or a fall from a
+        // leap still carries them over).
+        if ( f.m_ground && Vector3Length( want ) > 0.1f )
+        {
+            float speed = sqrtf( f.m_vel.x * f.m_vel.x + f.m_vel.z * f.m_vel.z );
+            float look = foeRadius( f ) + 0.35f + speed * 0.25f;
+            auto  edge = [&]( Vector3 w )
+            {
+                float len = Vector3Length( w );
+                return len > 0.05f && groundAt( Vector3Add( f.m_pos, Vector3Scale( w, look / len ) ) ) < -100.0f;
+            };
+            if ( edge( want ) )
+            {
+                Vector3 alongX = { want.x, 0.0f, 0.0f }, alongZ = { 0.0f, 0.0f, want.z };
+                want = !edge( alongX ) ? alongX : ( !edge( alongZ ) ? alongZ : Vector3{ 0.0f, 0.0f, 0.0f } );
+                if ( Vector3Length( want ) < 0.1f ) f.m_vel.x = f.m_vel.z = 0.0f;
             }
         }
         // Physics: walk on the ground, fly in a leap or when hit; the ship's dodges push everyone.
@@ -1709,6 +1765,32 @@ void Game::autopilot( float dt, GameInput &in )
 {
     in = GameInput();
     if ( m_dead || m_finished || m_scene > 0 ) return;
+    // In a hub: read every conversation through (the first answer each time), close the menus, talk to whom it names.
+    if ( m_talk )
+    {
+        in.m_jump = true;
+        return;
+    }
+    if ( m_menu )
+    {
+        in.m_special = true;
+        return;
+    }
+    if ( !m_level.m_autotalk.empty() && !m_fired.count( "talked." + m_level.m_autotalk ) )
+        for ( const NpcState &n : m_npcs )
+        {
+            if ( m_level.m_npcs[n.m_def].m_id != m_level.m_autotalk ) continue;
+            // Within sight: straight to them, then talk.
+            Vector2 to = { n.m_pos.x - m_pos.x, n.m_pos.z - m_pos.z };
+            float   dist = Vector2Length( to );
+            if ( dist > 10.0f || !los( Vector3Add( m_pos, { 0, 1.5f, 0 } ), Vector3Add( n.m_pos, { 0, 1.5f, 0 } ) ) )
+                break;
+            if ( dist > 1.8f )
+                in.m_move = Vector2Scale( to, 1.0f / dist );
+            else
+                in.m_jump = true;
+            return;
+        }
     int cols = m_level.cols();
     if ( m_waypoint < m_level.m_route.size() )
     {
@@ -1826,6 +1908,7 @@ void Game::autopilot( float dt, GameInput &in )
 void Game::update( float dt, const GameInput &inRaw )
 {
     GameInput in = inRaw;
+    m_rawMove = inRaw.m_move;
     if ( m_finished ) m_endTimer += dt;
     m_time += dt;
     m_titleTimer = fmaxf( 0.0f, m_titleTimer - dt );
@@ -1842,6 +1925,7 @@ void Game::update( float dt, const GameInput &inRaw )
         in.m_move = { m.x * c + m.y * s, -m.x * s + m.y * c };
     }
     updateScene( dt, in );
+    if ( updateHub( dt, in ) ) in = GameInput();
     updateThrust( dt );
     updateHero( dt, in );
     updateFoes( dt );
@@ -1864,7 +1948,7 @@ void Game::update( float dt, const GameInput &inRaw )
         for ( Foe &f : m_foes )
             if ( f.m_hidden ) f.m_hidden = false, f.m_awake = true;
     // What a level says at its start; on a ship the alarm goes after it, or as soon as the hero leaves the start.
-    if ( m_time > 0.8f ) fire( "start" );
+    if ( m_time > 0.8f ) fire( !m_level.m_back.empty() && m_fired.count( m_level.m_back ) ? "back" : "start" );
     if ( m_level.m_thrust && !m_fired.count( "alarm" ) && ( m_time > 13.0f || m_fired.count( "b" ) ) ) fire( "alarm" );
 
     // Lines and hints, one at a time.
@@ -1942,7 +2026,9 @@ Lighting Game::lighting() const
     L.m_sunColor = { 0, 0, 0 };
     L.m_spotPos = m_hero.lampPos();
     L.m_spotDir = m_hero.lampDir();
-    L.m_spotColor = m_dead ? Vector3{ 0, 0, 0 } : Vector3{ 48.0f, 43.0f, 35.0f };
+    // The helmet lamp; turned low where the place has its own light (it would burn out faces at arm's length).
+    L.m_spotColor =
+        m_dead ? Vector3{ 0, 0, 0 } : Vector3Scale( { 48.0f, 43.0f, 35.0f }, m_level.m_peaceful ? 0.2f : 1.0f );
     L.m_spotOuter = 30.0f;
     L.m_spotInner = 14.0f;
     L.m_spotRange = 26.0f;
@@ -1952,9 +2038,10 @@ Lighting Game::lighting() const
     L.m_fogColor = m_level.m_fogColor;
     L.m_roomMin = { 0.0f, -PitDepth, 0.0f };
     L.m_roomMax = { m_level.cols() * CellSize, m_level.m_wallHeight, m_level.rows() * CellSize };
+    if ( !m_level.m_view.empty() ) L.m_roomMin.y = 0.0f;   // no fog below a window in the floor
     if ( m_skyTex.id > 0 )
     {
-        // Out there is vacuum: no fog below the deck. The red dwarf shines up through the window in the floor.
+        // Out there is vacuum. The red dwarf shines up through the window in the floor.
         L.m_roomMin.y = 0.0f;
         L.m_sunDir = Vector3Normalize( Vector3Subtract( m_ownPlume, m_star ) );
         L.m_sunColor = { 2.6f, 0.75f, 0.3f };
@@ -2161,6 +2248,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     m_hero.pose( m_dynamic );
     poseCrew( m_dynamic );
     poseShip( m_dynamic );
+    poseHub( m_dynamic );
     for ( const Foe &f : m_foes )
     {
         if ( !f.m_alive || human( f ) ) continue;
@@ -2464,7 +2552,7 @@ void Game::drawHud( int w, int h )
         text( tr( m_level.m_name ), w * 0.5f, h * 0.30f + 36 * s, 64, { 240, 235, 230, (unsigned char)( 255 * a ) },
               true );
     }
-    if ( m_line )
+    if ( m_line && !m_talk && !m_menu )
     {
         float       a = Clamp( m_lineTimer * 3.0f, 0.0f, 1.0f );
         std::string speaker = m_line->m_speaker == "hero" ? heroKey( m_heroKind ) : m_line->m_speaker;
@@ -2489,7 +2577,9 @@ void Game::drawHud( int w, int h )
     }
     if ( !m_finished && m_pressDead && !m_liftGoing && m_liftWait > 0.0f )
         text( tr( "hud.lift" ), w * 0.5f, h * 0.62f, 26, { 160, 255, 190, 230 }, true );
-    if ( m_finished )
+    if ( m_finished && autoAdvance() )
+        DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 255 * Clamp( m_endTimer, 0.0f, 1.0f ) ) } );
+    else if ( m_finished )
     {
         float a = Clamp( m_endTimer / 2.0f, 0.0f, 1.0f );
         DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 225 * a ) } );
@@ -2498,9 +2588,11 @@ void Game::drawHud( int w, int h )
         text( tr( m_level.m_name ), w * 0.5f, h * 0.34f + 36 * s, 60, { 240, 235, 230, ta }, true );
         text( TextFormat( tr( "hud.summary" ), (int)m_time / 60, (int)m_time % 60, m_scrap, m_kills ), w * 0.5f,
               h * 0.34f + 120 * s, 26, { 210, 215, 220, ta }, true );
-        text( tr( m_level.m_next.empty() ? "hud.again" : "hud.next" ), w * 0.5f, h * 0.34f + 180 * s, 22,
-              { 160, 165, 170, ta }, true );
+        text( tr( next().empty() ? "hud.again" : "hud.next" ), w * 0.5f, h * 0.34f + 180 * s, 22, { 160, 165, 170, ta },
+              true );
     }
+    // The hub's people: the prompt, a conversation, Ottla's stims, Kiri's workshop.
+    drawHubHud( w, h, s );
 }
 
 std::string Game::report() const

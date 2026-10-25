@@ -163,27 +163,33 @@ def generate( name, aspect, prompt ):
         "generationConfig": { "responseModalities": ["IMAGE"],
                               "imageConfig": { "aspectRatio": aspect, "imageSize": "2K" } },
     } ).encode()
+    import time
     last = None
-    for model_id in MODELS:
-        for location in LOCATIONS:
-            host = "aiplatform.googleapis.com" if location == "global" else f"{location}-aiplatform.googleapis.com"
-            url = (f"https://{host}/v1/projects/{PROJECT}/locations/{location}/publishers/google/models/"
-                   f"{model_id}:generateContent")
-            req = urllib.request.Request( url, data=body, method="POST", headers={
-                "Authorization": "Bearer " + token(), "Content-Type": "application/json" } )
-            try:
-                with urllib.request.urlopen( req, timeout=300 ) as resp:
-                    answer = json.load( resp )
-                for part in answer["candidates"][0]["content"]["parts"]:
-                    if "inlineData" in part:
-                        data = base64.b64decode( part["inlineData"]["data"] )
-                        Image.open( io.BytesIO( data ) ).convert( "RGB" ).save( path, quality=95 )
-                        print( f"  {name}: {model_id} ({location})" )
-                        return path
-                last = "no picture in the answer"
-            except Exception as e:  # the next location or model
-                last = e
-                print( f"  {name}: {model_id} ({location}) failed: {str( e )[:160]}" )
+    # Too many requests (429) passes: then all models and places again, after a growing pause.
+    for attempt in range( 5 ):
+        if attempt:
+            print( f"  {name}: waiting {30 * attempt} s" )
+            time.sleep( 30 * attempt )
+        for model_id in MODELS:
+            for location in LOCATIONS:
+                host = "aiplatform.googleapis.com" if location == "global" else f"{location}-aiplatform.googleapis.com"
+                url = (f"https://{host}/v1/projects/{PROJECT}/locations/{location}/publishers/google/models/"
+                       f"{model_id}:generateContent")
+                req = urllib.request.Request( url, data=body, method="POST", headers={
+                    "Authorization": "Bearer " + token(), "Content-Type": "application/json" } )
+                try:
+                    with urllib.request.urlopen( req, timeout=300 ) as resp:
+                        answer = json.load( resp )
+                    for part in answer["candidates"][0]["content"]["parts"]:
+                        if "inlineData" in part:
+                            data = base64.b64decode( part["inlineData"]["data"] )
+                            Image.open( io.BytesIO( data ) ).convert( "RGB" ).save( path, quality=95 )
+                            print( f"  {name}: {model_id} ({location})" )
+                            return path
+                    last = "no picture in the answer"
+                except Exception as e:  # the next location or model
+                    last = e
+                    print( f"  {name}: {model_id} ({location}) failed: {str( e )[:160]}" )
     raise RuntimeError( f"{name}: no model answered ({last})" )
 
 

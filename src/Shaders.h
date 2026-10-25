@@ -322,6 +322,12 @@ void main()
     vec3 N = normalize( mat3( matNormal ) * nObj );
     vec3 Ng = normalize( fragNormal );
     vec3 V = normalize( viewPos - fragPos );
+    // Seen from behind (a cavern from inside, nothing is culled): light the face that is seen.
+    if( dot( Ng, V ) < 0.0 )
+    {
+        N = -N;
+        Ng = -Ng;
+    }
     vec3 col = vec3( 0.0 );
 
     float ndl = max( dot( Ng, -sunDir ), 0.0 );
@@ -416,7 +422,9 @@ void main()
         diff += lightColor[i].rgb * at * max( l.y, 0.0 );
         spec += ggx( N, V, l, rough ) * lightColor[i].rgb * at;
     }
-    vec3 c = spec * F * 3.0 + diff * dirt * 0.035 * vec3( 0.85, 0.9, 1.0 ) + mix( ambDown, ambUp, 0.5 ) * F * 2.0;
+    // Smudges catch a little of the lamps' light (too much, and a window over the dark turns to frosted glass).
+    vec3 c = spec * F * 3.0 + min( diff, vec3( 4.0 ) ) * dirt * 0.012 * vec3( 0.85, 0.9, 1.0 ) +
+             mix( ambDown, ambUp, 0.5 ) * F * 2.0;
     float alpha = clamp( 0.06 + F * 0.45 + dirt * 0.3, 0.0, 0.95 );
     vec4 fog = volumetric( viewPos, fragPos );
     finalColor = vec4( c * fog.a, alpha );
