@@ -117,13 +117,14 @@ public:
     void draw( const std::vector<Drawable> &list, const std::vector<Surface> &surfaces );
 
     /**
-     * @brief Draws the gas giant.
+     * @brief Draws a planet lit by the sun, or a star glowing by itself.
      * @param[in] mesh       a unit sphere
      * @param[in] transform  where and how large
-     * @param[in] map        its cloud map
+     * @param[in] map        its cloud (or surface) map
      * @param[in] spin       how far it has turned (texture u)
+     * @param[in] glow       0: a planet; above: a star this bright (limb darkened)
      */
-    void planet( const Mesh &mesh, const Matrix &transform, Texture2D map, float spin );
+    void planet( const Mesh &mesh, const Matrix &transform, Texture2D map, float spin, float glow = 0.0f );
 
     /**
      * @brief Draws the glass (blended over what is behind it).

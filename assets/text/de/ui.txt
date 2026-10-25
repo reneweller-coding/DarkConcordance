@@ -28,3 +28,14 @@ hud.core          = KERN
 hud.lift          = Lastenaufzug fährt an …
 hud.summary       = Zeit %d:%02d     Schrott %d     Maschinen zerstört %d
 hud.again         = Enter oder Start: noch einmal
+
+menu.choose         = Wer bist du?
+choose.dorra        = Dorra Vask  —  Nahkampf
+choose.corvin       = Corvin Aske  —  Fernkampf
+choose.ione         = Ione Sarrath  —  Drohnen (folgt)
+choose.dorra.about  = Schwerweltlerin von Kalvar. Rammhammer mit Sprengbolzen, ein Schild aus ihrem alten Grubenanzug.
+choose.corvin.about = Früher selbst Abschöpfer. Gaußgewehr, schnell, immer mit einem Fluchtweg im Kopf.
+choose.ione.about   = Technikerin mit einer Wolke aus Mikrodrohnen. Noch nicht spielbar.
+hero.dorra          = DORRA VASK
+speaker.dorra       = Dorra
+hud.next            = Enter oder Start: weiter

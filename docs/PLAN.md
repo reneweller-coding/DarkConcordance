@@ -68,12 +68,17 @@ user's first play (25.10.2026): zones with themes, signs, solid props, a freight
 (Leicht with slow regeneration), brightness, title and pause menus, the boss's weak points marked and announced;
 then a camera that turns about the hero (right stick, as on the Steam Deck) and German and English throughout.
 
+Built with the prologue (25.10.2026): the choice of hero; Dorra's melee (three blows in a chain, the overhead slam's
+blast, the shield, thrown blast bolts); boarders with batons and carbines (bolts in flight, aiming lasers); gravity from
+thrust that tilts with the ship's dodges, loose cargo; people who do not fight (refugees, Ilka); a window in the floor
+onto a star, the other ships' plumes and the patrol; lines per hero ("<key>.dorra"), a scripted last scene with a
+painted still; levels that lead to the next; the autopilot's route through a level. The game's code lives in
+Game.cpp (the level, Corvin), GameCrew.cpp (Dorra, the boarders) and GameShip.cpp (aboard a ship).
+
 Still to come, by first use:
 
 | System | First needed in |
 |---|---|
-| Tilting gravity (thrust pulses) | Prologue |
-| Melee with combos and shield (Dorra) | Prologue / class choice |
 | Rotating drum: gravity falls towards the axis, Coriolis bends shots, aim-ahead mode | 2 Knochenmarkt |
 | Vacuum: oxygen, helmet hits, radiation spikes, only radio and breath | 3 Außenhaut |
 | Floating water spheres: caustics, diving, drowning, current through water | 4 Ertrunkenes Viertel |
@@ -135,11 +140,12 @@ Still to come, by first use:
 
 ## Order
 
-1. **Level 1 „Die Kühlgedärme“** as the playable prototype with Corvin: does the combat feel right?
-2. Prologue (tutorial, Ilka, the other two classes as choices), Velm as hub, levels 2–5, voices: **Act I complete**.
-3. Act II with the ship as hub and the first choices; co-op for two.
-4. Acts III and IV, endings, epilogue cards, flashback levels.
-5. Steam Deck: half-resolution fog, no supersampling, gamepad everywhere.
+1. **Level 1 „Die Kühlgedärme“** as the playable prototype with Corvin: does the combat feel right? — done
+2. **Prologue** with Dorra and Corvin to choose — done (25.10.2026; Ione's drones still to come).
+3. Velm as hub (bar, trader, workshop, Ysolde), levels 2–5, Ione, voices: **Act I complete**.
+4. Act II with the ship as hub and the first choices; co-op for two.
+5. Acts III and IV, endings, epilogue cards, flashback levels.
+6. Steam Deck: half-resolution fog, no supersampling, gamepad everywhere.
 
 ## Open decisions (the user's)
 

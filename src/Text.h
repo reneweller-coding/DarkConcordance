@@ -28,6 +28,22 @@ bool loadTexts( const std::string &assets, const std::string &language );
  */
 const char *tr( const std::string &key );
 
+/**
+ * @brief Whether a key has a text (in the loaded language or in German).
+ * @param[in] key  the key
+ * @return true if it has one
+ */
+bool hasText( const std::string &key );
+
+/**
+ * @brief A text as a figure says it: "<key>.<who>" if there is one (Dorra and Corvin say some things differently),
+ *        else the key's own text.
+ * @param[in] key  the key
+ * @param[in] who  the figure (dorra, corvin)
+ * @return the text
+ */
+const char *trAs( const std::string &key, const std::string &who );
+
 /** @return the loaded language's code */
 const std::string &language();
 

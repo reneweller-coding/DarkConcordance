@@ -29,7 +29,8 @@ enum class CellE : uint8_t
     FLOOR,   ///< walkable at its height
     VOID,    ///< a shaft: no floor
     GRATE,   ///< a grating bridge over a shaft
-    FIN      ///< a heat exchanger block: cover, its top walkable
+    FIN,     ///< a heat exchanger block: cover, its top walkable
+    GLASS    ///< a window in the floor (walkable; open space under it)
 };
 
 /** @brief One map cell. */
@@ -85,6 +86,9 @@ struct LevelSurfaces
     int m_foil;     ///< thermal foil (the bodies)
     int m_glow;     ///< lamps
     int m_crate;    ///< painted crates
+    int m_box;      ///< corrugated container steel
+    int m_hull;     ///< the ship's bulkheads
+    int m_cloth;    ///< fabric (bundles, bags)
 };
 
 /** @brief The character of an area: colours, lining, pipes, props. */
@@ -95,6 +99,9 @@ enum class ThemeE : uint8_t
     SHAFT,       ///< the cooling shaft: raw rock, rust, cable drums
     COLDSTORE,   ///< the cold store: pale frosted panels, frost
     WORKS,       ///< the drone works: hazard paint, scrap, barrels
+    CARGO,       ///< a ship's hold: walls of stacked containers, tie-down rails, bundles
+    GANGWAY,     ///< a ship's gangway: bulkheads, cable trays, lockers
+    BRIDGE,      ///< the bridge deck: clean bulkheads, consoles
     COUNT        ///< number of themes
 };
 
@@ -217,22 +224,29 @@ public:
      */
     ThemeE theme( int r, int c ) const;
 
-    std::string             m_name;                                            ///< key of the name shown at the start
-    std::string             m_act;                                             ///< key of the act's name
-    float                   m_gravity = 9.81f;                                 ///< m/s²
-    Vector4                 m_fog = { 0.01f, 0.05f, 0.5f, 1.0f };              ///< fog as in Lighting
-    Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };           ///< the fog's own glow
-    Vector3                 m_ambUp = { 0.01f, 0.01f, 0.01f };                 ///< ambient from above
-    Vector3                 m_ambDown = { 0.01f, 0.01f, 0.01f };               ///< ambient from below
-    float                   m_wallHeight = 4.5f;                               ///< wall height
-    std::vector<Marker>     m_markers;                                         ///< spawns, lights, pickups
-    std::vector<Line>       m_lines;                                           ///< spoken lines
-    std::vector<Hint>       m_hints;                                           ///< hints
-    std::vector<LevelLight> m_lights;                                          ///< fixed lights (after build)
-    std::vector<Zone>       m_zones;                                           ///< areas with their themes
-    std::vector<Sign>       m_signs;                                           ///< signs (after build)
-    std::vector<Prop>       m_props;                                           ///< solid props (after build)
-    std::vector<std::pair<std::string, std::pair<int, int>>> m_signRequests;   ///< "sign" lines: texture, cell
+    std::string             m_name;                                              ///< key of the name shown at the start
+    std::string             m_act;                                               ///< key of the act's name
+    float                   m_gravity = 9.81f;                                   ///< m/s²
+    Vector4                 m_fog = { 0.01f, 0.05f, 0.5f, 1.0f };                ///< fog as in Lighting
+    Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };             ///< the fog's own glow
+    Vector3                 m_ambUp = { 0.01f, 0.01f, 0.01f };                   ///< ambient from above
+    Vector3                 m_ambDown = { 0.01f, 0.01f, 0.01f };                 ///< ambient from below
+    float                   m_wallHeight = 4.5f;                                 ///< wall height
+    std::vector<Marker>     m_markers;                                           ///< spawns, lights, pickups
+    std::vector<Line>       m_lines;                                             ///< spoken lines
+    std::vector<Hint>       m_hints;                                             ///< hints
+    std::vector<LevelLight> m_lights;                                            ///< fixed lights (after build)
+    std::vector<Zone>       m_zones;                                             ///< areas with their themes
+    std::vector<Sign>       m_signs;                                             ///< signs (after build)
+    std::vector<Prop>       m_props;                                             ///< solid props (after build)
+    std::vector<std::pair<std::string, std::pair<int, int>>> m_signRequests;     ///< "sign" lines: texture, cell
+    std::string                                              m_sky;              ///< the sky's picture ("" none)
+    bool                                                     m_thrust = false;   ///< the ship dodges: gravity tilts
+    std::string                                              m_next;             ///< the level after this one
+    std::string                                              m_gate = "bossdead";   ///< the event that opens the door
+    std::string                                              m_ambience = "tunnels";   ///< the background sound
+    std::vector<std::pair<int, int>>                         m_route;   ///< the autopilot's waypoints (cells), in order
+    std::vector<std::pair<int, int>> m_glass;   ///< the window cells (after build: the game lays the panes)
 
 private:
     int               m_rows = 0;

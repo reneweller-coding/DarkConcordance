@@ -1,0 +1,12 @@
+# Control hints any level can show (English).
+# "<key>.dorra": how it applies to Dorra; "-" means nothing for her.
+
+h_fire          = Shoot: right trigger or left mouse button. The rifle takes the nearest target ahead of you.
+h_fire.dorra    = Strike: right trigger or left mouse button. Hold it for the whole chain, up to the overhead blow.
+h_strafe        = Left trigger / Shift holds your facing: back off and keep firing.
+h_strafe.dorra  = Left trigger / Shift: shield up. It stops shots and blows from the front.
+h_bolt          = -
+h_bolt.dorra    = B / F: throw a blast bolt – for whatever the hammer can't reach.
+h_stim          = Q / Y: inject a stim (+40 health).
+h_heat          = The rifle has overheated. Ease off for a moment.
+h_heat.dorra    = -

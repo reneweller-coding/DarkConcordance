@@ -4,6 +4,7 @@
  * @author Rene Weller
  */
 #include "Game.h"
+#include "GameShared.h"
 
 #include "MeshBuilder.h"
 #include "Rig.h"
@@ -17,173 +18,13 @@
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <deque>
 
 namespace spaceopera
 {
 
-namespace
-{
-
-// Corvin and his rifle.
-constexpr float RunSpeed = 4.2f;
-constexpr float GroundAccel = 22.0f;
-constexpr float AirAccel = 7.0f;
-constexpr float JumpSpeed = 4.3f;
-constexpr float HeroRadius = 0.38f;
-constexpr float StepUp = 0.55f;
-constexpr float FireInterval = 0.17f;
-constexpr float ShotDamage = 20.0f;
-constexpr float HeatPerShot = 7.5f;
-constexpr float Range = 30.0f;
-constexpr float AutoCone = 0.7f;      ///< auto-aim looks this far either side (radians)
-constexpr float AssistCone = 0.22f;   ///< aim assist around a manual aim
-constexpr float StimHeal = 40.0f;
-// The enemies.
-constexpr float LouseHp = 36.0f;
-constexpr float WelderHp = 110.0f;
-constexpr float TankHp = 450.0f;
-constexpr float CoreHp = 700.0f;
-
-enum SurfE
-{
-    S_ROCK,
-    S_FLOOR,
-    S_GRATE,
-    S_METAL,
-    S_HAZARD,
-    S_RUST,
-    S_FOIL,
-    S_GLOW,
-    S_ARMOR,
-    S_DARK,
-    S_CRATE,
-    S_COUNT
-};
-
-/** @brief Loads a texture with mipmaps and anisotropic filtering (a grey checker if it is missing). */
-Texture2D loadTexture( const std::string &path )
-{
-    Texture2D t = FileExists( path.c_str() ) ? LoadTexture( path.c_str() ) : Texture2D{};
-    if ( t.id == 0 )
-    {
-        Image i = GenImageChecked( 64, 64, 8, 8, GRAY, DARKGRAY );
-        t = LoadTextureFromImage( i );
-        UnloadImage( i );
-    }
-    GenTextureMipmaps( &t );
-    SetTextureFilter( t, TEXTURE_FILTER_TRILINEAR );
-    SetTextureFilter( t, TEXTURE_FILTER_ANISOTROPIC_16X );
-    return t;
-}
-
-/** @brief A sign's picture in the loaded language (the German one if there is none). */
-Texture2D signTexture( const std::string &assets, const std::string &name )
-{
-    std::string path = assets + "/textures/" + name + "." + language() + ".png";
-    if ( !FileExists( path.c_str() ) ) path = assets + "/textures/" + name + ".de.png";
-    return loadTexture( path );
-}
-
-/** @brief Ray against a sphere: the distance along the ray, or -1. */
-float raySphere( Vector3 o, Vector3 d, Vector3 c, float r )
-{
-    Vector3 m = Vector3Subtract( o, c );
-    float   b = Vector3DotProduct( m, d );
-    float   cc = Vector3DotProduct( m, m ) - r * r;
-    if ( cc > 0.0f && b > 0.0f ) return -1.0f;
-    float disc = b * b - cc;
-    if ( disc < 0.0f ) return -1.0f;
-    float t = -b - sqrtf( disc );
-    return t < 0.0f ? 0.0f : t;
-}
-
-/** @brief Ray against an upright cylinder: the distance along the ray, or -1. */
-float rayCylinder( Vector3 o, Vector3 d, Vector3 base, float r, float h )
-{
-    float dx = d.x, dz = d.z;
-    float ox = o.x - base.x, oz = o.z - base.z;
-    float a = dx * dx + dz * dz;
-    if ( a < 1e-8f ) return -1.0f;
-    float b = ox * dx + oz * dz;
-    float c = ox * ox + oz * oz - r * r;
-    float disc = b * b - a * c;
-    if ( disc < 0.0f ) return -1.0f;
-    float t = ( -b - sqrtf( disc ) ) / a;
-    if ( t < 0.0f ) return -1.0f;
-    float y = o.y + d.y * t;
-    return ( y >= base.y && y <= base.y + h ) ? t : -1.0f;
-}
-
-/** @brief Ray against a box: the distance along the ray, or -1. */
-float rayBox( Vector3 o, Vector3 d, Vector3 lo, Vector3 hi )
-{
-    float       tmin = 0.0f, tmax = 1e9f;
-    const float oo[3] = { o.x, o.y, o.z }, dd[3] = { d.x, d.y, d.z }, l[3] = { lo.x, lo.y, lo.z },
-                h[3] = { hi.x, hi.y, hi.z };
-    for ( int i = 0; i < 3; ++i )
-    {
-        if ( fabsf( dd[i] ) < 1e-8f )
-        {
-            if ( oo[i] < l[i] || oo[i] > h[i] ) return -1.0f;
-            continue;
-        }
-        float t1 = ( l[i] - oo[i] ) / dd[i];
-        float t2 = ( h[i] - oo[i] ) / dd[i];
-        if ( t1 > t2 ) std::swap( t1, t2 );
-        tmin = std::max( tmin, t1 );
-        tmax = std::min( tmax, t2 );
-        if ( tmin > tmax ) return -1.0f;
-    }
-    return tmin;
-}
-
-/** @brief A cheap hash for flicker. */
-float hash1( int n )
-{
-    n = ( n << 13 ) ^ n;
-    return ( ( n * ( n * n * 15731 + 789221 ) + 1376312589 ) & 0x7fffffff ) / 2147483647.0f;
-}
-
-/** @brief Pushes a circle out of an axis-aligned rectangle on the ground. */
-void pushOutRect( Vector3 &p, float r, float x0, float x1, float z0, float z1 )
-{
-    float cx = Clamp( p.x, x0, x1 ), cz = Clamp( p.z, z0, z1 );
-    float dx = p.x - cx, dz = p.z - cz;
-    float d2 = dx * dx + dz * dz;
-    if ( d2 >= r * r ) return;
-    if ( d2 > 1e-8f )
-    {
-        float d = sqrtf( d2 );
-        p.x = cx + dx / d * r;
-        p.z = cz + dz / d * r;
-        return;
-    }
-    float m = std::min( std::min( p.x - x0, x1 - p.x ), std::min( p.z - z0, z1 - p.z ) );
-    if ( m == p.x - x0 )
-        p.x = x0 - r;
-    else if ( m == x1 - p.x )
-        p.x = x1 + r;
-    else if ( m == p.z - z0 )
-        p.z = z0 - r;
-    else
-        p.z = z1 + r;
-}
-
-/** @brief Pushes a circle out of a circle. */
-void pushOutCircle( Vector3 &p, float r, float cx, float cz, float cr )
-{
-    float dx = p.x - cx, dz = p.z - cz;
-    float d = sqrtf( dx * dx + dz * dz );
-    float min = r + cr;
-    if ( d < min && d > 1e-4f )
-    {
-        p.x = cx + dx / d * min;
-        p.z = cz + dz / d * min;
-    }
-}
-
-}   // namespace
+using namespace play;
 
 float Game::rnd()
 {
@@ -218,6 +59,14 @@ void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
     tile( S_ARMOR, "armor", 1.6f, { 1.0f, 1.0f, 1.5f, 0.0f }, 0.15f, { 132, 104, 78, 255 } );
     tile( S_DARK, "armor", 1.6f, { 0.9f, 1.0f, 1.5f, 0.0f }, 0.15f, { 46, 44, 48, 255 } );
     tile( S_CRATE, "crate", 0.6f, { 1.0f, 1.0f, 1.0f, 0.0f }, 0.4f );
+    tile( S_BOX, "container", 0.45f, { 1.0f, 1.0f, 1.4f, 0.0f }, 0.3f );
+    tile( S_HULL, "wall", 0.3f, { 0.9f, 1.0f, 1.1f, 0.0f }, 0.4f, { 160, 168, 178, 255 } );
+    tile( S_DORRA, "armor", 1.6f, { 1.1f, 1.0f, 1.5f, 0.0f }, 0.15f, { 196, 150, 40, 255 } );
+    tile( S_BOARDER, "armor", 1.6f, { 0.8f, 1.0f, 1.5f, 0.0f }, 0.15f, { 96, 30, 26, 255 } );
+    tile( S_CLOTH, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 120, 128, 140, 255 } );
+    tile( S_CLOTH2, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 132, 110, 84, 255 } );
+    tile( S_CLOTH3, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 92, 112, 96, 255 } );
+    tile( S_ILKA, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 215, 160, 60, 255 } );
 }
 
 bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound )
@@ -228,7 +77,9 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     // The lift's cell is part of its well.
     for ( const Marker &m : m_level.m_markers )
         if ( m.m_kind == 'X' ) m_level.setVoid( m.m_row, m.m_col );
-    m_level.build( { S_ROCK, S_FLOOR, S_GRATE, S_METAL, S_HAZARD, S_RUST, S_FOIL, S_GLOW, S_CRATE }, m_static );
+    m_level.build(
+        { S_ROCK, S_FLOOR, S_GRATE, S_METAL, S_HAZARD, S_RUST, S_FOIL, S_GLOW, S_CRATE, S_BOX, S_HULL, S_CLOTH2 },
+        m_static );
 
     // Signs: each picture its own surface, lit a little from within so it reads in the dark.
     for ( const Sign &sign : m_level.m_signs )
@@ -254,9 +105,19 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         }
     }
 
+    // The hero: Corvin with the rifle and an amber visor, or Dorra, short and broad, with hammer and shield.
     FigureSurfaces fs = { S_ARMOR, S_DARK, S_METAL, S_GLOW };
-    fs.m_visor = { 3.2f, 1.6f, 0.3f, 0.0f };   // Corvin's visor: amber
+    fs.m_visor = { 3.2f, 1.6f, 0.3f, 0.0f };
+    if ( m_heroKind == HeroE::DORRA )
+    {
+        fs.m_armor = S_DORRA;
+        fs.m_visor = { 0.6f, 3.0f, 1.4f, 0.0f };
+        fs.m_weapon = WeaponE::HAMMER;
+        fs.m_scale = { 1.14f, 0.9f, 1.1f };
+    }
     m_hero.build( fs );
+    m_hp = hpMax();
+    buildCrew( assets );
     m_louse.build( S_RUST, S_METAL, S_GLOW, false );
     m_welder.build( S_RUST, S_METAL, S_GLOW, true );
 
@@ -303,6 +164,16 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     Image dot = GenImageGradientRadial( 64, 64, 0.0f, WHITE, BLANK );
     m_dot = LoadTextureFromImage( dot );
     UnloadImage( dot );
+    Image streak = GenImageColor( 8, 64, BLANK );
+    for ( int y = 0; y < 64; ++y )
+    {
+        float d = ( y - 31.5f ) / 12.0f;
+        for ( int x = 0; x < 8; ++x )
+            ImageDrawPixel( &streak, x, y, { 255, 255, 255, (unsigned char)( 255 * expf( -d * d ) ) } );
+    }
+    m_streak = LoadTextureFromImage( streak );
+    SetTextureFilter( m_streak, TEXTURE_FILTER_BILINEAR );
+    UnloadImage( streak );
 
     // Markers: Corvin, enemies, capsules, pickups, the swarms, vents, the press, the door.
     const int DR[4] = { 1, 0, 0, -1 }, DC[4] = { 0, 1, -1, 0 };
@@ -317,6 +188,20 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
             break;
         case 'L': spawnFoe( FoeE::LOUSE, p, false ); break;
         case 'W': spawnFoe( FoeE::WELDER, p, false ); break;
+        case 'E':
+        case 'T':
+        case 'Y':
+        case 'U':
+        {
+            // Boarders; the bridge's wake together, Y and U come aboard once the bridge is clear.
+            spawnFoe( m.m_kind == 'E' || m.m_kind == 'Y' ? FoeE::BATON : FoeE::GUNNER, p, false );
+            Foe &f = m_foes.back();
+            if ( m.m_kind == 'Y' || m.m_kind == 'U' )
+                f.m_group = 2, f.m_hidden = true;
+            else if ( m_level.theme( m.m_row, m.m_col ) == ThemeE::BRIDGE )
+                f.m_group = 1;
+            break;
+        }
         case 'H': m_pickups.push_back( { 1, 1, p, { 0, 0, 0 } } ); break;
         case 'S': m_pickups.push_back( { 0, 10, p, { 0, 0, 0 } } ); break;
         case 'C':
@@ -425,11 +310,12 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         default: break;
         }
     }
+    loadShip( gfx, assets );
     m_hero.animate( 0.0f, m_pos, { 0, 0 }, 0.0f, false, 0.0f, 0.0f );
     m_yaw = m_aimYaw = 0.0f;
 
     loadFont();
-    m_audio.init( sound );
+    m_audio.init( sound, m_level.m_ambience );
     putHero( m_pos.x, m_pos.z, 0.0f );
     return true;
 }
@@ -484,22 +370,35 @@ const char *difficultyName( DifficultyE d )
     }
 }
 
-namespace
+const char *heroKey( HeroE h )
 {
-
-/** @brief How much an enemy can take, by difficulty. */
-float toughness( DifficultyE d )
-{
-    return d == DifficultyE::EASY ? 0.75f : ( d == DifficultyE::HARD ? 1.3f : 1.0f );
+    switch ( h )
+    {
+    case HeroE::DORRA: return "dorra";
+    case HeroE::IONE: return "ione";
+    default: return "corvin";
+    }
 }
 
-/** @brief How hard Corvin is hit, by difficulty. */
-float harm( DifficultyE d )
+float Game::hpMax() const
 {
-    return d == DifficultyE::EASY ? 0.55f : ( d == DifficultyE::HARD ? 1.35f : 1.0f );
+    return m_heroKind == HeroE::DORRA ? DorraHp : 100.0f;
 }
 
-}   // namespace
+float Game::runSpeed() const
+{
+    return m_heroKind == HeroE::DORRA ? DorraSpeed : RunSpeed;
+}
+
+float Game::foeRadius( const Foe &f ) const
+{
+    return f.m_kind == FoeE::WELDER ? 0.85f : ( human( f ) ? 0.42f : 0.5f );
+}
+
+float Game::foeHeight( const Foe &f ) const
+{
+    return f.m_kind == FoeE::WELDER ? 0.75f : ( human( f ) ? 1.15f : 0.45f );
+}
 
 void Game::setDifficulty( DifficultyE d )
 {
@@ -516,7 +415,8 @@ void Game::spawnFoe( FoeE kind, Vector3 pos, bool awake )
     Foe f;
     f.m_kind = kind;
     f.m_pos = pos;
-    f.m_hp = ( kind == FoeE::LOUSE ? LouseHp : WelderHp ) * toughness( m_difficulty );
+    const float hp[4] = { LouseHp, WelderHp, BatonHp, GunnerHp };
+    f.m_hp = hp[(int)kind] * toughness( m_difficulty );
     f.m_awake = awake;
     f.m_yaw = rnd() * 6.28f;
     f.m_id = (int)m_foes.size();
@@ -564,6 +464,8 @@ void Game::blockHero( Vector3 &p ) const
     for ( const Capsule &c : m_capsules ) pushOutCircle( p, HeroRadius, c.m_pos.x, c.m_pos.z, 0.75f );
     for ( const Marker &m : m_level.m_markers )
         if ( m.m_kind == 'K' ) pushOutCircle( p, HeroRadius, m.m_pos.x, m.m_pos.z - 0.2f, 1.0f );
+    for ( const Person &q : m_people ) pushOutCircle( p, HeroRadius, q.m_pos.x, q.m_pos.z, 0.45f );
+    for ( const Cargo &q : m_cargo ) pushOutCircle( p, HeroRadius, q.m_pos.x, q.m_pos.z, 0.55f );
     if ( m_doorHalf > 0.0f && m_doorOpen < 0.8f && fabsf( p.x - m_door.x ) < m_doorHalf + 0.5f )
         pushOutRect( p, HeroRadius, m_door.x - m_doorHalf - 0.5f, m_door.x + m_doorHalf + 0.5f, m_door.z - 0.2f,
                      m_door.z + 0.2f );
@@ -592,15 +494,39 @@ void Game::fire( const std::string &trigger )
         m_hint = nullptr;
         m_hintTimer = 0.0f;
     }
+    // What one hero says or needs to know and the other does not: "-".
+    const char *who = heroKey( m_heroKind );
     for ( const Line &l : m_level.m_lines )
-        if ( l.m_trigger == trigger ) m_lineQueue.push_back( &l );
+        if ( l.m_trigger == trigger && strcmp( trAs( l.m_id, who ), "-" ) != 0 ) m_lineQueue.push_back( &l );
     for ( const Hint &h : m_level.m_hints )
-        if ( h.m_trigger == trigger ) m_hintQueue.push_back( &h );
+        if ( h.m_trigger == trigger && strcmp( trAs( h.m_id, who ), "-" ) != 0 ) m_hintQueue.push_back( &h );
+    // Entering the bridge wakes all who hold it.
+    if ( trigger == "f" )
+        for ( Foe &f : m_foes )
+            if ( f.m_group == 1 ) f.m_awake = true;
 }
 
-void Game::hurtHero( float amount, Vector3 push )
+bool Game::shielded( Vector3 from ) const
 {
-    if ( m_dead || m_invuln > 0.0f || m_finished || m_liftGoing ) return;
+    if ( m_heroKind != HeroE::DORRA || m_block < 0.5f ) return false;
+    Vector3 d = { from.x - m_pos.x, 0.0f, from.z - m_pos.z };
+    float   len = Vector3Length( d );
+    return len > 1e-3f && ( d.x * sinf( m_yaw ) + d.z * cosf( m_yaw ) ) / len > 0.35f;
+}
+
+void Game::hurtHero( float amount, Vector3 push, Vector3 from )
+{
+    if ( m_dead || m_invuln > 0.0f || m_finished || m_liftGoing || m_scene > 0 ) return;
+    if ( shielded( from ) )
+    {
+        // The shield takes it: a clang, sparks off the plates, a little of it comes through.
+        Vector3 at = Vector3Add( Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } ),
+                                 Vector3Scale( { sinf( m_yaw ), 0.0f, cosf( m_yaw ) }, 0.5f ) );
+        sparks( at, { sinf( m_yaw ), 0.3f, cosf( m_yaw ) }, 10, { 255, 220, 160, 255 }, 3.0f );
+        m_audio.play( SfxE::BLOCK, at, m_camTarget, 0.8f );
+        amount *= 0.15f;
+        push = Vector3Scale( push, 0.3f );
+    }
     amount *= harm( m_difficulty );
     m_sinceHurt = 0.0f;
     m_hp -= amount;
@@ -609,7 +535,7 @@ void Game::hurtHero( float amount, Vector3 push )
     m_vel = Vector3Add( m_vel, push );
     if ( push.y > 0.5f ) m_ground = false;
     m_audio.play( SfxE::HURT, m_pos, m_camTarget, 0.8f );
-    if ( m_hp < 50.0f ) fire( "hurt" );
+    if ( m_hp < hpMax() * 0.5f ) fire( "hurt" );
     if ( m_hp <= 0.0f )
     {
         m_hp = 0.0f;
@@ -653,11 +579,20 @@ void Game::killFoe( Foe &f, bool drops )
 {
     f.m_alive = false;
     ++m_kills;
+    float   r = rnd();
+    Vector3 v = { ( rnd() - 0.5f ) * 2.0f, 2.5f, ( rnd() - 0.5f ) * 2.0f };
+    if ( human( f ) )
+    {
+        // A boarder falls and stays down; now and then a stim rolls out of the webbing.
+        f.m_swingT = -1.0f;
+        f.m_aim = 0.0f;
+        m_audio.play( SfxE::FALL, f.m_pos, m_camTarget, 0.7f );
+        if ( drops && r < 0.3f ) m_pickups.push_back( { 1, 1, Vector3Add( f.m_pos, { 0, 0.6f, 0 } ), v } );
+        return;
+    }
     float size = f.m_kind == FoeE::WELDER ? 1.4f : 0.8f;
     explode( Vector3Add( f.m_pos, { 0, 0.4f, 0 } ), size );
     if ( !drops ) return;
-    float   r = rnd();
-    Vector3 v = { ( rnd() - 0.5f ) * 2.0f, 2.5f, ( rnd() - 0.5f ) * 2.0f };
     if ( f.m_kind == FoeE::WELDER )
     {
         m_pickups.push_back( { 0, 15, Vector3Add( f.m_pos, { 0, 0.5f, 0 } ), v } );
@@ -674,10 +609,10 @@ void Game::hurtFoe( Foe &f, float amount, Vector3 dir )
     if ( !f.m_alive ) return;
     f.m_hp -= amount;
     f.m_flash = 1.0f;
-    if ( !f.m_awake ) m_audio.play( SfxE::CHITTER, f.m_pos, m_camTarget, 0.6f );
+    if ( !f.m_awake && !human( f ) ) m_audio.play( SfxE::CHITTER, f.m_pos, m_camTarget, 0.6f );
     f.m_awake = true;
     // Low gravity: a hit lifts a louse off its feet.
-    float push = f.m_kind == FoeE::LOUSE ? 1.8f : 0.5f;
+    float push = f.m_kind == FoeE::LOUSE ? 1.8f : ( human( f ) ? 0.8f : 0.5f );
     f.m_vel = Vector3Add( f.m_vel, { dir.x * push, push * 0.45f, dir.z * push } );
     if ( f.m_kind == FoeE::LOUSE ) f.m_ground = false;
     if ( f.m_hp <= 0.0f ) killFoe( f, true );
@@ -691,8 +626,7 @@ Vector3 Game::targetPoint( const Target &t ) const
     case 0:
     {
         const Foe &f = m_foes[t.m_index];
-        float      h = f.m_kind == FoeE::WELDER ? 0.75f : 0.45f;
-        return Vector3Add( f.m_pos, { 0.0f, h, 0.0f } );
+        return Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } );
     }
     case 1: return { o.x - 9.2f, 2.3f, o.z + 0.5f };
     case 2: return { o.x + 9.2f, 2.3f, o.z + 0.5f };
@@ -724,7 +658,7 @@ Game::Target Game::findTarget( Vector3 from, Vector3 dir, float cone ) const
         }
     };
     for ( int i = 0; i < (int)m_foes.size(); ++i )
-        if ( m_foes[i].m_alive ) consider( { 0, i, {} } );
+        if ( m_foes[i].m_alive && !m_foes[i].m_hidden ) consider( { 0, i, {} } );
     if ( m_pressActive && !m_pressDead && !m_pressDying )
     {
         if ( m_tank[0] > 0.0f ) consider( { 1, 0, {} } );
@@ -732,6 +666,32 @@ Game::Target Game::findTarget( Vector3 from, Vector3 dir, float cone ) const
         if ( m_pressPose.m_shutter > 0.85f && m_core > 0.0f ) consider( { 3, 0, {} } );
     }
     return best;
+}
+
+void Game::hitTank( int side, float amount, Vector3 at, Vector3 n )
+{
+    if ( m_tank[side] <= 0.0f ) return;
+    Vector3 o = m_pressModel.m_origin;
+    m_tank[side] -= amount;
+    m_pressPose.m_tankFlash[side] = 1.0f;
+    sparks( at, n, 8, { 140, 200, 255, 255 }, 3.0f );
+    if ( m_tank[side] <= 0.0f )
+    {
+        m_tank[side] = 0.0f;
+        Vector3 tp = { o.x + ( side ? 9.2f : -9.2f ), 2.0f, o.z + 0.5f };
+        explode( tp, 2.0f );
+        m_audio.play( SfxE::BURST, tp, m_camTarget, 1.0f );
+        m_shake = 0.8f;
+        if ( m_tank[1 - side] > 0.0f ) fire( "tank1" );
+    }
+}
+
+void Game::hitCore( float amount, Vector3 at, Vector3 n )
+{
+    if ( m_pressPose.m_shutter < 0.85f || m_core <= 0.0f ) return;
+    m_core -= amount;
+    m_pressPose.m_coreFlash = 1.0f;
+    sparks( at, n, 12, { 255, 160, 60, 255 }, 4.0f );
 }
 
 void Game::shoot()
@@ -753,10 +713,10 @@ void Game::shoot()
     for ( int i = 0; i < (int)m_foes.size(); ++i )
     {
         const Foe &f = m_foes[i];
-        if ( !f.m_alive ) continue;
-        float r = f.m_kind == FoeE::WELDER ? 0.85f : 0.5f;
-        float t = raySphere( muzzle, dir,
-                             Vector3Add( f.m_pos, { 0.0f, f.m_kind == FoeE::WELDER ? 0.75f : 0.45f, 0.0f } ), r );
+        if ( !f.m_alive || f.m_hidden ) continue;
+        float t = human( f )
+                      ? rayCylinder( muzzle, dir, f.m_pos, foeRadius( f ), 1.85f )
+                      : raySphere( muzzle, dir, Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } ), foeRadius( f ) );
         if ( t >= 0.0f && t < tBest ) tBest = t, kind = 0, index = i;
     }
     Vector3 o = m_pressModel.m_origin;
@@ -801,27 +761,9 @@ void Game::shoot()
         sparks( at, Vector3Negate( dir ), 10, { 255, 200, 120, 255 }, 3.5f );
     }
     else if ( kind == 1 || kind == 2 )
-    {
-        int side = kind - 1;
-        m_tank[side] -= ShotDamage;
-        m_pressPose.m_tankFlash[side] = 1.0f;
-        sparks( at, Vector3Negate( dir ), 8, { 140, 200, 255, 255 }, 3.0f );
-        if ( m_tank[side] <= 0.0f )
-        {
-            m_tank[side] = 0.0f;
-            Vector3 tp = { o.x + ( side ? 9.2f : -9.2f ), 2.0f, o.z + 0.5f };
-            explode( tp, 2.0f );
-            m_audio.play( SfxE::BURST, tp, m_camTarget, 1.0f );
-            m_shake = 0.8f;
-            if ( m_tank[1 - side] > 0.0f ) fire( "tank1" );
-        }
-    }
+        hitTank( kind - 1, ShotDamage, at, Vector3Negate( dir ) );
     else if ( kind == 3 )
-    {
-        m_core -= ShotDamage;
-        m_pressPose.m_coreFlash = 1.0f;
-        sparks( at, Vector3Negate( dir ), 12, { 255, 160, 60, 255 }, 4.0f );
-    }
+        hitCore( ShotDamage, at, Vector3Negate( dir ) );
     else if ( kind == 4 )
     {
         // The press's armour: grey sparks that bounce off, and a ring for "this does nothing".
@@ -845,10 +787,13 @@ void Game::shoot()
 
 void Game::updateHero( float dt, const GameInput &in )
 {
-    if ( m_finished )
+    if ( m_finished || m_scene >= 2 )
     {
+        // Over, or shot down in the last scene.
         m_vel = { 0, 0, 0 };
-        m_hero.animate( dt, m_pos, { 0, 0 }, m_yaw, false, 0.0f, m_time );
+        m_swing = -1;
+        m_hero.m_swing = -1;
+        m_hero.animate( dt, m_pos, { 0, 0 }, m_yaw, false, m_sceneDown, m_time );
         return;
     }
     if ( m_dead )
@@ -856,12 +801,14 @@ void Game::updateHero( float dt, const GameInput &in )
         m_deadTimer += dt;
         m_vel.x *= 0.9f;
         m_vel.z *= 0.9f;
+        m_swing = -1;
+        m_hero.m_swing = -1;
         m_hero.animate( dt, m_pos, { 0, 0 }, m_yaw, false, fminf( 1.0f, m_deadTimer / 0.5f ), m_time );
         if ( m_deadTimer > 2.4f )
         {
             // Back at the last capsule.
             m_dead = false;
-            m_hp = 100.0f;
+            m_hp = hpMax();
             m_heat = 0.0f;
             m_overheat = false;
             m_pos = m_respawn;
@@ -881,24 +828,53 @@ void Game::updateHero( float dt, const GameInput &in )
         return;
     }
 
-    Vector2 move = m_liftGoing ? Vector2{ 0.0f, 0.0f } : in.m_move;
+    Vector2 move = m_liftGoing || m_scene > 1 ? Vector2{ 0.0f, 0.0f } : in.m_move;
     if ( Vector2Length( move ) > 1.0f ) move = Vector2Normalize( move );
-    Vector2 want = Vector2Scale( move, RunSpeed );
+    // Dorra slows while she swings or holds the shield up.
+    float pace = 1.0f;
+    if ( m_heroKind == HeroE::DORRA ) pace = ( m_swing >= 0 ? 0.4f : 1.0f ) * ( 1.0f - 0.45f * m_block );
+    Vector2 want = Vector2Scale( move, runSpeed() * pace );
     Vector2 v = { m_vel.x, m_vel.z };
     Vector2 dv = Vector2Subtract( want, v );
-    float   step = ( m_ground ? GroundAccel : AirAccel ) * dt;
+    // A dodge of the ship pulls the floor from under the feet: less grip, and the push itself.
+    float grip = 1.0f - 0.75f * fminf( 1.0f, m_thrustAmt / ThrustPeak );
+    float step = ( m_ground ? GroundAccel * grip : AirAccel ) * dt;
     if ( Vector2Length( dv ) > step ) dv = Vector2Scale( Vector2Normalize( dv ), step );
-    m_vel.x += dv.x;
-    m_vel.z += dv.y;
-    if ( in.m_jump && m_ground )
+    m_vel.x += dv.x + thrust().x * dt;
+    m_vel.z += dv.y + thrust().z * dt;
+    if ( in.m_jump && m_ground && m_swing < 0 && m_scene == 0 )
     {
-        m_vel.y = JumpSpeed;
+        m_vel.y = m_heroKind == HeroE::DORRA ? DorraJump : JumpSpeed;
         m_ground = false;
         m_audio.play( SfxE::JUMP, m_pos, m_camTarget, 0.6f );
         if ( m_autoplay )
             TraceLog( LOG_WARNING, "JUMP at %.1f,%.1f v=%.1f,%.1f t=%.1f", m_pos.x, m_pos.z, m_vel.x, m_vel.z, m_time );
     }
+    if ( m_heroKind == HeroE::DORRA )
+        updateMelee( dt, in, move );
+    else
+        updateGunner( dt, in, move );
 
+    if ( in.m_stim && m_stims > 0 && m_hp < hpMax() )
+    {
+        m_hp = fminf( hpMax(), m_hp + StimHeal );
+        --m_stims;
+        m_audio.play( SfxE::STIM, m_pos, m_camTarget, 0.8f );
+        for ( int i = 0; i < 16; ++i )
+            m_particles.push_back(
+                { Vector3Add( m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.5f + rnd() * 1.2f, ( rnd() - 0.5f ) * 0.6f } ),
+                  { 0, 0.8f, 0 },
+                  0.8f,
+                  0.8f,
+                  0.015f,
+                  { 120, 255, 140, 255 },
+                  3 } );
+    }
+    moveHero( dt );
+}
+
+void Game::updateGunner( float dt, const GameInput &in, Vector2 move )
+{
     // Aim: the mouse for a while after it moved (the autopilot names a direction), else where Corvin runs, or where he
     // faces while strafing; the rifle finds the targets.
     Vector3 chest = Vector3Add( m_pos, { 0.0f, 1.25f, 0.0f } );
@@ -967,23 +943,10 @@ void Game::updateHero( float dt, const GameInput &in )
     else
         m_heat = fmaxf( 0.0f, m_heat - ( m_overheat ? 55.0f : 45.0f ) * dt );
     if ( m_overheat && m_heat < 25.0f ) m_overheat = false;
+}
 
-    if ( in.m_stim && m_stims > 0 && m_hp < 100.0f )
-    {
-        m_hp = fminf( 100.0f, m_hp + StimHeal );
-        --m_stims;
-        m_audio.play( SfxE::STIM, m_pos, m_camTarget, 0.8f );
-        for ( int i = 0; i < 16; ++i )
-            m_particles.push_back(
-                { Vector3Add( m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.5f + rnd() * 1.2f, ( rnd() - 0.5f ) * 0.6f } ),
-                  { 0, 0.8f, 0 },
-                  0.8f,
-                  0.8f,
-                  0.015f,
-                  { 120, 255, 140, 255 },
-                  3 } );
-    }
-
+void Game::moveHero( float dt )
+{
     // Move, collide, land.
     bool wasAir = !m_ground;
     m_vel.y -= m_level.m_gravity * dt;
@@ -1012,7 +975,7 @@ void Game::updateHero( float dt, const GameInput &in )
     m_hurtFlash = fmaxf( 0.0f, m_hurtFlash - dt * 2.5f );
     // On the easiest level health comes back slowly once nothing has hit for a while.
     m_sinceHurt += dt;
-    if ( m_difficulty == DifficultyE::EASY && m_sinceHurt > 4.0f ) m_hp = fminf( 100.0f, m_hp + 2.5f * dt );
+    if ( m_difficulty == DifficultyE::EASY && m_sinceHurt > 4.0f ) m_hp = fminf( hpMax(), m_hp + 2.5f * dt );
 
     // The lift: once the press is dead, standing on it a moment takes it down; the level ends below.
     bool onLift = m_liftMax.x > m_liftMin.x && m_pos.x > m_liftMin.x && m_pos.x < m_liftMax.x &&
@@ -1070,8 +1033,13 @@ void Game::updateHero( float dt, const GameInput &in )
     int r, c;
     m_level.cellOf( m_pos, r, c );
     char trig = m_level.cell( r, c ).m_trigger;
+    // z is the level's last scene: it waits for the gate's event.
+    if ( trig == 'z' && !m_fired.count( m_level.m_gate ) ) trig = 0;
     if ( trig ) fire( std::string( 1, trig ) );
 
+    m_hero.m_swing = m_swing;
+    m_hero.m_swingT = m_swingT;
+    m_hero.m_block = m_block;
     m_hero.animate( dt, m_pos, { m_vel.x, m_vel.z }, m_yaw, !m_ground, 0.0f, m_time );
 }
 
@@ -1144,9 +1112,21 @@ void Game::updateFoes( float dt )
     float   g = m_level.m_gravity;
     for ( Foe &f : m_foes )
     {
-        if ( !f.m_alive ) continue;
+        if ( f.m_hidden ) continue;
+        if ( !f.m_alive )
+        {
+            // A fallen boarder: down, and slid along by the ship's dodges.
+            if ( human( f ) )
+            {
+                f.m_down = fminf( 1.0f, f.m_down + dt * 2.2f );
+                f.m_pos = Vector3Add( f.m_pos, Vector3Scale( thrust(), dt * 0.15f ) );
+                m_level.collide( f.m_pos, 0.4f, 0.3f );
+            }
+            continue;
+        }
         bool    welder = f.m_kind == FoeE::WELDER;
-        Vector3 eye = Vector3Add( f.m_pos, { 0.0f, welder ? 0.9f : 0.5f, 0.0f } );
+        bool    man = human( f );
+        Vector3 eye = Vector3Add( f.m_pos, { 0.0f, welder ? 0.9f : ( man ? 1.55f : 0.5f ), 0.0f } );
         Vector3 to = Vector3Subtract( m_pos, f.m_pos );
         float   dist = sqrtf( to.x * to.x + to.z * to.z );
         Vector3 dir = dist > 1e-3f ? Vector3{ to.x / dist, 0.0f, to.z / dist } : Vector3{ 0, 0, 1 };
@@ -1159,20 +1139,22 @@ void Game::updateFoes( float dt )
         if ( !f.m_awake && !m_dead && ( ( dist < 13.0f && f.m_los ) || dist < 4.0f ) )
         {
             f.m_awake = true;
-            m_audio.play( SfxE::CHITTER, f.m_pos, m_camTarget, 0.7f );
+            if ( !man ) m_audio.play( SfxE::CHITTER, f.m_pos, m_camTarget, 0.7f );
             for ( Foe &o : m_foes )
-                if ( o.m_alive && Vector3Distance( o.m_pos, f.m_pos ) < 7.0f ) o.m_awake = true;
+                if ( o.m_alive && !o.m_hidden && Vector3Distance( o.m_pos, f.m_pos ) < 7.0f ) o.m_awake = true;
         }
 
         Vector3 want = { 0, 0, 0 };
         float   faceYaw = f.m_yaw;
-        bool    chase = f.m_awake && !m_dead && !m_finished;
+        bool    chase = f.m_awake && !m_dead && !m_finished && m_scene == 0;
         f.m_timer -= dt;
         if ( chase )
         {
             Vector3 path = ( f.m_los && dist < 9.0f ) ? dir : flowDir( f.m_pos );
             if ( Vector3Length( path ) < 0.5f ) path = dir;
-            if ( !welder )
+            if ( man )
+                updateBoarder( f, dt, dir, dist, path, want, faceYaw );
+            else if ( !welder )
             {
                 switch ( f.m_state )
                 {
@@ -1201,7 +1183,7 @@ void Game::updateFoes( float dt )
                     faceYaw = atan2f( f.m_vel.x, f.m_vel.z );
                     if ( Vector3Distance( Vector3Add( f.m_pos, { 0, 0.4f, 0 } ), chest ) < 1.05f )
                     {
-                        hurtHero( 10.0f, { dir.x * 2.5f, 1.0f, dir.z * 2.5f } );
+                        hurtHero( 10.0f, { dir.x * 2.5f, 1.0f, dir.z * 2.5f }, f.m_pos );
                         f.m_vel = { -dir.x * 2.0f, 1.0f, -dir.z * 2.0f };
                     }
                     if ( f.m_ground )
@@ -1268,19 +1250,35 @@ void Game::updateFoes( float dt )
                 }
             }
         }
-        // Physics: walk on the ground, fly in a leap or when hit.
+        // Physics: walk on the ground, fly in a leap or when hit; the ship's dodges push everyone.
         if ( f.m_ground )
         {
             Vector3 dv = { want.x - f.m_vel.x, 0.0f, want.z - f.m_vel.z };
             float   len = sqrtf( dv.x * dv.x + dv.z * dv.z );
-            float   step = 14.0f * dt;
+            float   step = 14.0f * dt * ( 1.0f - 0.75f * fminf( 1.0f, m_thrustAmt / ThrustPeak ) );
             if ( len > step ) dv = Vector3Scale( dv, step / len );
             f.m_vel.x += dv.x;
             f.m_vel.z += dv.z;
         }
+        f.m_vel = Vector3Add( f.m_vel, Vector3Scale( thrust(), dt ) );
         f.m_vel.y -= g * dt;
         f.m_pos = Vector3Add( f.m_pos, Vector3Scale( f.m_vel, dt ) );
-        m_level.collide( f.m_pos, welder ? 0.7f : 0.42f, welder ? 0.6f : 1.1f );
+        m_level.collide( f.m_pos, welder ? 0.7f : 0.42f, welder ? 0.6f : ( man ? StepUp : 1.1f ) );
+        for ( const Person &q : m_people ) pushOutCircle( f.m_pos, 0.4f, q.m_pos.x, q.m_pos.z, 0.45f );
+        for ( const Cargo &q : m_cargo ) pushOutCircle( f.m_pos, 0.4f, q.m_pos.x, q.m_pos.z, 0.55f );
+        if ( m_doorHalf > 0.0f && m_doorOpen < 0.8f && fabsf( f.m_pos.x - m_door.x ) < m_doorHalf + 0.5f )
+            pushOutRect( f.m_pos, 0.4f, m_door.x - m_doorHalf - 0.5f, m_door.x + m_doorHalf + 0.5f, m_door.z - 0.2f,
+                         m_door.z + 0.2f );
+        if ( man )
+        {
+            FigurePose p;
+            p.m_vel = { f.m_vel.x, f.m_vel.z };
+            p.m_yaw = f.m_yaw;
+            p.m_phase = f.m_phase;
+            p.m_air = !f.m_ground;
+            Figure::step( p, dt );
+            f.m_phase = p.m_phase;
+        }
         float floor = groundAt( f.m_pos );
         if ( f.m_pos.y <= floor && f.m_vel.y <= 0.0f && floor > -100.0f )
         {
@@ -1306,7 +1304,7 @@ void Game::updateFoes( float dt )
         for ( size_t j = i + 1; j < m_foes.size(); ++j )
         {
             Foe &a = m_foes[i], &b = m_foes[j];
-            if ( !a.m_alive || !b.m_alive ) continue;
+            if ( !a.m_alive || !b.m_alive || a.m_hidden || b.m_hidden ) continue;
             float   min = ( a.m_kind == FoeE::WELDER ? 0.8f : 0.45f ) + ( b.m_kind == FoeE::WELDER ? 0.8f : 0.45f );
             Vector3 d = Vector3Subtract( a.m_pos, b.m_pos );
             d.y = 0.0f;
@@ -1321,7 +1319,7 @@ void Game::updateFoes( float dt )
     // Feet.
     for ( Foe &f : m_foes )
     {
-        if ( !f.m_alive ) continue;
+        if ( !f.m_alive || human( f ) ) continue;
         const LouseModel &model = f.m_kind == FoeE::WELDER ? m_welder : m_louse;
         LousePose         pose;
         pose.m_pos = f.m_pos;
@@ -1349,7 +1347,6 @@ void Game::updatePress( float dt )
         m_pressPose.m_dead = true;
         m_pressPose.m_ram = fmaxf( 1.05f, m_pressPose.m_ram - dt * 3.0f );
         m_pressPose.m_warn = 0.0f;
-        m_doorOpen = fminf( 1.0f, m_doorOpen + dt * 0.5f );
         return;
     }
     if ( !m_pressActive )
@@ -1443,7 +1440,7 @@ void Game::updatePress( float dt )
             // Whatever stands on the anvil.
             auto onAnvil = [&]( Vector3 p )
             { return fabsf( p.x - o.x ) < 2.4f && p.z > o.z && p.z < o.z + 4.4f && p.y < 2.2f; };
-            if ( onAnvil( m_pos ) ) hurtHero( 35.0f, { ( m_pos.x - o.x ) * 1.5f, 4.0f, 5.0f } );
+            if ( onAnvil( m_pos ) ) hurtHero( 35.0f, { ( m_pos.x - o.x ) * 1.5f, 4.0f, 5.0f }, m_pos );
             for ( Foe &f : m_foes )
                 if ( f.m_alive && onAnvil( f.m_pos ) ) killFoe( f, false );
         }
@@ -1511,6 +1508,7 @@ void Game::updateEffects( float dt )
     {
         Debris &d = m_debris[i];
         d.m_life -= dt;
+        d.m_vel = Vector3Add( d.m_vel, Vector3Scale( thrust(), dt ) );
         d.m_vel.y -= g * dt;
         d.m_pos = Vector3Add( d.m_pos, Vector3Scale( d.m_vel, dt ) );
         d.m_rot = Vector3Add( d.m_rot, Vector3Scale( d.m_spin, dt ) );
@@ -1540,7 +1538,7 @@ void Game::updateEffects( float dt )
         bool    done = b.m_life <= 0.0f;
         if ( !done && Vector3Distance( b.m_pos, Vector3Add( m_pos, { 0, 1.0f, 0 } ) ) < 0.75f && !m_dead )
         {
-            hurtHero( 14.0f, { b.m_vel.x * 0.15f, 0.5f, b.m_vel.z * 0.15f } );
+            hurtHero( 14.0f, { b.m_vel.x * 0.15f, 0.5f, b.m_vel.z * 0.15f }, Vector3Subtract( b.m_pos, b.m_vel ) );
             done = true;
         }
         if ( !done && m_level.raycast( prev, b.m_pos, hit, n ) )
@@ -1594,6 +1592,13 @@ void Game::updateEffects( float dt )
         if ( !p.m_alive ) continue;
         p.m_t += dt;
         float floor = groundAt( p.m_pos );
+        if ( m_thrustAmt > 0.5f )
+        {
+            // A dodge rolls the pickups across the deck.
+            Vector3 q = Vector3Add( p.m_pos, Vector3Scale( thrust(), dt * 0.25f ) );
+            m_level.collide( q, 0.2f, 0.3f );
+            p.m_pos.x = q.x, p.m_pos.z = q.z;
+        }
         if ( p.m_pos.y > floor + 0.3f || p.m_vel.y > 0.0f )
         {
             p.m_vel.y -= g * dt;
@@ -1642,7 +1647,12 @@ void Game::plan()
     m_level.cellOf( m_pos, sr, sc );
     int     goal = -1;
     Vector3 o = m_pressModel.m_origin;
-    if ( m_pressActive && !m_pressDead )
+    if ( m_waypoint < m_level.m_route.size() )
+    {
+        // The level's route, one waypoint after the other.
+        goal = m_level.m_route[m_waypoint].first * cols + m_level.m_route[m_waypoint].second;
+    }
+    else if ( m_pressActive && !m_pressDead )
     {
         int gr, gc;
         m_level.cellOf( { o.x, 0.0f, o.z + 13.0f }, gr, gc );
@@ -1698,14 +1708,21 @@ void Game::plan()
 void Game::autopilot( float dt, GameInput &in )
 {
     in = GameInput();
-    if ( m_dead || m_finished ) return;
+    if ( m_dead || m_finished || m_scene > 0 ) return;
+    int cols = m_level.cols();
+    if ( m_waypoint < m_level.m_route.size() )
+    {
+        // A waypoint on the way counts from near by; the last one only when standing in it.
+        auto  wp = m_level.m_route[m_waypoint];
+        float near = m_waypoint + 1 < m_level.m_route.size() ? 1.6f : 0.6f;
+        if ( Vector3Distance( m_pos, m_level.centre( wp.first, wp.second ) ) < near ) ++m_waypoint, m_planTimer = 0.0f;
+    }
     m_planTimer -= dt;
     if ( m_planTimer <= 0.0f )
     {
         plan();
         m_planTimer = 0.5f;
     }
-    int cols = m_level.cols();
     int r, c;
     m_level.cellOf( m_pos, r, c );
     while ( m_ground && !m_path.empty() && m_path.front() == r * cols + c ) m_path.erase( m_path.begin() );
@@ -1717,12 +1734,13 @@ void Game::autopilot( float dt, GameInput &in )
     for ( int i = 0; i < (int)m_foes.size(); ++i )
     {
         const Foe &f = m_foes[i];
-        if ( !f.m_alive || !f.m_awake ) continue;
+        if ( !f.m_alive || !f.m_awake || f.m_hidden ) continue;
         float d = Vector3Distance( f.m_pos, m_pos );
         if ( d < bestDist && d < 18.0f && los( chest, targetPoint( { 0, i, {} } ) ) ) bestDist = d, best = { 0, i, {} };
     }
-    // At the press the weak spots come first, unless a louse is close.
-    if ( ( best.m_kind < 0 || bestDist > 6.0f ) && m_pressActive && !m_pressDead && !m_pressDying )
+    // At the press the weak spots come first, unless a louse is close (for the hammer: in reach).
+    float close = m_heroKind == HeroE::DORRA ? 2.5f : 6.0f;
+    if ( ( best.m_kind < 0 || bestDist > close ) && m_pressActive && !m_pressDead && !m_pressDying )
         for ( int k = 1; k <= 3; ++k )
         {
             if ( k == 1 ) bestDist = 1e9f;
@@ -1733,13 +1751,13 @@ void Game::autopilot( float dt, GameInput &in )
             float  d = Vector3Distance( targetPoint( t ), m_pos );
             if ( d < bestDist && los( chest, targetPoint( t ) ) ) bestDist = d, best = t;
         }
-    if ( best.m_kind >= 0 )
+    if ( m_hp < hpMax() * 0.4f && m_stims > 0 ) in.m_stim = true;
+    if ( m_heroKind != HeroE::DORRA && best.m_kind >= 0 )
     {
         Vector3 p = targetPoint( best );
         in.m_stick = Vector2Normalize( { p.x - m_pos.x, p.z - m_pos.z } );
         in.m_fire = m_ground && ( !m_overheat ) && m_heat < 92.0f;
     }
-    if ( m_hp < 40.0f && m_stims > 0 ) in.m_stim = true;
 
     // Move along the path; keep off the anvil while the ram is up; back off from a louse in the face.
     Vector3 o = m_pressModel.m_origin;
@@ -1750,7 +1768,8 @@ void Game::autopilot( float dt, GameInput &in )
         in.m_move = { m_pos.x < o.x ? -1.0f : 1.0f, 1.0f };
         return;
     }
-    if ( best.m_kind == 0 && bestDist < 2.5f && m_ground )
+    if ( m_heroKind == HeroE::DORRA && autopilotMelee( in, best, bestDist ) ) return;
+    if ( best.m_kind == 0 && bestDist < 2.5f && m_ground && m_heroKind != HeroE::DORRA )
     {
         // Back off, but never towards a shaft.
         Vector3 f = m_foes[best.m_index].m_pos;
@@ -1822,10 +1841,31 @@ void Game::update( float dt, const GameInput &inRaw )
         Vector2 m = in.m_move;
         in.m_move = { m.x * c + m.y * s, -m.x * s + m.y * c };
     }
+    updateScene( dt, in );
+    updateThrust( dt );
     updateHero( dt, in );
     updateFoes( dt );
     updatePress( dt );
     updateEffects( dt );
+    updateShots( dt );
+    updateCargo( dt );
+
+    // The door opens with the level's event (the press dead, the bridge clear).
+    if ( m_doorHalf > 0.0f && m_fired.count( m_level.m_gate ) ) m_doorOpen = fminf( 1.0f, m_doorOpen + dt * 0.5f );
+    // The bridge is clear once all who held it are down; then the others come aboard, by the containers.
+    if ( m_fired.count( "f" ) && !m_fired.count( "bridgeclear" ) )
+    {
+        bool held = false, any = false;
+        for ( const Foe &f : m_foes )
+            if ( f.m_group == 1 ) any = true, held = held || f.m_alive;
+        if ( any && !held ) fire( "bridgeclear" );
+    }
+    if ( m_fired.count( "bridgeclear" ) )
+        for ( Foe &f : m_foes )
+            if ( f.m_hidden ) f.m_hidden = false, f.m_awake = true;
+    // What a level says at its start; on a ship the alarm goes after it, or as soon as the hero leaves the start.
+    if ( m_time > 0.8f ) fire( "start" );
+    if ( m_level.m_thrust && !m_fired.count( "alarm" ) && ( m_time > 13.0f || m_fired.count( "b" ) ) ) fire( "alarm" );
 
     // Lines and hints, one at a time.
     m_lineTimer -= dt;
@@ -1836,11 +1876,13 @@ void Game::update( float dt, const GameInput &inRaw )
         {
             m_line = m_lineQueue.front();
             m_lineQueue.erase( m_lineQueue.begin() );
-            // The voice in the chosen language, else the German one (under the chosen language's subtitles).
-            float spoken = m_audio.voice( m_assets + "/voice/" + language() + "/" + m_line->m_id );
-            if ( spoken <= 0.0f && language() != "de" )
-                spoken = m_audio.voice( m_assets + "/voice/de/" + m_line->m_id );
-            int chars = GetCodepointCount( tr( m_line->m_id ) );
+            // The voice in the chosen language, else the German one (under the chosen language's subtitles); a line
+            // the hero says in their own way has its own file.
+            std::string key = m_line->m_id;
+            if ( hasText( key + "." + heroKey( m_heroKind ) ) ) key += std::string( "." ) + heroKey( m_heroKind );
+            float spoken = m_audio.voice( m_assets + "/voice/" + language() + "/" + key );
+            if ( spoken <= 0.0f && language() != "de" ) spoken = m_audio.voice( m_assets + "/voice/de/" + key );
+            int chars = GetCodepointCount( tr( key ) );
             m_lineTimer = spoken > 0.0f ? spoken + 0.4f : 1.5f + 0.055f * (float)chars;
         }
     }
@@ -1866,6 +1908,7 @@ void Game::update( float dt, const GameInput &inRaw )
     bool    arena = o.x != 0.0f && m_pressActive && !m_pressDead && fabsf( m_pos.x - o.x ) < 21.0f && m_pos.z > o.z &&
                     m_pos.z < o.z + 30.0f;
     if ( arena ) want = Vector3Lerp( want, { o.x, 1.0f, o.z + 4.0f }, 0.5f );
+    if ( m_scene == 1 || m_scene == 2 ) want = Vector3Lerp( hero, { m_scanner.x, 0.6f, m_scanner.z }, 0.5f );
     Vector3 off = Vector3Subtract( want, hero );
     float   reach = arena ? 7.0f : 3.0f;
     if ( Vector3Length( off ) > reach ) want = Vector3Add( hero, Vector3Scale( Vector3Normalize( off ), reach ) );
@@ -1874,13 +1917,19 @@ void Game::update( float dt, const GameInput &inRaw )
     Vector3 lag = Vector3Subtract( m_camTarget, hero );
     float   keep = arena ? 8.0f : 4.0f;
     if ( Vector3Length( lag ) > keep ) m_camTarget = Vector3Add( hero, Vector3Scale( Vector3Normalize( lag ), keep ) );
-    m_camPull += ( ( arena ? 1.45f : 1.0f ) - m_camPull ) * fminf( 1.0f, dt * 1.5f );
+    float pull = arena ? 1.45f : ( m_scene == 1 || m_scene == 2 ? 0.7f : 1.0f );
+    m_camPull += ( pull - m_camPull ) * fminf( 1.0f, dt * 1.5f );
     Vector3 shake = { ( rnd() - 0.5f ) * m_shake * 0.5f, ( rnd() - 0.5f ) * m_shake * 0.3f,
                       ( rnd() - 0.5f ) * m_shake * 0.5f };
     m_cam.target = Vector3Add( m_camTarget, shake );
     m_cam.position = Vector3Add(
         m_cam.target, Vector3Scale( { 8.1f * sinf( m_camYaw ), 11.5f, 8.1f * cosf( m_camYaw ) }, m_zoom * m_camPull ) );
-    m_cam.up = { 0.0f, 1.0f, 0.0f };
+    // A dodge tilts the picture towards where it pushes.
+    Vector3 look = Vector3Normalize( Vector3Subtract( m_cam.target, m_cam.position ) );
+    Vector3 side = Vector3Normalize( Vector3CrossProduct( look, { 0.0f, 1.0f, 0.0f } ) );
+    float   lean = Vector3DotProduct( thrust(), side ) / ThrustPeak * 0.06f;
+    m_roll += ( lean - m_roll ) * fminf( 1.0f, dt * 3.0f );
+    m_cam.up = Vector3Add( Vector3Scale( { 0.0f, 1.0f, 0.0f }, cosf( m_roll ) ), Vector3Scale( side, sinf( m_roll ) ) );
     m_cam.fovy = 38.0f;
     m_cam.projection = CAMERA_PERSPECTIVE;
     m_audio.update();
@@ -1903,9 +1952,23 @@ Lighting Game::lighting() const
     L.m_fogColor = m_level.m_fogColor;
     L.m_roomMin = { 0.0f, -PitDepth, 0.0f };
     L.m_roomMax = { m_level.cols() * CellSize, m_level.m_wallHeight, m_level.rows() * CellSize };
+    if ( m_skyTex.id > 0 )
+    {
+        // Out there is vacuum: no fog below the deck. The red dwarf shines up through the window in the floor.
+        L.m_roomMin.y = 0.0f;
+        L.m_sunDir = Vector3Normalize( Vector3Subtract( m_ownPlume, m_star ) );
+        L.m_sunColor = { 2.6f, 0.75f, 0.3f };
+    }
 
     std::vector<PointLight> all;
     all.push_back( { Vector3Add( m_pos, { 0.4f, 3.2f, 1.2f } ), 11.0f, { 13.0f, 11.5f, 10.0f }, 0.0f } );
+    // The ship's warning lights while it dodges; the scanner by Ilka, still warm.
+    if ( m_thrustState > 0 && fmodf( m_time, 0.5f ) < 0.3f )
+        all.push_back( { Vector3Add( m_pos, { 0.0f, 4.5f, 0.0f } ), 12.0f, { 16.0f, 7.0f, 1.0f }, 0.6f } );
+    if ( m_ilka >= 0 && m_fired.count( "bridgeclear" ) )
+        all.push_back( { Vector3Add( m_scanner, { 0.0f, 0.4f, 0.0f } ), 3.0f, { 6.0f, 0.6f, 0.3f }, 0.5f } );
+    for ( const Shot &s : m_shotsInFlight ) all.push_back( { s.m_pos, 3.0f, { 8.0f, 2.0f, 0.6f }, 1.0f } );
+    for ( const Bolt &b : m_bolts ) all.push_back( { b.m_pos, 3.0f, { 9.0f, 4.0f, 1.0f }, 1.0f } );
     // The lift: red while the gate is shut, green when it waits.
     if ( m_liftMax.x > m_liftMin.x )
         all.push_back( { { m_lift.x, m_liftY + 3.0f, m_lift.z },
@@ -2063,6 +2126,30 @@ void Game::drawParticles( Gfx &gfx )
         billboard( b.m_pos, 0.12f, { 255, 220, 150, 255 } );
         billboard( b.m_pos, 0.35f, { 255, 120, 40, 120 } );
     }
+    // Dorra's blast bolts, the carbines' bolts, and the laser of a carbine taking aim.
+    for ( const Bolt &b : m_bolts )
+    {
+        billboard( b.m_pos, 0.1f, { 255, 230, 170, 255 } );
+        billboard( b.m_pos, 0.3f, { 255, 140, 50, 140 } );
+        streak( b.m_pos, Vector3Subtract( b.m_pos, Vector3Scale( b.m_vel, 0.05f ) ), 0.04f, { 255, 160, 60, 160 } );
+    }
+    for ( const Shot &s : m_shotsInFlight )
+    {
+        Vector3 tail = Vector3Subtract( s.m_pos, Vector3Scale( s.m_vel, 0.045f ) );
+        streak( s.m_pos, tail, 0.03f, { 255, 235, 200, 255 } );
+        streak( s.m_pos, tail, 0.1f, { 255, 90, 40, 130 } );
+    }
+    for ( const Foe &f : m_foes )
+    {
+        if ( !f.m_alive || f.m_hidden || f.m_kind != FoeE::GUNNER || f.m_aim <= 0.02f ) continue;
+        Vector3 from = Vector3Add( f.m_pos, { sinf( f.m_yaw ) * 0.6f, 1.3f, cosf( f.m_yaw ) * 0.6f } );
+        Vector3 to = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
+        Vector3 hit, n;
+        if ( m_level.raycast( from, to, hit, n ) ) to = hit;
+        unsigned char a = (unsigned char)( 200 * f.m_aim );
+        streak( to, from, 0.012f, { 255, 40, 30, a } );
+        billboard( to, 0.06f + 0.06f * f.m_aim, { 255, 60, 40, a } );
+    }
     rlEnd();
     rlSetTexture( 0 );
     gfx.endParticles();
@@ -2072,9 +2159,11 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
 {
     m_dynamic.clear();
     m_hero.pose( m_dynamic );
+    poseCrew( m_dynamic );
+    poseShip( m_dynamic );
     for ( const Foe &f : m_foes )
     {
-        if ( !f.m_alive ) continue;
+        if ( !f.m_alive || human( f ) ) continue;
         LousePose pose;
         pose.m_pos = f.m_pos;
         pose.m_yaw = f.m_yaw;
@@ -2194,14 +2283,16 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     }
 
     Lighting L = lighting();
-    gfx.m_sunShadows = false;
+    gfx.m_sunShadows = m_skyTex.id > 0;
     gfx.m_cutCentre = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
     gfx.m_cutRadius = 2.6f;
     gfx.m_exposure = 1.7f * m_brightness;
     gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );
-    gfx.beginScene( m_cam, L, m_time, m_dot );
+    gfx.beginScene( m_cam, L, m_time, m_skyTex.id > 0 ? m_skyTex : m_dot );
+    drawView( gfx );
     gfx.draw( m_static, m_surfaces );
     gfx.draw( m_dynamic, m_surfaces );
+    if ( m_glassMesh.vertexCount > 0 ) gfx.glass( m_glassMesh, MatrixIdentity() );
     drawParticles( gfx );
     gfx.endScene();
     gfx.post( out );
@@ -2278,26 +2369,41 @@ void Game::drawHud( int w, int h )
         }
     }
 
-    // Corvin: health, heat, stims, scrap.
+    // The ship's dodges, the patrol out there, the last scene's dark and the clinic.
+    drawShipHud( w, h, s );
+
+    // The hero: health, the rifle's heat or the next blast bolt, stims, scrap.
     float x = 40.0f * s, y = h - 150.0f * s;
-    DrawRectangle( (int)( x - 14 * s ), (int)( y - 14 * s ), (int)( 360 * s ), (int)( 124 * s ), { 0, 0, 0, 120 } );
-    text( tr( "hero.corvin" ), x, y, 22, { 255, 200, 120, 230 } );
     float bw = 320.0f * s, bh = 14.0f * s;
-    DrawRectangle( (int)x, (int)( y + 32 * s ), (int)bw, (int)bh, { 40, 10, 10, 200 } );
-    DrawRectangleGradientH( (int)x, (int)( y + 32 * s ), (int)( bw * m_hp / 100.0f ), (int)bh, { 150, 20, 20, 255 },
-                            { 230, 60, 40, 255 } );
-    DrawRectangle( (int)x, (int)( y + 54 * s ), (int)bw, (int)( 8 * s ), { 10, 20, 30, 200 } );
-    Color heat = m_overheat
-                     ? Color{ 255, 80, 30, 255 }
-                     : Color{ (unsigned char)( 80 + 175 * m_heat / 100 ), (unsigned char)( 200 - 80 * m_heat / 100 ),
-                              (unsigned char)( 255 - 200 * m_heat / 100 ), 255 };
-    DrawRectangle( (int)x, (int)( y + 54 * s ), (int)( bw * m_heat / 100.0f ), (int)( 8 * s ), heat );
-    if ( m_overheat && fmodf( m_time, 0.4f ) < 0.25f )
+    if ( m_scene < 2 )
     {
-        const char *hot = tr( "hud.overheat" );
-        text( hot, x + bw - MeasureTextEx( m_font, hot, 18 * s, 1.0f ).x, y + 4 * s, 18, { 255, 120, 60, 255 } );
+        DrawRectangle( (int)( x - 14 * s ), (int)( y - 14 * s ), (int)( 360 * s ), (int)( 124 * s ), { 0, 0, 0, 120 } );
+        text( tr( std::string( "hero." ) + heroKey( m_heroKind ) ), x, y, 22, { 255, 200, 120, 230 } );
+        DrawRectangle( (int)x, (int)( y + 32 * s ), (int)bw, (int)bh, { 40, 10, 10, 200 } );
+        DrawRectangleGradientH( (int)x, (int)( y + 32 * s ), (int)( bw * m_hp / hpMax() ), (int)bh,
+                                { 150, 20, 20, 255 }, { 230, 60, 40, 255 } );
+        DrawRectangle( (int)x, (int)( y + 54 * s ), (int)bw, (int)( 8 * s ), { 10, 20, 30, 200 } );
+        if ( m_heroKind == HeroE::DORRA )
+        {
+            float ready = 1.0f - Clamp( m_boltTimer / BoltCooldown, 0.0f, 1.0f );
+            Color c = ready >= 1.0f ? Color{ 255, 170, 60, 255 } : Color{ 140, 90, 40, 255 };
+            DrawRectangle( (int)x, (int)( y + 54 * s ), (int)( bw * ready ), (int)( 8 * s ), c );
+        }
+        else
+        {
+            Color heat = m_overheat ? Color{ 255, 80, 30, 255 }
+                                    : Color{ (unsigned char)( 80 + 175 * m_heat / 100 ),
+                                             (unsigned char)( 200 - 80 * m_heat / 100 ),
+                                             (unsigned char)( 255 - 200 * m_heat / 100 ), 255 };
+            DrawRectangle( (int)x, (int)( y + 54 * s ), (int)( bw * m_heat / 100.0f ), (int)( 8 * s ), heat );
+        }
+        if ( m_overheat && fmodf( m_time, 0.4f ) < 0.25f )
+        {
+            const char *hot = tr( "hud.overheat" );
+            text( hot, x + bw - MeasureTextEx( m_font, hot, 18 * s, 1.0f ).x, y + 4 * s, 18, { 255, 120, 60, 255 } );
+        }
+        text( TextFormat( tr( "hud.stock" ), m_stims, m_scrap ), x, y + 72 * s, 20, { 200, 220, 210, 230 } );
     }
-    text( TextFormat( tr( "hud.stock" ), m_stims, m_scrap ), x, y + 72 * s, 20, { 200, 220, 210, 230 } );
 
     // The press: its bar in three parts (tank, core, tank), and a marker over each weak spot that can be hit now.
     if ( m_pressActive && !m_pressDead )
@@ -2345,7 +2451,7 @@ void Game::drawHud( int w, int h )
     {
         float       a = Clamp( m_hintTimer * 2.0f, 0.0f, 1.0f );
         float       hy = ( m_pressActive && !m_pressDead ? 125.0f : 50.0f ) * s;
-        const char *hint = tr( m_hint->m_id );
+        const char *hint = trAs( m_hint->m_id, heroKey( m_heroKind ) );
         Vector2     m = MeasureTextEx( m_font, hint, 24 * s, 1.0f );
         DrawRectangle( (int)( w * 0.5f - m.x * 0.5f - 18 * s ), (int)( hy - 10 * s ), (int)( m.x + 36 * s ),
                        (int)( m.y + 20 * s ), { 0, 0, 0, (unsigned char)( 150 * a ) } );
@@ -2361,11 +2467,12 @@ void Game::drawHud( int w, int h )
     if ( m_line )
     {
         float       a = Clamp( m_lineTimer * 3.0f, 0.0f, 1.0f );
-        std::string who = tr( "speaker." + m_line->m_speaker );
+        std::string speaker = m_line->m_speaker == "hero" ? heroKey( m_heroKind ) : m_line->m_speaker;
+        std::string who = tr( "speaker." + speaker );
         for ( char &ch : who ) ch = (char)toupper( (unsigned char)ch );
         float ly = h - 190.0f * s;
         text( who.c_str(), w * 0.5f, ly, 22, { 255, 190, 110, (unsigned char)( 255 * a ) }, true );
-        wrapped( tr( m_line->m_id ), w * 0.5f, ly + 30 * s, 28, w * 0.55f,
+        wrapped( trAs( m_line->m_id, heroKey( m_heroKind ) ), w * 0.5f, ly + 30 * s, 28, w * 0.55f,
                  { 245, 242, 236, (unsigned char)( 255 * a ) } );
     }
 
@@ -2391,18 +2498,23 @@ void Game::drawHud( int w, int h )
         text( tr( m_level.m_name ), w * 0.5f, h * 0.34f + 36 * s, 60, { 240, 235, 230, ta }, true );
         text( TextFormat( tr( "hud.summary" ), (int)m_time / 60, (int)m_time % 60, m_scrap, m_kills ), w * 0.5f,
               h * 0.34f + 120 * s, 26, { 210, 215, 220, ta }, true );
-        text( tr( "hud.again" ), w * 0.5f, h * 0.34f + 180 * s, 22, { 160, 165, 170, ta }, true );
+        text( tr( m_level.m_next.empty() ? "hud.again" : "hud.next" ), w * 0.5f, h * 0.34f + 180 * s, 22,
+              { 160, 165, 170, ta }, true );
     }
 }
 
 std::string Game::report() const
 {
-    char buf[256];
+    char buf[384];
+    int  alive = 0;
+    for ( const Foe &f : m_foes ) alive += f.m_alive ? 1 : 0;
     snprintf(
         buf, sizeof( buf ),
-        "finished=%d time=%.0fs deaths=%d kills=%d shots=%d hp=%.0f scrap=%d stims=%d press=%s tanks=%.0f/%.0f core=%.0f",
-        m_finished ? 1 : 0, m_time, m_deaths, m_kills, m_shots, m_hp, m_scrap, m_stims,
-        m_pressDead ? "dead" : ( m_pressActive ? "active" : "asleep" ), m_tank[0], m_tank[1], m_core );
+        "hero=%s finished=%d time=%.0fs deaths=%d kills=%d shots=%d hp=%.0f scrap=%d stims=%d press=%s tanks=%.0f/%.0f "
+        "core=%.0f alive=%d at=%.1f,%.1f waypoint=%d/%d scene=%d",
+        heroKey( m_heroKind ), m_finished ? 1 : 0, m_time, m_deaths, m_kills, m_shots, m_hp, m_scrap, m_stims,
+        m_pressDead ? "dead" : ( m_pressActive ? "active" : "asleep" ), m_tank[0], m_tank[1], m_core, alive, m_pos.x,
+        m_pos.z, (int)m_waypoint, (int)m_level.m_route.size(), m_scene );
     return buf;
 }
 

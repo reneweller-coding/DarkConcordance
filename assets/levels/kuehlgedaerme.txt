@@ -74,18 +74,18 @@ sign     32 54 sign_lift
 
 [lines]
 # Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/kuehlgedaerme.txt)
-l1_start    | a        | corvin
-l1_capsule  | capsule  | corvin
-l1_lice     | b        | corvin
-l1_droplets | c        | corvin
-l1_shaft    | e        | corvin
-l1_bodies   | f        | corvin
-l1_press    | g        | corvin
-l1_tanks    | bossstart | corvin
-l1_tank1    | tank1    | corvin
-l1_core     | coreopen | corvin
-l1_pressend | bossdead | corvin
-l1_exit     | bossdead | corvin
+l1_start    | a        | hero
+l1_capsule  | capsule  | hero
+l1_lice     | b        | hero
+l1_droplets | c        | hero
+l1_shaft    | e        | hero
+l1_bodies   | f        | hero
+l1_press    | g        | hero
+l1_tanks    | bossstart | hero
+l1_tank1    | tank1    | hero
+l1_core     | coreopen | hero
+l1_pressend | bossdead | hero
+l1_exit     | bossdead | hero
 
 [hints]
 # Schlüssel | Auslöser
@@ -93,6 +93,7 @@ h_jump     | a
 h_camera   | a
 h_fire     | b
 h_strafe   | b
+h_bolt     | b
 h_gap      | e
 h_stim     | hurt
 h_heat     | overheat

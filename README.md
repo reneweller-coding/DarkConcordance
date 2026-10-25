@@ -4,7 +4,43 @@ A dark space opera action RPG in the manner of *Baldur's Gate: Dark Alliance*: t
 ranged combat aimed as in *Fallout: Brotherhood of Steel*, pools of light in the dark. The story is the user's outline
 (*DARK CONCORDANCE* / *KATABASIS*); the production plan is in [docs/PLAN.md](docs/PLAN.md).
 
-## Level 1 „Die Kühlgedärme“ (playable prototype)
+## Starting the game
+
+„Spiel starten“ asks who you are: **Dorra Vask** (melee: ram hammer, shield, blast bolts) or **Corvin Aske**
+(ranged: the Gauss rifle); Ione follows later. The game begins with the prologue and goes on to level 1 with the same
+hero (Enter or Start after a level's end).
+
+## Prologue: the lighter „Gute Hoffnung“
+
+A refugee transport braking into the Velm system, 3,000 people in cargo containers. You were paid to take nine-year-old
+Ilka to her aunt on Velm. Skimmers (Abschöpfer) board the ship.
+
+- **Gravity from thrust, not spin:** the pilot dodges, and every dodge tilts gravity sideways: a klaxon, an arrow, then
+  the push. Everyone slides, loose cargo slams into whoever stands in its way, the picture tilts with it.
+- **Boarders:** with shock batons (they close in and swing) and carbines (they keep their distance, take aim with a red
+  laser, fire bursts of slow bolts you can sidestep or catch on Dorra's shield).
+- **The way:** hold four with its container stacks and the refugees sitting between them, the west gangway, the
+  observation blister with a window in the floor, the bridge, back through the east bulkhead.
+- **Wonder:** through the window, the red dwarf and the chain of fusion flames of the other refugee ships braking
+  before it. **Wound:** the Concordance patrol *Not Our Concern* answers the distress call and declines.
+- **The end:** Ilka found too late, the scanner still warm, the shot from behind, the dark, and the charity clinic on
+  Velm (a painted still with the doctor's lines).
+
+![Through the window in the floor](docs/screenshots/pro_view.jpg)
+![Dorra against a boarder in hold four](docs/screenshots/pro_dorra.jpg)
+![A dodge](docs/screenshots/pro_thrust.jpg)
+![Ilka](docs/screenshots/pro_ilka.jpg)
+![The clinic](docs/screenshots/pro_clinic.jpg)
+
+## Dorra
+
+Short and broad from a world of 1.9 g, in the plates of her old mining suit. The trigger strikes; held, the blows run
+forehand, backhand and the overhead slam, whose blast bolt goes off in a ring. The left trigger (Shift) raises the
+shield: shots and blows from the front are stopped, a boarder's baton is thrown back. B (F) throws a blast bolt in an
+arc at what the auto-aim picks: for gunners far off, and for the drone press's core, which hangs too high for the
+hammer; its tanks she smashes at the base. 140 health, a little slower than Corvin.
+
+## Level 1 „Die Kühlgedärme“
 
 Heat-exchanger tunnels near Velm's axis: little gravity, fog, rust-red emergency light. Corvin Aske with his Gauss rifle
 against rust lice and welder lice, across a cooling shaft, past the cold store with the empty bodies, to the drone
@@ -34,9 +70,10 @@ press that builds new lice from scrap.
   `assets/voice/<language>/<key>.ogg`.
 
 Move with WASD, the arrows or the left stick; turn the camera with the right stick or the right mouse button held;
-jump with Space or A; shoot with the left mouse button, the right trigger or X; hold the facing with the left trigger
-or Shift; Q or Y injects a stim; the mouse wheel, the shoulder buttons or the right stick's up and down zoom; Esc or
-Start pauses (difficulty, brightness, restart, quit); F1 frame rate, F12 picture.
+jump with Space or A; shoot (Dorra: strike) with the left mouse button, the right trigger or X; hold the facing
+(Dorra: the shield) with the left trigger or Shift; B or F throws Dorra's blast bolt; Q or Y injects a stim; the mouse
+wheel, the shoulder buttons or the right stick's up and down zoom; Esc or Start pauses (difficulty, brightness,
+language, restart, quit); F1 frame rate, F12 picture.
 
 The level is a text file, [assets/levels/kuehlgedaerme.txt](assets/levels/kuehlgedaerme.txt): an ASCII map of 2 m
 cells (legend at its top), zones with their themes, signs, the keys of the spoken lines and the hints with their
@@ -59,14 +96,15 @@ The first room: an observation deck with a glass floor over a gas giant and a ne
 
 Tests and pictures without a window (always silent):
 
-    bin\msvc\SpaceOpera.exe --shot work\a.png --autoplay --report --warm 900   # the autopilot plays the level
-    bin\msvc\SpaceOpera.exe --shot work\b.png --at 25,25 --face 180 --awake --fire --warm 4
+    bin\msvc\SpaceOpera.exe --shot work\a.png --autoplay --report --warm 600 --hero dorra     # the prologue
+    bin\msvc\SpaceOpera.exe --shot work\a.png --level kuehlgedaerme.txt --autoplay --report --warm 900
+    bin\msvc\SpaceOpera.exe --shot work\b.png --level kuehlgedaerme.txt --at 25,25 --face 180 --awake --fire --warm 4
     bin\msvc\SpaceOpera.exe --lookdev --shot work\c.png --at 0.6,-4.3 --face 145 --walk
 
 `--report` writes the run (finished, time, deaths, kills, shots) into `spaceopera.log` beside the program; `--bench n`
 renders n frames first and logs the time per frame. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
 `--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
-language.
+language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue.
 
 ## Textures
 

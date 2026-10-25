@@ -28,3 +28,14 @@ hud.core          = CORE
 hud.lift          = Freight lift starting …
 hud.summary       = Time %d:%02d     Scrap %d     Machines destroyed %d
 hud.again         = Enter or Start: play again
+
+menu.choose         = Who are you?
+choose.dorra        = Dorra Vask  —  melee
+choose.corvin       = Corvin Aske  —  ranged
+choose.ione         = Ione Sarrath  —  drones (coming)
+choose.dorra.about  = Heavy-worlder from Kalvar. A ram hammer driven by blast bolts, a shield made from her old mining suit.
+choose.corvin.about = Once a skimmer himself. Gauss rifle, quick, always with a way out in mind.
+choose.ione.about   = Technician with a cloud of micro-drones. Not playable yet.
+hero.dorra          = DORRA VASK
+speaker.dorra       = Dorra
+hud.next            = Enter or Start: continue

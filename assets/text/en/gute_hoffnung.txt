@@ -1,0 +1,60 @@
+# Prologue: The Lighter "Good Hope" (English). Lines, hints, signs.
+# "<key>.dorra" / "<key>.corvin": how this figure says it; "-" means nothing for them.
+# Speaker "hero" is whoever is played.
+
+pro.name        = The Lighter “Good Hope”
+act.0           = Prologue
+
+speaker.ilka    = Ilka
+speaker.pilot   = Pilot Reyes
+speaker.patrol  = Not Our Concern
+speaker.doctor  = Doctor
+
+p_ilka1         = How much longer?
+p_hero1         = Two days. Then you're with your aunt.
+p_ilka2         = And what if she doesn't want me?
+p_hero2         = Then she pays me anyway. … That was a joke.
+p_hero2.dorra   = She wants you. I read her message. Three times.
+p_alarm         = Bridge to all: we're being boarded. Skimmers, two boats on the hull. I'm taking evasive action – hold on!
+p_hero3         = Stay here. Shut the door. You don't open it for anyone. Only me.
+p_ilka3         = Promise?
+p_hero4         = Promise.
+p_board         = Skimmers. They don't want cargo. They want heads.
+p_board.corvin  = Skimmers. I know the routine: first the bridge, then the containers.
+p_dodge1        = Evasive! Hold on!
+p_dodge2        = Another one! Hold on!
+p_dodge3        = I can't shake them!
+p_guns          = Carbines. Cheap. But they hit if you stand still.
+p_guns.dorra    = Shooters. Shield up and close in.
+p_view1         = The others are braking down there. Twelve ships, a chain of fire before the red dwarf.
+p_view2         = All from the same settlement. All with the same destination.
+p_call          = Concordance patrol, this is the lighter “Good Hope”. We are being boarded. Three thousand people aboard. We need help.
+p_patrol1       = This is “Not Our Concern”. We have registered your distress call.
+p_patrol2       = There are no citizens of the Concordance aboard. Consequently, no jurisdiction applies.
+p_patrol3       = We wish you a safe arrival.
+p_after         = … Thanks.
+p_after.dorra   = Of course not.
+p_bridge        = They're at the bridge door! I can't fly and fight at the same time!
+p_clear1        = Bridge clear. Thank you. … Wait. Hold four, east – there are signals. They're in the containers!
+p_clear2        = Ilka.
+p_clear3        = I'm opening the east bulkhead. Hurry!
+p_hold          = The containers are open. They're going door to door.
+p_end1          = Ilka?
+p_end2          = The device is still warm.
+p_doc1          = You were lucky. Your heart stopped for two minutes.
+p_doc2          = Velm, Third Drum, the charity clinic. You've been here four days.
+p_hero5         = The girl. Ilka.
+p_doc3          = I'm sorry. They brought her in with the lighter. Empty.
+p_doc4          = Your treatment has been paid for, by the way. By a woman called Ysolde Varn. She'd like to speak with you.
+
+h_move          = Move: left stick / WASD. Turn the camera: right stick, or drag with the right mouse button.
+h_thrust        = Thrust pulse: gravity tilts the way the arrow points. Lean against it – and mind the loose cargo.
+h_east          = The east bulkhead is open. Back to hold four.
+
+hud.patrol      = CONCORDANCE PATROL · 2,000 km
+hud.thrust      = THRUST PULSE
+
+sign_hold4      = CARGO HOLD 4 | 312 PERSONS · STAY CALM
+sign_blister    = OBSERVATION BLISTER | KEEP OUT UNDER THRUST
+sign_bridge     = BRIDGE | CREW ONLY
+sign_hope       = LIGHTER GOOD HOPE | HOME PORT VELM

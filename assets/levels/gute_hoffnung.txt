@@ -1,0 +1,124 @@
+# Prolog: Der Leichter „Gute Hoffnung“. Ein überladener Flüchtlingstransporter bremst ins Velm-System ein, 3.000
+# Menschen in Frachtcontainern. Abschöpfer entern ihn; die Pilotin weicht aus, und die Schwerkraft (Schub, kein Spin)
+# kippt bei jedem Ausweichstoß. Eine Zelle sind 2 m; Norden ist oben (der Bug).
+#
+#   #  Wand (im Frachtraum Containerstapel, sonst Schotten)   .  Boden   1  Boden einen halben Meter höher
+#   _  Fenster im Boden (darunter der rote Zwerg und die anderen Schiffe)
+#   P  Start   I  Ilka   N  Flüchtlinge (sitzen)   Q  lose Fracht (rutscht bei Schubstößen)   H  Stim
+#   E  Abschöpfer mit Schlagstock   T  Abschöpfer mit Karabiner   Y / U  ebenso, sie kommen erst, wenn die Brücke frei ist
+#   A  Arbeitslicht   R  Notlicht   V  Dampf aus einer Leitung   G  Schott Ost (öffnet, wenn die Brücke frei ist)
+#   a-z  Auslöser der Zeilen unten (z: Ilkas Nische, die letzte Szene; sie wartet auf "gate")
+#
+#   zone r0 c0 r1 c1 thema   (cargo, gangway, bridge; die erste passende zählt)
+#   sign r c name            (Bild textures/<name>.<sprache>.png)
+#   route r c ...            die Wegpunkte des Autopiloten
+#   Alle Texte (Name, Akt, Zeilen, Hinweise, Schilder) stehen hier als Schlüssel, in assets/text/<sprache>/ als Text.
+
+name     pro.name
+act      act.0
+gravity  6.5
+fog      0.004 0.014 0.8 1.6
+fogcolor 0.0025 0.0016 0.0014
+ambient  0.05 0.046 0.044 0.03 0.026 0.026
+walls    5.2
+sky      nebula
+thrust   1
+gate     bridgeclear
+next     kuehlgedaerme.txt
+ambience ship
+zone     0 13 8 38 bridge
+zone     21 0 39 51 cargo
+zone     0 0 39 51 gangway
+sign     22 10 sign_hold4
+sign     22 28 sign_hope
+sign     9 11 sign_blister
+sign     9 19 sign_bridge
+route    29 19  23 4  14 4  12 8  12 15  9 16  5 19  5 33  12 35  20 35  24 35  28 20  29 22
+
+[map]
+####################################################
+####################################################
+##############H.....A........E.A......##############
+##############..........1111......E...##############
+##############...E......1111..........##############
+##############........E...............##############
+##############...............E........##############
+##############.A.................T...R##############
+################ff################...###############
+########R.......ff....H###########...###############
+########.N...........Q.###########...###############
+########..._________...###########...###############
+###......dd_________...###########..A###############
+###......dd_________...###########...###############
+###.T.##N..............###########...###############
+###ccc##R............NR###########...###############
+###ccc############################...###############
+###E..############################..A###############
+###..V############################...###############
+###..T############################...###############
+###.Q.############################...###############
+###A..############################.G.###############
+#H..........A.......................A............###
+#.....E...bbb.......Q.............ggg.........U..###
+#.N.......bbb...E..N........N.....gggY...........###
+#...######...######..........######...#######....###
+#...######...######.....Q.R..######...#######....###
+#...######...######..........######...#######....###
+#...N.............aaa#####.A.....N.....U.........###
+#.................aaaPzz##...................Y...###
+#R........N.......aaa.zI##.................N....R###
+#...######...######.....##...######...#######....###
+#...######...######..........######...#######....###
+#...######...######.......R..######...#######....###
+#............N.......................Y........N..###
+#...................Q...A........................###
+#.N........E..............N.........Q.........U..###
+#H.......A.......R....V........R........A.......H###
+####################################################
+####################################################
+
+[lines]
+# Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/gute_hoffnung.txt)
+p_ilka1     | start       | ilka
+p_hero1     | start       | hero
+p_ilka2     | start       | ilka
+p_hero2     | start       | hero
+p_alarm     | alarm       | pilot
+p_hero3     | alarm       | hero
+p_ilka3     | alarm       | ilka
+p_hero4     | alarm       | hero
+p_board     | b           | hero
+p_dodge1    | dodge1      | pilot
+p_dodge2    | dodge2      | pilot
+p_dodge3    | dodge3      | pilot
+p_guns      | c           | hero
+p_view1     | d           | hero
+p_view2     | d           | hero
+p_call      | d           | hero
+p_patrol1   | d           | patrol
+p_patrol2   | d           | patrol
+p_patrol3   | d           | patrol
+p_after     | d           | hero
+p_bridge    | f           | pilot
+p_clear1    | bridgeclear | pilot
+p_clear2    | bridgeclear | hero
+p_clear3    | bridgeclear | pilot
+p_hold      | g           | hero
+p_end1      | z           | hero
+p_end2      | z           | hero
+p_doc1      | clinic      | doctor
+p_doc2      | clinic      | doctor
+p_hero5     | clinic      | hero
+p_doc3      | clinic      | doctor
+p_doc4      | clinic      | doctor
+
+[hints]
+# Schlüssel | Auslöser
+h_move     | start
+h_fire     | b
+h_thrust   | dodge1
+h_strafe   | c
+h_bolt     | c
+h_stim     | hurt
+h_heat     | overheat
+h_east     | bridgeclear

@@ -90,6 +90,17 @@ const char *tr( const std::string &key )
     return s_missing.insert( key ).first->c_str();
 }
 
+bool hasText( const std::string &key )
+{
+    return s_texts.count( key ) || s_german.count( key );
+}
+
+const char *trAs( const std::string &key, const std::string &who )
+{
+    std::string own = key + "." + who;
+    return hasText( own ) ? tr( own ) : tr( key );
+}
+
 const std::string &language()
 {
     return s_language;

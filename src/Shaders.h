@@ -490,6 +490,7 @@ in vec4 fragColor;
 in vec2 fragTexCoord;
 uniform sampler2D texture0;
 uniform float spin;
+uniform float glow;
 out vec4 finalColor;
 void main()
 {
@@ -501,6 +502,15 @@ void main()
     alb *= 1.0 + ( dot( fine, vec3( 0.333 ) ) - 0.3 ) * 0.7;
     vec3 N = normalize( fragNormal );
     vec3 V = normalize( viewPos - fragPos );
+    if( glow > 0.0 )
+    {
+        // A star: its own light, darker towards the limb, a red rim of corona.
+        float mu = max( dot( N, V ), 0.0 );
+        vec3 c = alb * glow * ( 0.3 + 0.7 * pow( mu, 0.45 ) );
+        c += vec3( 1.0, 0.25, 0.08 ) * glow * 0.6 * pow( 1.0 - mu, 4.0 );
+        finalColor = vec4( c, 1.0 );
+        return;
+    }
     float l = dot( N, -sunDir );
     float day = smoothstep( -0.12, 0.45, l );
     float rim = pow( 1.0 - max( dot( N, V ), 0.0 ), 3.0 );

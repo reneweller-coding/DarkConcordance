@@ -1,0 +1,60 @@
+# Prolog: Der Leichter „Gute Hoffnung“ (Deutsch, die Quelle). Zeilen, Hinweise, Schilder.
+# "<schlüssel>.dorra" / "<schlüssel>.corvin": so sagt es diese Figur; "-" heißt: für sie nichts.
+# Sprecher "hero" ist, wer gespielt wird.
+
+pro.name        = Der Leichter „Gute Hoffnung“
+act.0           = Prolog
+
+speaker.ilka    = Ilka
+speaker.pilot   = Pilotin Reyes
+speaker.patrol  = Nicht Unsere Angelegenheit
+speaker.doctor  = Arzt
+
+p_ilka1         = Wie lange noch?
+p_hero1         = Zwei Tage. Dann bist du bei deiner Tante.
+p_ilka2         = Und wenn sie mich nicht haben will?
+p_hero2         = Dann bezahlt sie mich trotzdem. … Das war ein Witz.
+p_hero2.dorra   = Sie will dich. Ich hab ihre Nachricht gelesen. Dreimal.
+p_alarm         = Brücke an alle: Wir werden geentert. Abschöpfer, zwei Boote am Rumpf. Ich weiche aus – haltet euch fest!
+p_hero3         = Bleib hier. Tür zu. Du machst niemandem auf. Nur mir.
+p_ilka3         = Versprochen?
+p_hero4         = Versprochen.
+p_board         = Abschöpfer. Die wollen keine Fracht. Die wollen Köpfe.
+p_board.corvin  = Abschöpfer. Ich kenne die Masche: Erst die Brücke, dann die Container.
+p_dodge1        = Ausweichmanöver! Festhalten!
+p_dodge2        = Noch einer! Haltet euch fest!
+p_dodge3        = Ich krieg sie nicht abgeschüttelt!
+p_guns          = Karabiner. Billig. Aber sie treffen, wenn man stehen bleibt.
+p_guns.dorra    = Schützen. Schild hoch und ran.
+p_view1         = Da unten bremsen die anderen. Zwölf Schiffe, eine Kette aus Feuer vor dem roten Zwerg.
+p_view2         = Alle aus derselben Siedlung. Alle mit demselben Ziel.
+p_call          = Konkordanz-Patrouille, hier Leichter „Gute Hoffnung“. Wir werden geentert. Dreitausend Menschen an Bord. Wir brauchen Hilfe.
+p_patrol1       = Hier spricht „Nicht Unsere Angelegenheit“. Wir haben Ihren Notruf registriert.
+p_patrol2       = An Bord befinden sich keine Bürger der Konkordanz. Eine Zuständigkeit liegt daher nicht vor.
+p_patrol3       = Wir wünschen Ihnen eine sichere Ankunft.
+p_after         = … Danke.
+p_after.dorra   = Natürlich nicht.
+p_bridge        = Sie sind an der Brückentür! Ich kann nicht steuern und kämpfen gleichzeitig!
+p_clear1        = Brücke frei. Danke. … Moment. Frachtraum vier, Ost – da sind Signale. Sie sind in den Containern!
+p_clear2        = Ilka.
+p_clear3        = Ich öffne das Schott Ost. Beeil dich!
+p_hold          = Die Container sind offen. Sie gehen von Tür zu Tür.
+p_end1          = Ilka?
+p_end2          = Das Gerät ist noch warm.
+p_doc1          = Sie hatten Glück. Ihr Herz hat zwei Minuten stillgestanden.
+p_doc2          = Velm, Dritte Trommel, Armenklinik. Sie sind seit vier Tagen hier.
+p_hero5         = Das Mädchen. Ilka.
+p_doc3          = Es tut mir leid. Man hat sie mit dem Leichter hergebracht. Leer.
+p_doc4          = Ihre Behandlung ist übrigens bezahlt. Von einer Frau namens Ysolde Varn. Sie würde Sie gern sprechen.
+
+h_move          = Laufen: linker Stick / WASD. Kamera drehen: rechter Stick oder rechte Maustaste ziehen.
+h_thrust        = Schubstoß: Die Schwerkraft kippt in Pfeilrichtung. Gegenhalten – und auf lose Fracht achten.
+h_east          = Das Schott Ost ist offen. Zurück zu Frachtraum vier.
+
+hud.patrol      = KONKORDANZ-PATROUILLE · 2.000 km
+hud.thrust      = SCHUBSTOSS
+
+sign_hold4      = FRACHTRAUM 4 | 312 PERSONEN · RUHE BEWAHREN
+sign_blister    = AUSSICHTSKUPPEL | NICHT BETRETEN BEI SCHUB
+sign_bridge     = BRÜCKE | NUR BESATZUNG
+sign_hope       = LEICHTER GUTE HOFFNUNG | HEIMATHAFEN VELM

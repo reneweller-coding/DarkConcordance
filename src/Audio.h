@@ -35,6 +35,14 @@ enum class SfxE : int
     HURT,       ///< taking damage
     OVERHEAT,   ///< the rifle overheats
     STIM,       ///< a stim injected
+    SWING,      ///< a hammer or baton cutting the air
+    SMASH,      ///< the hammer landing
+    BLOCK,      ///< something on Dorra's shield
+    ZAP,        ///< a boarder's carbine
+    THRUST,     ///< the ship's dodge: the hull groans
+    GUNSHOT,    ///< one heavy shot (the last scene)
+    FALL,       ///< a body falling
+    THROW,      ///< a blast bolt thrown
     COUNT       ///< number of effects
 };
 
@@ -44,9 +52,10 @@ class Audio
 public:
     /**
      * @brief Opens the device and synthesises the effects.
-     * @param[in] on  false: stay silent (tests, pictures)
+     * @param[in] on        false: stay silent (tests, pictures)
+     * @param[in] ambience  the background: "tunnels" (Velm's hum) or "ship" (a hull under thrust)
      */
-    void init( bool on );
+    void init( bool on, const std::string &ambience = "tunnels" );
 
     /** @brief Closes the device. */
     void shutdown();

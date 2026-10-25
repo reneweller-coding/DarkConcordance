@@ -44,7 +44,7 @@ struct Options
     int         m_height = 900;                  ///< picture height
     float       m_ss = 1.5f;                     ///< supersampling
     std::string m_shot;                          ///< render this picture and exit
-    std::string m_level = "kuehlgedaerme.txt";   ///< the level
+    std::string m_level = "gute_hoffnung.txt";   ///< the level (the prologue starts the game)
     bool        m_hasAt = false;                 ///< --at was given
     float       m_x = 0.0f;                      ///< where to put the hero (east)
     float       m_z = 0.0f;                      ///< (south)
@@ -64,6 +64,7 @@ struct Options
     bool        m_menu = false;            ///< with --shot: the title menu over the picture
     float       m_camYaw = 0.0f;           ///< camera turned about the hero (degrees)
     Vector2     m_move = { 0.0f, 0.0f };   ///< with --shot: the left stick held during the warm-up
+    std::string m_hero;                    ///< corvin, dorra (else the choice in the menu)
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -127,6 +128,8 @@ Options parse( int argc, char **argv )
             o.m_menu = true;
         else if ( a == "--lang" )
             o.m_language = next();
+        else if ( a == "--hero" )
+            o.m_hero = next();
         else if ( a == "--camyaw" )
             o.m_camYaw = (float)atof( next().c_str() );
         else if ( a == "--move" )
@@ -182,6 +185,7 @@ GameInput readInput( Vector2 &lastMouse, float dt )
     in.m_fire = IsMouseButtonDown( MOUSE_BUTTON_LEFT ) || IsKeyDown( KEY_K );
     in.m_jump = IsKeyPressed( KEY_SPACE );
     in.m_stim = IsKeyPressed( KEY_Q );
+    in.m_special = IsKeyPressed( KEY_F );
     in.m_confirm = IsKeyPressed( KEY_ENTER );
     in.m_strafe = IsKeyDown( KEY_LEFT_SHIFT ) || IsKeyDown( KEY_RIGHT_SHIFT );
     in.m_cameraReset = IsKeyPressed( KEY_BACKSPACE );
@@ -209,6 +213,7 @@ GameInput readInput( Vector2 &lastMouse, float dt )
                     IsGamepadButtonDown( 0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT );
         in.m_jump = in.m_jump || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN );
         in.m_stim = in.m_stim || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_UP );
+        in.m_special = in.m_special || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT );
         in.m_confirm = in.m_confirm || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT );
     }
     return in;
@@ -429,10 +434,13 @@ int runGame( const Options &o, Gfx &gfx )
     Settings settings = loadSettings();
     if ( !o.m_language.empty() ) settings.m_language = o.m_language;
     if ( !loadTexts( assetsDir(), settings.m_language ) ) settings.m_language = "de";
-    auto game = std::make_unique<Game>();
-    if ( !game->load( gfx, assetsDir(), o.m_level, sound ) )
+    HeroE       hero = o.m_hero == "dorra" ? HeroE::DORRA : HeroE::CORVIN;
+    std::string level = o.m_level;
+    auto        game = std::make_unique<Game>();
+    game->m_heroKind = hero;
+    if ( !game->load( gfx, assetsDir(), level, sound ) )
     {
-        TraceLog( LOG_ERROR, "LEVEL: %s not found", o.m_level.c_str() );
+        TraceLog( LOG_ERROR, "LEVEL: %s not found", level.c_str() );
         return 1;
     }
     if ( !o.m_difficulty.empty() )
@@ -482,10 +490,11 @@ int runGame( const Options &o, Gfx &gfx )
     bool    showFps = false;
     int     shots = 0;
     Vector2 lastMouse = GetMousePosition();
-    // The title menu first (not when the autopilot shows off), Esc or Start pauses.
+    // The title menu first (not when the autopilot shows off), then who to play; Esc or Start pauses.
     enum
     {
         TITLE,
+        CHOOSE,
         PLAY,
         PAUSE
     } mode = o.m_autoplay ? PLAY : TITLE;
@@ -496,7 +505,8 @@ int runGame( const Options &o, Gfx &gfx )
         float zoom = game->m_zoom;
         game->shutdown();
         game = std::make_unique<Game>();
-        game->load( gfx, assetsDir(), o.m_level, sound );
+        game->m_heroKind = hero;
+        game->load( gfx, assetsDir(), level, sound );
         game->setDifficulty( settings.m_difficulty );
         game->m_brightness = settings.m_brightness;
         game->m_autoplay = o.m_autoplay;
@@ -519,8 +529,31 @@ int runGame( const Options &o, Gfx &gfx )
             {
                 game->update( dt, in );
                 game->m_zoom = Clamp( game->m_zoom * ( 1.0f + zoomStep( dt ) ), 0.55f, 1.7f );
-                if ( game->finished() && in.m_confirm ) restart();
+                if ( game->finished() && in.m_confirm )
+                {
+                    // On to the next level with the same hero (or the same one again at the end).
+                    if ( !game->next().empty() ) level = game->next();
+                    restart();
+                }
             }
+        }
+        else if ( mode == CHOOSE )
+        {
+            // Dorra, Corvin; Ione is not playable yet.
+            MenuKeys k = menuKeys( dt );
+            chosen = ( chosen + k.m_move + 3 ) % 3;
+            if ( k.m_confirm && chosen < 2 )
+            {
+                hero = chosen == 0 ? HeroE::DORRA : HeroE::CORVIN;
+                restart();
+                mode = PLAY;
+            }
+            if ( k.m_back )
+            {
+                mode = TITLE;
+                chosen = 0;
+            }
+            lastMouse = GetMousePosition();
         }
         else
         {
@@ -555,7 +588,9 @@ int runGame( const Options &o, Gfx &gfx )
             }
             if ( k.m_confirm )
             {
-                if ( chosen == 0 )
+                if ( chosen == 0 && mode == TITLE && o.m_hero.empty() )
+                    mode = CHOOSE, chosen = hero == HeroE::DORRA ? 0 : 1;
+                else if ( chosen == 0 )
                     mode = PLAY;
                 else if ( chosen == diffItem )
                 {
@@ -581,7 +616,15 @@ int runGame( const Options &o, Gfx &gfx )
             savePicture( gfx, std::string( GetApplicationDirectory() ) + TextFormat( "shot_%03d.png", ++shots ), draw );
         BeginDrawing();
         game->render( gfx, nullptr );
-        if ( mode != PLAY )
+        if ( mode == CHOOSE )
+        {
+            const char              *keys[3] = { "dorra", "corvin", "ione" };
+            std::vector<std::string> items;
+            for ( const char *key : keys ) items.push_back( tr( std::string( "choose." ) + key ) );
+            drawMenu( game->font(), tr( "menu.choose" ), tr( std::string( "choose." ) + keys[chosen] + ".about" ),
+                      items, chosen );
+        }
+        else if ( mode != PLAY )
         {
             std::string subtitle = mode == TITLE ? game->title() : difficultyName( settings.m_difficulty );
             drawMenu( game->font(), mode == TITLE ? "DARK CONCORDANCE" : tr( "menu.pause" ), subtitle.c_str(),

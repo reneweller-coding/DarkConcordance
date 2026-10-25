@@ -83,7 +83,28 @@ TEXTURES = {
              "Seamless tileable texture, heavily rusted and pitted steel plating with flaking orange-brown rust, "
              "patches of old yellow paint, scratches, oily grime, " + FLAT,
              0.5, 0.7, 2.5),
-    "screen":("picture", "16:9",
+    # The prologue's ship: container walls, refugees' clothes, the red dwarf, and the clinic of the last scene.
+    "container": ("tile", "1:1",
+                  "Seamless tileable texture, orthographic front view of the corrugated steel wall of a shipping "
+                  "container, evenly spaced vertical trapezoid ribs, faded light grey paint, scratches, dents, rust "
+                  "streaks running down, grime, " + FLAT,
+                  0.6, 0.55, 4.0),
+    "fabric": ("tile", "1:1",
+               "Seamless tileable texture, worn quilted thermal fabric of a padded jacket, light grey, stitched quilting "
+               "pattern, stains, frayed seams, close-up, " + FLAT,
+               0.0, 0.85, 2.0),
+    "reddwarf": ("picture", "16:9",
+                 "Equirectangular texture map of the surface of a red dwarf star filling the whole frame as a flat "
+                 "projection, deep red and orange plasma granulation cells, dark sunspot groups, bright faculae, "
+                 "glowing filaments, highly detailed, no sphere, no space background, no text",
+                 0.0, 0.0, 0.0),
+    "clinic": ("picture", "16:9",
+               "Cinematic still, a poor charity clinic inside a rotating space station habitat, a cramped ward with "
+               "patched curtains between worn cots, salvaged medical machines with small amber screens, a round "
+               "window showing stars and the curve of the habitat, dim warm light, dust in the air, exhaustion and "
+               "kindness, painterly realism, no people, no text",
+               0.0, 0.0, 0.0),
+    "screen": ("picture", "16:9",
                "Retro-futuristic spaceship computer terminal screen filling the whole frame, amber and cyan vector "
                "graphics, orbital diagrams, waveform readouts, warning glyphs, dark background, glowing CRT phosphor, "
                "scanlines, flat front view, no bezel",

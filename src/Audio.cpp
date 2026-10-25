@@ -237,13 +237,84 @@ Wave make( SfxE s )
         b.sweep( 0.12f, 440.0f, 880.0f, 0.4f, 0.2f, 5.0f );
         return b.wave();
     }
+    case SfxE::SWING:
+    {
+        // Air cut by something heavy: noise swelling and falling.
+        Buf   b( 0.4f );
+        float y = 0.0f;
+        int   n = (int)b.m_s.size();
+        for ( int i = 0; i < n; ++i )
+        {
+            float t = (float)i / n;
+            y += 0.25f * ( b.noise() - y );
+            b.m_s[i] = 0.7f * y * sinf( PI * t ) * sinf( PI * t );
+        }
+        return b.wave();
+    }
+    case SfxE::SMASH:
+    {
+        Buf b( 0.6f );
+        b.sweep( 0.0f, 110.0f, 45.0f, 0.3f, 0.9f, 12.0f );
+        b.hiss( 0.0f, 0.15f, 0.8f, 30.0f, 0.2f );
+        b.ping( 0.0f, 640.0f, 0.25f, 14.0f );
+        return b.wave();
+    }
+    case SfxE::BLOCK:
+    {
+        Buf b( 0.5f );
+        b.ping( 0.0f, 880.0f, 0.4f, 9.0f );
+        b.ping( 0.0f, 1310.0f, 0.2f, 12.0f );
+        b.hiss( 0.0f, 0.04f, 0.5f, 90.0f, 0.7f, true );
+        return b.wave();
+    }
+    case SfxE::ZAP:
+    {
+        Buf b( 0.25f );
+        b.sweep( 0.0f, 1800.0f, 600.0f, 0.1f, 0.35f, 20.0f );
+        b.hiss( 0.0f, 0.05f, 0.4f, 70.0f, 0.5f, true );
+        b.sweep( 0.0f, 220.0f, 120.0f, 0.08f, 0.3f, 30.0f );
+        return b.wave();
+    }
+    case SfxE::THRUST:
+    {
+        // The drive swings round: a deep roar, and the hull groaning under it.
+        Buf b( 2.2f );
+        b.hiss( 0.0f, 2.1f, 1.0f, 1.2f, 0.02f );
+        b.sweep( 0.0f, 48.0f, 34.0f, 2.0f, 0.6f, 1.2f );
+        b.sweep( 0.3f, 210.0f, 150.0f, 1.2f, 0.12f, 2.0f );
+        b.sweep( 0.9f, 260.0f, 190.0f, 0.8f, 0.08f, 3.0f );
+        return b.wave();
+    }
+    case SfxE::GUNSHOT:
+    {
+        Buf b( 1.4f );
+        b.hiss( 0.0f, 0.12f, 1.0f, 40.0f, 0.7f, true );
+        b.sweep( 0.0f, 160.0f, 40.0f, 0.5f, 1.0f, 7.0f );
+        b.hiss( 0.0f, 1.3f, 0.35f, 2.5f, 0.05f );
+        return b.wave();
+    }
+    case SfxE::FALL:
+    {
+        Buf b( 0.5f );
+        b.sweep( 0.0f, 90.0f, 50.0f, 0.2f, 0.7f, 15.0f );
+        b.hiss( 0.0f, 0.15f, 0.4f, 25.0f, 0.12f );
+        b.sweep( 0.12f, 80.0f, 45.0f, 0.2f, 0.4f, 18.0f );
+        return b.wave();
+    }
+    case SfxE::THROW:
+    {
+        Buf b( 0.35f );
+        b.hiss( 0.0f, 0.3f, 0.4f, 9.0f, 0.3f, true );
+        b.sweep( 0.0f, 600.0f, 900.0f, 0.15f, 0.1f, 15.0f );
+        return b.wave();
+    }
     default: break;
     }
     Buf b( 0.1f );
     return b.wave();
 }
 
-/** @brief The tunnels' hum: rumble, mains hum, ventilation, now and then a drop; loops seamlessly. */
+/** @brief The tunnels' hum: rumble, mains hum, ventilation, now and then a drop (made a loop by loop()). */
 Wave ambience()
 {
     const float len = 12.0f;
@@ -261,21 +332,46 @@ Wave ambience()
                    0.025f * sinf( Tau * 100.0f * t ) + 0.012f * sinf( Tau * 150.0f * t );
     }
     for ( float drop : { 1.3f, 4.1f, 6.8f, 9.9f, 11.0f } ) b.ping( drop, 1900.0f + drop * 37.0f, 0.04f, 18.0f );
-    // Cross-fade the ends so the loop has no seam.
-    int fade = Rate / 2;
+    return b.wave();
+}
+
+/** @brief A hull under thrust: the drive's deep roar, its beat, creaking frames, air in the ducts. */
+Wave shipAmbience()
+{
+    const float len = 12.0f;
+    Buf         b( len );
+    float       lo = 0.0f, mid = 0.0f;
+    for ( size_t i = 0; i < b.m_s.size(); ++i )
+    {
+        float t = (float)i / Rate;
+        float x = b.noise();
+        lo += 0.0025f * ( x - lo );
+        mid += 0.03f * ( x - mid );
+        float beat = 0.75f + 0.25f * sinf( Tau * 0.5f * t ) * sinf( Tau * 3.0f / len * t );
+        b.m_s[i] =
+            3.2f * lo * beat + 0.03f * mid + 0.06f * sinf( Tau * 41.0f * t ) * beat + 0.03f * sinf( Tau * 61.5f * t );
+    }
+    for ( float creak : { 2.2f, 7.5f, 10.3f } ) b.sweep( creak, 180.0f, 140.0f, 0.6f, 0.05f, 3.0f );
+    return b.wave();
+}
+
+/** @brief Makes a sound loop: the ends cross-faded so it has no seam. */
+Wave loop( Wave w )
+{
+    short *s = (short *)w.data;
+    int    n = (int)w.frameCount, fade = Rate / 2;
     for ( int i = 0; i < fade; ++i )
     {
-        float  w = (float)i / fade;
-        size_t j = b.m_s.size() - fade + i;
-        b.m_s[i] = b.m_s[i] * w + b.m_s[j] * ( 1.0f - w );
+        float wgt = (float)i / fade;
+        s[i] = (short)( s[i] * wgt + s[n - fade + i] * ( 1.0f - wgt ) );
     }
-    b.m_s.resize( b.m_s.size() - fade );
-    return b.wave();
+    w.frameCount = (unsigned)( n - fade );
+    return w;
 }
 
 }   // namespace
 
-void Audio::init( bool on )
+void Audio::init( bool on, const std::string &ambienceName )
 {
     m_on = on;
     if ( !on ) return;
@@ -293,7 +389,7 @@ void Audio::init( bool on )
         UnloadWave( w );
         for ( int v = 1; v < Voices; ++v ) m_sounds[s][v] = LoadSoundAlias( m_sounds[s][0] );
     }
-    Wave a = ambience();
+    Wave a = loop( ambienceName == "ship" ? shipAmbience() : ambience() );
     m_ambience = LoadSoundFromWave( a );
     UnloadWave( a );
     SetSoundVolume( m_ambience, 0.55f );

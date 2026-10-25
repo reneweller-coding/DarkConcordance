@@ -20,11 +20,7 @@ l1_exit        = The trail leads further down. To the Marrow Market.
 
 h_jump         = Low gravity: jumps carry far (Space / A). Every shot pushes you back.
 h_camera       = Turn the camera: right stick, or drag with the right mouse button. Stick click / Backspace resets it.
-h_fire         = Shoot: right trigger or left mouse button. The rifle takes the nearest target ahead of you.
-h_strafe       = Left trigger / Shift holds your facing: back off and keep firing.
 h_gap          = Take a run-up and jump. In the air, the recoil pushes you away.
-h_stim         = Q / Y: inject a stim (+40 health).
-h_heat         = The rifle has overheated. Ease off for a moment.
 h_tanks        = Weak spots: first the two coolant tanks left and right, then the core behind the ram.
 h_anvil        = When the ram rises: get off the anvil!
 h_core         = The core is open. Shoot the glow behind the ram.
@@ -37,3 +33,19 @@ sign_shaft     = COOLING SHAFT | FALL HAZARD · HARNESS REQUIRED
 sign_coldstore = COLD STORE B | AUTHORISED PERSONNEL ONLY
 sign_works     = DRONE WORKS | PRESS · NO ENTRY
 sign_lift      = FREIGHT LIFT ↓ | MARROW MARKET · AGRI DRUM
+
+# How Dorra says it.
+l1_start.dorra     = The Cooling Guts. Hardly any gravity, plenty of fog – and people have been vanishing down here for months. Like Ilka. Only nobody misses these.
+l1_capsule.dorra   = A rescue capsule. Donated. On Kalvar we'd have sold it.
+l1_lice.dorra      = Rust lice. Maintenance drones nobody looks after any more. They take apart anything made of metal. So do I.
+l1_droplets.dorra  = Condensate. Looks like a star cluster. On Kalvar, water just fell down.
+l1_shaft.dorra     = A cooling shaft. In this gravity you clear it with a run-up. Even me.
+l1_bodies.dorra    = There they are. Not a scratch. Just empty. Stacked neatly, like goods waiting for pickup.
+l1_tanks.dorra     = The tanks on the sides! If they burst, the thing boils over. I'll take them at the base.
+l1_core.dorra      = The core is exposed. Too high for the hammer – bolts!
+l1_pressend.dorra  = That was the factory. Now I want to know who pays the bills.
+h_jump.dorra       = Low gravity: jumps carry far (Space / A).
+h_tanks.dorra      = Weak spots: the two coolant tanks left and right – smash them at the base or throw blast bolts (B / F). Then the core behind the ram.
+h_core.dorra       = The core is open. Too high for the hammer: throw blast bolts (B / F).
+h_armour.dorra     = The armour holds. Smash the tanks glowing blue at their base.
+h_gap.dorra        = Take a run-up and jump.

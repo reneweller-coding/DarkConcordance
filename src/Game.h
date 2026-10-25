@@ -1,9 +1,14 @@
 /**
  * @file Game.h
- * @brief A playable level: Corvin with the Gauss rifle (auto-aim as in Brotherhood of Steel, mouse aim on the PC),
- *        a camera turning about him, low gravity with jumps and recoil, rust lice and welder lice on a flow field, the drone press as boss, rescue
- *        capsules (and the hidden death counter), scrap and stims, spoken lines and hints, the HUD, the camera, and
- *        an autopilot that plays the level for tests.
+ * @brief A playable level: Corvin with the Gauss rifle (auto-aim as in Brotherhood of Steel, mouse aim on the PC) or
+ *        Dorra with ram hammer, shield and blast bolts; a camera turning about the hero; gravity from spin or thrust,
+ *        with jumps and recoil, and on a ship the tilts of its dodges; rust lice, welder lice and boarders; the drone
+ *        press as boss; rescue capsules (and the hidden death counter); refugees, Ilka, the view through a window in
+ *        the floor; scrap and stims; spoken lines, hints and scenes; the HUD; and an autopilot that plays the level
+ *        for tests.
+ *
+ *        Game.cpp holds the level and Corvin, GameCrew.cpp Dorra and the boarders, GameShip.cpp the ship (dodges,
+ *        loose cargo, the people, the view, the last scene).
  * @author Rene Weller
  */
 #pragma once
@@ -15,6 +20,7 @@
 #include "Level.h"
 
 #include <raylib.h>
+#include <raymath.h>
 
 #include <set>
 #include <string>
@@ -27,12 +33,13 @@ namespace spaceopera
 struct GameInput
 {
     Vector2 m_move = { 0.0f, 0.0f };    ///< wanted direction on screen (x right, y down), length up to 1
-    bool    m_fire = false;             ///< trigger held
+    bool    m_fire = false;             ///< trigger held (Dorra: strike)
     bool    m_jump = false;             ///< jump pressed this frame
     bool    m_stim = false;             ///< stim pressed this frame
+    bool    m_special = false;          ///< special pressed this frame (Dorra: throw a blast bolt)
     bool    m_confirm = false;          ///< confirm pressed this frame (restart after the end)
     bool    m_mouseAim = false;         ///< the mouse aims (it moved or a button is held)
-    bool    m_strafe = false;           ///< keep facing where Corvin looks (left trigger, Shift)
+    bool    m_strafe = false;           ///< keep facing where the hero looks (left trigger, Shift; Dorra: shield up)
     bool    m_cameraReset = false;      ///< camera back behind the start's view (right stick click)
     float   m_cameraTurn = 0.0f;        ///< camera turn this frame (radians; right stick, right mouse button)
     Vector2 m_mouse = { 0.0f, 0.0f };   ///< mouse position (window pixels)
@@ -48,12 +55,28 @@ enum class DifficultyE : int
     COUNT     ///< number of levels
 };
 
+/** @brief Who is played. */
+enum class HeroE : int
+{
+    CORVIN,   ///< ranged: the Gauss rifle
+    DORRA,    ///< melee: ram hammer, shield, blast bolts
+    IONE,     ///< drones (not playable yet)
+    COUNT     ///< number of heroes
+};
+
 /**
- * @brief The name of a difficulty (German, for the menus).
+ * @brief The name of a difficulty (for the menus).
  * @param[in] d  the difficulty
- * @return its name
+ * @return its name in the loaded language
  */
 const char *difficultyName( DifficultyE d );
+
+/**
+ * @brief A hero's key in the texts (corvin, dorra, ione).
+ * @param[in] h  the hero
+ * @return the key
+ */
+const char *heroKey( HeroE h );
 
 /** @brief The level being played. */
 class Game
@@ -87,7 +110,7 @@ public:
     void shutdown();
 
     /**
-     * @brief Puts Corvin somewhere (tests and pictures).
+     * @brief Puts the hero somewhere (tests and pictures).
      * @param[in] x    east (m)
      * @param[in] z    south (m)
      * @param[in] yaw  heading (degrees, 0 = south)
@@ -97,8 +120,11 @@ public:
     /** @brief Wakes every enemy (pictures). */
     void wakeAll();
 
-    /** @return true once the exit is reached */
+    /** @return true once the level is over */
     bool finished() const { return m_finished; }
+
+    /** @return the level that follows ("" none) */
+    const std::string &next() const { return m_level.m_next; }
 
     /** @return a line about the run (autopilot) */
     std::string report() const;
@@ -122,14 +148,17 @@ public:
     float       m_zoom = 1.0f;                        ///< camera distance factor
     float       m_time = 0.0f;                        ///< seconds played
     float       m_brightness = 1.0f;                  ///< exposure factor (the menus' brightness)
-    float       m_camYaw = 0.0f;                      ///< camera turned about Corvin (radians, 0 = looking north)
+    float       m_camYaw = 0.0f;                      ///< camera turned about the hero (radians, 0 = looking north)
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
+    HeroE       m_heroKind = HeroE::CORVIN;           ///< who is played (set before load)
 
 private:
     enum class FoeE : uint8_t
     {
         LOUSE,
-        WELDER
+        WELDER,
+        BATON,   ///< a boarder with a shock baton
+        GUNNER   ///< a boarder with a carbine
     };
     enum class FoeStateE : uint8_t
     {
@@ -159,6 +188,14 @@ private:
         float     m_torch = 0.0f;
         int       m_id = 0;
         LouseLegs m_legs;
+        // Boarders.
+        float m_phase = 0.0f;     ///< walk cycle
+        float m_swingT = -1.0f;   ///< the baton's blow (-1 none)
+        float m_aim = 0.0f;       ///< the carbine's aim (its laser shows it)
+        int   m_burst = 0;        ///< shots left in the burst
+        float m_down = 0.0f;      ///< fallen (the body stays)
+        int   m_group = 0;        ///< 1 the bridge's, 2 coming aboard later
+        bool  m_hidden = false;   ///< not aboard yet
     };
     struct Blob
     {
@@ -217,11 +254,46 @@ private:
         int     m_index = -1;
         Vector3 m_point = { 0, 0, 0 };
     };
+    /** @brief Dorra's blast bolt in flight. */
+    struct Bolt
+    {
+        Vector3 m_pos, m_vel;
+        float   m_life;
+    };
+    /** @brief A carbine's bolt in flight. */
+    struct Shot
+    {
+        Vector3 m_pos, m_vel;
+        float   m_life;
+    };
+    /** @brief A crate that slides when the ship dodges. */
+    struct Cargo
+    {
+        Vector3 m_pos, m_vel;
+        float   m_yaw, m_spin;
+    };
+    /** @brief Someone who does not fight: a refugee, Ilka. */
+    struct Person
+    {
+        Vector3 m_pos;
+        float   m_yaw;
+        int     m_look;   ///< which clothes (0..2), 3 Ilka
+        float   m_sit;    ///< sitting
+        float   m_down;   ///< lying
+    };
+    /** @brief A ship braking far below (the view through the window). */
+    struct Ship
+    {
+        Vector3 m_pos;
+        float   m_size;
+    };
 
     void loadSurfaces( Gfx &gfx, const std::string &assets );
     void loadFont();
     void spawnFoe( FoeE kind, Vector3 pos, bool awake );
     void updateHero( float dt, const GameInput &in );
+    void updateGunner( float dt, const GameInput &in, Vector2 move );
+    void moveHero( float dt );
     void updateFoes( float dt );
     void updatePress( float dt );
     void updateEffects( float dt );
@@ -229,9 +301,11 @@ private:
     Target findTarget( Vector3 from, Vector3 dir, float cone ) const;
     Vector3 targetPoint( const Target &t ) const;
     bool los( Vector3 a, Vector3 b ) const;
-    void hurtHero( float amount, Vector3 push );
+    void hurtHero( float amount, Vector3 push, Vector3 from );
     void killFoe( Foe &f, bool drops );
     void hurtFoe( Foe &f, float amount, Vector3 dir );
+    void hitTank( int side, float amount, Vector3 at, Vector3 n );
+    void hitCore( float amount, Vector3 at, Vector3 n );
     void sparks( Vector3 p, Vector3 n, int count, Color c, float speed );
     void explode( Vector3 p, float size );
     void flow( int r, int c );
@@ -245,6 +319,34 @@ private:
     void autopilot( float dt, GameInput &in );
     void plan();
     float rnd();
+    float hpMax() const;
+    float runSpeed() const;
+    bool human( const Foe &f ) const { return f.m_kind == FoeE::BATON || f.m_kind == FoeE::GUNNER; }
+    float foeRadius( const Foe &f ) const;
+    float foeHeight( const Foe &f ) const;
+    bool shielded( Vector3 from ) const;
+
+    // GameCrew.cpp: Dorra, the boarders, their bolts and shots.
+    void buildCrew( const std::string &assets );
+    void updateMelee( float dt, const GameInput &in, Vector2 move );
+    void strike( int swing );
+    void throwBolt();
+    void blast( Vector3 p );
+    void updateBoarder( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    void updateShots( float dt );
+    void poseCrew( std::vector<Drawable> &out );
+    bool autopilotMelee( GameInput &in, const Target &best, float bestDist );
+
+    // GameShip.cpp: the dodges, the cargo, the people, the view, the last scene.
+    void loadShip( Gfx &gfx, const std::string &assets );
+    void updateThrust( float dt );
+    Vector3 thrust() const { return Vector3Scale( m_thrustDir, m_thrustAmt ); }
+    void updateCargo( float dt );
+    void updateScene( float dt, GameInput &in );
+    void drawView( Gfx &gfx );
+    void drawPlumes( Gfx &gfx );
+    void poseShip( std::vector<Drawable> &out );
+    void drawShipHud( int w, int h, float s );
 
     Level                 m_level;
     std::vector<Surface>  m_surfaces;
@@ -268,11 +370,12 @@ private:
     float                 m_armourHint = 0.0f;   ///< shots wasted on the press's armour (they bring up a hint)
     Mesh                  m_anvilGlow = {};      ///< the red warning on the anvil
     Texture2D             m_dot = {};
+    Texture2D             m_streak = {};   ///< soft across, even along (beams, plumes)
     Font                  m_font = {};
     bool                  m_ownFont = false;
     std::string           m_assets;
 
-    // Corvin.
+    // The hero.
     Vector3 m_pos = { 0, 0, 0 }, m_vel = { 0, 0, 0 };
     float   m_yaw = 0.0f, m_aimYaw = 0.0f, m_aimTimer = 0.0f;
     bool    m_ground = true;
@@ -284,6 +387,13 @@ private:
     Vector3 m_respawn = { 0, 0, 0 };
     Target  m_target;
     Vector3 m_aimDir = { 0, 0, 1 };
+    // Dorra.
+    int   m_swing = -1;          ///< the blow under way (0 forehand, 1 backhand, 2 overhead)
+    float m_swingT = 0.0f;       ///< how far through it
+    bool  m_comboNext = false;   ///< the next blow follows
+    float m_block = 0.0f;        ///< the shield raised
+    float m_boltTimer = 0.0f;    ///< until the next blast bolt
+    bool  m_fireWas = false;     ///< the trigger was held last frame
 
     // The world.
     std::vector<Foe>      m_foes;
@@ -296,10 +406,33 @@ private:
     std::vector<Capsule>  m_capsules;
     std::vector<Drop>     m_drops;
     std::vector<Vent>     m_vents;
+    std::vector<Bolt>     m_bolts;
+    std::vector<Shot>     m_shotsInFlight;
+    std::vector<Cargo>    m_cargo;
+    std::vector<Person>   m_people;
     std::vector<int>      m_flowDist;
-    std::set<int>         m_blocked;   ///< cells taken by capsules and the bodies (for paths)
+    std::set<int>         m_blocked;   ///< cells taken by capsules, people and the bodies (for paths)
     int                   m_flowR = -1, m_flowC = -1;
     float                 m_flowTimer = 0.0f;
+    Figure                m_boarderBaton, m_boarderGun;   ///< the boarders (one figure draws them all)
+    Figure                m_folk[4];                      ///< refugees in three kinds of clothes, and Ilka
+    Mesh                  m_cargoMesh = {}, m_cargoBand = {}, m_scannerMesh = {};
+
+    // The ship.
+    int               m_thrustState = 0;   ///< 0 calm, 1 warning, 2 pushing
+    float             m_thrustTimer = 8.0f, m_thrustAmt = 0.0f, m_roll = 0.0f;
+    Vector3           m_thrustDir = { 1, 0, 0 };
+    int               m_dodges = 0;
+    Texture2D         m_skyTex = {}, m_starTex = {}, m_cardTex = {};
+    Mesh              m_sphere = {}, m_glassMesh = {};
+    std::vector<Ship> m_ships;
+    Vector3           m_star = { 0, 0, 0 }, m_ownPlume = { 0, 0, 0 }, m_patrol = { 0, 0, 0 };
+    float             m_starRadius = 0.0f;
+    int               m_ilka = -1;   ///< Ilka among the people
+    Vector3           m_scanner = { 0, 0, 0 };
+    int               m_scene = 0;   ///< the last scene: 0 none, 1 Ilka, 2 the shot, 3 dark, 4 the clinic
+    float             m_sceneTimer = 0.0f, m_sceneDown = 0.0f, m_patrolMark = 0.0f;
+    Vector3           m_shooter = { 0, 0, 0 };
 
     // The press.
     bool      m_pressActive = false, m_pressDead = false, m_pressDying = false;
@@ -309,7 +442,7 @@ private:
     int       m_spawns = 0, m_spawnHatch = -1;
     PressPose m_pressPose;
     Vector3   m_door = { 0, 0, 0 };
-    float     m_doorOpen = 0.0f, m_doorHalf = 1.0f;
+    float     m_doorOpen = 0.0f, m_doorHalf = 0.0f;
     bool      m_finished = false;
 
     // Story.
@@ -330,6 +463,7 @@ private:
     std::vector<int> m_path;
     float            m_planTimer = 0.0f, m_stuckTimer = 0.0f, m_runup = 0.0f;
     Vector3          m_lastPos = { 0, 0, 0 };
+    size_t           m_waypoint = 0;   ///< the next of the level's route
     unsigned         m_seed = 4242;
 };
 

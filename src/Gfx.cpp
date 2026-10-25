@@ -347,10 +347,11 @@ void Gfx::draw( const std::vector<Drawable> &list, const std::vector<Surface> &s
     }
 }
 
-void Gfx::planet( const Mesh &mesh, const Matrix &transform, Texture2D map, float spin )
+void Gfx::planet( const Mesh &mesh, const Matrix &transform, Texture2D map, float spin, float glow )
 {
     m_planetMat.maps[MATERIAL_MAP_ALBEDO].texture = map;
     SetShaderValue( m_planet, GetShaderLocation( m_planet, "spin" ), &spin, SHADER_UNIFORM_FLOAT );
+    SetShaderValue( m_planet, GetShaderLocation( m_planet, "glow" ), &glow, SHADER_UNIFORM_FLOAT );
     DrawMesh( mesh, m_planetMat, transform );
 }
 

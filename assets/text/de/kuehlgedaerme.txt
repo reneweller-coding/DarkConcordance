@@ -20,11 +20,7 @@ l1_exit        = Die Spur führt weiter nach unten. Zum Knochenmarkt.
 
 h_jump         = Wenig Schwerkraft: Sprünge tragen weit (Leertaste / A). Jeder Schuss schiebt dich zurück.
 h_camera       = Kamera drehen: rechter Stick oder rechte Maustaste ziehen. Stick-Klick / Rücktaste stellt sie zurück.
-h_fire         = Schießen: rechter Trigger oder linke Maustaste. Das Gewehr nimmt das nächste Ziel vor dir.
-h_strafe       = Linker Trigger / Umschalt hält die Blickrichtung: rückwärts laufen und weiterfeuern.
 h_gap          = Mit Anlauf springen. In der Luft treibt dich der Rückstoß weg.
-h_stim         = Q / Y: Stim injizieren (+40 Leben).
-h_heat         = Das Gewehr ist überhitzt. Kurz absetzen.
 h_tanks        = Schwachstellen: erst die zwei Kühltanks links und rechts, dann der Kern hinter dem Stempel.
 h_anvil        = Fährt der Stempel hoch: runter vom Amboss!
 h_core         = Der Kern ist offen. Auf das Glühen hinter dem Stempel schießen.
@@ -37,3 +33,19 @@ sign_shaft     = KÜHLSCHACHT | ABSTURZGEFAHR · NUR MIT SICHERUNG
 sign_coldstore = KÜHLLAGER B | ZUTRITT NUR FÜR PERSONAL
 sign_works     = DROHNENWERK | PRESSE · ZUTRITT VERBOTEN
 sign_lift      = LASTENAUFZUG ↓ | KNOCHENMARKT · AGRARTROMMEL
+
+# So sagt es Dorra.
+l1_start.dorra     = Die Kühlgedärme. Kaum Schwerkraft, viel Nebel – und hier unten verschwinden seit Monaten Leute. Wie Ilka. Nur vermisst die hier keiner.
+l1_capsule.dorra   = Eine Rettungskapsel. Gespendet. Auf Kalvar hätten wir sie verkauft.
+l1_lice.dorra      = Rostläuse. Wartungsdrohnen, um die sich keiner mehr kümmert. Die zerlegen alles aus Metall. Ich auch.
+l1_droplets.dorra  = Kondenswasser. Sieht aus wie ein Sternhaufen. Auf Kalvar fiel Wasser einfach nach unten.
+l1_shaft.dorra     = Ein Kühlschacht. Bei der Schwerkraft schafft man das mit Anlauf. Sogar ich.
+l1_bodies.dorra    = Da sind sie. Kein Kratzer. Nur leer. Sauber gestapelt, wie Ware, die abgeholt wird.
+l1_tanks.dorra     = Die Tanks an den Seiten! Wenn die platzen, kocht das Ding über. Die hol ich mir am Fuß.
+l1_core.dorra      = Der Kern liegt frei. Zu hoch für den Hammer – Bolzen!
+l1_pressend.dorra  = Das war die Fabrik. Jetzt will ich wissen, wer die Rechnungen bezahlt.
+h_jump.dorra       = Wenig Schwerkraft: Sprünge tragen weit (Leertaste / A).
+h_tanks.dorra      = Schwachstellen: die zwei Kühltanks links und rechts – am Fuß zerschlagen oder Sprengbolzen werfen (B / F). Dann der Kern hinter dem Stempel.
+h_core.dorra       = Der Kern ist offen. Zu hoch für den Hammer: Sprengbolzen werfen (B / F).
+h_armour.dorra     = Die Panzerung hält. Die blau leuchtenden Tanks am Fuß zerschlagen.
+h_gap.dorra        = Mit Anlauf springen.
