@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <deque>
+#include <sstream>
 
 namespace spaceopera
 {
@@ -70,6 +71,12 @@ void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
     tile( S_YSOLDE, "fabric", 2.0f, { 0.8f, 0.0f, 1.0f, 0.0f }, 0.1f, { 44, 30, 62, 255 } );
     tile( S_KIRI, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 160, 75, 25, 255 } );
     tile( S_CAVERN, "rock", 0.004f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.8f, { 12, 11, 10, 255 } );
+    tile( S_CLOTH4, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 118, 54, 48, 255 } );
+    tile( S_CLOTH5, "fabric", 2.0f, { 1.0f, 0.0f, 1.0f, 0.0f }, 0.2f, { 58, 72, 104, 255 } );
+    tile( S_SKIN, "fabric", 0.15f, { 0.75f, 0.0f, 0.2f, 0.0f }, 0.0f, { 196, 146, 118, 255 } );
+    tile( S_HAIR, "fabric", 4.0f, { 0.9f, 0.0f, 1.0f, 0.0f }, 0.1f, { 48, 40, 34, 255 } );
+    tile( S_HAIR2, "fabric", 4.0f, { 0.9f, 0.0f, 1.0f, 0.0f }, 0.1f, { 132, 56, 30, 255 } );
+    tile( S_HAIR3, "fabric", 4.0f, { 0.9f, 0.0f, 1.0f, 0.0f }, 0.1f, { 150, 146, 140, 255 } );
 }
 
 bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound )
@@ -112,6 +119,10 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     // The hero: Corvin with the rifle and an amber visor, or Dorra, short and broad, with hammer and shield.
     FigureSurfaces fs = { S_ARMOR, S_DARK, S_METAL, S_GLOW };
     fs.m_visor = { 3.2f, 1.6f, 0.3f, 0.0f };
+    // Where there is air and nobody shoots, the helmet comes off.
+    fs.m_helmet = !m_level.m_peaceful;
+    fs.m_skin = S_SKIN;
+    fs.m_hair = m_heroKind == HeroE::DORRA ? S_HAIR2 : S_HAIR;
     if ( m_heroKind == HeroE::DORRA )
     {
         fs.m_armor = S_DORRA;
@@ -316,6 +327,9 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     }
     loadShip( gfx, assets );
     loadHub( gfx, assets );
+    loadUsables();
+    loadPanel();
+    if ( !m_level.m_intro.empty() ) m_intro = IntroTime;
     m_hero.animate( 0.0f, m_pos, { 0, 0 }, 0.0f, false, 0.0f, 0.0f );
     m_yaw = m_aimYaw = 0.0f;
     // What the hero brings along; what has happened (it opens doors and changes what people say, quietly).
@@ -619,10 +633,10 @@ void Game::killFoe( Foe &f, bool drops )
     Vector3 v = { ( rnd() - 0.5f ) * 2.0f, 2.5f, ( rnd() - 0.5f ) * 2.0f };
     if ( human( f ) )
     {
-        // A boarder falls and stays down; now and then a stim rolls out of the webbing.
+        // A boarder's suit bursts: its power cell shorts, the plates fly apart; now and then a stim rolls out.
         f.m_swingT = -1.0f;
         f.m_aim = 0.0f;
-        m_audio.play( SfxE::FALL, f.m_pos, m_camTarget, 0.7f );
+        burst( f );
         if ( drops && r < 0.3f ) m_pickups.push_back( { 1, 1, Vector3Add( f.m_pos, { 0, 0.6f, 0 } ), v } );
         return;
     }
@@ -1727,6 +1741,14 @@ void Game::plan()
     prev[(size_t)sr * cols + sc] = -1;
     q.push_back( sr * cols + sc );
     const int DR[4] = { -1, 0, 1, 0 }, DC[4] = { 0, 1, 0, -1 };
+    // A shut door is a way through (the autopilot opens it), unless it is locked.
+    auto passable = [&]( int r, int c )
+    {
+        if ( m_level.walkable( r, c ) ) return true;
+        if ( m_level.cell( r, c ).m_kind != CellE::DOOR ) return false;
+        auto lock = m_level.m_locks.find( r * 1000 + c );
+        return lock == m_level.m_locks.end() || m_fired.count( lock->second ) > 0;
+    };
     while ( !q.empty() )
     {
         int cur = q.front();
@@ -1738,8 +1760,7 @@ void Game::plan()
         {
             int nr = cr + DR[d], nc = cc + DC[d];
             int n = -1;
-            if ( m_level.walkable( nr, nc ) && !m_blocked.count( nr * cols + nc ) &&
-                 m_level.centre( nr, nc ).y - h <= StepUp )
+            if ( passable( nr, nc ) && !m_blocked.count( nr * cols + nc ) && m_level.centre( nr, nc ).y - h <= StepUp )
                 n = nr * cols + nc;
             else if ( m_level.cell( nr, nc ).m_kind == CellE::VOID )
                 for ( int k = 2; k <= 4; ++k )
@@ -1873,6 +1894,9 @@ void Game::autopilot( float dt, GameInput &in )
     Vector2 d = { to.x - m_pos.x, to.z - m_pos.z };
     float   len = Vector2Length( d );
     if ( len > 1e-3f ) in.m_move = Vector2Scale( d, 1.0f / len );
+    // A shut door on the way: open it.
+    const Cell &door = m_level.cell( next / cols, next % cols );
+    if ( door.m_kind == CellE::DOOR && !door.m_open ) in.m_use = true;
     // A jump edge: take a run-up, jump at the brink, and do not shoot in the air.
     int nr = next / cols, nc = next % cols;
     if ( abs( nr - r ) + abs( nc - c ) > 1 && m_ground )
@@ -1909,6 +1933,17 @@ void Game::update( float dt, const GameInput &inRaw )
 {
     GameInput in = inRaw;
     m_rawMove = inRaw.m_move;
+    // A level that opens with a card: nothing moves under it until it has been read (A, Enter or a click ends it).
+    if ( m_intro > 0.0f )
+    {
+        if ( m_autoplay ) m_intro = 0.0f;
+        m_intro -= dt;
+        if ( ( in.m_confirm || in.m_jump || in.m_fire ) && m_intro > 1.0f && m_intro < IntroTime - 1.5f )
+            m_intro = 1.0f;
+        m_titleTimer = 0.0f;
+        in = GameInput();
+        dt = 0.0f;
+    }
     if ( m_finished ) m_endTimer += dt;
     m_time += dt;
     m_titleTimer = fmaxf( 0.0f, m_titleTimer - dt );
@@ -1924,15 +1959,20 @@ void Game::update( float dt, const GameInput &inRaw )
         Vector2 m = in.m_move;
         in.m_move = { m.x * c + m.y * s, -m.x * s + m.y * c };
     }
+    if ( inRaw.m_map ) m_showMap = !m_showMap;
+    updateMap( dt );
     updateScene( dt, in );
+    if ( updateUse( dt, in ) ) in = GameInput();
     if ( updateHub( dt, in ) ) in = GameInput();
     updateThrust( dt );
     updateHero( dt, in );
     updateFoes( dt );
     updatePress( dt );
     updateEffects( dt );
+    updatePieces( dt );
     updateShots( dt );
     updateCargo( dt );
+    updateIlka( dt );
 
     // The door opens with the level's event (the press dead, the bridge clear).
     if ( m_doorHalf > 0.0f && m_fired.count( m_level.m_gate ) ) m_doorOpen = fminf( 1.0f, m_doorOpen + dt * 0.5f );
@@ -2249,6 +2289,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     poseCrew( m_dynamic );
     poseShip( m_dynamic );
     poseHub( m_dynamic );
+    poseUsables( m_dynamic );
     for ( const Foe &f : m_foes )
     {
         if ( !f.m_alive || human( f ) ) continue;
@@ -2591,8 +2632,29 @@ void Game::drawHud( int w, int h )
         text( tr( next().empty() ? "hud.again" : "hud.next" ), w * 0.5f, h * 0.34f + 180 * s, 22, { 160, 165, 170, ta },
               true );
     }
-    // The hub's people: the prompt, a conversation, Ottla's stims, Kiri's workshop.
+    // The map over the game, when asked for.
+    if ( m_showMap && !m_talk && !m_menu && m_reading.empty() && !m_finished )
+        drawMap( { w * 0.16f, h * 0.1f, w * 0.68f, h * 0.72f }, 0.8f, s );
+    // The hub's people: the prompt, a conversation, Ottla's stims, Kiri's workshop; doors, lockers, terminals.
     drawHubHud( w, h, s );
+    drawUseHud( w, h, s );
+
+    if ( m_intro > 0.0f )
+    {
+        // The opening card: black, the act and the name, then what has brought the hero here, a paragraph at a time.
+        float a = Clamp( m_intro, 0.0f, 1.0f ), t = IntroTime - m_intro;
+        DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 255 * a ) } );
+        auto fade = [&]( float from ) { return (unsigned char)( 255 * a * Clamp( ( t - from ) * 1.2f, 0.0f, 1.0f ) ); };
+        float top = h * 0.22f;
+        text( tr( m_level.m_act ), w * 0.5f, top, 26, { 255, 190, 120, fade( 0.3f ) }, true );
+        text( tr( m_level.m_name ), w * 0.5f, top + 36 * s, 60, { 240, 235, 230, fade( 0.3f ) }, true );
+        top += 150 * s;
+        std::string       intro = tr( m_level.m_intro ), part;
+        std::stringstream parts( intro );
+        for ( int i = 0; std::getline( parts, part, '|' ); ++i )
+            top += wrapped( part, w * 0.5f, top, 30, w * 0.56f, { 215, 210, 200, fade( 1.5f + i * 2.5f ) } ) + 24 * s;
+        text( tr( "talk.next" ), w * 0.5f, h * 0.9f, 20, { 150, 150, 150, fade( 4.0f ) }, true );
+    }
 }
 
 std::string Game::report() const

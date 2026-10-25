@@ -34,10 +34,27 @@ void Game::loadShip( Gfx &gfx, const std::string &assets )
 {
     (void)gfx;
     const int DR[4] = { 1, 0, 0, -1 }, DC[4] = { 0, 1, -1, 0 };
-    // People sit against a wall and face where there is most room; Ilka in the nook of her container.
+    // People sit against a wall and face where there is most room; Ilka in the nook of her container. In a hub some
+    // stand together (J) and some stroll about (Z), a child among them now and then.
+    const int adults[5] = { 0, 1, 2, 6, 7 };
     for ( const Marker &m : m_level.m_markers )
     {
-        if ( m.m_kind == 'N' || m.m_kind == 'I' )
+        if ( m.m_kind == 'J' || m.m_kind == 'Z' )
+        {
+            Person   q;
+            unsigned h = (unsigned)( m.m_row * 7 + m.m_col * 3 );
+            q.m_pos = m.m_pos;
+            q.m_yaw = rnd() * 6.28f;
+            q.m_look = m.m_kind == 'Z' && h % 4 == 0 ? 8 : adults[h % 5];
+            q.m_sit = 0.0f;
+            q.m_down = 0.0f;
+            q.m_walks = m.m_kind == 'Z';
+            q.m_to = q.m_pos;
+            q.m_wait = rnd() * 3.0f;
+            m_people.push_back( q );
+            if ( !q.m_walks ) m_blocked.insert( m.m_row * m_level.cols() + m.m_col );
+        }
+        else if ( m.m_kind == 'N' || m.m_kind == 'I' )
         {
             int best = 0, bestRoom = -1;
             for ( int d = 0; d < 4; ++d )
@@ -50,7 +67,7 @@ void Game::loadShip( Gfx &gfx, const std::string &assets )
             Person  q;
             q.m_pos = Vector3Subtract( m.m_pos, Vector3Scale( dir, 0.4f ) );
             q.m_yaw = atan2f( dir.x, dir.z ) + ( rnd() - 0.5f ) * 0.6f;
-            q.m_look = m.m_kind == 'I' ? 3 : ( m.m_row * 7 + m.m_col * 3 ) % 3;
+            q.m_look = m.m_kind == 'I' ? 3 : adults[( m.m_row * 7 + m.m_col * 3 ) % 5];
             q.m_sit = 1.0f;
             q.m_down = 0.0f;
             if ( m.m_kind == 'I' )
@@ -63,6 +80,30 @@ void Game::loadShip( Gfx &gfx, const std::string &assets )
         }
         else if ( m.m_kind == 'Q' )
             m_cargo.push_back( { m.m_pos, { 0, 0, 0 }, rnd() * 6.28f, 0.0f } );
+    }
+    // Ilka at the start, by the hero, until the alarm sends her back to her container.
+    if ( m_level.m_ilkaRow >= 0 )
+    {
+        Person q;
+        q.m_pos = m_level.centre( m_level.m_ilkaRow, m_level.m_ilkaCol );
+        q.m_yaw = atan2f( m_pos.x - q.m_pos.x, m_pos.z - q.m_pos.z );
+        q.m_look = 3;
+        q.m_sit = 0.0f;
+        q.m_down = 0.0f;
+        m_ilkaRun = (int)m_people.size();
+        m_people.push_back( q );
+    }
+    // Those who stand turn to the nearest one near them: they talk.
+    for ( Person &q : m_people )
+    {
+        if ( q.m_sit > 0.0f || q.m_walks ) continue;
+        float best = 3.2f;
+        for ( const Person &o : m_people )
+        {
+            float d = Vector3Distance( q.m_pos, o.m_pos );
+            if ( &o != &q && !o.m_walks && d < best )
+                best = d, q.m_yaw = atan2f( o.m_pos.x - q.m_pos.x, o.m_pos.z - q.m_pos.z );
+        }
     }
     // A strapped crate; the scanner that sat round her head, a ring on the floor.
     MeshBuilder crate;
@@ -197,6 +238,46 @@ void Game::updateCargo( float dt )
                 q.m_vel = Vector3Scale( q.m_vel, 0.5f );
             }
     }
+}
+
+void Game::updateIlka( float dt )
+{
+    if ( m_ilkaRun < 0 || m_ilkaGone ) return;
+    Person &q = m_people[m_ilkaRun];
+    // She looks at the hero while they talk; once the alarm has been said, she runs, and is gone at the last point.
+    bool go = m_fired.count( "alarm" ) && !m_line && m_lineQueue.empty();
+    if ( !go && m_ilkaStep == 0 )
+    {
+        q.m_yaw +=
+            Clamp( angleTo( q.m_yaw, atan2f( m_pos.x - q.m_pos.x, m_pos.z - q.m_pos.z ) ), -3.0f * dt, 3.0f * dt );
+        return;
+    }
+    if ( m_ilkaStep >= m_level.m_ilkaWay.size() )
+    {
+        q.m_pos = { -1000.0f, -100.0f, -1000.0f };
+        q.m_vel = { 0.0f, 0.0f };
+        m_ilkaGone = true;
+        return;
+    }
+    auto    w = m_level.m_ilkaWay[m_ilkaStep];
+    Vector3 to = m_level.centre( w.first, w.second );
+    Vector2 d = { to.x - q.m_pos.x, to.z - q.m_pos.z };
+    float   len = Vector2Length( d );
+    if ( len < 0.3f )
+    {
+        ++m_ilkaStep;
+        return;
+    }
+    q.m_vel = Vector2Scale( d, 2.6f / len );
+    q.m_pos.x += q.m_vel.x * dt;
+    q.m_pos.z += q.m_vel.y * dt;
+    q.m_yaw = atan2f( d.x, d.y );
+    FigurePose p;
+    p.m_yaw = q.m_yaw;
+    p.m_vel = q.m_vel;
+    p.m_phase = q.m_phase;
+    Figure::step( p, dt );
+    q.m_phase = p.m_phase;
 }
 
 void Game::updateScene( float dt, GameInput &in )
@@ -355,6 +436,10 @@ void Game::poseShip( std::vector<Drawable> &out )
         p.m_yaw = q.m_yaw;
         p.m_time = m_time + (float)i * 1.7f;
         p.m_sit = q.m_sit;
+        p.m_vel = q.m_vel;
+        p.m_phase = q.m_phase;
+        p.m_chair = q.m_chair;
+        p.m_seat = q.m_seat;
         // Ilka, once they have been: on her back, empty.
         if ( (int)i == m_ilka && taken )
         {

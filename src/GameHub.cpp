@@ -48,6 +48,27 @@ constexpr int HarvestCount = (int)( sizeof( Harvested ) / sizeof( Harvested[0] )
 
 void Game::loadHub( Gfx &gfx, const std::string &assets )
 {
+    // The lines one overhears in passing, started somewhere in the list.
+    while ( hasText( TextFormat( "bark.%d", m_barks + 1 ) ) ) ++m_barks;
+    m_barkNext = m_barks ? (int)( rnd() * m_barks ) % m_barks : 0;
+    // Guests on most of the stools, at the tables and the counter (in a hub's bar, in a ship's mess).
+    {
+        const int adults[5] = { 0, 1, 2, 6, 7 };
+        for ( size_t i = 0; i < m_level.m_seats.size(); ++i )
+        {
+            if ( rnd() > 0.65f ) continue;
+            const Seat &s = m_level.m_seats[i];
+            Person      q;
+            q.m_pos = s.m_pos;
+            q.m_yaw = s.m_yaw + ( rnd() - 0.5f ) * 0.4f;
+            q.m_look = adults[i % 5];
+            q.m_sit = 0.0f;
+            q.m_down = 0.0f;
+            q.m_chair = 1.0f;
+            q.m_seat = s.m_height;
+            m_people.push_back( q );
+        }
+    }
     // People: a figure by their look (or the station's terminal), and their portrait for the conversations.
     for ( size_t i = 0; i < m_level.m_npcs.size(); ++i )
     {
@@ -343,6 +364,107 @@ void Game::buy( int item )
     }
 }
 
+Vector3 Game::strollTo( const Person &q )
+{
+    // Somewhere in sight on open floor, the way there clear of props and of those who sit or stand.
+    int r0, c0;
+    m_level.cellOf( q.m_pos, r0, c0 );
+    for ( int tries = 0; tries < 16; ++tries )
+    {
+        int r = r0 + (int)( ( rnd() - 0.5f ) * 8.0f ), c = c0 + (int)( ( rnd() - 0.5f ) * 16.0f );
+        if ( !m_level.walkable( r, c ) || m_level.cell( r, c ).m_kind != CellE::FLOOR ||
+             m_blocked.count( r * m_level.cols() + c ) )
+            continue;
+        Vector3 to = m_level.centre( r, c );
+        to.x += ( rnd() - 0.5f ) * 1.2f;
+        to.z += ( rnd() - 0.5f ) * 1.2f;
+        float len = Vector3Distance( q.m_pos, to );
+        bool  clear = len > 2.0f;
+        for ( float t = 0.0f; clear && t <= len; t += 0.4f )
+        {
+            Vector3 p = Vector3Lerp( q.m_pos, to, t / len );
+            int     r1, c1;
+            m_level.cellOf( p, r1, c1 );
+            clear = m_level.walkable( r1, c1 ) && m_level.cell( r1, c1 ).m_kind == CellE::FLOOR;
+            for ( const Prop &pr : m_level.m_props )
+                clear = clear && Vector2Distance( { p.x, p.z }, { pr.m_pos.x, pr.m_pos.z } ) > pr.m_radius + 0.45f;
+            for ( const Person &o : m_people )
+                clear = clear && ( o.m_walks || Vector2Distance( { p.x, p.z }, { o.m_pos.x, o.m_pos.z } ) > 0.9f );
+            for ( const NpcState &n : m_npcs )
+                clear = clear && Vector2Distance( { p.x, p.z }, { n.m_pos.x, n.m_pos.z } ) > 0.9f;
+        }
+        if ( clear ) return to;
+    }
+    return q.m_pos;
+}
+
+void Game::updateCrowd( float dt )
+{
+    // Passers-by stroll somewhere, stand about a while, stroll on; they wait when the hero or another is in the way.
+    for ( Person &q : m_people )
+    {
+        if ( !q.m_walks ) continue;
+        Vector2 want = { 0.0f, 0.0f };
+        Vector2 to = { q.m_to.x - q.m_pos.x, q.m_to.z - q.m_pos.z };
+        float   dist = Vector2Length( to );
+        if ( q.m_wait > 0.0f )
+        {
+            q.m_wait -= dt;
+            if ( q.m_wait <= 0.0f ) q.m_to = strollTo( q );
+        }
+        else if ( dist < 0.4f )
+            q.m_wait = 2.5f + rnd() * 6.0f;
+        else
+        {
+            Vector2 dir = Vector2Scale( to, 1.0f / dist );
+            bool    blocked = false;
+            auto    inWay = [&]( Vector3 p )
+            {
+                Vector2 d = { p.x - q.m_pos.x, p.z - q.m_pos.z };
+                return Vector2Length( d ) < 1.3f && Vector2DotProduct( d, dir ) > 0.3f;
+            };
+            blocked = inWay( m_pos );
+            for ( const Person &o : m_people )
+                if ( &o != &q && inWay( o.m_pos ) ) blocked = true;
+            want = blocked ? Vector2{ 0.0f, 0.0f } : Vector2Scale( dir, q.m_look == 8 ? 1.7f : 1.15f );
+            // Stuck behind someone for long: go elsewhere.
+            if ( blocked && rnd() < dt * 0.3f ) q.m_wait = 1.0f;
+        }
+        q.m_vel = Vector2Lerp( q.m_vel, want, fminf( 1.0f, dt * 5.0f ) );
+        q.m_pos.x += q.m_vel.x * dt;
+        q.m_pos.z += q.m_vel.y * dt;
+        if ( Vector2Length( q.m_vel ) > 0.15f )
+            q.m_yaw += Clamp( angleTo( q.m_yaw, atan2f( q.m_vel.x, q.m_vel.y ) ), -5.0f * dt, 5.0f * dt );
+        FigurePose p;
+        p.m_yaw = q.m_yaw;
+        p.m_vel = q.m_vel;
+        p.m_phase = q.m_phase;
+        Figure::step( p, dt );
+        q.m_phase = p.m_phase;
+    }
+
+    // Now and then the nearest one says something the hero overhears; never the same one twice in a while.
+    m_barkShow -= dt;
+    if ( m_barkShow <= 0.0f ) m_barkWho = -1;
+    m_barkPause -= dt;
+    if ( m_barks == 0 || m_barkPause > 0.0f || m_talk || m_menu ) return;
+    int   who = -1;
+    float best = 4.5f;
+    for ( size_t i = 0; i < m_people.size(); ++i )
+    {
+        const Person &q = m_people[i];
+        float         d = Vector3Distance( q.m_pos, m_pos );
+        if ( d < best && m_time - q.m_said > 45.0f && (int)i != m_ilka ) best = d, who = (int)i;
+    }
+    if ( who < 0 ) return;
+    m_barkWho = who;
+    m_barkKey = TextFormat( "bark.%d", m_barkNext + 1 );
+    m_barkNext = ( m_barkNext + 1 ) % m_barks;
+    m_barkShow = 4.5f;
+    m_barkPause = 7.0f + rnd() * 5.0f;
+    m_people[who].m_said = m_time;
+}
+
 bool Game::updateHub( float dt, GameInput &in )
 {
     if ( !m_level.m_peaceful ) return false;
@@ -351,6 +473,7 @@ bool Game::updateHub( float dt, GameInput &in )
     bool back = in.m_special;
     in.m_special = false;
     m_spin += dt * sqrtf( m_level.m_gravity / DrumRadius );
+    updateCrowd( dt );
     // People turn to the hero when near.
     for ( NpcState &n : m_npcs )
     {
@@ -506,8 +629,8 @@ void Game::drawHubHud( int w, int h, float s )
                     { 0, 0, 0, (unsigned char)( c.a * 0.8f ) } );
         DrawTextEx( m_font, t, p, size * s, 1.0f, c );
     };
-    // Lines that wrap at a width; returns the height used.
-    auto wrapped = [&]( const std::string &t, float x, float y, float size, float width, Color c )
+    // Words into lines no wider than `width`.
+    auto split = [&]( const std::string &t, float size, float width )
     {
         std::vector<std::string> lines;
         std::string              line, word;
@@ -530,10 +653,29 @@ void Game::drawHubHud( int w, int h, float s )
                 word += ch;
         flush();
         if ( !line.empty() ) lines.push_back( line );
+        return lines;
+    };
+    // Lines that wrap at a width; returns the height used.
+    auto wrapped = [&]( const std::string &t, float x, float y, float size, float width, Color c )
+    {
+        std::vector<std::string> lines = split( t, size, width );
         for ( size_t i = 0; i < lines.size(); ++i ) text( lines[i].c_str(), x, y + i * size * 1.3f * s, size, c );
         return lines.size() * size * 1.3f * s;
     };
     const char *who = heroKey( m_heroKind );
+
+    // A line overheard, over the one who says it, fading in and out.
+    if ( m_barkWho >= 0 && !m_talk && !m_menu )
+    {
+        const Person &q = m_people[m_barkWho];
+        float   up = q.m_sit > 0.5f ? 1.3f : q.m_chair > 0.5f ? q.m_seat + 1.35f : ( q.m_look == 8 ? 1.6f : 2.25f );
+        Vector2 at = GetWorldToScreenEx( Vector3Add( q.m_pos, { 0.0f, up, 0.0f } ), m_cam, w, h );
+        float   a = Clamp( fminf( m_barkShow, 4.5f - m_barkShow ) * 3.0f, 0.0f, 1.0f );
+        std::vector<std::string> lines = split( tr( m_barkKey ), 20.0f, 380.0f * s );
+        float                    step = 20.0f * 1.3f * s, y = at.y - lines.size() * step;
+        for ( size_t i = 0; i < lines.size(); ++i )
+            text( lines[i].c_str(), at.x, y + i * step, 20.0f, { 235, 225, 205, (unsigned char)( 235 * a ) }, true );
+    }
 
     if ( m_talk )
     {

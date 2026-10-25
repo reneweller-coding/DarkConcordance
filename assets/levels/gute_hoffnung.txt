@@ -1,21 +1,27 @@
 # Prolog: Der Leichter „Gute Hoffnung“. Ein überladener Flüchtlingstransporter bremst ins Velm-System ein, 3.000
-# Menschen in Frachtcontainern. Abschöpfer entern ihn; die Pilotin weicht aus, und die Schwerkraft (Schub, kein Spin)
-# kippt bei jedem Ausweichstoß. Eine Zelle sind 2 m; Norden ist oben (der Bug).
+# Menschen in Frachtcontainern. In der Messe sagt Ilka, sie habe Angst vor ihrer Tante; dann entern Abschöpfer das
+# Schiff, Ilka läuft zurück zu ihrem Container, die Schotten schließen. Der Weg: Mannschaftsgang mit Kabinen, die Halle,
+# die Aussichtskuppel mit dem Fenster im Boden, die Brücke, der Ostgang mit dem Schott, zuletzt Frachtraum vier.
+# Die Pilotin weicht aus, und die Schwerkraft (Schub, kein Spin) kippt bei jedem Ausweichstoß. Eine Zelle sind 2 m;
+# Norden ist oben (der Bug).
 #
-#   #  Wand (im Frachtraum Containerstapel, sonst Schotten)   .  Boden   1  Boden einen halben Meter höher
+#   #  Wand (im Frachtraum Containerstapel, sonst Schotten)   .  Boden   F  Wärmetauscher (Deckung)
+#   /  Tür (A / E öffnet sie; "lock" verriegelt eine bis zu einem Ereignis)   &  Spind   !  Terminal ("note")
 #   _  Fenster im Boden (darunter der rote Zwerg und die anderen Schiffe)
-#   P  Start   I  Ilka   N  Flüchtlinge (sitzen)   Q  lose Fracht (rutscht bei Schubstößen)   H  Stim
+#   P  Start   I  Ilka   N  Flüchtlinge (sitzen)   Q  lose Fracht (rutscht bei Schubstößen)   H  Stim   S  Schrott
 #   E  Abschöpfer mit Schlagstock   T  Abschöpfer mit Karabiner   Y / U  ebenso, sie kommen erst, wenn die Brücke frei ist
-#   A  Arbeitslicht   R  Notlicht   V  Dampf aus einer Leitung   G  Schott Ost (öffnet, wenn die Brücke frei ist)
-#   a-z  Auslöser der Zeilen unten (z: Ilkas Nische, die letzte Szene; sie wartet auf "gate")
+#   A  Arbeitslicht   R  Notlicht   G  Schott Ost (öffnet, wenn die Brücke frei ist)
+#   a-z  Auslöser der Zeilen unten (z: Ilkas Nische, die letzte Szene)
 #
-#   zone r0 c0 r1 c1 thema   (cargo, gangway, bridge; die erste passende zählt)
+#   zone r0 c0 r1 c1 thema   (bridge, cargo, bar, gangway; die erste passende zählt)
 #   sign r c name            (Bild textures/<name>.<sprache>.png)
 #   route r c ...            die Wegpunkte des Autopiloten
+#   ilka r c / ilkaway r c ...  wo Ilka zu Beginn steht und wohin sie nach dem Alarm läuft (dann ist sie fort)
 #   Alle Texte (Name, Akt, Zeilen, Hinweise, Schilder) stehen hier als Schlüssel, in assets/text/<sprache>/ als Text.
 
 name     pro.name
 act      act.0
+intro    pro.intro
 gravity  6.5
 fog      0.004 0.014 0.8 1.6
 fogcolor 0.0025 0.0016 0.0014
@@ -26,56 +32,66 @@ thrust   1
 gate     bridgeclear
 next     velm.txt
 ambience ship
-zone     0 13 8 38 bridge
-zone     21 0 39 51 cargo
-zone     0 0 39 51 gangway
-sign     22 10 sign_hold4
-sign     22 28 sign_hope
-sign     9 11 sign_blister
-sign     9 19 sign_bridge
-route    29 19  23 4  14 4  12 8  12 15  9 16  5 19  5 33  12 35  20 35  24 35  28 20  29 22
+zone     0 22 8 42 bridge
+zone     29 22 43 59 cargo
+zone     30 0 39 18 bar
+zone     0 0 43 59 gangway
+sign     31 6 sign_hope
+sign     12 23 sign_blister
+sign     12 31 sign_bridge
+sign     30 46 sign_hold4
+lock     34 18 bridgeclear
+note     24 14 note.crewlog
+note     26 20 note.manifest
+ilka     36 10
+ilkaway  35 14  34 17
+route    36 9  31 10  20 10  19 16  19 22  17 32  13 32  12 24  14 14  12 24  10 32  5 32  5 40  5 46  17 47  28 47  31 47  40 47  40 53
 
 [map]
-####################################################
-####################################################
-##############H.....A........E.A......##############
-##############..........1111......E...##############
-##############...E......1111..........##############
-##############........E...............##############
-##############...............E........##############
-##############.A.................T...R##############
-################ff################...###############
-########R.......ff....H###########...###############
-########.N...........Q.###########...###############
-########..._________...###########...###############
-###......dd_________...###########..A###############
-###......dd_________...###########...###############
-###.T.##N..............###########...###############
-###ccc##R............NR###########...###############
-###ccc############################...###############
-###E..############################..A###############
-###..V############################...###############
-###..T############################...###############
-###.Q.############################...###############
-###A..############################.G.###############
-#H..........A.......................A............###
-#.....E...bbb.......Q.............ggg.........U..###
-#.N.......bbb...E..N........N.....gggY...........###
-#...######...######..........######...#######....###
-#...######...######.....Q.R..######...#######....###
-#...######...######..........######...#######....###
-#...N.............aaa#####.A.....N.....U.........###
-#.................aaaPzz##...................Y...###
-#R........N.......aaa.zI##.................N....R###
-#...######...######.....##...######...#######....###
-#...######...######..........######...#######....###
-#...######...######.......R..######...#######....###
-#............N.......................Y........N..###
-#...................Q...A........................###
-#.N........E..............N.........Q.........U..###
-#H.......A.......R....V........R........A.......H###
-####################################################
-####################################################
+############################################################
+############################################################
+########################..A...........A..###################
+########################....E............###################
+########################............T....###################
+########################................./..R...############
+########################.........E.......######.############
+########################................R######.############
+################################/##############A############
+######H.....A.......R###########.##############.############
+######..ddddddddddd..###########f##############.############
+######..._________...###########f##############A############
+######..._________.../...........##############.############
+######..._________...###########A##############.############
+######..ddddddddddd..###########.##############R############
+######N............N.###########R##############.############
+################################/##############.############
+###################.A...................R.#####.############
+###################.....T...Q.............#####G############
+##########....T.../ccc....................#####.############
+######.NA/.########.................E...Q.#####.############
+######&..#E########.....FF.......Q........#####.############
+##########.########...........E...........#####Y############
+##########./.A.####................FF.....#####.############
+##########A#..!####...........Q...........#####A############
+##########.########......Q............T.H.#####.############
+######..A/.########.!.........A..........A#####U############
+######&H.#E####################################g############
+##########b####################################g############
+##########b####################################/############
+##########/############.A...............A..............R.###
+###.A...........A.#####.....N.Q...............N..U..N....###
+###.......u.......#####...#####Y..#####..#####....#####..###
+###.......u.......#####...#####...#####..#####....#####..###
+###.............../.../...#####...#####..#####....#####..###
+###...............#####..N......S...A...N...U..Q.........###
+###......P........#####...#####...#####..#####...###########
+###.N.............#####...#####...#####..#####...###########
+###.........R.....#####...#####...#####..#####...###########
+#######################........N.........#####...###########
+#######################..........Q......Y.........zz...I####
+#######################.H.....A.....N.........A..###########
+############################################################
+############################################################
 
 [lines]
 # Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/gute_hoffnung.txt)
@@ -115,6 +131,7 @@ p_doc4      | clinic      | doctor
 [hints]
 # Schlüssel | Auslöser
 h_move     | start
+h_use      | u
 h_fire     | b
 h_thrust   | dodge1
 h_strafe   | c

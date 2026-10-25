@@ -55,6 +55,9 @@ struct FigureSurfaces
     Vector4 m_visor = { 0.35f, 2.4f, 3.2f, 0.0f };   ///< the visor's glow
     WeaponE m_weapon = WeaponE::RIFLE;               ///< what it carries
     bool    m_suit = true;                           ///< a hardsuit (false: clothes and a hood, no lamp)
+    bool    m_helmet = true;                         ///< the suit's helmet on (false: the bare head)
+    int     m_skin = -1;                             ///< the face (bare-headed)
+    int     m_hair = -1;                             ///< the hair (bare-headed)
     Vector3 m_scale = { 1.0f, 1.0f, 1.0f };          ///< width, height, depth (Dorra is short and broad)
 };
 
@@ -73,6 +76,8 @@ struct FigurePose
     float   m_swingT = 0.0f;                ///< 0..1 through the blow (the hit lands at 0.5)
     float   m_block = 0.0f;                 ///< 0..1 the shield raised
     float   m_sit = 0.0f;                   ///< 0..1 sitting on the floor, arms round the knees
+    float   m_chair = 0.0f;                 ///< 0..1 sitting on a chair or stool, forearms on the table
+    float   m_seat = 0.5f;                  ///< the seat's height (m)
 };
 
 /** @brief A person. */

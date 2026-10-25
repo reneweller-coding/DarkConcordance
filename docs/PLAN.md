@@ -79,7 +79,19 @@ Built with the Velm hub (25.10.2026): peaceful levels; people with conversations
 node by what has happened, portraits) and events (flags, scrap, shop, workshop); the trader and the workshop (weapon
 and armour in three levels each); progress carried between levels and saved (`save.txt`, „Fortsetzen“); exits that
 open by event; a board painted at load time in the game's font; the view through the bar's floor onto the cavern and
-the other drums turning with ours. Enemies no longer walk over chasms. The hub's code is GameHub.cpp.
+the other drums turning with ours. Enemies no longer walk over chasms. The hub's code is GameHub.cpp. After the user's
+look at it (25.10.2026): a street theme (house fronts, roofs, lights and washing strung across, stalls, clutter),
+people who stand together or stroll, lines overheard in passing; walls on a ship lidded with plating or container roofs
+instead of rock; an opening card for a level (the prologue's setup). Then: doors that open with A / E (some locked
+until an event), lockers to search, terminals whose texts the inventory keeps; boarders whose suits burst apart; the
+prologue rebuilt with corridors and cabins before the hold; people on stools at tables and counters; the hero
+bare-headed where there is air; a map of what has been seen (over the game or as a page), an inventory and a character
+page with portraits.
+
+Open: real character models and motion. Candidates (all to be downloaded only with the user's OK): Quaternius'
+Universal Animation Library 1 and 2 (CC0, 45 and 42 animations free in glTF; full sets paid) with the Universal Base
+Characters (CC0, six rigged humanoids); the CMU motion capture data (free, not to be resold as data). raylib plays
+glTF skeletal animation; the game's own shaders would need GPU skinning.
 
 Still to come, by first use:
 

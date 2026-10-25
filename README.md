@@ -14,19 +14,26 @@ and are saved in `save.txt` beside the program at each level's start („Fortset
 ## Prologue: the lighter „Gute Hoffnung“
 
 A refugee transport braking into the Velm system, 3,000 people in cargo containers. You were paid to take nine-year-old
-Ilka to her aunt on Velm. Skimmers (Abschöpfer) board the ship.
+Ilka to her aunt on Velm. Skimmers (Abschöpfer) board the ship. An opening card says so before the first step (A or
+Enter cuts it short).
 
 - **Gravity from thrust, not spin:** the pilot dodges, and every dodge tilts gravity sideways: a klaxon, an arrow, then
   the push. Everyone slides, loose cargo slams into whoever stands in its way, the picture tilts with it.
 - **Boarders:** with shock batons (they close in and swing) and carbines (they keep their distance, take aim with a red
-  laser, fire bursts of slow bolts you can sidestep or catch on Dorra's shield).
-- **The way:** hold four with its container stacks and the refugees sitting between them, the west gangway, the
-  observation blister with a window in the floor, the bridge, back through the east bulkhead.
+  laser, fire bursts of slow bolts you can sidestep or catch on Dorra's shield). Beaten, their suit's power cell
+  shorts out: a blue flash, sparks, smoke, and the armour plates fly apart and stay scattered on the deck.
+- **The way:** the mess, where Ilka asks whether her aunt will want her; the alarm sends her running back to her
+  container. Then the crew corridor with its cabins (doors, lockers, the captain's log on a terminal), the hall with
+  heat exchangers for cover and loose cargo, the observation blister with a window in the floor, the bridge, the east
+  corridor with its bulkhead, and only then hold four with its container stacks, the refugees and Ilka's nook.
 - **Wonder:** through the window, the red dwarf and the chain of fusion flames of the other refugee ships braking
   before it. **Wound:** the Concordance patrol *Not Our Concern* answers the distress call and declines.
 - **The end:** Ilka found too late, the scanner still warm, the shot from behind, the dark, and the charity clinic on
   Velm (a painted still with the doctor's lines).
 
+![The opening card](docs/screenshots/pro_intro.jpg)
+![The mess: refugees at the tables, the door to the crew corridor](docs/screenshots/pro_mess.jpg)
+![A boarder's suit burst apart, the plates on the deck](docs/screenshots/pro_burst.jpg)
 ![Through the window in the floor](docs/screenshots/pro_view.jpg)
 ![Dorra against a boarder in hold four](docs/screenshots/pro_dorra.jpg)
 ![A dodge](docs/screenshots/pro_thrust.jpg)
@@ -35,9 +42,16 @@ Ilka to her aunt on Velm. Skimmers (Abschöpfer) board the ship.
 
 ## Hub: Station Velm, the Third Drum
 
-An alley in one of the three habitat drums turning inside the hollowed asteroid. No fighting: A or E talks.
+An alley in one of the three habitat drums turning inside the hollowed asteroid. No fighting: A or E talks; there is air,
+so the hero goes without a helmet.
 
-- **The bar „Zur Letzten Schicht“** with Ottla behind the counter (she sells stims), people at the tables, the harvest
+- **The street:** house fronts with lit windows, doors with lamps, shutters, striped awnings, flat roofs with
+  skylights; strings of bulbs and washing across the alley; market stalls, benches, tubs of greens, vending machines.
+- **People:** standing together at the stalls and the counter, sitting by the walls, strolling about (children among
+  them); passing by, one hears what they say about the Harvest, the prices, the Marrow Market (24 lines, in turn).
+
+- **The bar „Zur Letzten Schicht“** with Ottla behind the counter (she sells stims), guests on the stools at the counter
+  and at the tables (a pendant lamp over each), bottles on the shelves behind the bar, the harvest
   board on the north wall (61 settlements the Mill has taken, the newest in red, chalked in the game's own font) and a
   window in the floor: beneath it Velm turns past, the cavern's work lights, girders, the other two drums with their
   lit rooms and window bands.
@@ -51,10 +65,18 @@ An alley in one of the three habitat drums turning inside the hollowed asteroid.
 The conversations are in [assets/levels/velm.txt](assets/levels/velm.txt) (`[npcs]`, `[talk]`: nodes, answers,
 events), their words in `assets/text/<language>/velm.txt`.
 
+![The alley](docs/screenshots/hub_street.jpg)
+![By the clinic, someone talking about the Mill](docs/screenshots/hub_yard.jpg)
 ![Ysolde Varn](docs/screenshots/hub_ysolde.jpg)
 ![Through the window in the bar's floor](docs/screenshots/hub_window.jpg)
 ![The harvest board](docs/screenshots/hub_board.jpg)
 ![The workshop](docs/screenshots/hub_workshop.jpg)
+
+## Map, inventory, character
+
+![Inventory](docs/screenshots/ui_inventory.jpg)
+![Character](docs/screenshots/ui_character.jpg)
+![Map](docs/screenshots/ui_map.jpg)
 
 ## Dorra
 
@@ -97,7 +119,10 @@ Move with WASD, the arrows or the left stick; turn the camera with the right sti
 jump with Space or A; shoot (Dorra: strike) with the left mouse button, the right trigger or X; hold the facing
 (Dorra: the shield) with the left trigger or Shift; B or F throws Dorra's blast bolt; Q or Y injects a stim; the mouse
 wheel, the shoulder buttons or the right stick's up and down zoom; Esc or Start pauses (difficulty, brightness,
-language, restart, quit); F1 frame rate, F12 picture.
+language, restart, quit); F1 frame rate, F12 picture. E (or A, where something is within reach) opens doors, searches
+lockers, reads terminals and talks; M, Tab or the pad's up shows the map of what the hero has seen over the game; I or
+C (the pad's View button) open the inventory (gear, supplies, jobs, notes read) and the character page (portrait,
+health, damage, upgrades), with the full map as a third page.
 
 The level is a text file, [assets/levels/kuehlgedaerme.txt](assets/levels/kuehlgedaerme.txt): an ASCII map of 2 m
 cells (legend at its top), zones with their themes, signs, the keys of the spoken lines and the hints with their
@@ -131,7 +156,8 @@ Tests and pictures without a window (always silent):
 renders n frames first and logs the time per frame. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
 `--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
 language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue; `--flags a,b`
-sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture.
+sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture;
+`--panel 0|1|2` shows the inventory, character or map page, `--map` the map over the game.
 
 ## Textures
 

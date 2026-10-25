@@ -26,6 +26,13 @@ PORTRAITS = {
     "hausmeister": "An old station administration terminal: a scratched amber monochrome screen in a heavy steel "
                    "housing, a simple pictogram of a building on the screen, warning labels without legible words, "
                    "flat front view. " + STYLE,
+    # The heroes, for the character page.
+    "corvin": "A lean man in his late thirties, short dark hair going grey at the temples, stubble, a small scar "
+              "through one eyebrow, watchful tired eyes, the neck ring of a worn grey armoured hardsuit with an amber "
+              "status light, a former raider who now takes escort jobs. " + STYLE,
+    "dorra": "A short, very broad woman in her forties from a high-gravity world, thick neck and heavy shoulders, "
+             "copper-red hair tied back tight, freckles, a once-broken nose, calm stubborn eyes, dented and welded "
+             "ochre plates of an old mining suit. " + STYLE,
 }
 
 

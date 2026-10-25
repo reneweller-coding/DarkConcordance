@@ -12,6 +12,7 @@
 #include <raylib.h>
 
 #include <cstdint>
+#include <map>
 #include <string>
 #include <vector>
 
@@ -25,14 +26,17 @@ constexpr float PitDepth = 30.0f;   ///< how deep the shafts go
 /** @brief What a cell is. */
 enum class CellE : uint8_t
 {
-    ROCK,     ///< solid
-    FLOOR,    ///< walkable at its height
-    VOID,     ///< a shaft: no floor
-    GRATE,    ///< a grating bridge over a shaft
-    FIN,      ///< a heat exchanger block: cover, its top walkable
-    GLASS,    ///< a window in the floor (walkable; open space under it)
-    COUNTER   ///< a bar counter: waist-high, in the way, shots pass over it
+    ROCK,      ///< solid
+    FLOOR,     ///< walkable at its height
+    VOID,      ///< a shaft: no floor
+    GRATE,     ///< a grating bridge over a shaft
+    FIN,       ///< a heat exchanger block: cover, its top walkable
+    GLASS,     ///< a window in the floor (walkable; open space under it)
+    COUNTER,   ///< a bar counter: waist-high, in the way, shots pass over it
+    DOOR       ///< a door: solid while shut (A / E opens it, unless it is locked)
 };
+
+constexpr float DoorHeight = 2.6f;   ///< the opening of a door
 
 constexpr float CounterHeight = 1.1f;   ///< height of a counter cell
 
@@ -63,6 +67,7 @@ struct Cell
     CellE m_kind = CellE::ROCK;   ///< what it is
     float m_height = 0.0f;        ///< floor height (m)
     char  m_trigger = 0;          ///< trigger letter (a-z) or 0
+    bool  m_open = false;         ///< a door: open
 };
 
 /** @brief Something placed in the map (an upper-case letter). */
@@ -127,6 +132,7 @@ enum class ThemeE : uint8_t
     GANGWAY,     ///< a ship's gangway: bulkheads, cable trays, lockers
     BRIDGE,      ///< the bridge deck: clean bulkheads, consoles
     BAR,         ///< a bar: warm panels, round tables with stools
+    STREET,      ///< a habitat's alley: house fronts with windows and doors, roofs, lights strung across, clutter
     COUNT        ///< number of themes
 };
 
@@ -150,6 +156,14 @@ struct Prop
 {
     Vector3 m_pos;      ///< on the floor
     float   m_radius;   ///< what it blocks
+};
+
+/** @brief A seat: a stool at a table or at the counter. */
+struct Seat
+{
+    Vector3 m_pos;      ///< on the floor under it
+    float   m_yaw;      ///< which way one sits (towards the table)
+    float   m_height;   ///< the seat's top
 };
 
 /** @brief A level. */
@@ -242,6 +256,13 @@ public:
     void setVoid( int r, int c );
 
     /**
+     * @brief Opens a door (it no longer blocks).
+     * @param[in] r  row
+     * @param[in] c  column
+     */
+    void openDoor( int r, int c );
+
+    /**
      * @brief The theme of a cell.
      * @param[in] r  row
      * @param[in] c  column
@@ -264,6 +285,7 @@ public:
     std::vector<Zone>       m_zones;                                             ///< areas with their themes
     std::vector<Sign>       m_signs;                                             ///< signs (after build)
     std::vector<Prop>       m_props;                                             ///< solid props (after build)
+    std::vector<Seat>       m_seats;                                             ///< stools (after build)
     std::vector<std::pair<std::string, std::pair<int, int>>> m_signRequests;     ///< "sign" lines: texture, cell
     std::string                                              m_sky;              ///< the sky's picture ("" none)
     bool                                                     m_thrust = false;   ///< the ship dodges: gravity tilts
@@ -276,6 +298,11 @@ public:
     std::string                      m_view;               ///< what the floor windows show: star, drums
     std::string                      m_back;               ///< with this flag the level starts with "back", not "start"
     std::string                      m_autotalk;           ///< whom the autopilot talks to
+    std::string                      m_intro;              ///< the opening card's text (paragraphs split by '|')
+    int                              m_ilkaRow = -1, m_ilkaCol = -1;   ///< where Ilka stands at the start
+    std::vector<std::pair<int, int>> m_ilkaWay;   ///< where she runs after the alarm (then she is gone)
+    std::map<int, std::string>       m_locks;     ///< door cell (row * 1000 + col) -> the event that unlocks it
+    std::map<int, std::string>       m_notes;     ///< terminal cell (row * 1000 + col) -> the key of its text
     std::vector<std::pair<std::string, std::string>>
                           m_exits;   ///< (level, flag): where the lift goes once the flag is set
     int                   m_boardRow = -1, m_boardCol = 0, m_boardWidth = 0;   ///< the harvest board

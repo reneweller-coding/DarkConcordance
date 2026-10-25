@@ -4,6 +4,7 @@
 
 pro.name        = Der Leichter „Gute Hoffnung“
 act.0           = Prolog
+pro.intro       = Das Velm-System, am Rand des Saums. Ein überladener Flüchtlingsleichter bremst ein: dreitausend Menschen aus einer geräumten Siedlung, in Frachtcontainern, vor einem roten Zwerg. | Du hast einen Auftrag: die neunjährige Ilka zu ihrer Tante nach Velm bringen. Bezahlt ist er schon. | Noch zwei Tage.
 
 speaker.ilka    = Ilka
 speaker.pilot   = Pilotin Reyes
@@ -16,7 +17,7 @@ p_ilka2         = Und wenn sie mich nicht haben will?
 p_hero2         = Dann bezahlt sie mich trotzdem. … Das war ein Witz.
 p_hero2.dorra   = Sie will dich. Ich hab ihre Nachricht gelesen. Dreimal.
 p_alarm         = Brücke an alle: Wir werden geentert. Abschöpfer, zwei Boote am Rumpf. Ich weiche aus – haltet euch fest!
-p_hero3         = Bleib hier. Tür zu. Du machst niemandem auf. Nur mir.
+p_hero3         = Lauf zurück zu deinem Container. Tür zu. Du machst niemandem auf. Nur mir.
 p_ilka3         = Versprochen?
 p_hero4         = Versprochen.
 p_board         = Abschöpfer. Die wollen keine Fracht. Die wollen Köpfe.
@@ -49,7 +50,13 @@ p_doc4          = Ihre Behandlung ist übrigens bezahlt. Von einer Frau namens Y
 
 h_move          = Laufen: linker Stick / WASD. Kamera drehen: rechter Stick oder rechte Maustaste ziehen.
 h_thrust        = Schubstoß: Die Schwerkraft kippt in Pfeilrichtung. Gegenhalten – und auf lose Fracht achten.
-h_east          = Das Schott Ost ist offen. Zurück zu Frachtraum vier.
+h_east          = Das Schott Ost ist offen. Zu Frachtraum vier.
+h_use           = A / E öffnet Türen, durchsucht Spinde, liest Terminals.
+
+note.crewlog.title = Bordbuch, Leichter „Gute Hoffnung“
+note.crewlog    = Tag 41. Noch zwei Tage bis Velm. Die Wasseraufbereitung schafft nicht mehr als zwei Liter pro Kopf; ich habe den Leuten in den Containern drei versprochen. | Tag 42. Auf dem Langstreckenscanner zwei kleine Kontakte ohne Kennung, sie halten Abstand. Ich habe Velm gemeldet, was wir an Bord haben. Vielleicht war das ein Fehler. – Reyes
+note.manifest.title = Ladeliste, Frachtraum 1 bis 6
+note.manifest   = Fracht: 3.041 Personen, Frachtklasse C (lebend). Herkunft: Siedlung Talgrund, geräumt. Bestimmung: Velm, Dritte Trommel. Zollwert: keiner. | Vermerk der Reederei: Bei Ausfall der Lebenserhaltung haftet der Charterer.
 
 hud.patrol      = KONKORDANZ-PATROUILLE · 2.000 km
 hud.thrust      = SCHUBSTOSS

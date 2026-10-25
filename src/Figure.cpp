@@ -75,8 +75,18 @@ void Figure::build( const FigureSurfaces &s )
         rbox( BoneE::PELVIS, s.m_armor, { 0.0f, 0.0f, 0.0f }, { 0.16f, 0.11f, 0.12f }, 0.07f );
         rbox( BoneE::SPINE, s.m_armor, { 0.0f, 0.3f, 0.0f }, { 0.2f, 0.22f, 0.13f }, 0.1f );
         rbox( BoneE::SPINE, s.m_dark, { 0.0f, 0.5f, 0.0f }, { 0.13f, 0.05f, 0.11f }, 0.04f );
-        rbox( BoneE::HEAD, s.m_armor, { 0.0f, 0.13f, -0.01f }, { 0.13f, 0.16f, 0.15f }, 0.11f );
-        rbox( BoneE::HEAD, s.m_dark, { 0.0f, 0.11f, 0.1f }, { 0.085f, 0.1f, 0.06f }, 0.05f );
+        if ( s.m_skin >= 0 )
+        {
+            // No hood: face and hair.
+            rbox( BoneE::HEAD, s.m_skin, { 0.0f, 0.13f, 0.02f }, { 0.088f, 0.112f, 0.1f }, 0.072f );
+            rbox( BoneE::HEAD, s.m_hair, { 0.0f, 0.21f, -0.012f }, { 0.095f, 0.055f, 0.11f }, 0.05f );
+            rbox( BoneE::HEAD, s.m_hair, { 0.0f, 0.13f, -0.07f }, { 0.093f, 0.1f, 0.05f }, 0.04f );
+        }
+        else
+        {
+            rbox( BoneE::HEAD, s.m_armor, { 0.0f, 0.13f, -0.01f }, { 0.13f, 0.16f, 0.15f }, 0.11f );
+            rbox( BoneE::HEAD, s.m_dark, { 0.0f, 0.11f, 0.1f }, { 0.085f, 0.1f, 0.06f }, 0.05f );
+        }
         for ( BoneE upper : { BoneE::UPPER_L, BoneE::UPPER_R } )
             rbox( upper, s.m_armor, { 0.0f, -0.15f, 0.0f }, { 0.06f, 0.16f, 0.06f }, 0.05f );
         for ( BoneE fore : { BoneE::FORE_L, BoneE::FORE_R } )
@@ -135,16 +145,29 @@ void Figure::build( const FigureSurfaces &s )
     add( BoneE::SPINE, s.m_glow, Lens, [&]( MeshBuilder &b )
          { b.cylinder( place( { -0.33f, 0.57f, 0.16f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.04f, 0.012f, 14 ); } );
 
-    // Helmet.
-    rbox( BoneE::HEAD, s.m_armor, { 0.0f, 0.14f, 0.0f }, { 0.13f, 0.15f, 0.15f }, 0.09f );
-    rbox( BoneE::HEAD, s.m_dark, { 0.0f, 0.11f, 0.12f }, { 0.11f, 0.09f, 0.05f }, 0.04f );
-    add(
-        BoneE::HEAD, s.m_glow, s.m_visor, [&]( MeshBuilder &b )
-        { b.roundedBox( place( { 0.0f, 0.15f, 0.168f } ), { 0.095f, 0.016f, 0.012f }, 0.008f, 3 ); }, true );
-    rbox( BoneE::HEAD, s.m_armor, { 0.0f, 0.29f, -0.01f }, { 0.025f, 0.03f, 0.13f }, 0.015f );
-    for ( float side : { -1.0f, 1.0f } )
-        rbox( BoneE::HEAD, s.m_metal, { side * 0.14f, 0.13f, 0.0f }, { 0.02f, 0.05f, 0.05f }, 0.015f );
-    rbox( BoneE::HEAD, s.m_metal, { 0.1f, 0.33f, -0.08f }, { 0.006f, 0.08f, 0.006f }, 0.003f );
+    if ( s.m_helmet )
+    {
+        // Helmet.
+        rbox( BoneE::HEAD, s.m_armor, { 0.0f, 0.14f, 0.0f }, { 0.13f, 0.15f, 0.15f }, 0.09f );
+        rbox( BoneE::HEAD, s.m_dark, { 0.0f, 0.11f, 0.12f }, { 0.11f, 0.09f, 0.05f }, 0.04f );
+        add(
+            BoneE::HEAD, s.m_glow, s.m_visor, [&]( MeshBuilder &b )
+            { b.roundedBox( place( { 0.0f, 0.15f, 0.168f } ), { 0.095f, 0.016f, 0.012f }, 0.008f, 3 ); }, true );
+        rbox( BoneE::HEAD, s.m_armor, { 0.0f, 0.29f, -0.01f }, { 0.025f, 0.03f, 0.13f }, 0.015f );
+        for ( float side : { -1.0f, 1.0f } )
+            rbox( BoneE::HEAD, s.m_metal, { side * 0.14f, 0.13f, 0.0f }, { 0.02f, 0.05f, 0.05f }, 0.015f );
+        rbox( BoneE::HEAD, s.m_metal, { 0.1f, 0.33f, -0.08f }, { 0.006f, 0.08f, 0.006f }, 0.003f );
+    }
+    else
+    {
+        // Bare-headed where there is air: the face, the hair, the suit's neck ring below.
+        rbox( BoneE::HEAD, s.m_metal, { 0.0f, 0.0f, 0.0f }, { 0.11f, 0.03f, 0.11f }, 0.025f );
+        rbox( BoneE::HEAD, s.m_skin, { 0.0f, 0.13f, 0.02f }, { 0.09f, 0.115f, 0.105f }, 0.075f );
+        rbox( BoneE::HEAD, s.m_hair, { 0.0f, 0.21f, -0.012f }, { 0.097f, 0.055f, 0.113f }, 0.05f );
+        rbox( BoneE::HEAD, s.m_hair, { 0.0f, 0.14f, -0.07f }, { 0.095f, 0.09f, 0.05f }, 0.04f );
+        for ( float side : { -1.0f, 1.0f } )
+            rbox( BoneE::HEAD, s.m_dark, { side * 0.034f, 0.14f, 0.122f }, { 0.013f, 0.007f, 0.004f }, 0.003f );
+    }
 
     // The weapon, along its bone's +z from the grip.
     switch ( s.m_weapon )
@@ -328,7 +351,7 @@ Matrix Figure::weaponFrame( const FigurePose &p, float amp, float bob, float ph 
 void Figure::solve( const FigurePose &p )
 {
     float speed = p.m_air ? 0.0f : Vector2Length( p.m_vel );
-    float amp = Clamp( speed / RunSpeed, 0.0f, 1.0f ) * ( 1.0f - p.m_sit );
+    float amp = Clamp( speed / RunSpeed, 0.0f, 1.0f ) * ( 1.0f - p.m_sit ) * ( 1.0f - p.m_chair );
     float ph = p.m_phase;
     float breath = 0.006f * sinf( p.m_time * 1.8f ) * ( 1.0f - amp );
     float bob = 0.03f * amp * cosf( 2.0f * ph ) + breath;
@@ -347,7 +370,7 @@ void Figure::solve( const FigurePose &p )
         MatrixMultiply( MatrixMultiply( MatrixScale( sc.x, sc.y, sc.z ), MatrixRotateX( -1.35f * p.m_down ) ),
                         MatrixRotateY( p.m_yaw ) ),
         MatrixTranslate( p.m_pos.x, p.m_pos.y, p.m_pos.z ) );
-    float  hip = Lerp( HipHeight + bob, 0.13f, p.m_sit );
+    float  hip = Lerp( Lerp( HipHeight + bob, 0.13f, p.m_sit ), ( p.m_seat + 0.08f ) / sc.y, p.m_chair );
     Matrix pelvis =
         MatrixMultiply( MatrixMultiply( MatrixRotateY( twist ), MatrixTranslate( 0.0f, hip, 0.0f ) ), root );
     // The chest turns to the right for the rifle stance and against the hips' swing; a blow turns it with the swing.
@@ -359,11 +382,12 @@ void Figure::solve( const FigurePose &p )
                                     : -0.5f + 1.0f * ease( 0.35f, 0.6f, t ) - 0.5f * ease( 0.6f, 1.0f, t ) );
     }
     float  chestYaw = ( rifle ? -0.35f : -0.1f ) - twist * 1.6f + swingTurn;
-    Matrix spine = MatrixMultiply( MatrixMultiply( MatrixRotateY( chestYaw ), MatrixRotateX( lean + 0.35f * p.m_sit ) ),
-                                   MatrixMultiply( MatrixTranslate( 0.0f, 0.1f, 0.0f ), pelvis ) );
+    Matrix spine = MatrixMultiply(
+        MatrixMultiply( MatrixRotateY( chestYaw ), MatrixRotateX( lean + 0.35f * p.m_sit + 0.15f * p.m_chair ) ),
+        MatrixMultiply( MatrixTranslate( 0.0f, 0.1f, 0.0f ), pelvis ) );
     Matrix head = MatrixMultiply( MatrixMultiply( MatrixRotateY( ( rifle ? 0.3f : 0.1f ) + twist * 1.6f -
                                                                  swingTurn * 0.7f + 0.05f * sinf( p.m_time * 0.7f ) ),
-                                                  MatrixRotateX( -lean * 0.7f + 0.25f * p.m_sit ) ),
+                                                  MatrixRotateX( -lean * 0.7f + 0.25f * p.m_sit - 0.12f * p.m_chair ) ),
                                   MatrixMultiply( MatrixTranslate( 0.0f, 0.56f, 0.0f ), spine ) );
     Matrix weapon;
     if ( rifle )
@@ -414,6 +438,13 @@ void Figure::solve( const FigurePose &p )
         wristR = Vector3Lerp( wristR, local( { -0.07f, 0.44f, 0.34f } ), p.m_sit );
         wristL = Vector3Lerp( wristL, local( { 0.07f, 0.44f, 0.34f } ), p.m_sit );
     }
+    if ( p.m_chair > 0.01f )
+    {
+        // Forearms on the table (or the counter), one hand a little forward.
+        float y = ( p.m_seat + 0.33f ) / sc.y, nod = 0.03f * sinf( p.m_time * 0.9f );
+        wristR = Vector3Lerp( wristR, local( { -0.15f, y, 0.4f + nod } ), p.m_chair );
+        wristL = Vector3Lerp( wristL, local( { 0.17f, y, 0.33f } ), p.m_chair );
+    }
     float   ua = UpperArm * sc.y, fa = Forearm * sc.y;
     Vector3 poleR = Vector3Add( Vector3Add( Vector3Scale( left, -1.0f ), down ), Vector3Scale( fwd, -0.3f ) );
     Vector3 poleL = Vector3Add( Vector3Add( Vector3Scale( left, 0.6f ), down ), Vector3Scale( fwd, -0.2f ) );
@@ -442,8 +473,8 @@ void Figure::solve( const FigurePose &p )
             s = Lerp( s, side ? -0.3f : 0.5f, slam );
             k = Lerp( k, side ? 0.4f : 0.9f, slam );
         }
-        s = Lerp( s, 2.6f, p.m_sit );
-        k = Lerp( k, 2.1f, p.m_sit );
+        s = Lerp( Lerp( s, 2.6f, p.m_sit ), 1.5f, p.m_chair );
+        k = Lerp( Lerp( k, 2.1f, p.m_sit ), 1.45f + ( side ? 0.15f : 0.0f ), p.m_chair );
         float  x = side ? -0.11f : 0.11f;
         Matrix thigh =
             MatrixMultiply( MatrixMultiply( MatrixRotateX( -s ), MatrixTranslate( x, -0.04f, 0.0f ) ), pelvis );

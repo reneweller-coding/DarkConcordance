@@ -79,6 +79,12 @@ enum SurfE
     S_YSOLDE,   ///< Ysolde's dark violet coat
     S_KIRI,     ///< Kiri's orange coverall
     S_CAVERN,   ///< the asteroid's cavern, seen from far
+    S_CLOTH4,   ///< more clothes for a crowd: a faded red
+    S_CLOTH5,   ///< and a worker's blue
+    S_SKIN,     ///< faces (the hero bare-headed)
+    S_HAIR,     ///< Corvin's dark hair
+    S_HAIR2,    ///< Dorra's red hair
+    S_HAIR3,    ///< grey hair (Ysolde)
     S_COUNT
 };
 

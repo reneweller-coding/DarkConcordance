@@ -4,6 +4,7 @@
 
 pro.name        = The Lighter “Good Hope”
 act.0           = Prologue
+pro.intro       = The Velm system, at the edge of the Fringe. An overloaded refugee lighter is braking in: three thousand people from a cleared settlement, in cargo containers, before a red dwarf. | You have a job: take nine-year-old Ilka to her aunt on Velm. It has already been paid for. | Two more days.
 
 speaker.ilka    = Ilka
 speaker.pilot   = Pilot Reyes
@@ -16,7 +17,7 @@ p_ilka2         = And what if she doesn't want me?
 p_hero2         = Then she pays me anyway. … That was a joke.
 p_hero2.dorra   = She wants you. I read her message. Three times.
 p_alarm         = Bridge to all: we're being boarded. Skimmers, two boats on the hull. I'm taking evasive action – hold on!
-p_hero3         = Stay here. Shut the door. You don't open it for anyone. Only me.
+p_hero3         = Run back to your container. Shut the door. You don't open it for anyone. Only me.
 p_ilka3         = Promise?
 p_hero4         = Promise.
 p_board         = Skimmers. They don't want cargo. They want heads.
@@ -49,7 +50,13 @@ p_doc4          = Your treatment has been paid for, by the way. By a woman calle
 
 h_move          = Move: left stick / WASD. Turn the camera: right stick, or drag with the right mouse button.
 h_thrust        = Thrust pulse: gravity tilts the way the arrow points. Lean against it – and mind the loose cargo.
-h_east          = The east bulkhead is open. Back to hold four.
+h_east          = The east bulkhead is open. To hold four.
+h_use           = A / E opens doors, searches lockers, reads terminals.
+
+note.crewlog.title = Log, lighter “Good Hope”
+note.crewlog    = Day 41. Two more days to Velm. The water plant manages no more than two litres a head; I promised the people in the containers three. | Day 42. Two small contacts on long-range scan, no transponder, keeping their distance. I reported to Velm what we have aboard. Maybe that was a mistake. – Reyes
+note.manifest.title = Manifest, holds 1 to 6
+note.manifest   = Cargo: 3,041 persons, freight class C (live). Origin: Talgrund settlement, cleared. Destination: Velm, Third Drum. Customs value: none. | Owner's note: should life support fail, the charterer is liable.
 
 hud.patrol      = CONCORDANCE PATROL · 2,000 km
 hud.thrust      = THRUST PULSE

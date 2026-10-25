@@ -84,6 +84,32 @@ board.ocean     = ocean
 board.settlement = settlement
 board.belt      = belt
 
+# What one overhears in passing (the people in the alleys, in turn).
+bark.1          = Seren-Süd's gone too. It's on the board already.
+bark.2          = Water's three scrap a litre now. Three!
+bark.3          = My brother went down to the Marrow Market. Nothing since Tuesday.
+bark.4          = The Concordance is sending observers. Observers!
+bark.5          = You smell of coolant. Come up from below, have you?
+bark.6          = Not so fast, little one!
+bark.7          = Three weeks for a whole moon, they say. That's the Mill.
+bark.8          = I'll sell you a filter. Nearly new.
+bark.9          = Sell your core and you get a month's rent. And then?
+bark.10         = The CARETAKER has dimmed the lights twice today.
+bark.11         = Another lighter came in. Full. And empty.
+bark.12         = Keep away from the skimmers. They don't count.
+bark.13         = My daughter wants to be a pilot. Fly where?
+bark.14         = Three drums, and no room in any of them.
+bark.15         = The way Varn looks at people. Like she keeps lists.
+bark.16         = Ottla's still running a tab. For now.
+bark.17         = At the Marrow Market there are birds that never landed.
+bark.18         = The Archons have names like jokes. None of them funny.
+bark.19         = The spin's restless today. Feel it in your stomach?
+bark.20         = Kiri fixed my stove. With a spoon.
+bark.21         = Sixty-one names. And room on the board for more.
+bark.22         = Psst. Got any stims? I pay well.
+bark.23         = People used to sing here in the evenings.
+bark.24         = When the Harvest comes to Velm – where do we go?
+
 sign_bar        = THE LAST SHIFT | BAR · THIRD DRUM
 sign_clinic     = CHARITY CLINIC | THIRD DRUM · OPEN
 sign_shop       = ANAND'S WORKSHOP | REPAIRS · REFITS

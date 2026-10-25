@@ -68,6 +68,8 @@ struct Options
     std::string m_flags;                   ///< what has happened already (comma-separated; tests)
     std::string m_talk;                    ///< with --shot: a conversation open in the picture
     int         m_shop = 0;                ///< with --shot: Ottla's (1) or Kiri's (2) menu open
+    int         m_panel = -1;              ///< with --shot: the inventory (0), character (1) or map (2) page
+    bool        m_map = false;             ///< with --shot: the map over the game
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -143,6 +145,10 @@ Options parse( int argc, char **argv )
             o.m_camYaw = (float)atof( next().c_str() );
         else if ( a == "--move" )
             sscanf( next().c_str(), "%f,%f", &o.m_move.x, &o.m_move.y );
+        else if ( a == "--panel" )
+            o.m_panel = atoi( next().c_str() );
+        else if ( a == "--map" )
+            o.m_map = true;
     }
     return o;
 }
@@ -196,6 +202,7 @@ GameInput readInput( Vector2 &lastMouse, float dt )
     in.m_stim = IsKeyPressed( KEY_Q );
     in.m_special = IsKeyPressed( KEY_F );
     in.m_use = IsKeyPressed( KEY_E );
+    in.m_map = IsKeyPressed( KEY_M ) || IsKeyPressed( KEY_TAB );
     in.m_confirm = IsKeyPressed( KEY_ENTER );
     in.m_strafe = IsKeyDown( KEY_LEFT_SHIFT ) || IsKeyDown( KEY_RIGHT_SHIFT );
     in.m_cameraReset = IsKeyPressed( KEY_BACKSPACE );
@@ -225,6 +232,7 @@ GameInput readInput( Vector2 &lastMouse, float dt )
         in.m_stim = in.m_stim || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_UP );
         in.m_special = in.m_special || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT );
         in.m_confirm = in.m_confirm || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT );
+        in.m_map = in.m_map || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_UP );
     }
     return in;
 }
@@ -532,12 +540,22 @@ int runGame( const Options &o, Gfx &gfx )
             GameInput in;
             in.m_fire = o.m_fire && i >= frames - 20;
             in.m_move = o.m_move;
+            in.m_map = o.m_map && i == 0;
             game->update( dt, in );
         }
         if ( o.m_report ) TraceLog( LOG_WARNING, "RUN: %s", game->report().c_str() );
         if ( !o.m_talk.empty() || o.m_shop ) game->openForPicture( o.m_talk, o.m_shop );
         if ( o.m_bench > 0 ) bench( gfx, o.m_bench, o, draw );
-        if ( o.m_menu )
+        if ( o.m_panel >= 0 )
+            savePicture( gfx, o.m_shot,
+                         [&]( const RenderTexture2D *rt )
+                         {
+                             game->render( gfx, rt );
+                             BeginTextureMode( *rt );
+                             game->drawPanel( rt->texture.width, rt->texture.height, o.m_panel, 0 );
+                             EndTextureMode();
+                         } );
+        else if ( o.m_menu )
         {
             // The title menu over the frame (to look at it without a window).
             std::vector<std::string> items = menuItems( true, settings, false );
@@ -565,9 +583,11 @@ int runGame( const Options &o, Gfx &gfx )
         TITLE,
         CHOOSE,
         PLAY,
-        PAUSE
+        PAUSE,
+        PANEL
     } mode = o.m_autoplay ? PLAY : TITLE;
     int  chosen = 0;
+    int  panelTab = 0, panelRow = 0;   ///< the inventory, character and map pages: which, and the chosen row
     bool quit = false;
     auto restart = [&]()
     {
@@ -590,10 +610,19 @@ int runGame( const Options &o, Gfx &gfx )
             GameInput in = readInput( lastMouse, dt );
             bool      pause = IsKeyPressed( KEY_ESCAPE ) ||
                               ( IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT ) );
+            // I the inventory, C the character page, the pad's View button both; the game waits meanwhile.
+            bool pad = IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_LEFT );
+            bool inventory = IsKeyPressed( KEY_I ) || pad, character = IsKeyPressed( KEY_C );
             if ( pause && !game->finished() )
             {
                 mode = PAUSE;
                 chosen = 0;
+            }
+            else if ( ( inventory || character ) && !game->finished() )
+            {
+                mode = PANEL;
+                panelTab = character ? 1 : 0;
+                panelRow = 0;
             }
             else
             {
@@ -613,6 +642,23 @@ int runGame( const Options &o, Gfx &gfx )
                     restart();
                 }
             }
+        }
+        else if ( mode == PANEL )
+        {
+            // Left and right (or the shoulder buttons) change the page, up and down choose a row; back, I, C or View
+            // close it.
+            MenuKeys k = menuKeys( dt );
+            bool     pad = IsGamepadAvailable( 0 );
+            int      turn = k.m_change;
+            if ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_TRIGGER_1 ) ) turn = -1;
+            if ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 ) ) turn = 1;
+            panelTab = ( panelTab + turn + 3 ) % 3;
+            int rows = game->panelRows();
+            if ( rows > 0 ) panelRow = ( panelRow + k.m_move + rows ) % rows;
+            if ( k.m_back || IsKeyPressed( KEY_I ) || IsKeyPressed( KEY_C ) ||
+                 ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_LEFT ) ) )
+                mode = PLAY;
+            lastMouse = GetMousePosition();
         }
         else if ( mode == CHOOSE )
         {
@@ -710,6 +756,7 @@ int runGame( const Options &o, Gfx &gfx )
             savePicture( gfx, std::string( GetApplicationDirectory() ) + TextFormat( "shot_%03d.png", ++shots ), draw );
         BeginDrawing();
         game->render( gfx, nullptr );
+        if ( mode == PANEL ) game->drawPanel( GetScreenWidth(), GetScreenHeight(), panelTab, panelRow );
         if ( mode == CHOOSE )
         {
             const char              *keys[3] = { "dorra", "corvin", "ione" };
@@ -718,7 +765,7 @@ int runGame( const Options &o, Gfx &gfx )
             drawMenu( game->font(), tr( "menu.choose" ), tr( std::string( "choose." ) + keys[chosen] + ".about" ),
                       items, chosen );
         }
-        else if ( mode != PLAY )
+        else if ( mode != PLAY && mode != PANEL )
         {
             std::string subtitle = mode == TITLE ? game->title() : difficultyName( settings.m_difficulty );
             drawMenu( game->font(), mode == TITLE ? "DARK CONCORDANCE" : tr( "menu.pause" ), subtitle.c_str(),

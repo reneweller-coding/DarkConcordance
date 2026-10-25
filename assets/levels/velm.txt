@@ -2,10 +2,11 @@
 # drehen: die Armenklinik, die Bar „Zur Letzten Schicht“ mit der Abbautafel und einem Fenster im Boden (darunter dreht
 # sich Velm vorbei), Kiris Werkstatt, HAUSMEISTERs Terminal, der Lastenaufzug zur Achse. Kein Kampf: A / E spricht.
 #
-#   #  Schott   .  Boden   +  Theke   _  Fenster im Boden   P  Start   O  Lastenaufzug   N  Leute (sitzen)
+#   #  Haus (in der Bar: Schott)   .  Boden   +  Theke   _  Fenster im Boden   P  Start   O  Lastenaufzug
+#   N  Leute (sitzen)   J  Leute (stehen beisammen)   Z  Leute (gehen umher)   M  Marktstand an der Wand
 #   A  Arbeitslicht   R  Notlicht   V  Dampf   a-z  Auslöser der Zeilen unten
 #
-#   zone r0 c0 r1 c1 thema   (bar, works, coldstore, gangway; die erste passende zählt)
+#   zone r0 c0 r1 c1 thema   (bar, street; die erste passende zählt)
 #   board r c breite         die Abbautafel an der Nordwand dieser Zellen
 #   exit level flag          wohin der Aufzug fährt, sobald das Ereignis geschehen ist (und solange das Level offen ist)
 #   back flag                mit diesem Ereignis beginnt das Level mit "back" statt "start"
@@ -29,42 +30,40 @@ exit     kuehlgedaerme.txt job1
 exit     knochenmarkt.txt job2
 board    3 17 10
 zone     2 11 14 34 bar
-zone     19 27 27 39 works
-zone     19 2 27 12 coldstore
-zone     0 0 29 43 gangway
+zone     0 0 29 43 street
 sign     15 19 sign_bar
 sign     18 4 sign_clinic
 sign     20 30 sign_shop
 sign     15 38 sign_axis
-route    19 6  16 10  14 22  11 29  14 22  16 38  16 40
+route    19 6  17 7  17 22  14 22  11 29  14 22  17 23  17 38  16 40
 
 [map]
 ############################################
 ############################################
 ############################################
 ############..A................A..##########
-############......................##########
+############..................Z...##########
 ############....+++++++++++++.....##########
 ############A.....................##########
-############.N....wwwwwwwww.....N.##########
-############......_________.......##########
-############..N..._________.......##########
-############......_________.......##########
 ############......wwwwwwwww.......##########
-############.N.....N.......N......##########
+############......_________.......##########
+############......_________.......##########
+############......_________.......##########
+############..Z...wwwwwwwww.......##########
+############.......J............J.##########
 ############....A.............A...##########
 #####################...####################
-##..A...........A.............A..........R##
-##......................................O.##
-##.............N...........N..............##
-##......................A.............A..R##
+##..AM.......M..A.........M...A..........R##
+##..Z.J......J....Z.......J...Z..Z......O.##
+##.......Z............Z..............Z....##
+##........M....JJ...M...A..J.M........A..R##
 ######P.########################..##########
 ######..####################.A.........#####
-###.A.......################...........#####
-###.........################...........#####
+###.A...J...################........J..#####
+###.....J...################...........#####
 ###.N.......################...........#####
-###.........################........V..#####
-###.......N.################...........#####
+###....Z....################........V..#####
+###.......N.################...Z.......#####
 ###........A################.........A.#####
 ############################################
 ############################################

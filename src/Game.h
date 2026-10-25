@@ -39,6 +39,7 @@ struct GameInput
     bool    m_stim = false;             ///< stim pressed this frame
     bool    m_special = false;          ///< special pressed this frame (Dorra: throw a blast bolt; menus: back)
     bool    m_use = false;              ///< use pressed this frame (talk; A does it too where there is someone)
+    bool    m_map = false;              ///< the map over the game toggled (M, Tab, the pad's up)
     bool    m_confirm = false;          ///< confirm pressed this frame (restart after the end)
     bool    m_mouseAim = false;         ///< the mouse aims (it moved or a button is held)
     bool    m_strafe = false;           ///< keep facing where the hero looks (left trigger, Shift; Dorra: shield up)
@@ -174,6 +175,18 @@ public:
     /** @return the act and the level's name in the loaded language (for the title menu) */
     std::string title() const;
 
+    /**
+     * @brief Draws the inventory, the character page or the map over the frame (the game waits meanwhile).
+     * @param[in] w    width (pixels)
+     * @param[in] h    height (pixels)
+     * @param[in] tab  0 inventory, 1 character, 2 map
+     * @param[in] sel  the inventory's chosen row
+     */
+    void drawPanel( int w, int h, int tab, int sel );
+
+    /** @return how many inventory rows can be chosen */
+    int panelRows() const;
+
     bool        m_autoplay = false;                   ///< the autopilot plays
     float       m_zoom = 1.0f;                        ///< camera distance factor
     float       m_time = 0.0f;                        ///< seconds played
@@ -250,6 +263,16 @@ private:
         Vector3 m_pos, m_vel, m_rot, m_spin;
         float   m_life;
     };
+    /** @brief A plate of a beaten boarder's suit, flung off when its power cell bursts. */
+    struct Piece
+    {
+        Mesh    m_mesh;
+        int     m_surface;
+        Vector4 m_emissive;
+        Matrix  m_turn;   ///< how it lay when it came off
+        Vector3 m_pos, m_vel, m_axis;
+        float   m_angle, m_spin, m_life;
+    };
     struct Flash
     {
         Vector3 m_pos, m_color;
@@ -303,14 +326,22 @@ private:
         Vector3 m_pos, m_vel;
         float   m_yaw, m_spin;
     };
-    /** @brief Someone who does not fight: a refugee, Ilka. */
+    /** @brief Someone who does not fight: a refugee, Ilka, people in a hub's alleys. */
     struct Person
     {
         Vector3 m_pos;
         float   m_yaw;
-        int     m_look;   ///< which clothes (0..2), 3 Ilka
-        float   m_sit;    ///< sitting
-        float   m_down;   ///< lying
+        int     m_look;                        ///< which figure of m_folk (3 Ilka, 8 a child)
+        float   m_sit;                         ///< sitting
+        float   m_down;                        ///< lying
+        bool    m_walks = false;               ///< strolls about
+        Vector3 m_to = { 0.0f, 0.0f, 0.0f };   ///< where to
+        float   m_wait = 0.0f;                 ///< standing about before strolling on
+        Vector2 m_vel = { 0.0f, 0.0f };        ///< on the ground
+        float   m_phase = 0.0f;                ///< walk cycle
+        float   m_said = -100.0f;              ///< when they last said something (m_time)
+        float   m_chair = 0.0f;                ///< on a stool
+        float   m_seat = 0.5f;                 ///< the stool's height
     };
     /** @brief A ship braking far below (the view through the window). */
     struct Ship
@@ -367,7 +398,31 @@ private:
     void updateBoarder( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
     void updateShots( float dt );
     void poseCrew( std::vector<Drawable> &out );
+    void burst( const Foe &f );
+    void updatePieces( float dt );
     bool autopilotMelee( GameInput &in, const Target &best, float bestDist );
+
+    // GamePanel.cpp: the map (what the hero has seen), the inventory, the character page.
+    struct PanelRow
+    {
+        std::string m_title, m_value, m_detail;
+        bool        m_header = false;
+    };
+    void loadPanel();
+    void updateMap( float dt );
+    void drawMap( Rectangle area, float alpha, float s );
+    std::vector<PanelRow> inventory() const;
+    std::vector<uint8_t> m_seen;   ///< cells the hero has seen
+    float                m_seenTimer = 0.0f;
+    bool                 m_showMap = false;   ///< the map over the game (M, Tab, the pad's up)
+    int                  m_mapR0 = 0, m_mapR1 = 0, m_mapC0 = 0, m_mapC1 = 0;   ///< the map's open part
+
+    // GameUse.cpp: what the hero works with A / E: doors (some locked until something has happened), lockers to
+    // search, terminals to read.
+    void loadUsables();
+    bool updateUse( float dt, GameInput &in );
+    void poseUsables( std::vector<Drawable> &out );
+    void drawUseHud( int w, int h, float s );
 
     // GameHub.cpp: people to talk to, the conversations, Ottla's stims, Kiri's workshop, the harvest board, the drums
     // turning past beneath the floor, the lift out.
@@ -379,6 +434,8 @@ private:
     void enterNode( const TalkNode *node );
     void runEvent( const std::string &event );
     void buy( int item );
+    void updateCrowd( float dt );
+    Vector3 strollTo( const Person &q );
     void poseHub( std::vector<Drawable> &out );
     void drawHubHud( int w, int h, float s );
     float weaponBoost() const { return 1.0f + 0.2f * m_progress.m_weapon; }
@@ -388,6 +445,7 @@ private:
     void updateThrust( float dt );
     Vector3 thrust() const { return Vector3Scale( m_thrustDir, m_thrustAmt ); }
     void updateCargo( float dt );
+    void updateIlka( float dt );
     void updateScene( float dt, GameInput &in );
     void drawView( Gfx &gfx );
     void drawPlumes( Gfx &gfx );
@@ -447,6 +505,7 @@ private:
     std::vector<Tracer>   m_tracers;
     std::vector<Particle> m_particles;
     std::vector<Debris>   m_debris;
+    std::vector<Piece>    m_pieces;
     std::vector<Flash>    m_flashes;
     std::vector<Pickup>   m_pickups;
     std::vector<Capsule>  m_capsules;
@@ -461,7 +520,8 @@ private:
     int                   m_flowR = -1, m_flowC = -1;
     float                 m_flowTimer = 0.0f;
     Figure                m_boarderBaton, m_boarderGun;   ///< the boarders (one figure draws them all)
-    Figure                m_folk[6];   ///< three kinds of worn clothes, Ilka, Ysolde's coat, Kiri's coverall
+    static constexpr int  FolkCount = 9;
+    Figure                m_folk[FolkCount];   ///< worn clothes 0-2, Ilka, Ysolde, Kiri, more clothes 6-7, a child
     Mesh                  m_cargoMesh = {}, m_cargoBand = {}, m_scannerMesh = {};
 
     // The ship.
@@ -474,7 +534,10 @@ private:
     std::vector<Ship> m_ships;
     Vector3           m_star = { 0, 0, 0 }, m_ownPlume = { 0, 0, 0 }, m_patrol = { 0, 0, 0 };
     float             m_starRadius = 0.0f;
-    int               m_ilka = -1;   ///< Ilka among the people
+    int               m_ilka = -1;      ///< Ilka among the people (in her nook)
+    int               m_ilkaRun = -1;   ///< Ilka at the start, who runs back to her container
+    size_t            m_ilkaStep = 0;   ///< the point of her way she runs to
+    bool              m_ilkaGone = false;
     Vector3           m_scanner = { 0, 0, 0 };
     int               m_scene = 0;   ///< the last scene: 0 none, 1 Ilka, 2 the shot, 3 dark, 4 the clinic
     float             m_sceneTimer = 0.0f, m_sceneDown = 0.0f, m_patrolMark = 0.0f;
@@ -504,7 +567,31 @@ private:
     Vector3                          m_exit = { 0, 0, 0 };
     bool                             m_hasExit = false;
     std::string                      m_exitTo, m_levelFile;
-    float                            m_spin = 0.0f;   ///< how far the drum has turned (radians)
+    float                            m_spin = 0.0f;                 ///< how far the drum has turned (radians)
+    int                              m_barks = 0, m_barkNext = 0;   ///< overheard lines ("bark.1".."bark.n"), next one
+    int                              m_barkWho = -1;                ///< who says one now (in m_people)
+    std::string                      m_barkKey;
+    float                            m_barkShow = 0.0f, m_barkPause = 3.0f;
+
+    /** @brief Something to work with A / E. */
+    struct Usable
+    {
+        int         m_kind = 0;                     ///< 0 a door, 1 a locker, 2 a terminal
+        int         m_row = 0, m_col = 0;           ///< its cell
+        Vector3     m_pos = { 0.0f, 0.0f, 0.0f };   ///< a door's middle; where one stands before a locker or terminal
+        Vector3     m_at = { 0.0f, 0.0f, 0.0f };    ///< a locker or a terminal, against the wall
+        Vector3     m_out = { 0.0f, 0.0f, 1.0f };   ///< out of the wall
+        bool        m_alongX = false;               ///< a door's leaves run along x
+        bool        m_used = false;                 ///< opened, searched
+        float       m_open = 0.0f;                  ///< 0 shut .. 1 open
+        std::string m_key;                          ///< a door: the event that unlocks it; a terminal: its text
+    };
+    std::vector<Usable> m_usables;
+    int                 m_near = -1;   ///< the one within reach
+    std::string         m_reading;     ///< a terminal's text on screen
+    std::string         m_toast;       ///< a short word (what a locker held, "locked")
+    float               m_toastTimer = 0.0f;
+    Mesh                m_leafMesh = {}, m_leafBand = {}, m_lockerMesh = {}, m_lockerDoor = {}, m_doorLamp = {};
 
     // The press.
     bool      m_pressActive = false, m_pressDead = false, m_pressDying = false;
@@ -524,6 +611,8 @@ private:
     const Line               *m_line = nullptr;
     const Hint               *m_hint = nullptr;
     float                     m_lineTimer = 0.0f, m_hintTimer = 0.0f, m_titleTimer = 6.0f, m_endTimer = 0.0f;
+    static constexpr float    IntroTime = 14.0f;   ///< the opening card, unless read sooner
+    float                     m_intro = 0.0f;      ///< how long the opening card still shows
 
     // Camera.
     Camera3D m_cam = {};

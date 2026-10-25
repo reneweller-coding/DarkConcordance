@@ -84,6 +84,32 @@ board.ocean     = Meer
 board.settlement = Siedlung
 board.belt      = Gürtel
 
+# Was man im Vorbeigehen aufschnappt (die Leute in den Gassen, der Reihe nach).
+bark.1          = Seren-Süd ist auch weg. Steht schon an der Tafel.
+bark.2          = Wasser kostet jetzt drei Schrott der Liter. Drei!
+bark.3          = Mein Bruder ist runter zum Knochenmarkt. Seit Dienstag nichts.
+bark.4          = Die Konkordanz schickt Beobachter. Beobachter!
+bark.5          = Du riechst nach Kühlmittel. Kommst von unten, was?
+bark.6          = Nicht so schnell, Kleiner!
+bark.7          = Für einen Mond braucht die Mühle drei Wochen, sagen sie.
+bark.8          = Ich verkauf dir 'n Filter. Fast neu.
+bark.9          = Wer seinen Kern verkauft, kriegt einen Monat Miete. Und dann?
+bark.10         = HAUSMEISTER hat heute schon zweimal das Licht gedimmt.
+bark.11         = Wieder ein Leichter angekommen. Voll. Und leer.
+bark.12         = Halt dich von den Abschöpfern fern. Die zählen nicht.
+bark.13         = Meine Tochter will Pilotin werden. Wohin denn?
+bark.14         = Drei Trommeln, und in keiner ist Platz.
+bark.15         = Wie die Varn die Leute anschaut. Als würd sie Listen führen.
+bark.16         = Ottla schreibt an. Noch.
+bark.17         = Am Knochenmarkt fliegen Vögel, die nie gelandet sind.
+bark.18         = Die Archonten haben Namen wie Witze. Lustig ist keiner.
+bark.19         = Der Spin ist heute unruhig. Merkst du's im Magen?
+bark.20         = Kiri hat meinen Kocher repariert. Mit einem Löffel.
+bark.21         = Einundsechzig Namen. Und noch Platz auf der Tafel.
+bark.22         = Psst. Hast du Stims? Ich zahl gut.
+bark.23         = Früher hat man hier abends gesungen.
+bark.24         = Wenn die Ernte nach Velm kommt – wohin gehen wir dann?
+
 sign_bar        = ZUR LETZTEN SCHICHT | BAR · DRITTE TROMMEL
 sign_clinic     = ARMENKLINIK | DRITTE TROMMEL · OFFEN
 sign_shop       = WERKSTATT ANAND | REPARATUR · UMBAU

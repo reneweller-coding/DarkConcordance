@@ -308,6 +308,26 @@ Wave make( SfxE s )
         b.sweep( 0.0f, 600.0f, 900.0f, 0.15f, 0.1f, 15.0f );
         return b.wave();
     }
+    case SfxE::DOOR:
+    {
+        Buf b( 0.8f );
+        b.hiss( 0.0f, 0.45f, 0.45f, 5.0f, 0.4f, true );
+        b.sweep( 0.02f, 160.0f, 240.0f, 0.5f, 0.22f, 4.0f );
+        b.sweep( 0.5f, 95.0f, 50.0f, 0.15f, 0.6f, 25.0f );
+        b.ping( 0.5f, 700.0f, 0.12f, 30.0f );
+        return b.wave();
+    }
+    case SfxE::CRACKLE:
+    {
+        Buf b( 0.7f );
+        for ( int i = 0; i < 12; ++i )
+        {
+            float t = 0.6f * powf( b.noise() * 0.5f + 0.5f, 1.6f );
+            b.hiss( t, 0.04f, 0.5f, 90.0f, 0.7f, true );
+            b.ping( t, 2600.0f + 1400.0f * ( b.noise() * 0.5f + 0.5f ), 0.08f, 70.0f );
+        }
+        return b.wave();
+    }
     default: break;
     }
     Buf b( 0.1f );

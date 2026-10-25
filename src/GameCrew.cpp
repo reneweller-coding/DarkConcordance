@@ -42,15 +42,22 @@ void Game::buildCrew( const std::string & )
     gun.m_weapon = WeaponE::RIFLE;
     m_boarderGun.build( gun );
     // People without a suit: three kinds of worn clothes, Ilka in her yellow jacket (nine years old), Ysolde tall in
-    // her dark violet coat, Kiri in her orange coverall.
-    const int cloth[6] = { S_CLOTH, S_CLOTH2, S_CLOTH3, S_ILKA, S_YSOLDE, S_KIRI };
-    for ( int i = 0; i < 6; ++i )
+    // her dark violet coat, Kiri in her orange coverall; for a crowd two more colours and a child.
+    const int cloth[FolkCount] = {
+        S_CLOTH, S_CLOTH2, S_CLOTH3, S_ILKA, S_YSOLDE, S_KIRI, S_CLOTH4, S_CLOTH5, S_CLOTH4
+    };
+    // Ysolde, Kiri and the crowd's extra people go bare-headed (grey, dark, red hair); the others wear hoods.
+    const int hair[FolkCount] = { -1, -1, -1, -1, S_HAIR3, S_HAIR, S_HAIR2, S_HAIR, S_HAIR2 };
+    for ( int i = 0; i < FolkCount; ++i )
     {
         FigureSurfaces f = { cloth[i], S_DARK, S_METAL, S_GLOW };
         f.m_suit = false;
         f.m_weapon = WeaponE::NONE;
+        if ( hair[i] >= 0 ) f.m_skin = S_SKIN, f.m_hair = hair[i];
         if ( i == 3 ) f.m_scale = { 0.62f, 0.62f, 0.62f };
         if ( i == 4 ) f.m_scale = { 0.95f, 1.06f, 0.95f };
+        if ( i == 7 ) f.m_scale = { 1.05f, 1.03f, 1.05f };
+        if ( i == 8 ) f.m_scale = { 0.66f, 0.68f, 0.66f };
         m_folk[i].build( f );
     }
 }
@@ -421,11 +428,114 @@ void Game::updateShots( float dt )
     }
 }
 
+void Game::burst( const Foe &f )
+{
+    // The suit as it stood, each plate its own piece: flung out from the chest, away from the hero, up.
+    std::vector<Drawable> parts;
+    FigurePose            p;
+    p.m_pos = f.m_pos;
+    p.m_yaw = f.m_yaw;
+    p.m_phase = f.m_phase;
+    p.m_time = m_time + f.m_id;
+    ( f.m_kind == FoeE::BATON ? m_boarderBaton : m_boarderGun ).pose( p, { 0.25f, 0.02f, 0.01f, 0.0f }, parts );
+    Vector3 chest = Vector3Add( f.m_pos, { 0.0f, 1.1f, 0.0f } );
+    Vector3 away = { f.m_pos.x - m_pos.x, 0.0f, f.m_pos.z - m_pos.z };
+    away = Vector3Length( away ) > 1e-3f ? Vector3Normalize( away ) : Vector3{ 0.0f, 0.0f, 1.0f };
+    for ( const Drawable &d : parts )
+    {
+        Piece q;
+        q.m_mesh = d.m_mesh;
+        q.m_surface = d.m_surface;
+        q.m_emissive = d.m_emissive;
+        q.m_turn = d.m_transform;
+        q.m_turn.m12 = q.m_turn.m13 = q.m_turn.m14 = 0.0f;
+        q.m_pos = { d.m_transform.m12, d.m_transform.m13, d.m_transform.m14 };
+        Vector3 out = Vector3Subtract( q.m_pos, chest );
+        out = Vector3Length( out ) > 0.05f ? Vector3Normalize( out )
+                                           : Vector3Normalize( { rnd() - 0.5f, 0.3f, rnd() - 0.5f } );
+        q.m_vel = Vector3Add(
+            Vector3Add( Vector3Scale( out, 2.0f + rnd() * 3.0f ), Vector3Scale( away, 1.5f + rnd() * 2.5f ) ),
+            { 0.0f, 2.0f + rnd() * 3.5f, 0.0f } );
+        q.m_axis = Vector3Normalize( { rnd() - 0.5f, rnd() - 0.5f, rnd() - 0.5f } );
+        q.m_angle = 0.0f;
+        q.m_spin = ( rnd() - 0.5f ) * 26.0f;
+        q.m_life = 8.0f + rnd() * 3.0f;
+        m_pieces.push_back( q );
+    }
+    // The power cell: a blue-white flash, sparks, then smoke; a crackle under the bang.
+    sparks( chest, { 0.0f, 1.0f, 0.0f }, 70, { 170, 215, 255, 255 }, 7.0f );
+    sparks( chest, { 0.0f, 1.0f, 0.0f }, 30, { 255, 170, 80, 255 }, 5.0f );
+    m_particles.push_back( { chest, { 0, 0, 0 }, 0.15f, 0.15f, 0.45f, { 170, 205, 255, 200 }, 2 } );
+    for ( int i = 0; i < 10; ++i )
+    {
+        float life = 1.8f + rnd() * 1.5f;
+        m_particles.push_back(
+            { Vector3Add( chest, { ( rnd() - 0.5f ) * 0.5f, ( rnd() - 0.5f ) * 0.5f, ( rnd() - 0.5f ) * 0.5f } ),
+              { ( rnd() - 0.5f ) * 1.2f, 0.6f + rnd() * 0.8f, ( rnd() - 0.5f ) * 1.2f },
+              life,
+              life,
+              0.35f + rnd() * 0.3f,
+              { 70, 72, 78, 170 },
+              1 } );
+    }
+    m_flashes.push_back( { chest, { 12.0f, 18.0f, 30.0f }, 6.0f, 0.3f, 0.3f } );
+    m_audio.play( SfxE::POP, chest, m_camTarget, 0.9f );
+    m_audio.play( SfxE::CRACKLE, chest, m_camTarget, 1.0f );
+    m_shake = fmaxf( m_shake, 0.2f );
+}
+
+void Game::updatePieces( float dt )
+{
+    float g = m_level.m_gravity;
+    for ( size_t i = 0; i < m_pieces.size(); )
+    {
+        Piece &q = m_pieces[i];
+        q.m_life -= dt;
+        q.m_vel = Vector3Add( q.m_vel, Vector3Scale( thrust(), dt ) );
+        q.m_vel.y -= g * dt;
+        q.m_pos = Vector3Add( q.m_pos, Vector3Scale( q.m_vel, dt ) );
+        q.m_angle += q.m_spin * dt;
+        // Off the walls; bouncing on the floor, slower each time; at the end they sink away.
+        Vector3 before = q.m_pos;
+        if ( m_level.collide( q.m_pos, 0.12f, 0.3f ) )
+        {
+            if ( fabsf( q.m_pos.x - before.x ) > 1e-4f ) q.m_vel.x *= -0.3f;
+            if ( fabsf( q.m_pos.z - before.z ) > 1e-4f ) q.m_vel.z *= -0.3f;
+        }
+        float floor = groundAt( q.m_pos ) + 0.06f;
+        if ( q.m_life < 1.5f ) floor -= ( 1.5f - q.m_life ) * 0.4f;
+        if ( q.m_pos.y < floor && floor > -100.0f )
+        {
+            q.m_pos.y = floor;
+            q.m_vel = { q.m_vel.x * 0.55f, fmaxf( 0.0f, -q.m_vel.y * 0.3f ), q.m_vel.z * 0.55f };
+            q.m_spin *= 0.55f;
+        }
+        if ( q.m_life <= 0.0f || q.m_pos.y < -20.0f )
+        {
+            m_pieces[i] = m_pieces.back();
+            m_pieces.pop_back();
+        }
+        else
+            ++i;
+    }
+}
+
 void Game::poseCrew( std::vector<Drawable> &out )
 {
+    for ( const Piece &q : m_pieces )
+    {
+        Drawable d;
+        d.m_mesh = q.m_mesh;
+        d.m_surface = q.m_surface;
+        d.m_emissive = q.m_emissive;
+        d.m_transform = MatrixMultiply( MatrixMultiply( q.m_turn, MatrixRotate( q.m_axis, q.m_angle ) ),
+                                        MatrixTranslate( q.m_pos.x, q.m_pos.y, q.m_pos.z ) );
+        d.m_spotShadow = false;
+        out.push_back( d );
+    }
     for ( const Foe &f : m_foes )
     {
-        if ( f.m_hidden || !human( f ) ) continue;
+        if ( f.m_hidden || !human( f ) || !f.m_alive ) continue;
         FigurePose p;
         p.m_pos = f.m_pos;
         p.m_yaw = f.m_yaw;

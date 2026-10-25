@@ -43,6 +43,8 @@ enum class SfxE : int
     GUNSHOT,    ///< one heavy shot (the last scene)
     FALL,       ///< a body falling
     THROW,      ///< a blast bolt thrown
+    DOOR,       ///< a door sliding open: a hiss, the servo, a clunk
+    CRACKLE,    ///< a suit's power cell shorting out: sparks
     COUNT       ///< number of effects
 };
 
