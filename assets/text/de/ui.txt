@@ -1,0 +1,30 @@
+# Menüs und HUD (Deutsch, die Quelle). Jede Zeile: Schlüssel = Text. %d und %s bleiben stehen.
+
+language.name     = Deutsch
+
+menu.start        = Spiel starten
+menu.resume       = Weiter
+menu.difficulty   = Schwierigkeit
+menu.brightness   = Helligkeit
+menu.language     = Sprache
+menu.restart      = Level neu starten
+menu.quit         = Beenden
+menu.pause        = PAUSE
+menu.help         = Oben/Unten: wählen    Links/Rechts: ändern    Enter / A: bestätigen    Esc / Start: Pause
+
+difficulty.easy   = Leicht
+difficulty.normal = Normal
+difficulty.hard   = Schwer
+
+act.1             = Akt I · Velm
+
+speaker.corvin    = Corvin
+hero.corvin       = CORVIN ASKE
+
+hud.overheat      = ÜBERHITZT
+hud.stock         = Stims %d      Schrott %d
+hud.tank          = TANK
+hud.core          = KERN
+hud.lift          = Lastenaufzug fährt an …
+hud.summary       = Zeit %d:%02d     Schrott %d     Maschinen zerstört %d
+hud.again         = Enter oder Start: noch einmal

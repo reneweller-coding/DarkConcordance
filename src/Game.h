@@ -112,6 +112,12 @@ public:
     /** @return the HUD's font (the menus use it too) */
     const Font &font() const { return m_font; }
 
+    /** @brief Takes the language just loaded (loadTexts): the signs' pictures and the font's characters. */
+    void setLanguage();
+
+    /** @return the act and the level's name in the loaded language (for the title menu) */
+    std::string title() const;
+
     bool        m_autoplay = false;                   ///< the autopilot plays
     float       m_zoom = 1.0f;                        ///< camera distance factor
     float       m_time = 0.0f;                        ///< seconds played
@@ -213,6 +219,7 @@ private:
     };
 
     void loadSurfaces( Gfx &gfx, const std::string &assets );
+    void loadFont();
     void spawnFoe( FoeE kind, Vector3 pos, bool awake );
     void updateHero( float dt, const GameInput &in );
     void updateFoes( float dt );
@@ -241,6 +248,7 @@ private:
 
     Level                 m_level;
     std::vector<Surface>  m_surfaces;
+    std::vector<int>      m_signSurfaces;   ///< each sign's surface (its picture follows the language)
     std::vector<Drawable> m_static;
     std::vector<Drawable> m_dynamic;
     Figure                m_hero;

@@ -52,18 +52,16 @@ struct Marker
 /** @brief A spoken line. */
 struct Line
 {
-    std::string m_id;        ///< file name of its voice (assets/voice/<id>.ogg)
+    std::string m_id;        ///< key of its text and name of its voice (assets/voice/<language>/<id>.ogg)
     std::string m_trigger;   ///< trigger letter or event name
-    std::string m_speaker;   ///< who speaks
-    std::string m_text;      ///< what is said
+    std::string m_speaker;   ///< who speaks (key speaker.<name>)
 };
 
 /** @brief A hint on screen. */
 struct Hint
 {
-    std::string m_id;        ///< name
+    std::string m_id;        ///< key of its text
     std::string m_trigger;   ///< trigger letter or event name
-    std::string m_text;      ///< the hint
 };
 
 /** @brief A fixed light of the level. */
@@ -110,7 +108,7 @@ struct Zone
 /** @brief A sign on a wall or on posts. */
 struct Sign
 {
-    std::string m_texture;     ///< picture (assets/textures/<name>.png)
+    std::string m_texture;     ///< picture (assets/textures/<name>.<language>.png) and key of its text
     Vector3     m_corner[4];   ///< top left, top right, bottom right, bottom left
     Vector3     m_lamp;        ///< the small lamp above it
 };
@@ -219,8 +217,8 @@ public:
      */
     ThemeE theme( int r, int c ) const;
 
-    std::string             m_name;                                            ///< shown at the start
-    std::string             m_act;                                             ///< the act
+    std::string             m_name;                                            ///< key of the name shown at the start
+    std::string             m_act;                                             ///< key of the act's name
     float                   m_gravity = 9.81f;                                 ///< m/s²
     Vector4                 m_fog = { 0.01f, 0.05f, 0.5f, 1.0f };              ///< fog as in Lighting
     Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };           ///< the fog's own glow

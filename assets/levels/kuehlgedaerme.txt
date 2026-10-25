@@ -7,10 +7,12 @@
 #   D  Tropfenschwarm  R  rotes Notlicht  A  Arbeitslicht  V  Dampfventil  G  Tor (öffnet nach dem Boss)
 #   X  Lastenaufzug (seine Nachbarn ~ sind der Schacht)   a-z  Auslöser der Zeilen unten
 #
-#   zone r0 c0 r1 c1 thema   (service, exchanger, shaft, coldstore, works)   sign r c textur
+#   zone r0 c0 r1 c1 thema   (service, exchanger, shaft, coldstore, works)
+#   sign r c name            (Bild textures/<name>.<sprache>.png)
+#   Alle Texte (Name, Akt, Zeilen, Hinweise, Schilder) stehen hier als Schlüssel, in assets/text/<sprache>/ als Text.
 
-name     Die Kühlgedärme
-act      Akt I · Velm
+name     l1.name
+act      act.1
 gravity  3.2
 fog      0.006 0.025 0.6 1.2
 fogcolor 0.004 0.0012 0.0009
@@ -71,31 +73,31 @@ sign     32 54 sign_lift
 ################################################################
 
 [lines]
-# id | Auslöser | Sprecher | Text   (assets/voice/<id>.ogg wird gespielt, wenn es sie gibt)
-l1_start    | a        | Corvin | Die Kühlgedärme. Kaum Schwerkraft, viel Nebel – und irgendwo hier unten verschwinden seit Monaten Leute.
-l1_capsule  | capsule  | Corvin | Eine Rettungskapsel. Gespendet von einem Hilfswerk. Sehr großzügig, so weit draußen.
-l1_lice     | b        | Corvin | Rostläuse. Wartungsdrohnen, die seit Jahren keiner mehr wartet. Die fressen alles, was nach Metall riecht.
-l1_droplets | c        | Corvin | Kondenswasser. Sieht aus wie ein Sternhaufen. Solange man nicht fragt, woher die Wärme kommt.
-l1_shaft    | e        | Corvin | Ein Kühlschacht. Bei der Schwerkraft schafft man das mit Anlauf. Nur nicht in der Luft schießen.
-l1_bodies   | f        | Corvin | Da sind sie. Kein Kratzer an ihnen. Nur der Kopf ist leer. Sauber gestapelt, wie Ware, die auf Abholung wartet.
-l1_press    | g        | Corvin | Eine Drohnenpresse. Baut aus Schrott neue Läuse. Und irgendwer füttert sie.
-l1_tanks    | bossstart | Corvin | Die Tanks an den Seiten! Wenn die platzen, kocht das Ding über.
-l1_tank1    | tank1    | Corvin | Einer ist hin. Noch einer.
-l1_core     | coreopen | Corvin | Der Kern liegt frei. Jetzt!
-l1_pressend | bossdead | Corvin | Das war die Fabrik. Fehlt nur noch, wer die Rechnungen bezahlt.
-l1_exit     | bossdead | Corvin | Die Spur führt weiter nach unten. Zum Knochenmarkt.
+# Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/kuehlgedaerme.txt)
+l1_start    | a        | corvin
+l1_capsule  | capsule  | corvin
+l1_lice     | b        | corvin
+l1_droplets | c        | corvin
+l1_shaft    | e        | corvin
+l1_bodies   | f        | corvin
+l1_press    | g        | corvin
+l1_tanks    | bossstart | corvin
+l1_tank1    | tank1    | corvin
+l1_core     | coreopen | corvin
+l1_pressend | bossdead | corvin
+l1_exit     | bossdead | corvin
 
 [hints]
-# id | Auslöser | Text
-h_jump     | a        | Wenig Schwerkraft: Sprünge tragen weit (Leertaste / A). Jeder Schuss schiebt dich zurück.
-h_camera   | a        | Kamera drehen: rechter Stick oder rechte Maustaste ziehen. Stick-Klick / Rücktaste stellt sie zurück.
-h_fire     | b        | Schießen: rechter Trigger oder linke Maustaste. Das Gewehr nimmt das nächste Ziel vor dir.
-h_strafe   | b        | Linker Trigger / Umschalt hält die Blickrichtung: rückwärts laufen und weiterfeuern.
-h_gap      | e        | Mit Anlauf springen. In der Luft treibt dich der Rückstoß weg.
-h_stim     | hurt     | Q / Y: Stim injizieren (+40 Leben).
-h_heat     | overheat | Das Gewehr ist überhitzt. Kurz absetzen.
-h_tanks    | bossstart | Schwachstellen: erst die zwei Kühltanks links und rechts, dann der Kern hinter dem Stempel.
-h_anvil    | ramwarn  | Fährt der Stempel hoch: runter vom Amboss!
-h_core     | coreopen | Der Kern ist offen. Auf das Glühen hinter dem Stempel schießen.
-h_armour   | armour   | Die Panzerung hält. Auf die blau leuchtenden Tanks zielen.
-h_lift     | bossdead | Das Tor ist offen. Der Lastenaufzug dahinter führt nach unten.
+# Schlüssel | Auslöser
+h_jump     | a
+h_camera   | a
+h_fire     | b
+h_strafe   | b
+h_gap      | e
+h_stim     | hurt
+h_heat     | overheat
+h_tanks    | bossstart
+h_anvil    | ramwarn
+h_core     | coreopen
+h_armour   | armour
+h_lift     | bossdead

@@ -1,0 +1,39 @@
+# Level 1: Die Kühlgedärme (Deutsch, die Quelle). Zeilen, Hinweise und Schilder; die Leveldatei nennt nur die Schlüssel.
+# Gesprochene Zeilen: assets/voice/<sprache>/<schlüssel>.ogg wird gespielt, wenn es sie gibt.
+# Schilder: tools/make_textures.py malt aus "OBEN | UNTEN" das Schild sign_<name>.<sprache>.png.
+
+l1.name        = Die Kühlgedärme
+boss.press     = DROHNENPRESSE
+
+l1_start       = Die Kühlgedärme. Kaum Schwerkraft, viel Nebel – und irgendwo hier unten verschwinden seit Monaten Leute.
+l1_capsule     = Eine Rettungskapsel. Gespendet von einem Hilfswerk. Sehr großzügig, so weit draußen.
+l1_lice        = Rostläuse. Wartungsdrohnen, die seit Jahren keiner mehr wartet. Die fressen alles, was nach Metall riecht.
+l1_droplets    = Kondenswasser. Sieht aus wie ein Sternhaufen. Solange man nicht fragt, woher die Wärme kommt.
+l1_shaft       = Ein Kühlschacht. Bei der Schwerkraft schafft man das mit Anlauf. Nur nicht in der Luft schießen.
+l1_bodies      = Da sind sie. Kein Kratzer an ihnen. Nur der Kopf ist leer. Sauber gestapelt, wie Ware, die auf Abholung wartet.
+l1_press       = Eine Drohnenpresse. Baut aus Schrott neue Läuse. Und irgendwer füttert sie.
+l1_tanks       = Die Tanks an den Seiten! Wenn die platzen, kocht das Ding über.
+l1_tank1       = Einer ist hin. Noch einer.
+l1_core        = Der Kern liegt frei. Jetzt!
+l1_pressend    = Das war die Fabrik. Fehlt nur noch, wer die Rechnungen bezahlt.
+l1_exit        = Die Spur führt weiter nach unten. Zum Knochenmarkt.
+
+h_jump         = Wenig Schwerkraft: Sprünge tragen weit (Leertaste / A). Jeder Schuss schiebt dich zurück.
+h_camera       = Kamera drehen: rechter Stick oder rechte Maustaste ziehen. Stick-Klick / Rücktaste stellt sie zurück.
+h_fire         = Schießen: rechter Trigger oder linke Maustaste. Das Gewehr nimmt das nächste Ziel vor dir.
+h_strafe       = Linker Trigger / Umschalt hält die Blickrichtung: rückwärts laufen und weiterfeuern.
+h_gap          = Mit Anlauf springen. In der Luft treibt dich der Rückstoß weg.
+h_stim         = Q / Y: Stim injizieren (+40 Leben).
+h_heat         = Das Gewehr ist überhitzt. Kurz absetzen.
+h_tanks        = Schwachstellen: erst die zwei Kühltanks links und rechts, dann der Kern hinter dem Stempel.
+h_anvil        = Fährt der Stempel hoch: runter vom Amboss!
+h_core         = Der Kern ist offen. Auf das Glühen hinter dem Stempel schießen.
+h_armour       = Die Panzerung hält. Auf die blau leuchtenden Tanks zielen.
+h_lift         = Das Tor ist offen. Der Lastenaufzug dahinter führt nach unten.
+
+sign_k7        = KÜHLSEKTOR K-7 | WARTUNGSZUGANG
+sign_exchanger = WÄRMETAUSCHER 3 | KONDENSAT · RUTSCHGEFAHR
+sign_shaft     = KÜHLSCHACHT | ABSTURZGEFAHR · NUR MIT SICHERUNG
+sign_coldstore = KÜHLLAGER B | ZUTRITT NUR FÜR PERSONAL
+sign_works     = DROHNENWERK | PRESSE · ZUTRITT VERBOTEN
+sign_lift      = LASTENAUFZUG ↓ | KNOCHENMARKT · AGRARTROMMEL

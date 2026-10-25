@@ -7,6 +7,7 @@
 
 #include "MeshBuilder.h"
 #include "Rig.h"
+#include "Text.h"
 
 #include <raymath.h>
 #include <rlgl.h>
@@ -74,6 +75,14 @@ Texture2D loadTexture( const std::string &path )
     SetTextureFilter( t, TEXTURE_FILTER_TRILINEAR );
     SetTextureFilter( t, TEXTURE_FILTER_ANISOTROPIC_16X );
     return t;
+}
+
+/** @brief A sign's picture in the loaded language (the German one if there is none). */
+Texture2D signTexture( const std::string &assets, const std::string &name )
+{
+    std::string path = assets + "/textures/" + name + "." + language() + ".png";
+    if ( !FileExists( path.c_str() ) ) path = assets + "/textures/" + name + ".de.png";
+    return loadTexture( path );
 }
 
 /** @brief Ray against a sphere: the distance along the ray, or -1. */
@@ -224,7 +233,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     // Signs: each picture its own surface, lit a little from within so it reads in the dark.
     for ( const Sign &sign : m_level.m_signs )
     {
-        Texture2D tex = loadTexture( assets + "/textures/" + sign.m_texture + ".png" );
+        Texture2D tex = signTexture( assets, sign.m_texture );
         Surface   surf = gfx.surface( tex, m_surfaces[S_METAL].m_material.maps[MATERIAL_MAP_METALNESS].texture,
                                       m_surfaces[S_METAL].m_material.maps[MATERIAL_MAP_NORMAL].texture, tex );
         surf.m_uvScale = 1.0f;
@@ -232,6 +241,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         surf.m_emissive = { 0.22f, 0.21f, 0.2f, 2.0f };
         surf.m_variation = 0.0f;
         m_surfaces.push_back( surf );
+        m_signSurfaces.push_back( (int)m_surfaces.size() - 1 );
         MeshBuilder b;
         b.quad( sign.m_corner[0], sign.m_corner[1], sign.m_corner[2], sign.m_corner[3] );
         for ( Mesh mesh : b.build() )
@@ -418,11 +428,19 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     m_hero.animate( 0.0f, m_pos, { 0, 0 }, 0.0f, false, 0.0f, 0.0f );
     m_yaw = m_aimYaw = 0.0f;
 
-    // Bahnschrift has the umlauts and the dashes of the subtitles; raylib's font if it is not there.
-    std::vector<int> cps;
-    for ( int c = 32; c < 256; ++c ) cps.push_back( c );
-    for ( int c : { 0x2013, 0x2014, 0x2018, 0x2019, 0x201C, 0x201D, 0x201E, 0x2026 } ) cps.push_back( c );
-    const char *fontPath = "C:/Windows/Fonts/bahnschrift.ttf";
+    loadFont();
+    m_audio.init( sound );
+    putHero( m_pos.x, m_pos.z, 0.0f );
+    return true;
+}
+
+void Game::loadFont()
+{
+    if ( m_ownFont ) UnloadFont( m_font );
+    m_ownFont = false;
+    // Bahnschrift with every character the loaded texts use (umlauts, dashes, quotes); raylib's font if it is missing.
+    std::vector<int> cps = textCodepoints();
+    const char      *fontPath = "C:/Windows/Fonts/bahnschrift.ttf";
     if ( FileExists( fontPath ) )
     {
         m_font = LoadFontEx( fontPath, 48, cps.data(), (int)cps.size() );
@@ -430,10 +448,24 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         m_ownFont = m_font.texture.id > 0;
     }
     if ( !m_ownFont ) m_font = GetFontDefault();
+}
 
-    m_audio.init( sound );
-    putHero( m_pos.x, m_pos.z, 0.0f );
-    return true;
+void Game::setLanguage()
+{
+    for ( size_t i = 0; i < m_signSurfaces.size() && i < m_level.m_signs.size(); ++i )
+    {
+        Material &m = m_surfaces[m_signSurfaces[i]].m_material;
+        UnloadTexture( m.maps[MATERIAL_MAP_ALBEDO].texture );
+        Texture2D tex = signTexture( m_assets, m_level.m_signs[i].m_texture );
+        m.maps[MATERIAL_MAP_ALBEDO].texture = tex;
+        m.maps[MATERIAL_MAP_EMISSION].texture = tex;
+    }
+    loadFont();
+}
+
+std::string Game::title() const
+{
+    return std::string( tr( m_level.m_act ) ) + "  —  " + tr( m_level.m_name );
 }
 
 void Game::shutdown()
@@ -446,9 +478,9 @@ const char *difficultyName( DifficultyE d )
 {
     switch ( d )
     {
-    case DifficultyE::EASY: return "Leicht";
-    case DifficultyE::HARD: return "Schwer";
-    default: return "Normal";
+    case DifficultyE::EASY: return tr( "difficulty.easy" );
+    case DifficultyE::HARD: return tr( "difficulty.hard" );
+    default: return tr( "difficulty.normal" );
     }
 }
 
@@ -1804,8 +1836,12 @@ void Game::update( float dt, const GameInput &inRaw )
         {
             m_line = m_lineQueue.front();
             m_lineQueue.erase( m_lineQueue.begin() );
-            float spoken = m_audio.voice( m_assets + "/voice/" + m_line->m_id );
-            m_lineTimer = spoken > 0.0f ? spoken + 0.4f : 1.5f + 0.055f * (float)m_line->m_text.size();
+            // The voice in the chosen language, else the German one (under the chosen language's subtitles).
+            float spoken = m_audio.voice( m_assets + "/voice/" + language() + "/" + m_line->m_id );
+            if ( spoken <= 0.0f && language() != "de" )
+                spoken = m_audio.voice( m_assets + "/voice/de/" + m_line->m_id );
+            int chars = GetCodepointCount( tr( m_line->m_id ) );
+            m_lineTimer = spoken > 0.0f ? spoken + 0.4f : 1.5f + 0.055f * (float)chars;
         }
     }
     m_hintTimer -= dt;
@@ -2245,7 +2281,7 @@ void Game::drawHud( int w, int h )
     // Corvin: health, heat, stims, scrap.
     float x = 40.0f * s, y = h - 150.0f * s;
     DrawRectangle( (int)( x - 14 * s ), (int)( y - 14 * s ), (int)( 360 * s ), (int)( 124 * s ), { 0, 0, 0, 120 } );
-    text( "CORVIN ASKE", x, y, 22, { 255, 200, 120, 230 } );
+    text( tr( "hero.corvin" ), x, y, 22, { 255, 200, 120, 230 } );
     float bw = 320.0f * s, bh = 14.0f * s;
     DrawRectangle( (int)x, (int)( y + 32 * s ), (int)bw, (int)bh, { 40, 10, 10, 200 } );
     DrawRectangleGradientH( (int)x, (int)( y + 32 * s ), (int)( bw * m_hp / 100.0f ), (int)bh, { 150, 20, 20, 255 },
@@ -2257,10 +2293,11 @@ void Game::drawHud( int w, int h )
                               (unsigned char)( 255 - 200 * m_heat / 100 ), 255 };
     DrawRectangle( (int)x, (int)( y + 54 * s ), (int)( bw * m_heat / 100.0f ), (int)( 8 * s ), heat );
     if ( m_overheat && fmodf( m_time, 0.4f ) < 0.25f )
-        text( "ÜBERHITZT", x + bw - 110 * s, y + 4 * s, 18, { 255, 120, 60, 255 } );
-    char buf[96];
-    snprintf( buf, sizeof( buf ), "Stims %d      Schrott %d", m_stims, m_scrap );
-    text( buf, x, y + 72 * s, 20, { 200, 220, 210, 230 } );
+    {
+        const char *hot = tr( "hud.overheat" );
+        text( hot, x + bw - MeasureTextEx( m_font, hot, 18 * s, 1.0f ).x, y + 4 * s, 18, { 255, 120, 60, 255 } );
+    }
+    text( TextFormat( tr( "hud.stock" ), m_stims, m_scrap ), x, y + 72 * s, 20, { 200, 220, 210, 230 } );
 
     // The press: its bar in three parts (tank, core, tank), and a marker over each weak spot that can be hit now.
     if ( m_pressActive && !m_pressDead )
@@ -2268,10 +2305,10 @@ void Game::drawHud( int w, int h )
         float tough = toughness( m_difficulty );
         float pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s, gap = 10.0f * s;
         float part = ( pw - 2.0f * gap ) / 3.0f;
-        text( "DROHNENPRESSE", w * 0.5f, py - 4 * s, 24, { 255, 210, 150, 240 }, true );
+        text( tr( "boss.press" ), w * 0.5f, py - 4 * s, 24, { 255, 210, 150, 240 }, true );
         const float fill[3] = { m_tank[0] / ( TankHp * tough ), m_core / ( CoreHp * tough ),
                                 m_tank[1] / ( TankHp * tough ) };
-        const char *names[3] = { "TANK", "KERN", "TANK" };
+        const char *names[3] = { tr( "hud.tank" ), tr( "hud.core" ), tr( "hud.tank" ) };
         bool        coreOpen = m_pressPose.m_shutter > 0.85f;
         for ( int i = 0; i < 3; ++i )
         {
@@ -2306,28 +2343,30 @@ void Game::drawHud( int w, int h )
     // A hint, the level's title, the subtitles.
     if ( m_hint )
     {
-        float   a = Clamp( m_hintTimer * 2.0f, 0.0f, 1.0f );
-        float   hy = ( m_pressActive && !m_pressDead ? 125.0f : 50.0f ) * s;
-        Vector2 m = MeasureTextEx( m_font, m_hint->m_text.c_str(), 24 * s, 1.0f );
+        float       a = Clamp( m_hintTimer * 2.0f, 0.0f, 1.0f );
+        float       hy = ( m_pressActive && !m_pressDead ? 125.0f : 50.0f ) * s;
+        const char *hint = tr( m_hint->m_id );
+        Vector2     m = MeasureTextEx( m_font, hint, 24 * s, 1.0f );
         DrawRectangle( (int)( w * 0.5f - m.x * 0.5f - 18 * s ), (int)( hy - 10 * s ), (int)( m.x + 36 * s ),
                        (int)( m.y + 20 * s ), { 0, 0, 0, (unsigned char)( 150 * a ) } );
-        text( m_hint->m_text.c_str(), w * 0.5f, hy, 24, { 230, 235, 240, (unsigned char)( 255 * a ) }, true );
+        text( hint, w * 0.5f, hy, 24, { 230, 235, 240, (unsigned char)( 255 * a ) }, true );
     }
     if ( m_titleTimer > 0.0f )
     {
         float a = Clamp( fminf( ( 6.0f - m_titleTimer ) * 1.5f, m_titleTimer * 0.8f ), 0.0f, 1.0f );
-        text( m_level.m_act.c_str(), w * 0.5f, h * 0.30f, 26, { 255, 190, 120, (unsigned char)( 220 * a ) }, true );
-        text( m_level.m_name.c_str(), w * 0.5f, h * 0.30f + 36 * s, 64, { 240, 235, 230, (unsigned char)( 255 * a ) },
+        text( tr( m_level.m_act ), w * 0.5f, h * 0.30f, 26, { 255, 190, 120, (unsigned char)( 220 * a ) }, true );
+        text( tr( m_level.m_name ), w * 0.5f, h * 0.30f + 36 * s, 64, { 240, 235, 230, (unsigned char)( 255 * a ) },
               true );
     }
     if ( m_line )
     {
         float       a = Clamp( m_lineTimer * 3.0f, 0.0f, 1.0f );
-        std::string who = m_line->m_speaker;
+        std::string who = tr( "speaker." + m_line->m_speaker );
         for ( char &ch : who ) ch = (char)toupper( (unsigned char)ch );
         float ly = h - 190.0f * s;
         text( who.c_str(), w * 0.5f, ly, 22, { 255, 190, 110, (unsigned char)( 255 * a ) }, true );
-        wrapped( m_line->m_text, w * 0.5f, ly + 30 * s, 28, w * 0.55f, { 245, 242, 236, (unsigned char)( 255 * a ) } );
+        wrapped( tr( m_line->m_id ), w * 0.5f, ly + 30 * s, 28, w * 0.55f,
+                 { 245, 242, 236, (unsigned char)( 255 * a ) } );
     }
 
     // Death, the way down, and the end.
@@ -2342,18 +2381,17 @@ void Game::drawHud( int w, int h )
         DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 255 * a ) } );
     }
     if ( !m_finished && m_pressDead && !m_liftGoing && m_liftWait > 0.0f )
-        text( "Lastenaufzug fährt an …", w * 0.5f, h * 0.62f, 26, { 160, 255, 190, 230 }, true );
+        text( tr( "hud.lift" ), w * 0.5f, h * 0.62f, 26, { 160, 255, 190, 230 }, true );
     if ( m_finished )
     {
         float a = Clamp( m_endTimer / 2.0f, 0.0f, 1.0f );
         DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 225 * a ) } );
         unsigned char ta = (unsigned char)( 255 * Clamp( m_endTimer - 1.0f, 0.0f, 1.0f ) );
-        text( m_level.m_act.c_str(), w * 0.5f, h * 0.34f, 26, { 255, 190, 120, ta }, true );
-        text( m_level.m_name.c_str(), w * 0.5f, h * 0.34f + 36 * s, 60, { 240, 235, 230, ta }, true );
-        snprintf( buf, sizeof( buf ), "Zeit %d:%02d     Schrott %d     Maschinen zerstört %d", (int)m_time / 60,
-                  (int)m_time % 60, m_scrap, m_kills );
-        text( buf, w * 0.5f, h * 0.34f + 120 * s, 26, { 210, 215, 220, ta }, true );
-        text( "Enter oder Start: noch einmal", w * 0.5f, h * 0.34f + 180 * s, 22, { 160, 165, 170, ta }, true );
+        text( tr( m_level.m_act ), w * 0.5f, h * 0.34f, 26, { 255, 190, 120, ta }, true );
+        text( tr( m_level.m_name ), w * 0.5f, h * 0.34f + 36 * s, 60, { 240, 235, 230, ta }, true );
+        text( TextFormat( tr( "hud.summary" ), (int)m_time / 60, (int)m_time % 60, m_scrap, m_kills ), w * 0.5f,
+              h * 0.34f + 120 * s, 26, { 210, 215, 220, ta }, true );
+        text( tr( "hud.again" ), w * 0.5f, h * 0.34f + 180 * s, 22, { 160, 165, 170, ta }, true );
     }
 }
 

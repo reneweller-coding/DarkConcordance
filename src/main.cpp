@@ -2,14 +2,15 @@
  * @file main.cpp
  * @brief SpaceOpera: level 1 „Die Kühlgedärme“ (default) or the look test (--lookdev).
  *
- *        Move with WASD, the arrows or the left stick; jump with Space or A; shoot with the left mouse button, the
- *        right trigger or X (without aiming the rifle takes the nearest target ahead); aim with the mouse or the right
- *        stick; Q or Y injects a stim; the mouse wheel or the shoulder buttons zoom; F1 shows the frame rate, F12 saves
- *        a picture.
+ *        Move with WASD, the arrows or the left stick; turn the camera with the right stick or the right mouse button;
+ *        jump with Space or A; shoot with the left mouse button, the right trigger or X (the rifle takes the nearest
+ *        target ahead; the mouse can aim); Q or Y injects a stim; the mouse wheel or the shoulder buttons zoom; F1
+ *        shows the frame rate, F12 saves a picture.
  *
  *        --shot FILE    renders one picture and exits (--w, --h, --ss, --at x,z, --face deg, --awake, --fire,
  *                       --autoplay, --warm s, --bench n); --report writes the autopilot's run into the log
  *        --autoplay     the autopilot plays (also in the window, as a demo)
+ *        --lang CODE    the language (de, en; else the saved one, at first the system's)
  *        --mute         no sound
  *        --lookdev      the look test's room instead of the level
  * @author Rene Weller
@@ -17,10 +18,12 @@
 #include "Game.h"
 #include "Gfx.h"
 #include "Scene.h"
+#include "Text.h"
 
 #include <raylib.h>
 #include <raymath.h>
 
+#include <algorithm>
 #include <cstdarg>
 #include <cstdio>
 #include <cstdlib>
@@ -57,6 +60,7 @@ struct Options
     float       m_exposure = -1.0f;              ///< exposure (negative: the renderer's)
     int         m_bench = 0;               ///< with --shot: render this many frames first and log the time per frame
     std::string m_difficulty;              ///< leicht, normal, schwer (else the saved setting)
+    std::string m_language;                ///< de, en (else the saved setting)
     bool        m_menu = false;            ///< with --shot: the title menu over the picture
     float       m_camYaw = 0.0f;           ///< camera turned about the hero (degrees)
     Vector2     m_move = { 0.0f, 0.0f };   ///< with --shot: the left stick held during the warm-up
@@ -121,6 +125,8 @@ Options parse( int argc, char **argv )
             o.m_difficulty = next();
         else if ( a == "--menu" )
             o.m_menu = true;
+        else if ( a == "--lang" )
+            o.m_language = next();
         else if ( a == "--camyaw" )
             o.m_camYaw = (float)atof( next().c_str() );
         else if ( a == "--move" )
@@ -278,6 +284,7 @@ struct Settings
 {
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
     float       m_brightness = 1.0f;                  ///< exposure factor
+    std::string m_language;                           ///< the texts' language
 };
 
 /** @brief Where the settings live. */
@@ -286,18 +293,22 @@ std::string settingsPath()
     return std::string( GetApplicationDirectory() ) + "settings.txt";
 }
 
-/** @brief Reads the settings (defaults if there are none). */
+/** @brief Reads the settings (defaults if there are none; the language at first the system's). */
 Settings loadSettings()
 {
     Settings s;
-    FILE    *f = fopen( settingsPath().c_str(), "r" );
+    s.m_language = systemLanguage( assetsDir() );
+    FILE *f = fopen( settingsPath().c_str(), "r" );
     if ( !f ) return s;
-    int   d = 1;
-    float b = 1.0f;
-    if ( fscanf( f, "difficulty %d\nbrightness %f", &d, &b ) >= 1 )
+    char key[32], value[64];
+    while ( fscanf( f, "%31s %63s", key, value ) == 2 )
     {
-        s.m_difficulty = (DifficultyE)Clamp( (float)d, 0.0f, 2.0f );
-        s.m_brightness = Clamp( b, 0.6f, 2.0f );
+        if ( !strcmp( key, "difficulty" ) )
+            s.m_difficulty = (DifficultyE)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+        else if ( !strcmp( key, "brightness" ) )
+            s.m_brightness = Clamp( (float)atof( value ), 0.6f, 2.0f );
+        else if ( !strcmp( key, "language" ) )
+            s.m_language = value;
     }
     fclose( f );
     return s;
@@ -308,7 +319,8 @@ void saveSettings( const Settings &s )
 {
     FILE *f = fopen( settingsPath().c_str(), "w" );
     if ( !f ) return;
-    fprintf( f, "difficulty %d\nbrightness %.2f\n", (int)s.m_difficulty, s.m_brightness );
+    fprintf( f, "difficulty %d\nbrightness %.2f\nlanguage %s\n", (int)s.m_difficulty, s.m_brightness,
+             s.m_language.c_str() );
     fclose( f );
 }
 
@@ -382,30 +394,47 @@ void drawMenu( const Font &font, const char *title, const char *subtitle, const 
                            { 255, 170, 80, 40 } );
         text( items[i].c_str(), y, 34, on ? Color{ 255, 205, 140, 255 } : Color{ 200, 200, 200, 220 } );
     }
-    text( "Oben/Unten: wählen    Links/Rechts: ändern    Enter / A: bestätigen    Esc / Start: Pause", h - 70 * s, 20,
-          { 150, 150, 150, 200 } );
+    text( tr( "menu.help" ), h - 70 * s, 20, { 150, 150, 150, 200 } );
 }
 
 /** @brief A brightness bar as text. */
 std::string brightnessBar( float b )
 {
     int         n = (int)roundf( ( b - 0.6f ) / 0.1f );
-    std::string bar = "Helligkeit  ";
+    std::string bar = std::string( tr( "menu.brightness" ) ) + "  ";
     for ( int i = 0; i <= 14; ++i ) bar += i <= n ? "|" : ".";
     return bar;
+}
+
+/**
+ * @brief The menu's items. Title: start, difficulty, brightness, language, quit. Pause: resume, difficulty,
+ *        brightness, language, restart, quit.
+ */
+std::vector<std::string> menuItems( bool title, const Settings &s )
+{
+    std::vector<std::string> items;
+    items.push_back( tr( title ? "menu.start" : "menu.resume" ) );
+    items.push_back( std::string( tr( "menu.difficulty" ) ) + "  " + difficultyName( s.m_difficulty ) );
+    items.push_back( brightnessBar( s.m_brightness ) );
+    items.push_back( std::string( tr( "menu.language" ) ) + "  " + tr( "language.name" ) );
+    if ( !title ) items.push_back( tr( "menu.restart" ) );
+    items.push_back( tr( "menu.quit" ) );
+    return items;
 }
 
 /** @brief The level. */
 int runGame( const Options &o, Gfx &gfx )
 {
-    bool sound = !o.m_mute && o.m_shot.empty();
+    bool     sound = !o.m_mute && o.m_shot.empty();
+    Settings settings = loadSettings();
+    if ( !o.m_language.empty() ) settings.m_language = o.m_language;
+    if ( !loadTexts( assetsDir(), settings.m_language ) ) settings.m_language = "de";
     auto game = std::make_unique<Game>();
     if ( !game->load( gfx, assetsDir(), o.m_level, sound ) )
     {
         TraceLog( LOG_ERROR, "LEVEL: %s not found", o.m_level.c_str() );
         return 1;
     }
-    Settings settings = loadSettings();
     if ( !o.m_difficulty.empty() )
         settings.m_difficulty = o.m_difficulty == "leicht"
                                     ? DifficultyE::EASY
@@ -434,16 +463,13 @@ int runGame( const Options &o, Gfx &gfx )
         if ( o.m_menu )
         {
             // The title menu over the frame (to look at it without a window).
-            std::vector<std::string> items = { "Spiel starten",
-                                               std::string( "Schwierigkeit  " ) +
-                                                   difficultyName( settings.m_difficulty ),
-                                               brightnessBar( settings.m_brightness ), "Beenden" };
+            std::vector<std::string> items = menuItems( true, settings );
             savePicture( gfx, o.m_shot,
                          [&]( const RenderTexture2D *rt )
                          {
                              game->render( gfx, rt );
                              BeginTextureMode( *rt );
-                             drawMenu( game->font(), "DARK CONCORDANCE", "Akt I · Velm  —  Die Kühlgedärme", items, 0 );
+                             drawMenu( game->font(), "DARK CONCORDANCE", game->title().c_str(), items, 0 );
                              EndTextureMode();
                          } );
         }
@@ -498,11 +524,23 @@ int runGame( const Options &o, Gfx &gfx )
         }
         else
         {
-            // Title: start, difficulty, brightness, quit. Pause: resume, difficulty, brightness, restart, quit.
+            // The items as menuItems lists them.
             MenuKeys k = menuKeys( dt );
-            int      count = mode == TITLE ? 4 : 5;
+            int      count = mode == TITLE ? 5 : 6;
             chosen = ( chosen + k.m_move + count ) % count;
-            int diffItem = 1, brightItem = 2;
+            int  diffItem = 1, brightItem = 2, langItem = 3, restartItem = mode == PAUSE ? 4 : -1;
+            auto nextLanguage = [&]( int step )
+            {
+                std::vector<std::string> all = languages( assetsDir() );
+                if ( all.empty() ) return;
+                auto it = std::find( all.begin(), all.end(), settings.m_language );
+                int  i = it == all.end() ? 0 : (int)( it - all.begin() );
+                settings.m_language = all[( i + step + all.size() ) % all.size()];
+                loadTexts( assetsDir(), settings.m_language );
+                game->setLanguage();
+                saveSettings( settings );
+            };
+            if ( chosen == langItem && k.m_change ) nextLanguage( k.m_change );
             if ( chosen == diffItem && k.m_change )
             {
                 settings.m_difficulty = (DifficultyE)( ( (int)settings.m_difficulty + k.m_change + 3 ) % 3 );
@@ -525,7 +563,9 @@ int runGame( const Options &o, Gfx &gfx )
                     game->setDifficulty( settings.m_difficulty );
                     saveSettings( settings );
                 }
-                else if ( mode == PAUSE && chosen == 3 )
+                else if ( chosen == langItem )
+                    nextLanguage( 1 );
+                else if ( chosen == restartItem )
                 {
                     restart();
                     mode = PLAY;
@@ -543,15 +583,9 @@ int runGame( const Options &o, Gfx &gfx )
         game->render( gfx, nullptr );
         if ( mode != PLAY )
         {
-            std::vector<std::string> items;
-            items.push_back( mode == TITLE ? "Spiel starten" : "Weiter" );
-            items.push_back( std::string( "Schwierigkeit  " ) + difficultyName( settings.m_difficulty ) );
-            items.push_back( brightnessBar( settings.m_brightness ) );
-            if ( mode == PAUSE ) items.push_back( "Level neu starten" );
-            items.push_back( "Beenden" );
-            drawMenu( game->font(), mode == TITLE ? "DARK CONCORDANCE" : "PAUSE",
-                      mode == TITLE ? "Akt I · Velm  —  Die Kühlgedärme" : difficultyName( settings.m_difficulty ),
-                      items, chosen );
+            std::string subtitle = mode == TITLE ? game->title() : difficultyName( settings.m_difficulty );
+            drawMenu( game->font(), mode == TITLE ? "DARK CONCORDANCE" : tr( "menu.pause" ), subtitle.c_str(),
+                      menuItems( mode == TITLE, settings ), chosen );
         }
         if ( showFps ) DrawFPS( 10, 10 );
         EndDrawing();

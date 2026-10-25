@@ -2,12 +2,15 @@
 renderer reads. (Imagen 3 and 4 are gone from Vertex: 404.)
 
     G:\\Tools\\ImageGeneration\\venv\\Scripts\\python.exe tools\\make_textures.py [--force NAME ...] [--only NAME ...]
+        [--lang CODE ...]
 
 Each picture is asked for once and kept in assets/raw/<name>.jpg (the source; --force asks again). From it:
   tiles     <name>_albedo.png  seamless (opposite edges cross-faded), baked light removed
             <name>_normal.png  OpenGL convention (green up), from the luminance as a height field
             <name>_orm.png     R ambient occlusion, G roughness, B metallic
   pictures  <name>.png         as generated (sky, planet, screens)
+  signs     <name>.<lang>.png  one per language: every "sign_... = TOP | BOTTOM" in assets/text/<lang>/*.txt
+                               (--lang makes only the signs of these languages; --force sign_k7 asks again)
 """
 import argparse
 import os
@@ -19,6 +22,7 @@ from PIL import Image
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RAW = os.path.join(ROOT, "assets", "raw")
 OUT = os.path.join(ROOT, "assets", "textures")
+TEXT = os.path.join(ROOT, "assets", "text")
 PROJECT = "plenary-office-432719-u6"
 LOCATIONS = ["global", "us-central1"]
 MODELS = ["gemini-3-pro-image", "gemini-3.1-flash-image"]
@@ -79,14 +83,7 @@ TEXTURES = {
              "Seamless tileable texture, heavily rusted and pitted steel plating with flaking orange-brown rust, "
              "patches of old yellow paint, scratches, oily grime, " + FLAT,
              0.5, 0.7, 2.5),
-    # Signs of Velm's cooling sector (wall plates, read from the game camera; German as the story).
-    "sign_k7": ("picture", "21:9", SIGN.format( "KÜHLSEKTOR K-7", "WARTUNGSZUGANG" ), 0, 0, 0),
-    "sign_exchanger": ("picture", "21:9", SIGN.format( "WÄRMETAUSCHER 3", "KONDENSAT · RUTSCHGEFAHR" ), 0, 0, 0),
-    "sign_shaft": ("picture", "21:9", SIGN.format( "KÜHLSCHACHT", "ABSTURZGEFAHR · NUR MIT SICHERUNG" ), 0, 0, 0),
-    "sign_coldstore": ("picture", "21:9", SIGN.format( "KÜHLLAGER B", "ZUTRITT NUR FÜR PERSONAL" ), 0, 0, 0),
-    "sign_works": ("picture", "21:9", SIGN.format( "DROHNENWERK", "PRESSE · ZUTRITT VERBOTEN" ), 0, 0, 0),
-    "sign_lift": ("picture", "21:9", SIGN.format( "LASTENAUFZUG ↓", "KNOCHENMARKT · AGRARTROMMEL" ), 0, 0, 0),
-    "screen": ("picture", "16:9",
+    "screen":("picture", "16:9",
                "Retro-futuristic spaceship computer terminal screen filling the whole frame, amber and cyan vector "
                "graphics, orbital diagrams, waveform readouts, warning glyphs, dark background, glowing CRT phosphor, "
                "scanlines, flat front view, no bezel",
@@ -111,6 +108,26 @@ def token():
     creds, _ = google.auth.default( scopes=["https://www.googleapis.com/auth/cloud-platform"] )
     creds.refresh( google.auth.transport.requests.Request() )
     return creds.token
+
+
+def signs( languages ):
+    """The sign plates per language: {(name, lang): (top, bottom)} from assets/text/<lang>/*.txt."""
+    out = {}
+    for lang in sorted( os.listdir( TEXT ) ):
+        folder = os.path.join( TEXT, lang )
+        if not os.path.isdir( folder ) or (languages and lang not in languages):
+            continue
+        for file in sorted( os.listdir( folder ) ):
+            if not file.endswith( ".txt" ):
+                continue
+            with open( os.path.join( folder, file ), encoding="utf-8-sig" ) as f:
+                for line in f:
+                    key, eq, value = line.strip().partition( "=" )
+                    key = key.strip()
+                    if eq and key.startswith( "sign_" ) and not line.lstrip().startswith( "#" ):
+                        top, _, bottom = value.partition( "|" )
+                        out[(key, lang)] = (top.strip(), bottom.strip())
+    return out
 
 
 def generate( name, aspect, prompt ):
@@ -208,11 +225,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument( "--force", nargs="*", default=[], help="ask Imagen again for these" )
     ap.add_argument( "--only", nargs="*", default=None, help="only these textures" )
+    ap.add_argument( "--lang", nargs="*", default=None, help="signs only in these languages" )
     args = ap.parse_args()
     os.makedirs( RAW, exist_ok=True )
     os.makedirs( OUT, exist_ok=True )
     for name, (kind, aspect, prompt, metallic, roughness, strength) in TEXTURES.items():
-        if args.only and name not in args.only:
+        if (args.only and name not in args.only) or args.lang is not None:
             continue
         raw = os.path.join( RAW, name + ".jpg" )
         if not os.path.exists( raw ) or name in args.force:
@@ -222,6 +240,16 @@ def main():
         else:
             Image.open( raw ).convert( "RGB" ).save( os.path.join( OUT, name + ".png" ) )
         print( f"{name}: done" )
+    # The signs, in every language (the story's world speaks each player's language).
+    for (name, lang), (top, bottom) in signs( args.lang ).items():
+        if args.only and name not in args.only:
+            continue
+        local = f"{name}.{lang}"
+        raw = os.path.join( RAW, local + ".jpg" )
+        if not os.path.exists( raw ) or name in args.force:
+            generate( local, "21:9", SIGN.format( top, bottom ) )
+        Image.open( raw ).convert( "RGB" ).save( os.path.join( OUT, local + ".png" ) )
+        print( f"{local}: done" )
     return 0
 
 

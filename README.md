@@ -29,6 +29,9 @@ press that builds new lice from scrap.
 - **Difficulty** Leicht (less damage, weaker enemies, health returns slowly), Normal, Schwer; **brightness** in the
   menu; both kept in `settings.txt` beside the program.
 - **Sound** is synthesised at start (rifle, hits, lice, press, steam, hum); `--mute` silences it.
+- **Languages:** German and English (menu, at first the system's language). Every text lives in
+  `assets/text/<language>/` (`key = text`), German fills the gaps; the signs are painted per language, voices go to
+  `assets/voice/<language>/<key>.ogg`.
 
 Move with WASD, the arrows or the left stick; turn the camera with the right stick or the right mouse button held;
 jump with Space or A; shoot with the left mouse button, the right trigger or X; hold the facing with the left trigger
@@ -36,7 +39,9 @@ or Shift; Q or Y injects a stim; the mouse wheel, the shoulder buttons or the ri
 Start pauses (difficulty, brightness, restart, quit); F1 frame rate, F12 picture.
 
 The level is a text file, [assets/levels/kuehlgedaerme.txt](assets/levels/kuehlgedaerme.txt): an ASCII map of 2 m
-cells (legend at its top), zones with their themes, signs, the spoken lines and the hints with their triggers.
+cells (legend at its top), zones with their themes, signs, the keys of the spoken lines and the hints with their
+triggers; their words are in [assets/text/de/kuehlgedaerme.txt](assets/text/de/kuehlgedaerme.txt) and
+[assets/text/en/kuehlgedaerme.txt](assets/text/en/kuehlgedaerme.txt).
 
 ![The shaft](docs/screenshots/l1_jump.jpg)
 ![The condensate swarm](docs/screenshots/l1_drops.jpg)
@@ -60,11 +65,14 @@ Tests and pictures without a window (always silent):
 
 `--report` writes the run (finished, time, deaths, kills, shots) into `spaceopera.log` beside the program; `--bench n`
 renders n frames first and logs the time per frame. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
-`--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up.
+`--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
+language.
 
 ## Textures
 
     G:\Tools\ImageGeneration\venv\Scripts\python.exe tools\make_textures.py [--force NAME ...] [--only NAME ...]
+    G:\Tools\ImageGeneration\venv\Scripts\python.exe tools\make_textures.py --lang en    # only the English signs
 
 Gemini's image model on Vertex AI (the PC's gcloud ADC, project `plenary-office-432719-u6`); Imagen 3 and 4 are gone
 (404). The pictures are made seamless, the baked light removed, normal, roughness, metal and occlusion maps derived.
+Sign plates are painted once per language from the `sign_...` lines of the text files.

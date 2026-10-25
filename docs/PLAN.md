@@ -20,9 +20,44 @@ on the RTX 5090 (the Steam Deck needs half-resolution fog); the 3D generator is 
 | Machines, drones, creatures | built in code from shapes, moved procedurally (IK legs, pistons, swarms) |
 | People in the game | segmented suits as in the look test; for close-ups none |
 | Conversations | portraits from the image model (one reference per figure, expressions from it), subtitles, voice |
-| Voice | local TTS in batches: F5-TTS German (the user's choice in Text2Video), Qwen3-TTS as alternative; for a sale Chatterbox (MIT) or Qwen3-TTS (Apache) instead of F5 (non-commercial weights). Lines live in the level files with ids; `assets/voice/<id>.ogg` is played when present |
+| Texts | `assets/text/<language>/*.txt`, one `key = text` per line (menus and HUD in `ui.txt`, one file per level); the level files carry only the keys. German is the source and fills every gap |
+| Signs | painted per language by the image model from the same text files (`make_textures.py --lang en`) |
+| Voice | local TTS in batches, per language: F5-TTS German (the user's choice in Text2Video), XTTS-v2 speaks German and English from one cloned reference per figure, Qwen3-TTS as alternative; for a sale Chatterbox (MIT) or Qwen3-TTS (Apache) instead of F5 (non-commercial weights). `assets/voice/<language>/<key>.ogg` is played when present, else the German one under the chosen subtitles |
+| Cutscenes | films from Text2Video (see below), without speech: voice and subtitles per language at playback |
 | Music | renders from the VRAudio generators (Noctuary for Velm, Empyrean for the Concordance, Totality/Skybreak for fights) |
 | Sound effects | synthesised in code for now |
+
+## Languages
+
+German and English are required; another language is a folder of text files, its signs and its voices, with no
+change to the code.
+
+- No visible text in the code or baked into a texture except through keys: menus, HUD, lines, hints, level names,
+  sign plates.
+- The language is chosen in the title and pause menus (at first the system's), kept in `settings.txt`; `--lang` for
+  tests. Switching repaints the signs and reloads the font's characters.
+- The font loads every character the texts use (Bahnschrift: Latin, Greek, Cyrillic; Chinese or Japanese would need
+  another font).
+- Per level: the German file is written with the level, the English one translated from it in the same step, then the
+  signs (`make_textures.py --lang`) and the voices (one TTS batch per language).
+- Control hints name keys and buttons in the text for now; glyphs per device later.
+
+## Cutscenes
+
+Films for the big moments (the prologue's opening, the end of each act, the three endings, the companion flashbacks'
+openings); everything else plays in the engine (cheaper, the same look as the game). Made with the Text2Video tools
+(`G:\Tools\Text2Video`):
+
+1. Script per shot (who, where, camera, length), keyframes from the image model (Gemini 3 Pro Image or FLUX.2 locally)
+   with one reference picture per figure and place.
+2. Motion with LTX-2.3 locally (image to video on the RTX 5090), a few seconds per shot, cut together.
+3. No speech in the picture: per language a voice track (the same TTS as the lines) and subtitles from the text files;
+   music from the VRAudio generators. One film serves every language. Lip sync (EchoMimicV3, SoulX) only for close
+   faces, then per language; the suits' helmets spare most of it.
+4. In the game: MPEG-1 decoded with pl_mpeg (one header, MIT; raylib has an example), the language's voice track mixed
+   in, subtitles drawn by the game.
+
+Open: the films' look next to the game's (photographic, or painted and graded to match).
 
 ## Systems
 
@@ -30,7 +65,8 @@ Built with level 1: grid levels, low gravity with jumps and recoil, ranged comba
 the right stick turns the camera, as on the Steam Deck), flow-field pathing, enemy state machines, boss with weak points, rescue capsules as checkpoints, the hidden death
 counter, pickups (scrap, stims), subtitles and hints, HUD, wall cut-away around the hero, synthesised sound; after the
 user's first play (25.10.2026): zones with themes, signs, solid props, a freight lift as the end, difficulty levels
-(Leicht with slow regeneration), brightness, title and pause menus, the boss's weak points marked and announced.
+(Leicht with slow regeneration), brightness, title and pause menus, the boss's weak points marked and announced;
+then a camera that turns about the hero (right stick, as on the Steam Deck) and German and English throughout.
 
 Still to come, by first use:
 
@@ -110,3 +146,4 @@ Still to come, by first use:
 - Title: *DARK CONCORDANCE* or *KATABASIS* (collision check before it is final).
 - Where the reference voices come from; voice language (German, as the story).
 - Where human character models come from, if the suits are not enough.
+- The cutscene films' look (photographic or painted next to the game).

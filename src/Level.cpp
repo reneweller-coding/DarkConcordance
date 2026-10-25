@@ -174,13 +174,13 @@ bool Level::load( const std::string &path )
         if ( section == LINES )
         {
             auto f = fields( t );
-            if ( f.size() >= 4 ) m_lines.push_back( { f[0], f[1], f[2], f[3] } );
+            if ( f.size() >= 3 ) m_lines.push_back( { f[0], f[1], f[2] } );
             continue;
         }
         if ( section == HINTS )
         {
             auto f = fields( t );
-            if ( f.size() >= 3 ) m_hints.push_back( { f[0], f[1], f[2] } );
+            if ( f.size() >= 2 ) m_hints.push_back( { f[0], f[1] } );
             continue;
         }
         std::stringstream kv( t );

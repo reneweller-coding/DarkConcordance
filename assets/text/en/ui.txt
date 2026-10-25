@@ -1,0 +1,30 @@
+# Menus and HUD (English). Each line: key = text. Keep %d and %s.
+
+language.name     = English
+
+menu.start        = Start game
+menu.resume       = Resume
+menu.difficulty   = Difficulty
+menu.brightness   = Brightness
+menu.language     = Language
+menu.restart      = Restart level
+menu.quit         = Quit
+menu.pause        = PAUSED
+menu.help         = Up/Down: choose    Left/Right: change    Enter / A: confirm    Esc / Start: pause
+
+difficulty.easy   = Easy
+difficulty.normal = Normal
+difficulty.hard   = Hard
+
+act.1             = Act I · Velm
+
+speaker.corvin    = Corvin
+hero.corvin       = CORVIN ASKE
+
+hud.overheat      = OVERHEATED
+hud.stock         = Stims %d      Scrap %d
+hud.tank          = TANK
+hud.core          = CORE
+hud.lift          = Freight lift starting …
+hud.summary       = Time %d:%02d     Scrap %d     Machines destroyed %d
+hud.again         = Enter or Start: play again
