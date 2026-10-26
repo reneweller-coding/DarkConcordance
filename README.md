@@ -82,6 +82,10 @@ lockers, a champion and terminals (the Taxator's ledger, an appraisal, a receipt
 way, and at the end the Taxator's hall behind a door: the boss in a brass exoskeleton who stomps, fires fanned volleys,
 calls for help at 60 % and 30 % and finally charges. Each new game lays the market out anew; the hall stays.
 
+**The drum turns:** the market lies on the inside of a spinning drum, so everything that flies is bent by the Coriolis
+force: shots, bolts, grenades and the enemies' bolts curve sideways on long throws (the auto-aim leads them), and
+flocks of birds wheel under the cavern's lights.
+
 **The Depths** ([assets/levels/tiefen.txt](assets/levels/tiefen.txt)): the maintenance levels under the drum, open
 from the hub's lift after level 1 and again and again, laid out anew on every visit, as strong as the hero, with a
 guardian champion before the lift. For experience and gear.
@@ -95,7 +99,63 @@ volatile (orange, explodes when killed), berserk (red); they always drop an item
 ![The Taxator's volley](docs/screenshots/l2_volley.jpg)
 ![The Taxator](docs/screenshots/l2_taxator.jpg)
 ![The market on the map](docs/screenshots/l2_map.jpg)
+![In the farm drum, birds over the alley](docs/screenshots/l2_drum.jpg)
 ![The lift asks where to](docs/screenshots/hub_lift.jpg)
+
+## Level 3 „Die Außenhaut“: vacuum, oxygen, radiation storms
+
+The Taxator's receipt names the tug *Grace Period* at the cargo ring, outside on Velm's skin
+([assets/levels/aussenhaut.txt](assets/levels/aussenhaut.txt), generated). Hull plates, gangways and catwalks over open
+space with the red dwarf beneath; low gravity, no falling off the edge.
+
+- **Oxygen:** outside, the suit holds a good minute and a half (the blue bar). The maintenance huts and the air posts
+  refill it, blue canisters add some; at zero it costs health. Hits leak air.
+- **Radiation storms:** the red dwarf flares every minute or so: eight seconds of warning, then six seconds of
+  radiation that burns everyone in the open, enemies too. Shelter is a hut or anything tall close by.
+- **The tug *Grace Period*:** a boss of parts – the deck gun on top (volleys of shells, red rings show where they
+  land) and two engines at the back; bolts from the bridge (close along its hull they cannot reach), drones from its
+  hangar. A broken part stays broken: without the gun no more shells. Hurt to half, it tries to cast off, sliding
+  along the edge and firing faster; with all three parts gone it breaks up and its container drifts away.
+
+![The skin over open space](docs/screenshots/l3_hull.jpg)
+![The tug „Gnadenfrist“](docs/screenshots/l3_tug.jpg)
+
+## Level 4 „Das Ertrunkene Viertel“: water
+
+A quarter of the Second Drum where the tanks overflowed; at three metres per second squared the water gathered into
+balls and stayed ([assets/levels/ertrunken.txt](assets/levels/ertrunken.txt), generated). Light dances on the floor
+beneath them.
+
+- **Under water:** slow, the shots weaker, the steps light; breath lasts about half a minute, then it costs health. A
+  current pulls round in circles; the sound goes dull.
+- **Shock gunners** charge where you can see it (blue sparks); in water their arc hits two and a half times as hard.
+- **The Hydrauliker** (the Pumpwright), a man of steel and hoses who keeps the locks: his water jet throws you far
+  back, his hammer strikes close, and he floods where you stand.
+
+![The Hydrauliker floods the hall](docs/screenshots/l4_pumpwright.jpg)
+![A street in the drowned quarter](docs/screenshots/l4_street.jpg)
+
+## Level 5 „Die Kernbank“: Mother Sevenfold
+
+The vaults where Mother Sevenfold stores the harvested cores until they are sold
+([assets/levels/kernbank.txt](assets/levels/kernbank.txt), generated).
+
+- **Racks of cores** like a night sky, every light someone. A hit breaks a rack; the auto-aim will not shoot through
+  them, grenades, bolts and blasts will. A terminal holds the register with Ilka's name.
+- **Shells (Hüllen):** emptied bodies walking on a cheap core; slow, tough, they scratch close up.
+- **Mother Sevenfold:** one mind in seven bodies, linked by three radio masts. While a mast stands the bodies heal and
+  shrug off hits; with the masts down they stumble and fall like anyone. Leave every rack whole and the game remembers.
+
+![The racks](docs/screenshots/l5_racks.jpg)
+![In the vaults](docs/screenshots/l5_vault.jpg)
+
+## Act I
+
+After each level Ysolde has the next job (the lift lists every place already open; the Depths stay open). After the
+Core Bank she learns where Ilka went – sold to the Mill – and the act ends there: „Ende des ersten Akts – Fortsetzung
+folgt“. Act II begins at the Mill.
+
+![Back on Velm after the Core Bank](docs/screenshots/hub_act1.jpg)
 
 ## Items, levels, skills
 

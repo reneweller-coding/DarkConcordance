@@ -1,0 +1,49 @@
+# Level 3: Die Außenhaut (Deutsch, die Quelle). Zeilen, Hinweise, Terminals, die Anzeigen draußen.
+
+l3.name        = Die Außenhaut
+l3.intro       = Die Quittung des Taxators nennt einen Schlepper: die »Gnadenfrist«, festgemacht am Frachtring draußen auf Velms Haut. Einundsechzig Körper aus Talgrund liegen in seinem Container. | Draußen gibt es keine Luft, nur Funk und den eigenen Atem. Unter den Platten der offene Raum, darin der rote Zwerg – und wenn er ausbricht, brennt seine Strahlung über die Haut. | In drei Stunden öffnet sich das Startfenster.
+
+l3_start       = Die Schleuse. Dahinter keine Luft, nur Funk und mein eigener Atem.
+l3_out         = Draußen. Unter den Platten nichts als der Zwerg. Nicht runtersehen.
+l3_flare       = Er bricht aus! In Deckung – hinter irgendwas Großes!
+l3_lowair      = Die Luft wird knapp. Eine Hütte, ein Kanister, irgendwas.
+l3_champion    = Der da trägt seinen Anzug wie eine Rüstung. Einer von der teuren Sorte.
+l3_ring        = Der Frachtring. Irgendwo da vorne liegt der Schlepper.
+l3_tug         = Da ist er. Die »Gnadenfrist«. Der Container hängt unter ihm.
+l3_boss        = Er hat mich gesehen. Das Deckgeschütz schwenkt herum.
+l3_gun         = Das Geschütz ist hin.
+l3_engine      = Ein Triebwerk weniger.
+l3_cast        = Er legt ab! Nicht mit den Körpern!
+l3_end         = Der Container reißt los … er treibt auf den Zwerg zu. Einundsechzig Menschen aus Talgrund. Ich kann nichts mehr tun.
+
+l3_start.dorra = Die Schleuse. Auf Kalvar sind wir ohne Helm in die Stollen. Hier draußen nicht.
+l3_out.dorra   = Draußen. Kein Boden unter dem Boden. Nur der Zwerg.
+l3_flare.dorra = Der Zwerg bricht aus! Hinter was Großes, schnell!
+l3_tug.dorra   = Da liegt er, der Schlepper. Und darunter, im Container, die Leute aus Talgrund.
+l3_end.dorra   = Der Container … er treibt weg, in die Glut. Wir waren zu spät. Wieder.
+
+h_oxygen       = Draußen ist keine Luft: der Sauerstoff (blauer Balken) reicht gut anderthalb Minuten. In den Wartungshütten füllt er sich auf, blaue Kanister geben welchen dazu.
+h_flare        = Strahlungssturm: in eine Hütte oder dicht an etwas Hohes (Gehäuse, Kühler). Im Freien brennt die Strahlung – auch die Gegner.
+h_lowair       = Wenig Sauerstoff: zurück in eine Hütte oder einen blauen Kanister suchen.
+h_tug          = Der Schlepper: das Deckgeschütz oben, die Triebwerke hinten. Rote Ringe zeigen, wo seine Granaten einschlagen – raus da.
+h_tug.dorra    = Der Schlepper: das nahe Triebwerk erreichst du vom Rand aus mit dem Hammer, Geschütz und fernes Triebwerk mit Sprengbolzen (B / F). Raus aus den roten Ringen.
+
+hud.oxygen     = SAUERSTOFF
+hud.air        = (Luft)
+hud.flarewarn  = STRAHLUNGSSTURM IN %d
+hud.flare      = STRAHLUNGSSTURM – IN DECKUNG!
+hud.sheltered  = In Deckung
+boss.tug       = SCHLEPPER »GNADENFRIST«
+tug.gun        = Deckgeschütz
+tug.engine     = Triebwerk
+
+note.tuglog.title  = Logbuch Schlepper »Gnadenfrist«
+note.tuglog        = Ladung übernommen: ein Container, gekühlt, 61 Einheiten. Bestimmung: Sammelstelle Mühle, dann Werft am Tor. | Startfenster 14:20 Stationszeit. Der Taxator will eine Bestätigung bei Ankunft. Er bekommt keine. Bei Ankunft gibt es keinen Taxator mehr, der etwas will.
+note.berth.title   = Liegeplatzordnung Frachtring
+note.berth         = Schiffe ohne Kennung liegen an den Außenplätzen 7 bis 12. Die Stationsverwaltung zählt sie nicht. Sie zählt nur, was andockt. | Gezeichnet: HAUSMEISTER, im Auftrag.
+note.weather.title = Weltraumwetter, heute
+note.weather       = Der Zwerg ist unruhig. Ausbrüche alle ein bis zwei Minuten. Wer draußen arbeitet: zwischen den Kühlern bleiben, Hütten offen halten. | Wer draußen nicht arbeiten muss: drinnen bleiben.
+note.welder.title  = Zettel an einem Schweißgerät
+note.welder        = Meine Schicht ist um. Wenn du das liest, ist dein Anzug undicht. Schau auf die Anzeige, nicht auf den Zwerg. Er schaut nicht zurück.
+
+dest.aussenhaut    = Die Außenhaut · Frachtring

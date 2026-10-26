@@ -15,6 +15,16 @@ elite.0        = Flinker
 elite.1        = Gepanzerter
 elite.2        = Instabiler
 elite.3        = Rasender
+# Vor einem weiblichen Namen (foe.<x>.g = f):
+elite.0.f      = Flinke
+elite.1.f      = Gepanzerte
+elite.2.f      = Instabile
+elite.3.f      = Rasende
+foe.louse.g    = f
+foe.welder.g   = f
+foe.shield.g   = f
+foe.drone.g    = f
+foe.shell.g    = f
 
 boss.taxator   = DER TAXATOR
 boss.guardian  = WÄCHTER: %s

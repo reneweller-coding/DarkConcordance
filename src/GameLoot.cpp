@@ -154,7 +154,8 @@ int Game::xpFor( const Foe &f ) const
     case FoeE::DRONE: base = 11; break;
     case FoeE::SAW: base = 5; break;
     case FoeE::BOMBER: base = 8; break;
-    case FoeE::TAXATOR: base = 700; break;
+    case FoeE::TAXATOR: base = f.m_variant ? 900 : 700; break;
+    case FoeE::SHELL: base = 9; break;
     default: break;
     }
     // A champion is worth four, the guardian of a level's end ten.

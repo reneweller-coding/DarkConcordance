@@ -16,6 +16,7 @@
 #include <algorithm>
 #include <cctype>
 #include <cmath>
+#include <functional>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -218,11 +219,22 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         switch ( m.m_kind )
         {
         case '$': spawnFoe( FoeE::SHIELD, p, false ); break;
+        case ':': m_pickups.push_back( { 2, 40, p, { 0, 0, 0 } } ); break;
+        case ',': spawnFoe( FoeE::SHELL, p, false ); break;
         case '%': spawnFoe( FoeE::HEAVY, p, false ); break;
         case '^': spawnFoe( FoeE::DRONE, Vector3Add( p, { 0.0f, 1.75f, 0.0f } ), false ); break;
         case '*': spawnFoe( FoeE::SAW, p, false ); break;
         case '?': spawnFoe( FoeE::BOMBER, p, false ); break;
         case '@': spawnFoe( FoeE::TAXATOR, p, false ); break;
+        case '<':
+            spawnFoe( FoeE::GUNNER, p, false );
+            m_foes.back().m_variant = 1;
+            break;
+        case '>':
+            spawnFoe( FoeE::TAXATOR, p, false );
+            m_foes.back().m_variant = 1;
+            m_foes.back().m_hp *= 1.45f, m_foes.back().m_hpMax = m_foes.back().m_hp;
+            break;
         case 'P':
             m_pos = p;
             m_respawn = p;
@@ -359,6 +371,9 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     loadHub( gfx, assets );
     loadUsables();
     loadPanel();
+    loadWorld();
+    loadTug();
+    loadVault();
     // Who stands, walks or sits on a stool is a skinned figure; those huddled on the floor and Ilka stay as they are.
     for ( size_t i = 0; i < m_people.size(); ++i )
         if ( m_people[i].m_sit < 0.5f ) dressPerson( m_people[i], (unsigned)( i * 7919u + 13u ) );
@@ -461,7 +476,7 @@ float Game::hpMax() const
 float Game::runSpeed() const
 {
     return ( m_heroKind == HeroE::DORRA ? DorraSpeed : RunSpeed ) *
-           Clamp( 1.0f + stat( StatE::SPEED ) / 100.0f, 0.7f, 1.5f );
+           Clamp( 1.0f + stat( StatE::SPEED ) / 100.0f, 0.7f, 1.5f ) * ( m_inWater ? 0.55f : 1.0f );
 }
 
 float Game::foeRadius( const Foe &f ) const
@@ -474,6 +489,7 @@ float Game::foeRadius( const Foe &f ) const
     case FoeE::DRONE: return 0.6f;
     case FoeE::SAW: return 0.42f;
     case FoeE::BOMBER: return 0.55f;
+    case FoeE::SHELL: return 0.42f;
     default: return human( f ) ? 0.42f : 0.5f;
     }
 }
@@ -482,6 +498,7 @@ float Game::foeHeight( const Foe &f ) const
 {
     if ( f.m_kind == FoeE::DRONE ) return 0.0f;   // its position is its body, in the air
     if ( human( f ) ) return foeTall( f ) * 0.62f;
+    if ( f.m_kind == FoeE::SHELL ) return 1.05f;
     return f.m_kind == FoeE::WELDER ? 0.75f : ( f.m_kind == FoeE::SAW ? 0.35f : 0.45f );
 }
 
@@ -489,6 +506,7 @@ void Game::setDifficulty( DifficultyE d )
 {
     float scale = toughness( d ) / toughness( m_difficulty );
     for ( Foe &f : m_foes ) f.m_hp *= scale, f.m_hpMax *= scale;
+    for ( BossPart &q : m_parts ) q.m_hp *= scale, q.m_max *= scale;
     m_tank[0] *= scale;
     m_tank[1] *= scale;
     m_core *= scale;
@@ -500,9 +518,8 @@ void Game::spawnFoe( FoeE kind, Vector3 pos, bool awake )
     Foe f;
     f.m_kind = kind;
     f.m_pos = pos;
-    const float hp[10] = {
-        LouseHp, WelderHp, BatonHp, GunnerHp, ShieldHp, HeavyHp, DroneHp, SawHp, BomberHp, TaxatorHp
-    };
+    const float hp[11] = { LouseHp, WelderHp, BatonHp,  GunnerHp,  ShieldHp, HeavyHp,
+                           DroneHp, SawHp,    BomberHp, TaxatorHp, ShellHp };
     f.m_hp = hp[(int)kind] * toughness( m_difficulty ) * ( 1.0f + 0.25f * ( m_level.m_area - 1 ) );
     f.m_home = f.m_safe = pos;
     f.m_hpMax = f.m_hp;
@@ -627,6 +644,7 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
         amount *= 0.15f;
         push = Vector3Scale( push, 0.3f );
     }
+    if ( m_level.m_vacuum && m_outside ) m_oxygen = fmaxf( 0.0f, m_oxygen - amount * 0.25f );
     amount *= harm( m_difficulty ) * ( 1.0f - armorCut() ) * m_areaHit * m_hitScale;
     // Thorns: whoever stands close takes some back.
     if ( stat( StatE::THORNS ) > 0.0f )
@@ -641,6 +659,8 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
     m_hp -= amount;
     m_invuln = 0.45f;
     m_hurtFlash = 1.0f;
+    if ( m_level.m_space ) push.y = 0.0f;   // the boots hold to the deck
+    if ( !m_hurtBy[0] ) m_hurtBy = "hit";
     m_vel = Vector3Add( m_vel, push );
     if ( push.y > 0.5f ) m_ground = false;
     m_audio.play( SfxE::HURT, m_pos, m_camTarget, 0.8f );
@@ -655,12 +675,13 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
         {
             // Who stood near: what killed the autopilot.
             std::string near;
-            const char *kinds[] = { "louse", "welder", "baton", "gunner", "shield",
-                                    "heavy", "drone",  "saw",   "bomber", "taxator" };
+            const char *kinds[] = { "louse", "welder", "baton",  "gunner",  "shield", "heavy",
+                                    "drone", "saw",    "bomber", "taxator", "shell" };
             for ( const Foe &f : m_foes )
                 if ( f.m_alive && !f.m_hidden && f.m_awake && Vector3Distance( f.m_pos, m_pos ) < 14.0f )
                     near += std::string( " " ) + kinds[(int)f.m_kind] + ( f.m_elite ? "*" : "" );
-            TraceLog( LOG_WARNING, "DEATH: hit at %.1f,%.1f t=%.0f by%s", m_pos.x, m_pos.z, m_time, near.c_str() );
+            TraceLog( LOG_WARNING, "DEATH: hit at %.1f,%.1f t=%.0f [%s] by%s", m_pos.x, m_pos.z, m_time, m_hurtBy,
+                      near.c_str() );
         }
     }
 }
@@ -703,7 +724,7 @@ void Game::killFoe( Foe &f, bool drops )
     if ( drops && rnd() < 0.09f * ( 1.0f + stat( StatE::FIND ) / 100.0f ) )
         dropItem( Vector3Add( f.m_pos, { 0.0f, 0.8f, 0.0f } ), 1.0f );
     if ( f.m_elite == 1 ) dropItem( Vector3Add( f.m_pos, { 0.0f, 0.8f, 0.0f } ), 2.5f );
-    if ( f.m_kind == FoeE::TAXATOR || f.m_elite == 2 ) bossDown( f );
+    if ( ( f.m_kind == FoeE::TAXATOR || f.m_elite == 2 ) && f.m_kind != FoeE::SHELL ) bossDown( f );
     if ( f.m_kind == FoeE::BOMBER ) detonate( f, 32.0f, 3.2f );
     if ( f.m_affix == 2 ) detonate( f, 26.0f, 3.5f );
     float   r = rnd();
@@ -715,6 +736,17 @@ void Game::killFoe( Foe &f, bool drops )
         f.m_aim = 0.0f;
         burst( f );
         if ( drops && r < 0.3f ) m_pickups.push_back( { 1, 1, Vector3Add( f.m_pos, { 0, 0.6f, 0 } ), v } );
+        return;
+    }
+    if ( f.m_kind == FoeE::SHELL )
+    {
+        // A shell falls; its core sputters out at the back of its head.
+        Vector3 core = Vector3Add( f.m_pos, { 0.0f, 1.65f, 0.0f } );
+        sparks( core, { 0.0f, 1.0f, 0.0f }, 24, { 170, 215, 255, 255 }, 3.0f );
+        m_audio.play( SfxE::CRACKLE, core, m_camTarget, 0.7f );
+        f.m_down = 0.0f;
+        if ( drops && r < 0.5f )
+            m_pickups.push_back( { 0, 4 + (int)( rnd() * 8 ), Vector3Add( f.m_pos, { 0, 0.5f, 0 } ), v } );
         return;
     }
     float size = f.m_kind == FoeE::WELDER ? 1.4f : 0.8f;
@@ -746,6 +778,7 @@ void Game::hurtFoe( Foe &f, float amount, Vector3 dir )
         fire( "shieldguard" );
     }
     if ( f.m_affix == 1 ) amount *= 0.5f;
+    if ( f.m_kind == FoeE::SHELL && f.m_variant == 2 && motherLinked() ) amount *= 0.3f;   // the link holds them
     f.m_hp -= amount;
     f.m_flash = 1.0f;
     if ( !f.m_awake && !human( f ) ) m_audio.play( SfxE::CHITTER, f.m_pos, m_camTarget, 0.6f );
@@ -772,6 +805,7 @@ Vector3 Game::targetPoint( const Target &t ) const
     case 1: return { o.x - 9.2f, 2.3f, o.z + 0.5f };
     case 2: return { o.x + 9.2f, 2.3f, o.z + 0.5f };
     case 3: return { o.x, 3.4f, o.z - 0.4f };
+    case 5: return m_parts[t.m_index].m_pos;
     default: return { 0, 0, 0 };
     }
 }
@@ -789,7 +823,7 @@ Game::Target Game::findTarget( Vector3 from, Vector3 dir, float cone ) const
         float a = acosf( Clamp(
             ( d.x * dir.x + d.z * dir.z ) / ( dist * sqrtf( dir.x * dir.x + dir.z * dir.z ) + 1e-6f ), -1.0f, 1.0f ) );
         if ( a > cone ) return;
-        if ( !los( from, p ) ) return;
+        if ( !los( from, p ) || rackInWay( from, p ) ) return;
         float score = a * 2.0f + dist * 0.03f;
         if ( score < bestScore )
         {
@@ -806,6 +840,9 @@ Game::Target Game::findTarget( Vector3 from, Vector3 dir, float cone ) const
         if ( m_tank[1] > 0.0f ) consider( { 2, 0, {} } );
         if ( m_pressPose.m_shutter > 0.85f && m_core > 0.0f ) consider( { 3, 0, {} } );
     }
+    if ( partsLive() )
+        for ( int i = 0; i < (int)m_parts.size(); ++i )
+            if ( m_parts[i].m_hp > 0.0f ) consider( { 5, i, {} } );
     return best;
 }
 
@@ -852,11 +889,40 @@ void Game::shootPellet( bool first )
     dir = Vector3Normalize(
         Vector3Add( dir, { ( rnd() - 0.5f ) * spread, ( rnd() - 0.5f ) * spread * 0.6f, ( rnd() - 0.5f ) * spread } ) );
     if ( first ) ++m_shots;
+    // In a drum the slug bends with the spin: the aim leads by half the turn it makes on the way, it flies in pieces,
+    // each turned a little (the tracer shows the curve), until something is in the piece.
+    Vector3 from = muzzle;
+    float   reach = m_stats.m_range;
+    if ( m_level.m_coriolis != 0.0f )
+    {
+        if ( m_target.m_kind >= 0 )
+            dir = turnYaw( dir, m_level.m_coriolis * Vector3Distance( targetPoint( m_target ), muzzle ) / SlugSpeed );
+        const int pieces = 5;
+        float     len = reach / pieces;
+        for ( int k = 0; k < pieces - 1; ++k )
+        {
+            Vector3 to = Vector3Add( from, Vector3Scale( dir, len ) ), hit, n;
+            bool    stop = m_level.raycast( from, to, hit, n );
+            for ( const Foe &f : m_foes )
+            {
+                if ( stop || !f.m_alive || f.m_hidden ) continue;
+                float u = human( f ) ? rayCylinder( from, dir, f.m_pos, foeRadius( f ), foeTall( f ) )
+                                     : raySphere( from, dir, Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } ),
+                                                  foeRadius( f ) );
+                stop = u >= 0.0f && u < len;
+            }
+            if ( stop ) break;
+            m_tracers.push_back( { from, to, 0.08f } );
+            from = to;
+            reach -= len;
+            dir = turnYaw( dir, -2.0f * m_level.m_coriolis * len / SlugSpeed );
+        }
+    }
 
-    Vector3 end = Vector3Add( muzzle, Vector3Scale( dir, m_stats.m_range ) );
+    Vector3 end = Vector3Add( from, Vector3Scale( dir, reach ) );
     Vector3 hit, normal;
-    m_level.raycast( muzzle, end, hit, normal );
-    float tBest = Vector3Distance( muzzle, hit );
+    m_level.raycast( from, end, hit, normal );
+    float tBest = Vector3Distance( from, hit );
     int   kind = -1, index = -1;   // -1 wall, 0 foe, 1/2 tank, 3 core, 4 armour of the press
     // The foes on the line, nearest first: a slug that pierces goes on through the next ones.
     std::vector<std::pair<float, int>> along;
@@ -864,9 +930,9 @@ void Game::shootPellet( bool first )
     {
         const Foe &f = m_foes[i];
         if ( !f.m_alive || f.m_hidden ) continue;
-        float t = human( f )
-                      ? rayCylinder( muzzle, dir, f.m_pos, foeRadius( f ), foeTall( f ) )
-                      : raySphere( muzzle, dir, Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } ), foeRadius( f ) );
+        float t = human( f ) || f.m_kind == FoeE::SHELL
+                      ? rayCylinder( from, dir, f.m_pos, foeRadius( f ), foeTall( f ) )
+                      : raySphere( from, dir, Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } ), foeRadius( f ) );
         if ( t >= 0.0f && t < tBest ) along.push_back( { t, i } );
     }
     std::sort( along.begin(), along.end() );
@@ -876,13 +942,13 @@ void Game::shootPellet( bool first )
     {
         for ( int side = 0; side < 2; ++side )
         {
-            float t = rayCylinder( muzzle, dir, { o.x + ( side ? 9.2f : -9.2f ), 0.0f, o.z + 0.5f }, 1.15f,
+            float t = rayCylinder( from, dir, { o.x + ( side ? 9.2f : -9.2f ), 0.0f, o.z + 0.5f }, 1.15f,
                                    m_tank[side] > 0.0f ? 4.7f : 1.9f );
             if ( t >= 0.0f && t < tBest ) tBest = t, kind = m_tank[side] > 0.0f ? 1 + side : 4;
         }
         if ( m_pressPose.m_shutter > 0.85f && m_core > 0.0f )
         {
-            float t = raySphere( muzzle, dir, { o.x, 3.4f, o.z - 1.0f }, 0.95f );
+            float t = raySphere( from, dir, { o.x, 3.4f, o.z - 1.0f }, 0.95f );
             if ( t >= 0.0f && t < tBest ) tBest = t, kind = 3;
         }
         struct Box
@@ -902,25 +968,39 @@ void Game::shootPellet( bool first )
         for ( const Box &b : boxes )
         {
             if ( b.lo.x >= b.hi.x ) continue;
-            float t = rayBox( muzzle, dir, b.lo, b.hi );
+            float t = rayBox( from, dir, b.lo, b.hi );
             if ( t >= 0.0f && t < tBest ) tBest = t, kind = 4;
         }
     }
-    Vector3 at = Vector3Add( muzzle, Vector3Scale( dir, tBest ) );
-    float   damage = m_stats.m_damage;
+    if ( partsLive() )
+        for ( int i = 0; i < (int)m_parts.size(); ++i )
+        {
+            if ( m_parts[i].m_hp <= 0.0f ) continue;
+            float t = raySphere( from, dir, m_parts[i].m_pos, m_parts[i].m_radius );
+            if ( t >= 0.0f && t < tBest ) tBest = t, kind = 5, index = i;
+        }
+    // A rack of cores in the way takes the slug.
+    for ( int i = 0; i < (int)m_racks.size(); ++i )
+    {
+        if ( !m_racks[i].m_alive ) continue;
+        float t = rayCylinder( from, dir, m_racks[i].m_pos, 0.5f, 2.3f );
+        if ( t >= 0.0f && t < tBest ) tBest = t, kind = 6, index = i;
+    }
+    Vector3 at = Vector3Add( from, Vector3Scale( dir, tBest ) );
+    float   damage = m_stats.m_damage * ( m_inWater ? 0.6f : 1.0f );
     if ( kind == 0 )
     {
         // The first one hit and those the slug goes on through; an arc jumps on from the first.
         int count = std::min( (int)along.size(), 1 + m_stats.m_pierce );
         for ( int k = 0; k < count; ++k )
         {
-            Vector3 p = Vector3Add( muzzle, Vector3Scale( dir, along[k].first ) );
+            Vector3 p = Vector3Add( from, Vector3Scale( dir, along[k].first ) );
             dealHit( m_foes[along[k].second], damage * ( k == 0 ? 1.0f : 0.8f ), dir, p );
             sparks( p, Vector3Negate( dir ), 10, { 255, 200, 120, 255 }, 3.5f );
             at = p;
         }
         std::set<int> struck = { index };
-        Vector3       from = Vector3Add( m_foes[index].m_pos, { 0.0f, 1.0f, 0.0f } );
+        Vector3       arc = Vector3Add( m_foes[index].m_pos, { 0.0f, 1.0f, 0.0f } );
         for ( int c = 0; c < m_stats.m_chain; ++c )
         {
             int   next = -1;
@@ -929,19 +1009,19 @@ void Game::shootPellet( bool first )
             {
                 const Foe &f = m_foes[i];
                 if ( !f.m_alive || f.m_hidden || struck.count( i ) ) continue;
-                float d = Vector3Distance( from, f.m_pos );
-                if ( d < best && los( from, Vector3Add( f.m_pos, { 0.0f, 0.8f, 0.0f } ) ) ) best = d, next = i;
+                float d = Vector3Distance( arc, f.m_pos );
+                if ( d < best && los( arc, Vector3Add( f.m_pos, { 0.0f, 0.8f, 0.0f } ) ) ) best = d, next = i;
             }
             if ( next < 0 ) break;
             Vector3 to = Vector3Add( m_foes[next].m_pos, { 0.0f, 1.0f, 0.0f } );
-            m_tracers.push_back( { from, to, 0.12f } );
+            m_tracers.push_back( { arc, to, 0.12f } );
             sparks( to, { 0.0f, 1.0f, 0.0f }, 8, { 150, 200, 255, 255 }, 2.5f );
-            dealHit( m_foes[next], damage * 0.7f, Vector3Normalize( Vector3Subtract( to, from ) ), to );
+            dealHit( m_foes[next], damage * 0.7f, Vector3Normalize( Vector3Subtract( to, arc ) ), to );
             struck.insert( next );
-            from = to;
+            arc = to;
         }
     }
-    if ( m_stats.m_splash > 0.0f && kind <= 0 )
+    if ( m_stats.m_splash > 0.0f && ( kind <= 0 || kind == 5 ) )
     {
         // A plasma ball bursts where it lands.
         explode( at, 0.5f );
@@ -955,7 +1035,11 @@ void Game::shootPellet( bool first )
                      dist > 1e-3f ? Vector3Scale( d, 1.0f / dist ) : dir, f.m_pos );
         }
     }
-    if ( kind == 1 || kind == 2 )
+    if ( kind == 6 )
+        breakRack( index );
+    else if ( kind == 5 )
+        hitPart( index, damage, at );
+    else if ( kind == 1 || kind == 2 )
         hitTank( kind - 1, damage, at, Vector3Negate( dir ) );
     else if ( kind == 3 )
         hitCore( damage, at, Vector3Negate( dir ) );
@@ -967,7 +1051,7 @@ void Game::shootPellet( bool first )
     }
     else if ( kind < 0 )
         sparks( at, normal, 9, { 200, 225, 255, 255 }, 3.0f );
-    m_tracers.push_back( { muzzle, at, 0.08f } );
+    m_tracers.push_back( { from, at, 0.08f } );
     if ( !first ) return;
     m_flashes.push_back( { muzzle, { 10.0f, 16.0f, 24.0f }, 5.0f, 0.06f, 0.06f } );
     m_flashes.push_back( { Vector3Add( at, Vector3Scale( dir, -0.3f ) ), { 6.0f, 9.0f, 14.0f }, 3.5f, 0.1f, 0.1f } );
@@ -976,6 +1060,8 @@ void Game::shootPellet( bool first )
 
     // Recoil: on the ground a nudge, in the air a shove (heavy guns kick harder).
     float kick = ( m_ground ? 0.5f : 1.3f ) * Clamp( m_stats.m_heat / 7.5f, 0.6f, 2.5f );
+    // A faster gun kicks less per shot (the push per second stays what the rifle's is), else it pins one to a wall.
+    kick *= fminf( 1.0f, m_stats.m_interval * ( m_overcharge > 0.0f ? 0.5f : 1.0f ) / 0.16f );
     m_vel.x -= dir.x * kick;
     m_vel.z -= dir.z * kick;
     m_hero.recoil();
@@ -1010,6 +1096,8 @@ void Game::updateHero( float dt, const GameInput &in )
             m_pos = m_respawn;
             m_vel = { 0, 0, 0 };
             m_invuln = 1.5f;
+            m_path.clear();   // the autopilot's way from where it fell no longer starts here
+            m_planTimer = 0.0f;
             for ( int i = 0; i < 30; ++i )
                 m_particles.push_back(
                     { Vector3Add( m_pos, { ( rnd() - 0.5f ) * 0.8f, rnd() * 2.0f, ( rnd() - 0.5f ) * 0.8f } ),
@@ -1179,7 +1267,17 @@ void Game::moveHero( float dt )
 {
     // Move, collide, land.
     bool wasAir = !m_ground;
-    m_vel.y -= m_level.m_gravity * dt;
+    m_vel.y -= m_level.m_gravity * dt * ( m_inWater ? 0.3f : 1.0f );   // water carries
+    // In open space the deck's edge holds (magnetic boots): walking or thrown, the hero stops at it; a jump carries.
+    if ( m_level.m_space && m_ground )
+    {
+        auto  over = [&]( float x, float z ) { return groundAt( { x, m_pos.y, z } ) < -100.0f; };
+        float nx = m_pos.x + m_vel.x * dt, nz = m_pos.z + m_vel.z * dt;
+        if ( fabsf( m_vel.x ) > 1e-3f && over( nx + ( m_vel.x > 0.0f ? HeroRadius : -HeroRadius ), m_pos.z ) )
+            m_vel.x = 0.0f;
+        if ( fabsf( m_vel.z ) > 1e-3f && over( m_pos.x, nz + ( m_vel.z > 0.0f ? HeroRadius : -HeroRadius ) ) )
+            m_vel.z = 0.0f;
+    }
     m_pos = Vector3Add( m_pos, Vector3Scale( m_vel, dt ) );
     m_level.collide( m_pos, HeroRadius, StepUp );
     blockHero( m_pos );
@@ -1235,11 +1333,13 @@ void Game::moveHero( float dt )
 
     // Capsules, pickups, triggers, the exit.
     for ( Capsule &c : m_capsules )
-        if ( !c.m_active && Vector3Distance( c.m_pos, m_pos ) < 2.6f )
+        if ( !c.m_active && Vector3Distance( c.m_pos, m_pos ) < 6.0f &&
+             los( Vector3Add( m_pos, { 0, 1.2f, 0 } ), Vector3Add( c.m_pos, { 0, 1.2f, 0 } ) ) )
         {
             for ( Capsule &o : m_capsules ) o.m_active = false;
             c.m_active = true;
-            m_respawn = c.m_front;
+            // One wakes before the capsule; where that is open space (a capsule by a deck's edge), beside the hero.
+            m_respawn = groundAt( c.m_front ) > -100.0f && groundAt( c.m_front ) < 100.0f ? c.m_front : m_pos;
             fire( "capsule" );
             m_audio.play( SfxE::CAPSULE, c.m_pos, m_camTarget, 0.9f );
         }
@@ -1248,13 +1348,15 @@ void Game::moveHero( float dt )
         if ( !p.m_alive ) continue;
         Vector3 d = Vector3Subtract( Vector3Add( m_pos, { 0, 0.6f, 0 } ), p.m_pos );
         float   dist = Vector3Length( d );
-        if ( dist < 2.6f && ( p.m_kind == 0 || m_stims < 9 ) )
+        if ( dist < 2.6f && ( p.m_kind != 1 || m_stims < 9 ) && ( p.m_kind != 2 || m_oxygen < m_oxygenMax - 5.0f ) )
             p.m_pos = Vector3Add( p.m_pos, Vector3Scale( d, fminf( 1.0f, dt * 6.0f ) ) );
         if ( dist < 0.8f )
         {
             p.m_alive = false;
             if ( p.m_kind == 0 )
                 m_scrap += (int)roundf( p.m_amount * ( 1.0f + stat( StatE::FIND ) / 100.0f ) );
+            else if ( p.m_kind == 2 )
+                m_oxygen = fminf( m_oxygenMax, m_oxygen + p.m_amount );
             else
                 ++m_stims;
             m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.7f );
@@ -1416,6 +1518,10 @@ void Game::updateFoes( float dt )
                 updateHeavy( f, dt, dir, dist, path, want, faceYaw );
             else if ( f.m_kind == FoeE::TAXATOR )
                 updateTaxator( f, dt, dir, dist, path, want, faceYaw );
+            else if ( f.m_kind == FoeE::SHELL )
+                updateShell( f, dt, dir, dist, path, want, faceYaw );
+            else if ( f.m_kind == FoeE::GUNNER && f.m_variant == 1 )
+                updateShocker( f, dt, dir, dist, path, want, faceYaw );
             else if ( man )
                 updateBoarder( f, dt, dir, dist, path, want, faceYaw );
             else if ( f.m_kind == FoeE::SAW || f.m_kind == FoeE::BOMBER || drone )
@@ -1519,8 +1625,9 @@ void Game::updateFoes( float dt )
         }
         if ( !f.m_alive ) continue;   // a bomber went off
         // A boss keeps to its hall: led too far away, it walks back.
-        if ( ( f.m_kind == FoeE::TAXATOR || f.m_elite == 2 ) && Vector3Distance( f.m_pos, f.m_home ) > 16.0f &&
-             Vector3Distance( m_pos, f.m_home ) > 14.0f )
+        float leash = f.m_kind == FoeE::SHELL ? 30.0f : 16.0f;   // Mother's bodies keep to their whole hall
+        if ( ( f.m_kind == FoeE::TAXATOR || f.m_elite == 2 ) && Vector3Distance( f.m_pos, f.m_home ) > leash &&
+             Vector3Distance( m_pos, f.m_home ) > leash - 2.0f )
         {
             Vector3 back = Vector3Subtract( f.m_home, f.m_pos );
             back.y = 0.0f;
@@ -1529,6 +1636,8 @@ void Game::updateFoes( float dt )
             f.m_state = FoeStateE::CHASE;
         }
         if ( f.m_affix == 0 || f.m_affix == 3 ) want = Vector3Scale( want, f.m_affix == 0 ? 1.45f : 1.15f );
+        if ( !m_waters.empty() && f.m_kind != FoeE::DRONE && waterAt( Vector3Add( f.m_pos, { 0, 0.8f, 0 } ) ) >= 0 )
+            want = Vector3Scale( want, 0.6f );
         if ( drone )
         {
             // A drone flies: no edges, no gravity, it eases towards what it wants (up and down too).
@@ -1656,7 +1765,7 @@ void Game::updateFoes( float dt )
     // Feet.
     for ( Foe &f : m_foes )
     {
-        if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE ) continue;
+        if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ) continue;
         const LouseModel &model =
             f.m_kind == FoeE::WELDER
                 ? m_welder
@@ -1875,6 +1984,7 @@ void Game::updateEffects( float dt )
         Blob   &b = m_blobs[i];
         Vector3 prev = b.m_pos;
         b.m_vel.y -= g * dt;
+        b.m_vel = Vector3Add( b.m_vel, Vector3Scale( coriolis( b.m_vel ), dt ) );
         b.m_pos = Vector3Add( b.m_pos, Vector3Scale( b.m_vel, dt ) );
         b.m_life -= dt;
         Vector3 hit, n;
@@ -2001,6 +2111,43 @@ void Game::plan()
         m_level.cellOf( { o.x, 0.0f, o.z + 13.0f }, gr, gc );
         goal = gr * cols + gc;
     }
+    else if ( tugFighting() )
+    {
+        // At the tug: Dorra from the deck's edge by it; Corvin from where he stands once it is in sight.
+        if ( m_heroKind != HeroE::DORRA && Vector3Distance( m_tugPos, m_pos ) < 26.0f &&
+             los( Vector3Add( m_pos, { 0, 1.3f, 0 } ), m_parts[1].m_pos ) )
+        {
+            m_path.clear();
+            return;
+        }
+        // Dorra by the near engine while it lives (her hammer reaches it from the edge), else where she stands.
+        Vector3 stand = m_tugStand;
+        if ( m_parts[0].m_hp > 0.0f ) stand.z = m_parts[0].m_pos.z;
+        int gr, gc;
+        m_level.cellOf( stand, gr, gc );
+        if ( !m_level.walkable( gr, gc ) ) m_level.cellOf( m_tugStand, gr, gc );
+        goal = gr * cols + gc;
+    }
+    else if ( motherFighting() && motherLinked() )
+    {
+        // While the link holds: to the nearest relay that keeps it, the open cell beside it.
+        Vector3 at = m_pos;
+        float   best = 1e9f;
+        for ( const BossPart &q : m_parts )
+            if ( q.m_hp > 0.0f && Vector3Distance( q.m_pos, m_pos ) < best )
+                best = Vector3Distance( q.m_pos, m_pos ), at = q.m_pos;
+        int rr, rc;
+        m_level.cellOf( at, rr, rc );
+        goal = rr * cols + rc;
+        const int dr4[4] = { -1, 0, 1, 0 }, dc4[4] = { 0, 1, 0, -1 };
+        for ( int d = 0; d < 4; ++d )
+            if ( m_level.walkable( rr + dr4[d], rc + dc4[d] ) &&
+                 !m_blocked.count( ( rr + dr4[d] ) * cols + rc + dc4[d] ) )
+            {
+                goal = ( rr + dr4[d] ) * cols + rc + dc4[d];
+                break;
+            }
+    }
     else if ( boss() >= 0 )
     {
         // Corvin fights the boss from where he stands once it is in sight and near; until then he goes to it.
@@ -2034,6 +2181,25 @@ void Game::plan()
                 m_propCells[(size_t)pr * cols + pc] = 1;
         }
     }
+    // Out of air: to the nearest hut or air post first (until the suit is full); in a storm into the lee of something.
+    std::function<bool( int, int )> want;
+    if ( m_level.m_vacuum || !m_waters.empty() )
+    {
+        if ( m_outside && m_oxygen < m_oxygenMax * 0.3f ) m_seekAir = true;
+        if ( m_oxygen > m_oxygenMax * 0.95f ) m_seekAir = false;
+        if ( m_seekAir )
+            want = [&]( int r, int c )
+            {
+                Vector3 p = m_level.centre( r, c );
+                if ( waterAt( Vector3Add( p, { 0.0f, 1.0f, 0.0f } ) ) >= 0 ) return false;
+                if ( !m_level.m_vacuum || !m_level.outdoor( r, c ) ) return true;
+                for ( const Vector3 &post : m_airPosts )
+                    if ( Vector2Distance( { p.x, p.z }, { post.x, post.z } ) < 2.2f ) return true;
+                return false;
+            };
+    }
+    if ( m_flareState >= 1 && exposed( m_pos ) )
+        want = [&]( int r, int c ) { return !exposed( m_level.centre( r, c ) ); };
     std::vector<int> prev;
     std::deque<int>  q;
     if ( !m_level.walkable( sr, sc ) ) return;
@@ -2047,6 +2213,7 @@ void Game::plan()
         // How many cells of shaft a running jump clears in this gravity (three at most).
         float jump = m_heroKind == HeroE::DORRA ? DorraJump : JumpSpeed;
         int   maxGap = std::clamp( (int)( ( runSpeed() * 2.0f * jump / m_level.m_gravity - 0.8f ) / CellSize ), 0, 3 );
+        if ( m_level.m_space ) maxGap = 0;   // out over open space the catwalks lead everywhere
         // A shut door is a way through (the autopilot opens it), unless it is locked.
         auto passable = [&]( int r, int c )
         {
@@ -2059,7 +2226,12 @@ void Game::plan()
         {
             int cur = q.front();
             q.pop_front();
-            if ( cur == goal ) break;
+            if ( want && want( cur / cols, cur % cols ) )
+            {
+                goal = cur;
+                break;
+            }
+            if ( !want && cur == goal ) break;
             int   cr = cur / cols, cc = cur % cols;
             float h = m_level.centre( cr, cc ).y;
             for ( int d = 0; d < 4; ++d )
@@ -2151,7 +2323,9 @@ void Game::autopilot( float dt, GameInput &in )
         const Foe &f = m_foes[i];
         if ( !f.m_alive || !f.m_awake || f.m_hidden ) continue;
         float d = Vector3Distance( f.m_pos, m_pos );
-        if ( d < bestDist && d < 18.0f && los( chest, targetPoint( { 0, i, {} } ) ) ) bestDist = d, best = { 0, i, {} };
+        if ( d < bestDist && d < 18.0f && los( chest, targetPoint( { 0, i, {} } ) ) &&
+             !rackInWay( chest, targetPoint( { 0, i, {} } ) ) )
+            bestDist = d, best = { 0, i, {} };
     }
     // At the press the weak spots come first, unless a louse is close (for the hammer: in reach).
     float close = m_heroKind == HeroE::DORRA ? 2.5f : 6.0f;
@@ -2166,8 +2340,35 @@ void Game::autopilot( float dt, GameInput &in )
             float  d = Vector3Distance( targetPoint( t ), m_pos );
             if ( d < bestDist && los( chest, targetPoint( t ) ) ) bestDist = d, best = t;
         }
+    if ( ( best.m_kind < 0 || bestDist > close || motherLinked() ) && partsLive() )
+        for ( int i = 0; i < (int)m_parts.size(); ++i )
+        {
+            if ( m_parts[i].m_hp <= 0.0f ) continue;
+            Target t = { 5, i, {} };
+            float  d = Vector3Distance( targetPoint( t ), m_pos );
+            if ( ( best.m_kind != 5 || d < bestDist ) && d < 30.0f && los( chest, targetPoint( t ) ) )
+                bestDist = d, best = t;
+        }
     if ( m_hp < hpMax() * 0.4f && m_stims > 0 ) in.m_stim = true;
     autoSkills( in, best, bestDist );
+    // Out of where a shell will land.
+    for ( const Shell &sh : m_shells )
+    {
+        Vector2 away = { m_pos.x - sh.m_at.x, m_pos.z - sh.m_at.z };
+        float   len = Vector2Length( away );
+        if ( len > 4.0f || !m_ground ) continue;
+        away = len > 0.1f ? Vector2Scale( away, 1.0f / len ) : Vector2{ 1.0f, 0.0f };
+        if ( groundAt( { m_pos.x + away.x * 1.5f, 0.0f, m_pos.z + away.y * 1.5f } ) < -100.0f )
+            away = { -away.y, away.x };
+        in.m_move = away;
+        if ( m_heroKind != HeroE::DORRA && best.m_kind >= 0 )
+        {
+            Vector3 p = targetPoint( best );
+            in.m_stick = Vector2Normalize( { p.x - m_pos.x, p.z - m_pos.z } );
+            in.m_fire = !m_overheat && m_heat < 92.0f;
+        }
+        return;
+    }
     if ( m_heroKind != HeroE::DORRA && best.m_kind >= 0 )
     {
         Vector3 p = targetPoint( best );
@@ -2201,12 +2402,13 @@ void Game::autopilot( float dt, GameInput &in )
             in.m_move = m_unstickDir;
         }
     };
-    if ( m_heroKind == HeroE::DORRA && autopilotMelee( in, best, bestDist ) )
+    bool flee = m_seekAir || ( m_flareState >= 1 && exposed( m_pos ) );   // air or cover first
+    if ( m_heroKind == HeroE::DORRA && !flee && autopilotMelee( in, best, bestDist ) )
     {
         unstick();
         return;
     }
-    if ( best.m_kind == 0 && bestDist < 2.5f && m_ground && m_heroKind != HeroE::DORRA )
+    if ( best.m_kind == 0 && bestDist < 2.5f && m_ground && m_heroKind != HeroE::DORRA && !motherLinked() )
     {
         // Back off, but never towards a shaft.
         Vector3 f = m_foes[best.m_index].m_pos;
@@ -2227,6 +2429,14 @@ void Game::autopilot( float dt, GameInput &in )
             Vector3 wp = m_level.centre( m_level.m_route[m_waypoint].first, m_level.m_route[m_waypoint].second );
             Vector2 to = { wp.x - m_pos.x, wp.z - m_pos.z };
             if ( Vector2Length( to ) > 0.2f ) in.m_move = Vector2Normalize( to );
+        }
+        if ( tugFighting() && m_waypoint >= m_level.m_route.size() )
+        {
+            Vector2 to = Vector2Normalize( { m_tugPos.x - m_pos.x, m_tugPos.z - m_pos.z } );
+            float   side = fmodf( m_time, 6.0f ) < 3.0f ? 1.0f : -1.0f;
+            Vector2 move = { -to.y * side, to.x * side };
+            if ( Vector3Distance( m_pos, m_tugPos ) < 12.0f ) move = Vector2Normalize( Vector2Subtract( move, to ) );
+            if ( groundAt( { m_pos.x + move.x * 1.5f, 0.0f, m_pos.z + move.y * 1.5f } ) > -100.0f ) in.m_move = move;
         }
         int b = boss();
         if ( b >= 0 && m_waypoint >= m_level.m_route.size() )
@@ -2255,7 +2465,7 @@ void Game::autopilot( float dt, GameInput &in )
     if ( door.m_kind == CellE::DOOR && !door.m_open ) in.m_use = true;
     // A jump edge: take a run-up, jump at the brink, and do not shoot in the air.
     int nr = next / cols, nc = next % cols;
-    if ( abs( nr - r ) + abs( nc - c ) > 1 && m_ground )
+    if ( abs( nr - r ) + abs( nc - c ) > 1 && m_ground && !m_level.m_space )
     {
         in.m_fire = false;
         Vector3 ahead = Vector3Add( m_pos, { in.m_move.x * 0.6f, 0.0f, in.m_move.y * 0.6f } );
@@ -2281,6 +2491,7 @@ void Game::update( float dt, const GameInput &inRaw )
 {
     GameInput in = inRaw;
     m_rawMove = inRaw.m_move;
+    m_hurtBy = "";
     // A level that opens with a card: nothing moves under it until it has been read (A, Enter or a click ends it).
     if ( m_intro > 0.0f )
     {
@@ -2316,8 +2527,11 @@ void Game::update( float dt, const GameInput &inRaw )
     useSkills( dt, in );
     updateHero( dt, in );
     updateFoes( dt );
+    updateTug( dt );
+    updateVault( dt );
     updatePress( dt );
     updateEffects( dt );
+    updateWorld( dt );
     updatePieces( dt );
     updateLoot( dt );
     updateShots( dt );
@@ -2436,6 +2650,11 @@ Lighting Game::lighting() const
         L.m_roomMin.y = 0.0f;
         L.m_sunDir = Vector3Normalize( Vector3Subtract( m_ownPlume, m_star ) );
         L.m_sunColor = { 2.6f, 0.75f, 0.3f };
+        if ( Vector3Length( m_level.m_sunDir ) > 0.1f ) L.m_sunDir = Vector3Normalize( m_level.m_sunDir );
+        if ( Vector3Length( m_level.m_sunColor ) > 0.01f ) L.m_sunColor = m_level.m_sunColor;
+        float storm =
+            m_flareState == 1 ? m_flareT / 8.0f : ( m_flareState == 2 ? 2.5f + 0.8f * sinf( m_time * 23.0f ) : 0.0f );
+        L.m_sunColor = Vector3Scale( L.m_sunColor, 1.0f + storm );
     }
 
     std::vector<PointLight> all;
@@ -2505,6 +2724,12 @@ Lighting Game::lighting() const
                { return Vector3DistanceSqr( a.m_pos, c ) < Vector3DistanceSqr( b.m_pos, c ); } );
     if ( all.size() > (size_t)MaxLights ) all.resize( MaxLights );
     L.m_points = all;
+    // Caustics near the balls of water closest to the camera.
+    std::vector<std::pair<float, Vector4>> balls;
+    for ( const Water &wb : m_waters )
+        balls.push_back( { Vector3DistanceSqr( wb.m_c, c ), { wb.m_c.x, wb.m_c.y, wb.m_c.z, wb.m_r * wb.m_grow } } );
+    std::sort( balls.begin(), balls.end(), []( const auto &a, const auto &b ) { return a.first < b.first; } );
+    for ( size_t i = 0; i < balls.size() && i < 8; ++i ) L.m_water.push_back( balls[i].second );
     return L;
 }
 
@@ -2643,9 +2868,12 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     poseUsables( m_dynamic );
     poseLoot( m_dynamic );
     poseFoes( m_dynamic );
+    poseWorld( m_dynamic );
+    poseTug( m_dynamic );
+    poseVault( m_dynamic );
     for ( const Foe &f : m_foes )
     {
-        if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE ) continue;
+        if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ) continue;
         LousePose pose;
         pose.m_pos = f.m_pos;
         pose.m_yaw = f.m_yaw;
@@ -2715,7 +2943,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
         {
             d.m_mesh = m_stimMesh;
             d.m_surface = S_GLOW;
-            d.m_emissive = { 0.4f, 3.0f, 0.8f, 0.0f };
+            d.m_emissive = p.m_kind == 2 ? Vector4{ 0.4f, 1.4f, 3.4f, 0.0f } : Vector4{ 0.4f, 3.0f, 0.8f, 0.0f };
             m_dynamic.push_back( d );
             d.m_mesh = m_stimCap;
             d.m_surface = S_METAL;
@@ -2779,6 +3007,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     gfx.draw( m_static, m_surfaces );
     gfx.draw( m_dynamic, m_surfaces );
     if ( m_glassMesh.vertexCount > 0 ) gfx.glass( m_glassMesh, MatrixIdentity() );
+    drawWater( gfx );
     drawParticles( gfx );
     gfx.endScene();
     gfx.post( out );
@@ -2933,12 +3162,15 @@ void Game::drawHud( int w, int h )
     }
 
     drawFoeHud( w, h, s );
+    drawWorldHud( w, h, s );
+    drawTugHud( w, h, s );
+    drawVaultHud( w, h, s );
 
     // A hint, the level's title, the subtitles.
     if ( m_hint )
     {
         float       a = Clamp( m_hintTimer * 2.0f, 0.0f, 1.0f );
-        bool        bar = ( m_pressActive && !m_pressDead ) || ( boss() >= 0 && m_foes[boss()].m_awake );
+        bool        bar = ( m_pressActive && !m_pressDead ) || ( boss() >= 0 && m_foes[boss()].m_awake ) || partsLive();
         float       hy = ( bar ? 125.0f : 50.0f ) * s;
         const char *hint = trAs( m_hint->m_id, heroKey( m_heroKind ) );
         Vector2     m = MeasureTextEx( m_font, hint, 24 * s, 1.0f );
@@ -3020,21 +3252,29 @@ void Game::drawHud( int w, int h )
 
 std::string Game::report() const
 {
-    char buf[384];
-    int  alive = 0;
+    char        buf[640];
+    std::string parts;
+    for ( const BossPart &q : m_parts ) parts += TextFormat( "%.0f/", fmaxf( 0.0f, q.m_hp ) );
+    if ( m_motherOn ) parts += m_motherAwake ? "awake" : "asleep";
+    int alive = 0;
     for ( const Foe &f : m_foes ) alive += f.m_alive ? 1 : 0;
     snprintf(
         buf, sizeof( buf ),
         "hero=%s finished=%d time=%.0fs deaths=%d kills=%d shots=%d hp=%.0f scrap=%d stims=%d press=%s tanks=%.0f/%.0f "
-        "core=%.0f alive=%d at=%.1f,%.1f waypoint=%d/%d scene=%d boss=%s(%.0f@%.0f,%.0f) level=%d path=%d lift=%d next=%d,%d read=%d",
+        "core=%.0f alive=%d at=%.1f,%.1f waypoint=%d/%d scene=%d boss=%s(%.0f@%.0f,%.0f) level=%d path=%d lift=%d next=%d,%d read=%d o2=%.0f seek=%d out=%d parts=%s g=%d v=%.1f,%.1f,%.1f dash=%.2f",
         heroKey( m_heroKind ), m_finished ? 1 : 0, m_time, m_deaths, m_kills, m_shots, m_hp, m_scrap, m_stims,
         m_pressDead ? "dead" : ( m_pressActive ? "active" : "asleep" ), m_tank[0], m_tank[1], m_core, alive, m_pos.x,
         m_pos.z, (int)m_waypoint, (int)m_level.m_route.size(), m_scene,
-        boss() >= 0 ? "alive" : ( m_fired.count( "bossdead" ) ? "dead" : "none" ),
-        boss() >= 0 ? m_foes[boss()].m_hp : 0.0f, boss() >= 0 ? m_foes[boss()].m_pos.x : 0.0f,
-        boss() >= 0 ? m_foes[boss()].m_pos.z : 0.0f, m_progress.m_heroLevel, (int)m_path.size(), liftOpen() ? 1 : 0,
+        boss() >= 0 || tugFighting() ? "alive" : ( m_fired.count( "bossdead" ) ? "dead" : "none" ),
+        boss() >= 0 ? m_foes[boss()].m_hp
+                    : ( tugFighting() ? fmaxf( 0.0f, m_parts[0].m_hp ) + fmaxf( 0.0f, m_parts[1].m_hp ) +
+                                            fmaxf( 0.0f, m_parts[2].m_hp )
+                                      : 0.0f ),
+        boss() >= 0 ? m_foes[boss()].m_pos.x : m_tugPos.x, boss() >= 0 ? m_foes[boss()].m_pos.z : m_tugPos.z,
+        m_progress.m_heroLevel, (int)m_path.size(), liftOpen() ? 1 : 0,
         m_path.empty() ? -1 : m_path.front() / m_level.cols(), m_path.empty() ? -1 : m_path.front() % m_level.cols(),
-        m_reading.empty() ? 0 : 1 );
+        m_reading.empty() ? 0 : 1, m_oxygen, m_seekAir ? 1 : 0, m_outside ? 1 : 0, parts.c_str(), m_ground ? 1 : 0,
+        m_vel.x, m_vel.y, m_vel.z, m_dash );
     return buf;
 }
 

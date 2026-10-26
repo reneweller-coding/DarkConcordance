@@ -1,0 +1,80 @@
+# Level 3: Die Außenhaut (Akt I). Draußen auf der Haut der Station, am Frachtring: Platten, Kühler und Masten über dem
+# offenen Raum, darunter der rote Zwerg. Keine Luft (der Sauerstoff reicht im Freien gut anderthalb Minuten, in den
+# Wartungshütten füllt er sich auf, Kanister ":" liegen herum), der Schall nur durch den Anzug, Strahlungsstürme des
+# Zwergs (dann in eine Hütte oder dicht an etwas Hohes). Am Ende liegt der Schlepper längsseits. Die Karte wird erzeugt
+# (die gen...-Zeilen erklärt knochenmarkt.txt; genvoid: offener Raum statt Fels; genoutdoor: Themen im Freien;
+# genstarttheme: das Thema des Starts; genoxygen: Kanister je Raum im Freien; genarena tug: der Schlepper).
+#
+#   space 1 / vacuum 1   offener Raum unter den Lücken / keine Luft im Freien
+#   flares s             Sekunden zwischen den Strahlungsstürmen
+#   star x y z r         der Zwerg (von der Mitte der Karte aus), sundir / suncolor sein Licht
+
+name     l3.name
+act      act.1
+intro    l3.intro
+gravity  5.5
+fog      0.002 0.006 0.4 0.7
+fogcolor 0.0008 0.0006 0.0006
+ambient  0.07 0.06 0.065 0.03 0.022 0.025
+walls    4.0
+sky      nebula
+space    1
+vacuum   1
+flares   55
+star     -2500 -6500 -9000 4200
+sundir   0.35 -0.8 0.5
+suncolor 2.3 0.8 0.4
+area     5
+next     velm.txt
+gate     bossdead
+ambience suit
+
+genrooms      12
+genside       4
+gensize       11 17 9 14
+gentheme      hull hull hull gangway
+genoutdoor    hull
+genstarttheme gangway
+genarenatheme hull
+genarena      tug
+genvoid       1
+genoxygen     0.6
+genpack       ETT     3
+genpack       EET     2
+genpack       TT      1.5
+genpack       $T      1.5
+genpack       %T      1
+genpack       ^^^     2
+genpack       ^^T     1.5
+genpack       ****    1.2
+genpack       **?     1
+gendensity    1.15
+genelite      0.25
+gennote       note.tuglog note.berth note.weather note.welder
+
+[lines]
+# Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/aussenhaut.txt)
+l3_start    | a                | hero
+l3_out      | b                | hero
+l3_flare    | flarewarn        | hero
+l3_lowair   | lowoxygen        | hero
+l3_champion | champion         | hero
+l3_ring     | e                | hero
+l3_tug      | g                | hero
+l3_boss     | bossstart        | hero
+l3_gun      | tug.gundown      | hero
+l3_engine   | tug.enginedown   | hero
+l3_cast     | tug2             | hero
+l3_end      | bossdead         | hero
+
+[hints]
+# Schlüssel | Auslöser
+h_oxygen    | b
+h_flare     | flarewarn
+h_lowair    | lowoxygen
+h_shield    | shieldguard
+h_champion  | champion
+h_bomber    | bomber
+h_stim      | hurt
+h_tug       | bossstart
+h_lift      | bossdead

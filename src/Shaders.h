@@ -126,6 +126,9 @@ uniform vec4 fogParams;
 uniform vec3 fogColor;
 uniform vec3 roomMin;
 uniform vec3 roomMax;
+#define MAX_WATER 8
+uniform int waterCount;
+uniform vec4 waterBalls[MAX_WATER];
 
 const vec2 Poisson[12] = vec2[]( vec2( -0.326, -0.406 ), vec2( -0.840, -0.074 ), vec2( -0.696, 0.457 ),
     vec2( -0.203, 0.621 ), vec2( 0.962, -0.195 ), vec2( 0.473, -0.480 ), vec2( 0.519, 0.767 ), vec2( 0.185, -0.893 ),
@@ -230,6 +233,23 @@ vec3 spotLight( vec3 wp, out vec3 L )
 }
 
 float hg( float c, float g ) { return ( 1.0 - g * g ) / ( 4.0 * PI * pow( 1.0 + g * g - 2.0 * g * c, 1.5 ) ); }
+
+// Light thrown through water: a moving web of bright lines on what lies near a ball of water (and inside it).
+vec3 caustics( vec3 p )
+{
+    vec3 c = vec3( 0.0 );
+    for( int i = 0; i < waterCount; i++ )
+    {
+        float d = length( p - waterBalls[i].xyz ) - waterBalls[i].w;
+        if( d > 7.0 ) continue;
+        vec3 q = vec3( p.x * 0.9 + time * 0.31, p.y * 0.5 - time * 0.22, p.z * 0.9 - time * 0.27 );
+        float n1 = noise3( q );
+        float n2 = noise3( q * 1.9 + vec3( 3.1, time * 0.4, 1.7 ) );
+        float web = pow( 1.0 - abs( n1 - n2 ), 12.0 );
+        c += vec3( 0.25, 0.75, 0.85 ) * web * smoothstep( 7.0, 0.0, d ) * ( d < 0.0 ? 1.6 : 1.0 );
+    }
+    return c;
+}
 
 // The fog between `from` and `to`, inside the room only: rgb in-scattered light, a transmittance.
 vec4 volumetric( vec3 from, vec3 to )
@@ -423,6 +443,7 @@ void main()
     vec3 R = reflect( -V, N );
     vec3 env = mix( ambDown, ambUp, R.y * 0.5 + 0.5 ) * 3.0;
     col += ( amb * albedo * ( 1.0 - metal ) + env * Fr ) * ao;
+    if( waterCount > 0 ) col += albedo * caustics( fragPos ) * 1.4 * ao;
 
     vec3 em = emissive.rgb;
     if( emissive.w > 0.5 && emissive.w < 1.5 )
@@ -499,6 +520,47 @@ void main()
     float alpha = clamp( 0.06 + F * 0.45 + dirt * 0.3, 0.0, 0.95 );
     vec4 fog = volumetric( viewPos, fragPos );
     finalColor = vec4( c * fog.a, alpha );
+}
+)";
+
+/** @brief A ball of water floating in low gravity: rippled skin, reflections at the rim, the depths dark green, a
+ *         shimmer of caustics inside; premultiplied alpha. */
+inline const char *WaterFs = R"(
+in vec3 fragPos;
+in vec3 fragNormal;
+in vec3 objPos;
+in vec3 objNormal;
+in vec4 fragColor;
+in vec2 fragTexCoord;
+out vec4 finalColor;
+
+void main()
+{
+    vec3 N = normalize( fragNormal );
+    vec3 V = normalize( viewPos - fragPos );
+    if( dot( N, V ) < 0.0 ) N = -N;
+    vec3 q = fragPos * 1.4 + vec3( time * 0.6, time * 0.4, -time * 0.5 );
+    N = normalize( N + 0.18 * vec3( noise3( q ) - 0.5, noise3( q + 7.3 ) - 0.5, noise3( q + 13.1 ) - 0.5 ) );
+    float NdV = max( dot( N, V ), 0.0 );
+    float F = 0.02 + 0.98 * pow( 1.0 - NdV, 5.0 );
+    vec3 spec = vec3( 0.0 );
+    for( int i = 0; i < lightCount; i++ )
+    {
+        vec3 lv = lightPos[i].xyz - fragPos;
+        float d = length( lv );
+        if( d >= lightPos[i].w ) continue;
+        vec3 H = normalize( V + lv / d );
+        spec += lightColor[i].rgb * atten( d, lightPos[i].w ) * pow( max( dot( N, H ), 0.0 ), 120.0 ) * 2.0;
+    }
+    vec3 L;
+    vec3 sc = spotLight( fragPos, L );
+    if( sc.r + sc.g + sc.b > 0.0 ) spec += sc * pow( max( dot( N, normalize( V + L ) ), 0.0 ), 120.0 ) * 2.0;
+    vec3 env = mix( ambDown, ambUp, reflect( -V, N ).y * 0.5 + 0.5 ) * 4.0;
+    vec3 body = vec3( 0.02, 0.09, 0.1 ) * ( 0.6 + caustics( fragPos ).g * 2.0 );
+    vec3 c = body * ( 1.0 - F ) + ( env + spec ) * F + spec * 0.3;
+    float alpha = clamp( 0.22 + F * 0.6, 0.0, 0.9 );
+    vec4 fog = volumetric( viewPos, fragPos );
+    finalColor = vec4( c * fog.a * alpha, alpha );
 }
 )";
 

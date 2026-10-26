@@ -169,6 +169,18 @@ void Game::strike( int swing )
                 3.0f );
         hit = true;
     }
+    // The tug's weak points within reach of the deck's edge, Mother Sevenfold's relays.
+    if ( partsLive() )
+        for ( int i = 0; i < (int)m_parts.size(); ++i )
+        {
+            const BossPart &q = m_parts[i];
+            if ( q.m_hp <= 0.0f ) continue;
+            Vector3 d = Vector3Subtract( q.m_pos, Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } ) );
+            float   len = Vector3Length( d );
+            if ( len - q.m_radius > reach || d.x * fwd.x + d.z * fwd.z < 0.0f ) continue;
+            hitPart( i, damage, Vector3Subtract( q.m_pos, Vector3Scale( Vector3Normalize( d ), q.m_radius ) ) );
+            hit = true;
+        }
     // The press: its tanks stand on the floor within reach; its core hangs high (blast bolts, or from the anvil).
     Vector3 o = m_pressModel.m_origin;
     if ( o.x != 0.0f && m_pressActive && !m_pressDead && !m_pressDying )
@@ -243,8 +255,9 @@ void Game::throwBolt( float damage, float radius )
     float   flat = sqrtf( d.x * d.x + d.z * d.z );
     float   time = Clamp( flat / 12.0f, 0.35f, 1.1f );
     float   g = m_level.m_gravity;
-    m_bolts.push_back(
-        { from, { d.x / time, ( d.y + 0.5f * g * time * time ) / time, d.z / time }, time + 0.6f, damage, radius } );
+    Vector3 v =
+        turnYaw( { d.x / time, ( d.y + 0.5f * g * time * time ) / time, d.z / time }, m_level.m_coriolis * time );
+    m_bolts.push_back( { from, v, time + 0.6f, damage, radius } );
     m_audio.play( SfxE::THROW, from, m_camTarget, 0.7f );
 }
 
@@ -266,6 +279,17 @@ void Game::blast( Vector3 p, float damage, float radius )
         f.m_vel = Vector3Add( f.m_vel, { dir.x * 3.0f, 1.5f, dir.z * 3.0f } );
         f.m_ground = false;
     }
+    for ( int i = 0; i < (int)m_racks.size(); ++i )
+        if ( m_racks[i].m_alive &&
+             Vector2Distance( { p.x, p.z }, { m_racks[i].m_pos.x, m_racks[i].m_pos.z } ) < radius * 0.8f )
+            breakRack( i );
+    if ( partsLive() )
+        for ( int i = 0; i < (int)m_parts.size(); ++i )
+        {
+            float d = Vector3Distance( p, m_parts[i].m_pos ) - m_parts[i].m_radius;
+            if ( m_parts[i].m_hp > 0.0f && d < radius )
+                hitPart( i, damage * 1.3f * ( 1.0f - 0.5f * fmaxf( 0.0f, d ) / radius ), p );
+        }
     // The press's parts take more: it is what the bolts are for.
     Vector3 o = m_pressModel.m_origin;
     if ( o.x != 0.0f && m_pressActive && !m_pressDead && !m_pressDying )
@@ -333,6 +357,7 @@ void Game::updateBoarder( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
             Vector3 aim = Vector3Add(
                 m_pos, { m_vel.x * 0.15f + ( rnd() - 0.5f ) * 0.5f, 1.2f, m_vel.z * 0.15f + ( rnd() - 0.5f ) * 0.5f } );
             Vector3 v = Vector3Scale( Vector3Normalize( Vector3Subtract( aim, muzzle ) ), ShotSpeed );
+            v = turnYaw( v, m_level.m_coriolis * Vector3Distance( aim, muzzle ) / ShotSpeed );
             m_shotsInFlight.push_back( { muzzle, v, 1.6f, ShotHurt * m_hitScale } );
             m_flashes.push_back( { muzzle, { 16.0f, 5.0f, 1.5f }, 3.5f, 0.06f, 0.06f } );
             m_audio.play( SfxE::ZAP, muzzle, m_camTarget, 0.6f );
@@ -378,6 +403,7 @@ void Game::updateShots( float dt )
         Bolt   &b = m_bolts[i];
         Vector3 prev = b.m_pos;
         b.m_vel.y -= g * dt;
+        b.m_vel = Vector3Add( b.m_vel, Vector3Scale( coriolis( b.m_vel ), dt ) );
         b.m_pos = Vector3Add( b.m_pos, Vector3Scale( b.m_vel, dt ) );
         b.m_life -= dt;
         Vector3 hit, n;
@@ -388,6 +414,9 @@ void Game::updateShots( float dt )
                  Vector3Distance( b.m_pos, Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } ) ) <
                      foeRadius( f ) + 0.25f )
                 done = true;
+        if ( partsLive() )
+            for ( const BossPart &q : m_parts )
+                if ( !done && q.m_hp > 0.0f && Vector3Distance( b.m_pos, q.m_pos ) < q.m_radius + 0.3f ) done = true;
         Vector3 o = m_pressModel.m_origin;
         if ( !done && o.x != 0.0f && m_pressActive && !m_pressDead )
         {
@@ -415,6 +444,7 @@ void Game::updateShots( float dt )
     {
         Shot   &s = m_shotsInFlight[i];
         Vector3 prev = s.m_pos;
+        s.m_vel = Vector3Add( s.m_vel, Vector3Scale( coriolis( s.m_vel ), dt ) );
         s.m_pos = Vector3Add( s.m_pos, Vector3Scale( s.m_vel, dt ) );
         s.m_life -= dt;
         Vector3 hit, n;
@@ -422,6 +452,7 @@ void Game::updateShots( float dt )
         float   flat = Vector2Distance( { s.m_pos.x, s.m_pos.z }, { m_pos.x, m_pos.z } );
         if ( !done && !m_dead && flat < 0.45f && s.m_pos.y > m_pos.y + 0.2f && s.m_pos.y < m_pos.y + 1.9f )
         {
+            m_hurtBy = "bolt";
             hurtHero( s.m_hurt > 0.0f ? s.m_hurt : ShotHurt, Vector3Scale( Vector3Normalize( s.m_vel ), 0.6f ),
                       Vector3Subtract( s.m_pos, s.m_vel ) );
             done = true;
@@ -570,6 +601,7 @@ void Game::poseCrew( std::vector<Drawable> &out )
         // The visor: red (a guard's white, a champion's gold), white when hit; the Taxator's burns before a charge.
         Vector4 visor = { 3.5f, 0.25f, 0.15f, 0.0f };
         if ( f.m_kind == FoeE::SHIELD ) visor = { 2.4f, 2.6f, 3.0f, 0.0f };
+        if ( f.m_variant ) visor = { 0.4f, 1.8f, 4.2f, 0.0f };   // the shock gunner, the Hydrauliker
         if ( f.m_kind == FoeE::TAXATOR ) visor = { 3.8f, 2.2f, 0.3f, 0.0f };
         if ( f.m_elite ) visor = { 4.5f, 3.2f, 0.6f, 0.0f };
         if ( f.m_kind == FoeE::TAXATOR && f.m_state == FoeStateE::LEAP ) visor = { 9.0f, 0.4f, 0.2f, 0.0f };
@@ -591,8 +623,15 @@ bool Game::autopilotMelee( GameInput &in, const Target &best, float bestDist )
     FoeE kind = best.m_kind == 0 ? m_foes[best.m_index].m_kind : FoeE::LOUSE;
     bool shooter = best.m_kind == 0 && ( kind == FoeE::GUNNER || kind == FoeE::HEAVY || kind == FoeE::DRONE );
     bool tank = best.m_kind == 1 || best.m_kind == 2;
-    if ( m_boltTimer <= 0.0f && ( best.m_kind == 3 || ( shooter && dist > 5.0f ) || ( tank && dist > 4.0f ) ) )
+    if ( m_boltTimer <= 0.0f &&
+         ( best.m_kind == 3 || best.m_kind == 5 || ( shooter && dist > 5.0f ) || ( tank && dist > 4.0f ) ) )
         in.m_special = true;
+    if ( best.m_kind == 5 )
+    {
+        // A part of the tug: strike it where it is in reach, else bolts while the path leads to the edge.
+        in.m_fire = dist < 3.4f;
+        return dist < 3.4f;
+    }
     if ( best.m_kind == 3 || dist > 9.0f ) return false;
     bool aimedAt = false;
     for ( const Foe &f : m_foes )

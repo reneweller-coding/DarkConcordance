@@ -15,6 +15,11 @@ elite.0        = Swift
 elite.1        = Armoured
 elite.2        = Volatile
 elite.3        = Berserk
+# English has no gender: the same words before a feminine German name (foe.<x>.g).
+elite.0.f      = Swift
+elite.1.f      = Armoured
+elite.2.f      = Volatile
+elite.3.f      = Berserk
 
 boss.taxator   = THE ASSESSOR
 boss.guardian  = GUARDIAN: %s

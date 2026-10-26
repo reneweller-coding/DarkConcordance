@@ -1,0 +1,66 @@
+# Level 4: Das Ertrunkene Viertel (Akt I). Ein Viertel der Zweiten Trommel, das ertrank, als ihr Spin nachließ: das
+# Wasser der Tanks hing sich zu Kugeln zusammen, die jetzt über den Gassen schweben. Man kann hindurchtauchen
+# (langsam, schwebend, eine Strömung dreht einen herum), doch der Atem reicht nicht lange. Abschöpfer mit
+# Schockgewehren halten den Weg zur Kernbank offen; die Pumpen hält der Hydrauliker. Die Karte wird erzeugt (die
+# gen...-Zeilen erklärt knochenmarkt.txt; genwater: Anteil der Räume mit einer Wasserkugel; genarena hydraulic: der
+# Hydrauliker in seiner gefluteten Halle). Gegner: < Abschöpfer mit Schockgewehr, > der Hydrauliker.
+
+name     l4.name
+act      act.1
+intro    l4.intro
+gravity  3.0
+fog      0.006 0.03 0.55 1.2
+fogcolor 0.0010 0.0030 0.0032
+ambient  0.03 0.05 0.055 0.022 0.032 0.036
+walls    5.0
+area     7
+next     velm.txt
+gate     bossdead
+ambience water
+
+genrooms      12
+genside       4
+gensize       11 17 9 14
+gentheme      street street works service exchanger coldstore
+genarenatheme works
+genarena      hydraulic
+genwater      0.65
+genpack       <<T     3
+genpack       <E      2
+genpack       $<      1.5
+genpack       %<      1
+genpack       ^^<     1.5
+genpack       ****    1.2
+genpack       LLLL    1
+genpack       **?     0.8
+genpack       $$T     1
+gendensity    1.15
+genelite      0.25
+gennote       note.flood1 note.flood2 note.pump note.child
+
+[lines]
+# Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/ertrunken.txt)
+l4_start    | a           | hero
+l4_balls    | b           | hero
+l4_water    | water       | hero
+l4_shock    | c           | hero
+l4_champion | champion    | hero
+l4_drowned  | e           | hero
+l4_deep     | d           | hero
+l4_hall     | g           | hero
+l4_boss     | bossstart   | hero
+l4_flood    | hydra2      | hero
+l4_flood2   | hydra3      | hero
+l4_end      | bossdead    | hero
+
+[hints]
+# Schlüssel | Auslöser
+h_balls     | b
+h_water     | water
+h_shocker   | c
+h_shield    | shieldguard
+h_champion  | champion
+h_bomber    | bomber
+h_stim      | hurt
+h_hydra     | bossstart
+h_lift      | bossdead

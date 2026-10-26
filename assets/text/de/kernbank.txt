@@ -1,0 +1,46 @@
+# Level 5: Die Kernbank (Deutsch, die Quelle). Zeilen, Hinweise, Terminals, die Anzeigen.
+
+l5.name        = Die Kernbank
+l5.intro       = Hinter den Schleusen des Hydraulikers liegen die Gewölbe der Kernbank. Hier lagert Mutter Siebenfach, was ihre Abschöpfer geerntet haben: Kerne, die Gedächtnisse geraubter Menschen, bis jemand sie kauft. | Die leeren Körper bleiben nicht leer. Sie bekommen einen billigen Kern und gehen wieder – als Hüllen. | Mutter Siebenfach selbst ist ein Geist in sieben Körpern. Man sagt, sie war einmal eine Frau. Man sagt, sie war einmal sieben.
+
+l5_start       = Die Kernbank. Hier liegt, was von Talgrund übrig ist. Und von hundert anderen Orten.
+l5_racks       = Die Gestelle … jedes Licht ist ein Kern. Jeder Kern ist jemand. Sieht aus wie ein Nachthimmel.
+l5_rack        = Nicht die Gestelle! In jedem davon steckt jemand.
+l5_shells      = Die da gehen, aber sie sind nicht da. Hüllen. Ein billiger Kern im Nacken, sonst nichts.
+l5_champion    = Elite. Die Bank bezahlt ihre Wachen gut.
+l5_deep        = Je tiefer, desto älter die Kerne. Manche hier warten seit Jahren auf einen Käufer.
+l5_register    = Das Register. Talgrund, 3.041 Kerne … Ilka. Ihr Name. Daneben: verkauft.
+l5_hall        = Ihre Halle. Ich höre sie schon – sieben Stimmen, ein Satz.
+l5_boss        = Mutter Siebenfach. Sieben Körper, ein Blick. Die Masten halten sie zusammen.
+l5_relay       = Ein Mast weniger. Sie stolpert – alle sieben auf einmal.
+l5_unlinked    = Die Verbindung ist weg. Jetzt ist jeder Körper nur noch ein Körper.
+l5_end         = Sie ist still. Alle sieben. Und Ilkas Kern ist nicht hier – verkauft an die Mühle.
+l5_clean       = Kein einziges Gestell zerbrochen. Wer immer da drin ist, kann noch heimkommen.
+l5_broken      = Ich habe Gestelle zerbrochen. Ich werde nie wissen, wen.
+
+l5_start.dorra = Die Kernbank. Auf Kalvar haben wir Erz gelagert. Hier lagern sie Menschen.
+l5_rack.dorra  = Vorsicht mit dem Hammer – in den Gestellen steckt jemand!
+l5_boss.dorra  = Mutter Siebenfach. Sieben Körper. Ich habe einen Hammer. Das wird reichen.
+l5_end.dorra   = Sie ist still. Und Ilka … verkauft. An die Mühle. Dann gehen wir eben zur Mühle.
+
+h_racks        = Die Gestelle sind voller Kerne – gestohlener Menschen. Ein Treffer zerstört welche. Die Zielhilfe schießt nicht hindurch; Granaten, Bolzen und Explosionen schon.
+h_shells       = Hüllen: langsam, zäh, kratzen aus der Nähe. Der Kern leuchtet hinten am Kopf.
+h_mother       = Mutter Siebenfach: ein Geist in sieben Körpern, verbunden über drei Funkmasten. Solange ein Mast steht, heilen die Körper und halten viel aus – erst die Masten!
+h_unlinked     = Die Masten sind gefallen: jetzt nehmen die Körper vollen Schaden und heilen nicht mehr.
+
+boss.mother    = MUTTER SIEBENFACH
+hud.linked     = VERBUNDEN – %d Funkmasten
+hud.unlinked   = Verbindung getrennt
+mother.relay   = Funkmast
+foe.shell      = Hülle
+
+note.register.title = Register, Abteilung T
+note.register       = Talgrund: 3.041 Kerne, Klasse C. Eingang vor 41 Tagen. 2.988 verkauft an: Sammelstelle Mühle. 53 zurückgestellt (beschädigt). | Darunter, Zeile 1.207: Ilka, 9 Jahre. Verkauft.
+note.mother.title   = Notiz in sieben Handschriften
+note.mother         = Wir haben nicht geschlafen. Wir schlafen nicht mehr seit der Teilung. Einer von uns träumt immer, und die anderen sehen zu. | Die Mühle zahlt für jedes Kind das Doppelte. Wir haben nicht gefragt, warum. Wir fragen nie.
+note.ilka.title     = Ein Etikett, abgerissen
+note.ilka           = TALGRUND 1207 · ILKA · KLASSE C · GESUND · VERSAND MÜHLE
+note.shell.title    = Wartungsanweisung Hüllen
+note.shell          = Hüllen nicht ansprechen. Sie antworten, aber nicht sie. | Kerne der Hüllen alle 200 Stunden tauschen. Alte Kerne in Gestell 0 (Ausschuss).
+
+dest.kernbank       = Die Kernbank · Gewölbe

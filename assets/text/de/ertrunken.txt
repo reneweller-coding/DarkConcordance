@@ -1,0 +1,42 @@
+# Level 4: Das Ertrunkene Viertel (Deutsch, die Quelle). Zeilen, Hinweise, Terminals.
+
+l4.name        = Das Ertrunkene Viertel
+l4.intro       = Die Zweite Trommel dreht sich langsamer, seit ihre Lager versagten. In einem ihrer Viertel liefen die Tanks über; ohne Schwerkraft hängt sich Wasser zu Kugeln zusammen, und die Kugeln blieben. | Wer nicht schwimmen konnte, blieb auch. | Durch das Viertel führt der Weg der Abschöpfer zur Kernbank. Seine Pumpen und Schleusen hält ein Mann, den sie den Hydrauliker nennen.
+
+l4_start       = Das Ertrunkene Viertel. Es ist still hier. Wasser ist still, wenn es nicht fällt.
+l4_balls       = Wasser, das schwebt. Ganze Kugeln davon, über den Gassen. Und das Licht darin wirft Netze auf die Wände.
+l4_water       = Kalt. Und kein Atem hier drin. Nicht lange bleiben.
+l4_shock       = Schockgewehre. Im Wasser wäre das ein schlechter Ort, um getroffen zu werden.
+l4_champion    = Der da kennt das Wasser. Und er weiß, dass ich es nicht kenne.
+l4_drowned     = In der Kugel da … das sind Leute. Sie treiben, als würden sie schlafen.
+l4_deep        = Die Pumpen. Hier unten wird das Wasser gehalten. Absichtlich.
+l4_hall        = Die Pumpenhalle. Der Hydrauliker.
+l4_boss        = Ein Mann aus Stahl und Schläuchen. Er hält das Viertel unter Wasser, damit niemand fragt, wer hindurchgeht.
+l4_flood       = Er flutet! Raus aus dem Wasser!
+l4_flood2      = Noch mehr Wasser. Er will mich ertränken wie die anderen.
+l4_end         = Die Pumpen stehen. Hinter seiner Halle liegt die Schleuse zur Kernbank.
+
+l4_start.dorra = Das Ertrunkene Viertel. Auf Kalvar haben wir Wasser aus dem Fels geholt. Hier hat es die Leute geholt.
+l4_water.dorra = Kalt. Kein Atem. Mit der Rüstung sinke ich wie ein Stein – nur dass hier nichts sinkt.
+l4_boss.dorra  = Der Hydrauliker. Er hält das Viertel unter Wasser für Geld. Dafür schlage ich ihm die Pumpen kaputt.
+l4_end.dorra   = Die Pumpen stehen. Und die Kugeln … werden die jetzt fallen? Nein. Hier fällt nichts.
+
+h_balls        = Wasserkugeln: hindurchtauchen geht, aber langsam, und der Atem (blauer Balken) reicht nur eine halbe Minute. Eine Strömung zieht im Kreis.
+h_water        = Unter Wasser: langsam, die Schüsse schwächer, der Atem knapp. Wieder auftauchen, bevor er ausgeht.
+h_shocker      = Schockgewehre laden sichtbar (blaue Funken). Im Wasser trifft ihr Bogen zweieinhalbmal so hart – raus, wenn sie laden.
+h_hydra        = Der Hydrauliker: sein Wasserstrahl wirft dich weit zurück, der Hammer schlägt nah. Er flutet, wo du stehst – raus aus dem neuen Wasser.
+
+hud.breath     = ATEM
+boss.hydraulic = DER HYDRAULIKER
+foe.shocker    = Abschöpfer mit Schockgewehr
+
+note.flood1.title = Aushang, Gemeindesaal
+note.flood1       = Die Lager der Zweiten Trommel werden getauscht. Während der Arbeiten dreht die Trommel langsamer. Bitte Wasserbehälter sichern. | Darunter, mit der Hand: Sie haben gesagt, eine Woche.
+note.flood2.title = Notiz an einer Wohnungstür
+note.flood2       = Wir sind oben bei Mara. Das Wasser steigt nicht, es schwebt. Der Junge sagt, man kann hindurchschauen wie durch Glas. Ich habe ihm verboten hineinzugehen.
+note.pump.title   = Pumpenprotokoll
+note.pump         = Pumpen 1–6: aus. Schleuse Kernbank: offen für Kennung Siebenfach. Schleuse Wohnviertel: zu. | Anweisung bleibt: Das Viertel bleibt geflutet. Wer fragt, bekommt Wasser zu trinken.
+note.child.title  = Ein Kinderbild, in Folie
+note.child        = Eine Kugel, darin ein Fisch mit Beinen. Darunter in großen Buchstaben: MEIN WASSER. Daneben, kleiner: Papa sagt, die Fische kommen zurück, wenn die Trommel sich wieder richtig dreht.
+
+dest.ertrunken    = Das Ertrunkene Viertel · Zweite Trommel

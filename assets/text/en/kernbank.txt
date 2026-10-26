@@ -1,0 +1,46 @@
+# Level 5: The Core Bank (English). Lines, hints, terminals, the readouts.
+
+l5.name        = The Core Bank
+l5.intro       = Beyond the Pumpwright's locks lie the vaults of the Core Bank. Here Mother Sevenfold stores what her Skimmers have harvested: cores, the memories of stolen people, until someone buys them. | The empty bodies do not stay empty. They get a cheap core and walk again – as shells. | Mother Sevenfold herself is one mind in seven bodies. They say she was a woman once. They say she was seven once.
+
+l5_start       = The Core Bank. What's left of Talgrund lies here. And of a hundred other places.
+l5_racks       = The racks … every light is a core. Every core is someone. It looks like a night sky.
+l5_rack        = Not the racks! There's someone in every one of them.
+l5_shells      = Those walk, but they aren't there. Shells. A cheap core in the neck, nothing else.
+l5_champion    = Elite. The bank pays its guards well.
+l5_deep        = The deeper, the older the cores. Some here have waited years for a buyer.
+l5_register    = The register. Talgrund, 3,041 cores … Ilka. Her name. Next to it: sold.
+l5_hall        = Her hall. I can hear her already – seven voices, one sentence.
+l5_boss        = Mother Sevenfold. Seven bodies, one gaze. The masts hold her together.
+l5_relay       = One mast less. She stumbles – all seven at once.
+l5_unlinked    = The link is gone. Now each body is only a body.
+l5_end         = She's quiet. All seven. And Ilka's core isn't here – sold to the Mill.
+l5_clean       = Not a single rack broken. Whoever is in there can still go home.
+l5_broken      = I broke racks. I'll never know whom.
+
+l5_start.dorra = The Core Bank. On Kalvar we stored ore. Here they store people.
+l5_rack.dorra  = Careful with the hammer – there's someone in those racks!
+l5_boss.dorra  = Mother Sevenfold. Seven bodies. I have a hammer. That'll do.
+l5_end.dorra   = She's quiet. And Ilka … sold. To the Mill. Then we go to the Mill.
+
+h_racks        = The racks are full of cores – stolen people. A hit destroys some. The aim assist won't shoot through them; grenades, bolts and blasts will.
+h_shells       = Shells: slow, tough, they scratch up close. The core glows at the back of the head.
+h_mother       = Mother Sevenfold: one mind in seven bodies, linked through three radio masts. While a mast stands, the bodies heal and shrug off hits – the masts first!
+h_unlinked     = The masts are down: now the bodies take full damage and no longer heal.
+
+boss.mother    = MOTHER SEVENFOLD
+hud.linked     = LINKED – %d radio masts
+hud.unlinked   = Link cut
+mother.relay   = Radio mast
+foe.shell      = Shell
+
+note.register.title = Register, section T
+note.register       = Talgrund: 3,041 cores, class C. Received 41 days ago. 2,988 sold to: the Mill collection point. 53 held back (damaged). | Below, line 1,207: Ilka, 9 years. Sold.
+note.mother.title   = A note in seven hands
+note.mother         = We have not slept. We have not slept since the division. One of us is always dreaming, and the others watch. | The Mill pays double for every child. We did not ask why. We never ask.
+note.ilka.title     = A label, torn off
+note.ilka           = TALGRUND 1207 · ILKA · CLASS C · HEALTHY · SHIPPED TO THE MILL
+note.shell.title    = Maintenance instructions, shells
+note.shell          = Do not address the shells. They answer, but it isn't them. | Swap the shells' cores every 200 hours. Old cores into rack 0 (rejects).
+
+dest.kernbank       = The Core Bank · vaults

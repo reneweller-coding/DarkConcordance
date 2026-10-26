@@ -239,14 +239,15 @@ private:
     {
         LOUSE,
         WELDER,
-        BATON,    ///< a boarder with a shock baton
-        GUNNER,   ///< a boarder with a carbine
-        SHIELD,   ///< a market guard behind a riot shield, with a shock maul
-        HEAVY,    ///< a heavy boarder with a rotary gun: long bursts, much armour
-        DRONE,    ///< a hovering drone that keeps its distance and shoots
-        SAW,      ///< a small saw bot: fast, in swarms, cuts on contact
-        BOMBER,   ///< a crawler with a charge on its back: runs at the hero and goes off
-        TAXATOR   ///< the Taxator in his exoskeleton (the Knochenmarkt's boss)
+        BATON,     ///< a boarder with a shock baton
+        GUNNER,    ///< a boarder with a carbine
+        SHIELD,    ///< a market guard behind a riot shield, with a shock maul
+        HEAVY,     ///< a heavy boarder with a rotary gun: long bursts, much armour
+        DRONE,     ///< a hovering drone that keeps its distance and shoots
+        SAW,       ///< a small saw bot: fast, in swarms, cuts on contact
+        BOMBER,    ///< a crawler with a charge on its back: runs at the hero and goes off
+        TAXATOR,   ///< the Taxator in his exoskeleton (the Knochenmarkt's boss)
+        SHELL      ///< an emptied body a stolen core drives (a skinned figure that shambles and scratches)
     };
     enum class FoeStateE : uint8_t
     {
@@ -289,12 +290,14 @@ private:
         float m_burnTime = 0.0f;   ///< seconds it still burns
         float m_stun = 0.0f;       ///< seconds it still stands stunned
         // Champions and the later kinds.
-        int     m_elite = 0;            ///< 0 an ordinary one, 1 a champion, 2 a guardian (the level's end)
-        int     m_affix = -1;           ///< a champion's gift: 0 swift, 1 armoured, 2 volatile, 3 berserk
-        float   m_hpMax = 1.0f;         ///< full health (its bar)
-        float   m_fuse = -1.0f;         ///< a bomber's fuse burning down (-1 not lit)
-        float   m_spin = 0.0f;          ///< a saw's blade, a drone's rotors
-        int     m_stage = 0;            ///< the Taxator: 0 .. 2 as he weakens
+        int   m_elite = 0;      ///< 0 an ordinary one, 1 a champion, 2 a guardian (the level's end)
+        int   m_affix = -1;     ///< a champion's gift: 0 swift, 1 armoured, 2 volatile, 3 berserk
+        float m_hpMax = 1.0f;   ///< full health (its bar)
+        float m_fuse = -1.0f;   ///< a bomber's fuse burning down (-1 not lit)
+        float m_spin = 0.0f;    ///< a saw's blade, a drone's rotors
+        int   m_stage = 0;      ///< the Taxator: 0 .. 2 as he weakens
+        int   m_body = -1;      ///< a shell's figure (m_shellBodies)
+        int m_variant = 0;   ///< a kind's other shape: the Taxator's kind as the Hydrauliker, a gunner with a shock gun
         Vector3 m_rush = { 0, 0, 0 };   ///< the Taxator's charge (its direction)
         Vector3 m_home = { 0, 0, 0 };   ///< where it was put (a boss keeps to its hall)
         Vector3 m_safe = { 0, 0, 0 };   ///< where it last stood in the open (never left in rock)
@@ -470,6 +473,12 @@ private:
     void strike( int swing );
     void shootPellet( bool first );
     /** @return the exit lift takes the hero: the press destroyed, else the level's gate event has happened */
+    /** @return what a drum's spin does to something flying at velocity v (an acceleration, sideways) */
+    Vector3 coriolis( Vector3 v ) const
+    {
+        float w = 2.0f * m_level.m_coriolis;
+        return { -w * v.z, 0.0f, w * v.x };
+    }
     bool liftOpen() const
     {
         return m_pressModel.m_origin.x != 0.0f ? m_pressDead : m_fired.count( m_level.m_gate ) > 0;
@@ -506,6 +515,104 @@ private:
     float      m_hitScale = 1.0f;                      ///< what the foe acting now does more (champions)
     float      m_areaHit = 1.0f;                       ///< what enemies do more in a deeper area
     std::vector<std::pair<FoeE, Vector3>> m_summons;   ///< enemies called this frame (they come in after the update)
+
+    // GameTug.cpp: the tug at the hull's edge (level 3's boss) and the boss parts one hits (its gun, its engines).
+    struct BossPart
+    {
+        const char *m_key;      ///< its name in the texts
+        Vector3     m_local;    ///< where on the tug (its frame)
+        float       m_radius;   ///< how big a target
+        float       m_hp, m_max;
+        Vector3     m_pos;   ///< where it is this frame
+    };
+    struct Shell
+    {
+        Vector3 m_at;   ///< where it lands
+        float   m_t;    ///< until it does
+    };
+    void loadTug();
+    void updateTug( float dt );
+    void poseTug( std::vector<Drawable> &out );
+    void drawTugHud( int w, int h, float s );
+    void hitPart( int i, float damage, Vector3 at );
+    Matrix tugFrame() const;
+    bool tugFighting() const { return m_tugOn && m_tugAwake && !m_tugDead; }
+    bool                  m_tugOn = false, m_tugAwake = false, m_tugDead = false;
+    Vector3               m_tugHome = { 0, 0, 0 }, m_tugPos = { 0, 0, 0 }, m_tugStand = { 0, 0, 0 };
+    float                 m_tugYaw = 0.0f, m_tugT = 0.0f, m_tugGun = 0.0f, m_tugPd = 0.0f, m_tugDrone = 0.0f;
+    float                 m_tugDying = 0.0f;
+    int                   m_tugVolley = 0, m_tugStage = 0;
+    std::vector<BossPart> m_parts;
+    std::vector<Shell>    m_shells;
+    std::vector<Mesh>     m_tugMeshes;
+    std::vector<int>      m_tugSurfaces;
+    Mesh                  m_tugGunMesh = {}, m_tugEngineMesh = {}, m_tugNozzle = {}, m_tugPodMesh = {};
+    Vector3               m_podPos = { 0, 0, 0 }, m_podVel = { 0, 0, 0 };
+    float                 m_podSpin = 0.0f;
+
+    // GameVault.cpp: the Core Bank: racks of cores that break, shells, Mother Sevenfold and her relays.
+    struct Rack
+    {
+        Vector3 m_pos;
+        bool    m_alive;
+        float   m_phase;   ///< its lights' own rhythm
+    };
+    void loadVault();
+    void updateVault( float dt );
+    void poseVault( std::vector<Drawable> &out );
+    void drawVaultHud( int w, int h, float s );
+    bool rackInWay( Vector3 a, Vector3 b ) const;
+    void breakRack( int i );
+    void updateShell( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    bool motherLinked() const;
+    bool motherFighting() const { return m_motherOn && m_motherAwake && !m_motherDone; }
+    /** @return boss parts can be hit now (the tug's, Mother Sevenfold's relays) */
+    bool partsLive() const { return tugFighting() || motherFighting(); }
+    std::vector<Rack>   m_racks;
+    int                 m_racksBroken = 0;
+    std::vector<Person> m_shellBodies;
+    Mesh                m_rackMesh = {}, m_rackLights = {}, m_relayMesh = {}, m_relayTop = {}, m_coreGlow = {};
+    bool                m_motherOn = false, m_motherAwake = false, m_motherDone = false;
+
+    // GameWorld.cpp: what a place does around the fight (birds over a drum).
+    struct Bird
+    {
+        Vector3 m_pos, m_vel;
+        float   m_phase;
+    };
+    void loadWorld();
+    void updateWorld( float dt );
+    void poseWorld( std::vector<Drawable> &out );
+    void drawWorldHud( int w, int h, float s );
+    void drainHero( float amount );
+    bool exposed( Vector3 p ) const;
+    float m_oxygen = 100.0f, m_oxygenMax = 100.0f;   ///< the suit's air (seconds out in a vacuum)
+    /** @brief A ball of water floating in low gravity (one can dive through it; a current turns in it). */
+    struct Water
+    {
+        Vector3 m_c;             ///< its middle
+        float   m_r;             ///< its radius
+        float   m_turn;          ///< which way its current turns (+1, -1)
+        float   m_grow = 1.0f;   ///< a new one swells into being
+    };
+    std::vector<Water> m_waters;
+    Mesh               m_waterMesh = {};
+    bool               m_inWater = false;   ///< the hero's chest is under water
+    int waterAt( Vector3 p ) const;
+    void drawWater( Gfx &gfx );
+    void updateShocker( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    void updateHydraulic( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    Figure               m_hydraFigure;
+    std::vector<Vector3> m_airPosts;   ///< posts that refill the suit's air near them
+    Mesh                 m_postMesh = {}, m_postRing = {};
+    bool                 m_seekAir = false;                      ///< the autopilot goes for air
+    const char          *m_hurtBy = "";                          ///< what hurt the hero last (the autopilot's log)
+    bool                 m_outside = false;                      ///< the hero is out in the open (a vacuum)
+    int                  m_flareState = 0;                       ///< the star: 0 calm, 1 warning, 2 a storm
+    float                m_flareTimer = 0.0f, m_flareT = 0.0f;   ///< until the next warning; time in the state
+    std::vector<Bird>    m_birds;
+    Vector3              m_flockAt = { 0, 0, 0 };
+    Mesh                 m_birdBody = {}, m_birdWing = {};
 
     // GameLoot.cpp: the hero's stats from gear, level and skills; hits with crits, burning, stuns and leech; items on
     // the floor and picking them up; experience and levels; the active skills.

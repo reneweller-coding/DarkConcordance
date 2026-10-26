@@ -1,0 +1,66 @@
+# Level 5: Die Kernbank (Akt I). Die Gewölbe, in denen Mutter Siebenfach die geraubten Kerne lagert, bis sie verkauft
+# sind: Gestelle voller blinkender Kerne wie ein Nachthimmel – jeder davon ein Mensch, und jeder Treffer zerstört
+# welche. Hüllen (geleerte Körper, die ein gestohlener Kern lenkt) schlurfen durch die Gänge, die Wachen sind Elite.
+# Am Ende Mutter Siebenfach selbst: ein Geist in sieben Körpern, über drei Funkmasten verbunden. Die Karte wird erzeugt
+# (die gen...-Zeilen erklärt knochenmarkt.txt; Thema vault: Reihen von Gestellen "|"; genarena mother: ihre Halle mit
+# drei Masten und sieben Körpern). Gegner: "," eine Hülle.
+
+name     l5.name
+act      act.1
+intro    l5.intro
+gravity  7.5
+fog      0.003 0.012 0.5 0.9
+fogcolor 0.0012 0.0016 0.0026
+ambient  0.03 0.034 0.045 0.02 0.022 0.03
+walls    5.5
+area     9
+next     velm.txt
+gate     bossdead
+ambience tunnels
+
+genrooms      13
+genside       4
+gensize       12 18 10 14
+gentheme      vault vault vault service gangway
+genarenatheme vault
+genarena      mother
+genpack       ,,,,    3
+genpack       ,,,T    2
+genpack       ,,,,,,  1.5
+genpack       $$%     1.5
+genpack       %T      1.2
+genpack       $<      1
+genpack       ^^^     1.5
+genpack       **?     0.8
+gendensity    1.2
+genelite      0.4
+gennote       note.register note.mother note.ilka note.shell
+
+[lines]
+# Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/kernbank.txt)
+l5_start    | a                  | hero
+l5_racks    | b                  | hero
+l5_rack     | rack               | hero
+l5_shells   | c                  | hero
+l5_champion | champion           | hero
+l5_deep     | e                  | hero
+l5_register | d                  | hero
+l5_hall     | g                  | hero
+l5_boss     | bossstart          | hero
+l5_relay    | mother.relaydown   | hero
+l5_unlinked | unlinked           | hero
+l5_end      | bossdead           | hero
+l5_clean    | clean              | hero
+l5_broken   | broken             | hero
+
+[hints]
+# Schlüssel | Auslöser
+h_racks     | b
+h_shells    | c
+h_shield    | shieldguard
+h_champion  | champion
+h_bomber    | bomber
+h_stim      | hurt
+h_mother    | bossstart
+h_unlinked  | unlinked
+h_lift      | bossdead

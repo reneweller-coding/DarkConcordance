@@ -29,6 +29,9 @@ back     done.kuehlgedaerme
 autotalk ysolde
 exit     kuehlgedaerme.txt job1
 exit     knochenmarkt.txt job2
+exit     aussenhaut.txt job3
+exit     ertrunken.txt job4
+exit     kernbank.txt job5
 exit     tiefen.txt done.kuehlgedaerme again
 board    3 17 10
 zone     2 11 14 34 bar
@@ -73,7 +76,7 @@ route    19 6  17 7  17 22  14 22  11 29  14 22  17 23  17 38  16 40
 
 [npcs]
 # Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...
-ysolde      | 11 30 | ysolde   | ys1 | job1:ys7 done.kuehlgedaerme:ys10 l1told:ys20 job2:ys22 done.knochenmarkt:ys30 l2told:ys40
+ysolde      | 11 30 | ysolde   | ys1 | job1:ys7 done.kuehlgedaerme:ys10 l1told:ys20 job2:ys22 done.knochenmarkt:ys30 l2told:ys40 job3:ys42 done.aussenhaut:ys50 l3told:ys60 job4:ys62 done.ertrunken:ys70 job5:ys72 done.kernbank:ys80 act1done:ys82
 ottla       | 4 22  | ottla    | ot1
 kiri        | 23 33 | kiri     | ki1
 hausmeister | 15 9  | terminal | hm1
@@ -95,7 +98,20 @@ ys21 | ysolde      | job2         |
 ys22 | ysolde      | -            |
 ys30 | ysolde      | -            | ys30_a>ys31
 ys31 | ysolde      | l2told       |
-ys40 | ysolde      | -            |
+ys40 | ysolde      | -            | ys40_a>ys41
+ys41 | ysolde      | job3         |
+ys42 | ysolde      | -            |
+ys50 | ysolde      | -            | ys50_a>ys51
+ys51 | ysolde      | l3told       |
+ys60 | ysolde      | -            | ys60_a>ys61
+ys61 | ysolde      | job4         |
+ys62 | ysolde      | -            |
+ys70 | ysolde      | -            | ys70_a>ys71
+ys71 | ysolde      | l4told,job5  |
+ys72 | ysolde      | -            |
+ys80 | ysolde      | -            | ys80_a>ys81
+ys81 | ysolde      | act1done     |
+ys82 | ysolde      | -            |
 ot1  | ottla       | -            | ot1_a>ot2 ot1_b>ot4 ot1_c>-
 ot2  | ottla       | -            | ot2_a>ot3
 ot3  | ottla       | -            |

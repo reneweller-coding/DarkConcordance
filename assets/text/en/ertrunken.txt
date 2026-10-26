@@ -1,0 +1,42 @@
+# Level 4: The Drowned Quarter (English). Lines, hints, terminals.
+
+l4.name        = The Drowned Quarter
+l4.intro       = The Second Drum has turned more slowly since its bearings failed. In one of its quarters the tanks overflowed; without weight, water gathers into balls, and the balls stayed. | Whoever could not swim stayed as well. | Through the quarter runs the Skimmers' way to the Core Bank. Its pumps and locks are kept by a man they call the Pumpwright.
+
+l4_start       = The Drowned Quarter. It's quiet here. Water is quiet when it doesn't fall.
+l4_balls       = Water that floats. Whole balls of it, over the alleys. And the light inside throws nets across the walls.
+l4_water       = Cold. And no breath in here. Don't stay long.
+l4_shock       = Shock guns. Water would be a bad place to get hit.
+l4_champion    = That one knows the water. And he knows I don't.
+l4_drowned     = In that ball … those are people. They drift as if they were asleep.
+l4_deep        = The pumps. Down here the water is being kept. On purpose.
+l4_hall        = The pump hall. The Pumpwright.
+l4_boss        = A man of steel and hoses. He keeps the quarter under water so nobody asks who passes through.
+l4_flood       = He's flooding it! Out of the water!
+l4_flood2      = More water. He wants to drown me like the others.
+l4_end         = The pumps have stopped. Behind his hall lies the lock to the Core Bank.
+
+l4_start.dorra = The Drowned Quarter. On Kalvar we got water out of the rock. Here it got the people.
+l4_water.dorra = Cold. No breath. In this armour I'd sink like a stone – except nothing sinks here.
+l4_boss.dorra  = The Pumpwright. He keeps the quarter under water for money. For that I'll smash his pumps.
+l4_end.dorra   = The pumps have stopped. And the balls … will they fall now? No. Nothing falls here.
+
+h_balls        = Balls of water: you can dive through, but slowly, and your breath (the blue bar) lasts only half a minute. A current pulls round in circles.
+h_water        = Under water: slow, your shots weaker, your breath short. Surface before it runs out.
+h_shocker      = Shock guns charge where you can see it (blue sparks). In water their arc hits two and a half times as hard – get out when they charge.
+h_hydra        = The Pumpwright: his water jet throws you far back, his hammer strikes close. He floods where you stand – get out of the new water.
+
+hud.breath     = BREATH
+boss.hydraulic = THE PUMPWRIGHT
+foe.shocker    = Skimmer with a shock gun
+
+note.flood1.title = Notice, community hall
+note.flood1       = The Second Drum's bearings are being replaced. During the work the drum turns more slowly. Please secure water containers. | Below, by hand: They said a week.
+note.flood2.title = Note on a flat's door
+note.flood2       = We're upstairs at Mara's. The water doesn't rise, it floats. The boy says you can look through it like glass. I've told him not to go in.
+note.pump.title   = Pump log
+note.pump         = Pumps 1–6: off. Lock to the Core Bank: open to registration Sevenfold. Lock to the residential quarter: shut. | Standing order: the quarter stays flooded. Whoever asks gets water to drink.
+note.child.title  = A child's drawing, in plastic
+note.child        = A ball, in it a fish with legs. Below in big letters: MY WATER. Next to it, smaller: Dad says the fish will come back when the drum turns properly again.
+
+dest.ertrunken    = The Drowned Quarter · Second Drum

@@ -49,6 +49,7 @@ constexpr float DroneHp = 42.0f;
 constexpr float SawHp = 26.0f;
 constexpr float BomberHp = 30.0f;
 constexpr float TaxatorHp = 4500.0f;
+constexpr float ShellHp = 85.0f;
 // Dorra.
 constexpr float DorraSpeed = 3.9f;
 constexpr float DorraJump = 4.0f;
@@ -95,6 +96,15 @@ enum SurfE
     S_TAXATOR,   ///< the Taxator's brass
     S_COUNT
 };
+
+/** @brief A direction turned about the vertical by `a` radians (towards a larger yaw, yaw = atan2( x, z )). */
+inline Vector3 turnYaw( Vector3 v, float a )
+{
+    float c = cosf( a ), s = sinf( a );
+    return { v.x * c + v.z * s, v.y, v.z * c - v.x * s };
+}
+
+constexpr float SlugSpeed = 90.0f;   ///< how fast a slug is taken to fly where Coriolis bends it (m/s)
 
 /** @brief Loads a texture with mipmaps and anisotropic filtering (a grey checker if it is missing). */
 inline Texture2D loadTexture( const std::string &path )

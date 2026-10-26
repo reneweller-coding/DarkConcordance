@@ -68,6 +68,8 @@ Gfx::CommonLocs Gfx::locate( Shader s )
     l.m_fogColor = GetShaderLocation( s, "fogColor" );
     l.m_roomMin = GetShaderLocation( s, "roomMin" );
     l.m_roomMax = GetShaderLocation( s, "roomMax" );
+    l.m_waterCount = GetShaderLocation( s, "waterCount" );
+    l.m_waterBalls = GetShaderLocation( s, "waterBalls" );
     int unit = SunUnit;
     SetShaderValue( s, l.m_sunShadow, &unit, SHADER_UNIFORM_INT );
     unit = SpotUnit;
@@ -130,6 +132,9 @@ void Gfx::upload( Shader s, const CommonLocs &l )
     SetShaderValue( s, l.m_fogColor, &L.m_fogColor, SHADER_UNIFORM_VEC3 );
     SetShaderValue( s, l.m_roomMin, &L.m_roomMin, SHADER_UNIFORM_VEC3 );
     SetShaderValue( s, l.m_roomMax, &L.m_roomMax, SHADER_UNIFORM_VEC3 );
+    int water = (int)std::min( L.m_water.size(), (size_t)8 );
+    SetShaderValue( s, l.m_waterCount, &water, SHADER_UNIFORM_INT );
+    if ( water > 0 ) SetShaderValueV( s, l.m_waterBalls, L.m_water.data(), SHADER_UNIFORM_VEC4, water );
 }
 
 RenderTexture2D Gfx::hdrTarget( int w, int h, bool depth )
@@ -189,6 +194,7 @@ void Gfx::init( int width, int height, float ss )
     std::string common = CommonFs;
     m_lit = load( LitVs, ( common + LitFs ).c_str() );
     m_glassShader = load( LitVs, ( common + GlassFs ).c_str() );
+    m_waterShader = load( LitVs, ( common + WaterFs ).c_str() );
     m_sky = load( FullscreenVs, ( common + SkyFs ).c_str() );
     m_planet = load( LitVs, ( common + PlanetFs ).c_str() );
     m_particle = load( ParticleVs, ( common + ParticleFs ).c_str() );
@@ -206,6 +212,7 @@ void Gfx::init( int width, int height, float ss )
     m_litLocs = locate( m_lit );
     m_litSkinLocs = locate( m_litSkin );
     m_glassLocs = locate( m_glassShader );
+    m_waterLocs = locate( m_waterShader );
     m_skyLocs = locate( m_sky );
     m_planetLocs = locate( m_planet );
     m_particleLocs = locate( m_particle );
@@ -218,6 +225,8 @@ void Gfx::init( int width, int height, float ss )
     m_depthSkinMat.shader = m_depthSkin;
     m_glassMat = LoadMaterialDefault();
     m_glassMat.shader = m_glassShader;
+    m_waterMat = LoadMaterialDefault();
+    m_waterMat.shader = m_waterShader;
     m_planetMat = LoadMaterialDefault();
     m_planetMat.shader = m_planet;
 
@@ -337,6 +346,7 @@ void Gfx::beginScene( const Camera3D &cam, const Lighting &lights, float time, T
     upload( m_lit, m_litLocs );
     upload( m_litSkin, m_litSkinLocs );
     upload( m_glassShader, m_glassLocs );
+    upload( m_waterShader, m_waterLocs );
     upload( m_sky, m_skyLocs );
     upload( m_planet, m_planetLocs );
     upload( m_particle, m_particleLocs );
@@ -410,6 +420,15 @@ void Gfx::glass( const Mesh &mesh, const Matrix &transform )
     BeginBlendMode( BLEND_ALPHA_PREMULTIPLY );
     rlDisableDepthMask();
     DrawMesh( mesh, m_glassMat, transform );
+    rlEnableDepthMask();
+    EndBlendMode();
+}
+
+void Gfx::water( const Mesh &mesh, const Matrix &transform )
+{
+    BeginBlendMode( BLEND_ALPHA_PREMULTIPLY );
+    rlDisableDepthMask();
+    DrawMesh( mesh, m_waterMat, transform );
     rlEnableDepthMask();
     EndBlendMode();
 }

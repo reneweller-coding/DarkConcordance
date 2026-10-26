@@ -375,6 +375,52 @@ Wave shipAmbience()
     return b.wave();
 }
 
+/** @brief Inside a suit: slow breathing in the helmet, the fans, now and then the radio's crackle. */
+Wave suitAmbience()
+{
+    const float len = 12.0f;
+    Buf         b( len );
+    float       lo = 0.0f, air = 0.0f;
+    for ( size_t i = 0; i < b.m_s.size(); ++i )
+    {
+        float t = (float)i / Rate;
+        float x = b.noise();
+        lo += 0.003f * ( x - lo );
+        air += 0.12f * ( x - air );
+        // A breath every four seconds: in (rising), a pause, out (longer, lower).
+        float ph = fmodf( t, 4.0f ), breath = 0.0f;
+        if ( ph < 1.3f )
+            breath = sinf( PI * ph / 1.3f ) * 0.9f;
+        else if ( ph > 1.6f && ph < 3.6f )
+            breath = sinf( PI * ( ph - 1.6f ) / 2.0f ) * 0.6f;
+        b.m_s[i] = 1.2f * lo + 0.08f * air * breath +
+                   0.02f * sinf( Tau * 180.0f * t ) * ( 0.6f + 0.4f * sinf( Tau * 0.3f * t ) );
+    }
+    for ( float c : { 2.7f, 8.3f } ) b.hiss( c, 0.25f, 0.2f, 60.0f, 0.5f, true );
+    return b.wave();
+}
+
+/** @brief A flooded quarter: deep slow water moving, drips, now and then a gurgle in a pipe. */
+Wave waterAmbience()
+{
+    const float len = 12.0f;
+    Buf         b( len );
+    float       lo = 0.0f, mid = 0.0f;
+    for ( size_t i = 0; i < b.m_s.size(); ++i )
+    {
+        float t = (float)i / Rate;
+        float x = b.noise();
+        lo += 0.002f * ( x - lo );
+        mid += 0.02f * ( x - mid );
+        float swell = 0.7f + 0.3f * sinf( Tau * t / len * 2.0f );
+        b.m_s[i] = 2.6f * lo * swell + 0.04f * mid * ( 0.5f + 0.5f * sinf( Tau * 0.21f * t ) );
+    }
+    for ( float drop : { 0.7f, 2.3f, 3.1f, 5.6f, 6.2f, 8.8f, 10.4f, 11.3f } )
+        b.ping( drop, 1100.0f + drop * 113.0f, 0.06f, 22.0f );
+    for ( float g : { 4.0f, 9.3f } ) b.sweep( g, 140.0f, 260.0f, 0.5f, 0.15f, 8.0f );
+    return b.wave();
+}
+
 /** @brief Makes a sound loop: the ends cross-faded so it has no seam. */
 Wave loop( Wave w )
 {
@@ -409,7 +455,10 @@ void Audio::init( bool on, const std::string &ambienceName )
         UnloadWave( w );
         for ( int v = 1; v < Voices; ++v ) m_sounds[s][v] = LoadSoundAlias( m_sounds[s][0] );
     }
-    Wave a = loop( ambienceName == "ship" ? shipAmbience() : ambience() );
+    Wave a = loop( ambienceName == "ship"    ? shipAmbience()
+                   : ambienceName == "suit"  ? suitAmbience()
+                   : ambienceName == "water" ? waterAmbience()
+                                             : ambience() );
     m_ambience = LoadSoundFromWave( a );
     UnloadWave( a );
     SetSoundVolume( m_ambience, 0.55f );
@@ -434,7 +483,7 @@ void Audio::play( SfxE s, Vector3 at, Vector3 listener, float volume )
     if ( !m_on ) return;
     Vector3 d = Vector3Subtract( at, listener );
     float   dist2 = d.x * d.x + d.z * d.z + 0.3f * d.y * d.y;
-    float   v = volume / ( 1.0f + dist2 / 90.0f );
+    float   v = volume * m_muffle / ( 1.0f + dist2 / 90.0f );
     if ( v < 0.01f ) return;
     int    i = (int)s;
     Sound &snd = m_sounds[i][m_next[i]];

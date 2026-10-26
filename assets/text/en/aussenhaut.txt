@@ -1,0 +1,49 @@
+# Level 3: The Outer Skin (English). Lines, hints, terminals, the readouts outside.
+
+l3.name        = The Outer Skin
+l3.intro       = The Assessor's receipt names a tug: the »Grace Period«, moored at the cargo ring out on Velm's skin. Sixty-one bodies from Talgrund lie in its container. | Outside there is no air, only the radio and your own breath. Under the plates, open space and the red dwarf in it – and when it flares, its radiation burns across the skin. | In three hours its launch window opens.
+
+l3_start       = The airlock. Beyond it no air, only the radio and my own breath.
+l3_out         = Outside. Under the plates nothing but the dwarf. Don't look down.
+l3_flare       = It's flaring! Take cover – behind something big!
+l3_lowair      = Air's running low. A hut, a canister, anything.
+l3_champion    = That one wears his suit like armour. One of the expensive kind.
+l3_ring        = The cargo ring. The tug lies somewhere up ahead.
+l3_tug         = There it is. The »Grace Period«. The container hangs beneath it.
+l3_boss        = It's seen me. The deck gun is swinging round.
+l3_gun         = The gun's gone.
+l3_engine      = One engine less.
+l3_cast        = It's casting off! Not with those bodies!
+l3_end         = The container's torn loose … it's drifting towards the dwarf. Sixty-one people from Talgrund. There's nothing I can do.
+
+l3_start.dorra = The airlock. On Kalvar we went into the galleries without helmets. Not out here.
+l3_out.dorra   = Outside. No ground under the ground. Only the dwarf.
+l3_flare.dorra = The dwarf's flaring! Behind something big, quick!
+l3_tug.dorra   = There lies the tug. And under it, in the container, the people from Talgrund.
+l3_end.dorra   = The container … it's drifting off, into the glow. We were too late. Again.
+
+h_oxygen       = There is no air outside: your oxygen (the blue bar) lasts a good minute and a half. It refills in the maintenance huts; blue canisters add some.
+h_flare        = Radiation storm: get into a hut or close to something tall (a housing, a radiator). Out in the open the radiation burns – the enemies too.
+h_lowair       = Oxygen low: back into a hut or find a blue canister.
+h_tug          = The tug: the deck gun on top, the engines at the back. Red rings show where its shells land – get out of them.
+h_tug.dorra    = The tug: from the edge your hammer reaches the near engine; the gun and the far engine take blast bolts (B / F). Get out of the red rings.
+
+hud.oxygen     = OXYGEN
+hud.air        = (air)
+hud.flarewarn  = RADIATION STORM IN %d
+hud.flare      = RADIATION STORM – TAKE COVER!
+hud.sheltered  = In cover
+boss.tug       = TUG »GRACE PERIOD«
+tug.gun        = Deck gun
+tug.engine     = Engine
+
+note.tuglog.title  = Log, tug »Grace Period«
+note.tuglog        = Cargo taken on: one container, refrigerated, 61 units. Destination: the Mill collection point, then the Yard at the Gate. | Launch window 14:20 station time. The Assessor wants confirmation on arrival. He won't get it. On arrival there will be no Assessor left to want anything.
+note.berth.title   = Berthing rules, cargo ring
+note.berth         = Ships without a registration berth at outer places 7 to 12. The station's administration does not count them. It counts only what docks. | Signed: CARETAKER, by order.
+note.weather.title = Space weather, today
+note.weather       = The dwarf is restless. Flares every one to two minutes. Whoever works outside: stay between the radiators, keep the huts open. | Whoever does not have to work outside: stay in.
+note.welder.title  = Note on a welding rig
+note.welder        = My shift's over. If you're reading this, your suit is leaking. Watch the readout, not the dwarf. It doesn't look back.
+
+dest.aussenhaut    = The Outer Skin · cargo ring

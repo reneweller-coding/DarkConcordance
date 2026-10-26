@@ -43,6 +43,7 @@ struct Lighting
     Vector3                 m_fogColor;    ///< the fog's own glow
     Vector3                 m_roomMin;     ///< the fog fills this box
     Vector3                 m_roomMax;     ///< up to here
+    std::vector<Vector4>    m_water;       ///< balls of water (middle, radius): caustics near them (8 at most)
 };
 
 /** @brief How a surface looks: its maps, tiling, roughness and metal scales, its glow. */
@@ -137,6 +138,13 @@ public:
     void glass( const Mesh &mesh, const Matrix &transform );
 
     /**
+     * @brief Draws a ball of water (after the opaque scene; it does not write depth).
+     * @param[in] mesh       the ball
+     * @param[in] transform  where it is
+     */
+    void water( const Mesh &mesh, const Matrix &transform );
+
+    /**
      * @brief Begins additive particles.
      * @param[in] boost  intensity factor (the vertex colours stop at 1)
      * @param[in] lit    true: lit by the sun and the lamp (dust)
@@ -170,6 +178,7 @@ private:
         int m_viewPos, m_time, m_frame, m_sunDir, m_sunColor, m_sunVP, m_sunShadow, m_sunTexel;
         int m_spotPos, m_spotDir, m_spotColor, m_spotCos, m_spotRange, m_spotVP, m_spotShadow, m_spotNF;
         int m_lightCount, m_lightPos, m_lightColor, m_ambUp, m_ambDown, m_fogParams, m_fogColor, m_roomMin, m_roomMax;
+        int m_waterCount, m_waterBalls;
     };
 
     /** @brief Loads a shader from vertex and fragment source. */
@@ -201,6 +210,9 @@ private:
     DrawLocs   m_litDraw, m_skinDraw;
     Material   m_depthMat, m_depthSkinMat;
     Material   m_glassMat;
+    Material   m_waterMat;
+    Shader     m_waterShader;
+    CommonLocs m_waterLocs;
     Material   m_planetMat;
 
     RenderTexture2D              m_hdr;

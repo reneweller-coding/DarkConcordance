@@ -147,6 +147,10 @@ void Game::loadShip( Gfx &gfx, const std::string &assets )
     m_star = Vector3Add( c, { 3000.0f, -9000.0f, -9500.0f } );
     m_starRadius = 5000.0f;
     m_ownPlume = Vector3Add( c, { 70.0f, -160.0f, 30.0f } );
+    if ( m_level.m_starAt.w > 0.0f )
+        m_star = Vector3Add( c, { m_level.m_starAt.x, m_level.m_starAt.y, m_level.m_starAt.z } ),
+        m_starRadius = m_level.m_starAt.w;
+    if ( m_level.m_glass.empty() ) return;   // out in the open: no ships braking in a chain
     for ( int i = 0; i < 12; ++i )
     {
         float d = 500.0f + 300.0f * i;
@@ -345,8 +349,9 @@ void Game::drawView( Gfx &gfx )
     Matrix star = MatrixMultiply(
         MatrixMultiply( MatrixScale( m_starRadius, m_starRadius, m_starRadius ), MatrixRotateX( 0.3f ) ),
         MatrixTranslate( m_star.x, m_star.y, m_star.z ) );
-    gfx.planet( m_sphere, star, m_starTex, m_time * 0.0004f, 2.2f );
-    drawPlumes( gfx );
+    float storm = m_flareState == 1 ? m_flareT / 8.0f : ( m_flareState == 2 ? 3.0f : 0.0f );
+    gfx.planet( m_sphere, star, m_starTex, m_time * 0.0004f, 2.2f * ( 1.0f + storm ) );
+    if ( !m_level.m_glass.empty() ) drawPlumes( gfx );
 }
 
 void Game::drawPlumes( Gfx &gfx )

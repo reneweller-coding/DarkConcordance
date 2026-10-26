@@ -44,8 +44,8 @@ const Color AffixColor[4] = {
 /** @brief The key of a kind's name in the texts. */
 const char *foeKey( int kind )
 {
-    static const char *keys[] = { "foe.louse", "foe.welder", "foe.baton", "foe.gunner", "foe.shield",
-                                  "foe.heavy", "foe.drone",  "foe.saw",   "foe.bomber", "foe.taxator" };
+    static const char *keys[] = { "foe.louse", "foe.welder", "foe.baton",  "foe.gunner",  "foe.shield", "foe.heavy",
+                                  "foe.drone", "foe.saw",    "foe.bomber", "foe.taxator", "foe.shell" };
     return keys[kind];
 }
 
@@ -70,6 +70,12 @@ void Game::buildFoes()
     tax.m_weapon = WeaponE::RIFLE;
     tax.m_scale = { TaxatorScale * 1.15f, TaxatorScale, TaxatorScale * 1.1f };
     m_taxatorFigure.build( tax );
+    // The Hydrauliker: oxidised green-blue, broad, a great wrench in his fist.
+    FigureSurfaces hydra = { S_GUARD, S_RUST, S_METAL, S_GLOW };
+    hydra.m_visor = { 0.4f, 2.6f, 3.0f, 0.0f };
+    hydra.m_weapon = WeaponE::HAMMER;
+    hydra.m_scale = { 1.9f * 1.25f, 1.9f, 1.9f * 1.15f };
+    m_hydraFigure.build( hydra );
     // Saw bots: small dark lice with a blade on the back; bombers: hazard-striped, a charge that glows.
     m_saw.build( S_METAL, S_DARK, S_GLOW, false, 0.72f );
     m_bomber.build( S_HAZARD, S_METAL, S_GLOW, false, 1.05f );
@@ -134,7 +140,7 @@ Figure &Game::foeFigure( const Foe &f )
     case FoeE::BATON: return m_boarderBaton;
     case FoeE::SHIELD: return m_guardFigure;
     case FoeE::HEAVY: return m_heavyFigure;
-    case FoeE::TAXATOR: return m_taxatorFigure;
+    case FoeE::TAXATOR: return f.m_variant ? m_hydraFigure : m_taxatorFigure;
     default: return m_boarderGun;
     }
 }
@@ -151,7 +157,8 @@ void Game::fireShot( Vector3 muzzle, Vector3 at, float speed, float hurt, float 
     Vector3 aim =
         Vector3Add( at, { ( rnd() - 0.5f ) * spread, ( rnd() - 0.5f ) * spread * 0.4f, ( rnd() - 0.5f ) * spread } );
     Vector3 v = Vector3Scale( Vector3Normalize( Vector3Subtract( aim, muzzle ) ), speed );
-    Shot    s;
+    v = turnYaw( v, m_level.m_coriolis * Vector3Distance( aim, muzzle ) / speed );   // leads the drum's bend
+    Shot s;
     s.m_pos = muzzle;
     s.m_vel = v;
     s.m_life = 1.8f;
@@ -301,6 +308,11 @@ void Game::updateCritter( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
 
 void Game::updateTaxator( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw )
 {
+    if ( f.m_variant == 1 )
+    {
+        updateHydraulic( f, dt, dir, dist, path, want, faceYaw );
+        return;
+    }
     // Three stages as he weakens; at each new one he calls for help. He stomps when close, sweeps the cannon at
     // range, and in the last stage charges (into a wall, he stands stunned).
     float share = f.m_hp / fmaxf( 1.0f, f.m_hpMax );
@@ -440,6 +452,144 @@ void Game::updateTaxator( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
         f.m_state = FoeStateE::SPIT, f.m_burst = 3 + stage, f.m_timer = 0.2f;
 }
 
+void Game::updateShocker( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw )
+{
+    // A shock gun: it charges (the muzzle sparks blue), then an arc jumps to the hero; in water it bites much harder.
+    f.m_spit -= dt;
+    Vector3 fwd = { sinf( f.m_yaw ), 0.0f, cosf( f.m_yaw ) };
+    Vector3 muzzle = Vector3Add( f.m_pos, { fwd.x * 0.7f, 1.35f, fwd.z * 0.7f } );
+    if ( f.m_aim > 0.0f )
+    {
+        f.m_aim += dt / 0.7f;
+        faceYaw = atan2f( dir.x, dir.z );
+        if ( rnd() < dt * 30.0f ) sparks( muzzle, fwd, 2, { 140, 200, 255, 255 }, 1.5f );
+        if ( !f.m_los || dist > 13.0f ) f.m_aim = 0.0f;
+        if ( f.m_aim >= 1.0f )
+        {
+            Vector3 chest = Vector3Add( m_pos, { 0.0f, 1.1f, 0.0f } );
+            m_tracers.push_back( { muzzle, chest, 0.15f } );
+            m_tracers.push_back( { muzzle, Vector3Lerp( muzzle, chest, 0.5f ), 0.15f } );
+            sparks( chest, Vector3Negate( dir ), 14, { 150, 205, 255, 255 }, 3.5f );
+            m_flashes.push_back( { chest, { 8.0f, 14.0f, 26.0f }, 5.0f, 0.15f, 0.15f } );
+            m_audio.play( SfxE::CRACKLE, chest, m_camTarget, 0.8f );
+            m_hurtBy = "shock";
+            hurtHero( 9.0f * ( m_inWater ? 2.5f : 1.0f ), { dir.x * 1.0f, 0.0f, dir.z * 1.0f }, f.m_pos );
+            m_hurtBy = "";
+            f.m_aim = 0.0f;
+            f.m_spit = 2.4f + rnd() * 1.2f;
+        }
+        return;
+    }
+    float side = ( ( f.m_id + (int)( m_time / 3.0f ) ) % 2 ) ? 1.0f : -1.0f;
+    if ( !f.m_los || dist > 10.0f )
+        want = Vector3Scale( path, 2.6f );
+    else if ( dist < 5.5f )
+        want = Vector3Scale( dir, -2.0f );
+    else
+        want = { -dir.z * side * 1.4f, 0.0f, dir.x * side * 1.4f };
+    faceYaw = f.m_los ? atan2f( dir.x, dir.z ) : atan2f( path.x, path.z );
+    if ( f.m_spit <= 0.0f && f.m_los && dist < 11.0f && f.m_timer <= 0.0f ) f.m_aim = 0.01f;
+}
+
+void Game::updateHydraulic( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw )
+{
+    // The Hydrauliker: a water cannon that throws one back, a hydraulic slam close by; at two thirds and one third
+    // he floods the place where the hero stands (a new ball of water round them) and calls for help.
+    float share = f.m_hp / fmaxf( 1.0f, f.m_hpMax );
+    int   stage = share > 0.66f ? 0 : ( share > 0.33f ? 1 : 2 );
+    if ( stage > f.m_stage )
+    {
+        f.m_stage = stage;
+        fire( stage == 1 ? "hydra2" : "hydra3" );
+        if ( m_waters.size() < 12 && groundAt( m_pos ) > -100.0f )
+            m_waters.push_back( { { m_pos.x, m_pos.y + 2.0f, m_pos.z }, 3.4f, stage == 1 ? 1.0f : -1.0f, 0.05f } );
+        std::vector<FoeE> help = stage == 1 ? std::vector<FoeE>{ FoeE::GUNNER, FoeE::GUNNER }
+                                            : std::vector<FoeE>{ FoeE::SAW, FoeE::SAW, FoeE::SAW, FoeE::BOMBER };
+        for ( FoeE k : help )
+            for ( int t = 0; t < 12; ++t )
+            {
+                float   a = rnd() * 6.283f;
+                Vector3 p = Vector3Add( f.m_pos, { cosf( a ) * 9.0f, 0.0f, sinf( a ) * 9.0f } );
+                float   floor = groundAt( p );
+                if ( floor < -100.0f || floor > 100.0f ) continue;
+                p.y = floor;
+                m_summons.push_back( { k, p } );
+                break;
+            }
+        m_audio.play( SfxE::BURST, f.m_pos, m_camTarget, 1.0f );
+    }
+    f.m_spit -= dt;
+    switch ( f.m_state )
+    {
+    case FoeStateE::WINDUP:
+        // The slam: the wrench up, then down into the deck; a ring of spray that hurts within five metres.
+        faceYaw = atan2f( dir.x, dir.z );
+        f.m_swingT = fminf( 0.45f, f.m_swingT < 0.0f ? 0.0f : f.m_swingT + dt * 0.6f );
+        if ( f.m_timer <= 0.0f )
+        {
+            for ( int i = 0; i < 40; ++i )
+            {
+                float a = i * PI * 2.0f / 40.0f;
+                m_particles.push_back( { Vector3Add( f.m_pos, { 0.0f, 0.2f, 0.0f } ),
+                                         { cosf( a ) * 6.0f, 1.0f + rnd(), sinf( a ) * 6.0f },
+                                         0.7f,
+                                         0.7f,
+                                         0.3f,
+                                         { 170, 210, 230, 40 },
+                                         1 } );
+            }
+            m_audio.play( SfxE::SLAM, f.m_pos, m_camTarget, 1.0f );
+            m_shake = fmaxf( m_shake, 0.5f );
+            if ( dist < 5.0f && fabsf( m_pos.y - f.m_pos.y ) < 1.5f )
+                hurtHero( 24.0f, { dir.x * 6.0f, 2.0f, dir.z * 6.0f }, f.m_pos );
+            f.m_swingT = -1.0f;
+            f.m_state = FoeStateE::RECOVER;
+            f.m_timer = 0.9f;
+        }
+        return;
+    case FoeStateE::SPIT:
+    {
+        // The water cannon: a hard jet for two seconds; it hurts a little and throws one far back.
+        Vector3 fwd = { sinf( f.m_yaw ), 0.0f, cosf( f.m_yaw ) };
+        faceYaw = atan2f( dir.x, dir.z );
+        Vector3 nozzle = Vector3Add( f.m_pos, { fwd.x * 1.6f, 2.2f, fwd.z * 1.6f } );
+        for ( int k = 0; k < 3; ++k )
+            m_particles.push_back( { nozzle,
+                                     Vector3Add( Vector3Scale( fwd, 16.0f + rnd() * 4.0f ),
+                                                 { ( rnd() - 0.5f ) * 1.5f, -1.0f + rnd(), ( rnd() - 0.5f ) * 1.5f } ),
+                                     0.8f,
+                                     0.8f,
+                                     0.12f + rnd() * 0.1f,
+                                     { 190, 225, 240, 70 },
+                                     1 } );
+        Vector3 to = Vector3Subtract( m_pos, f.m_pos );
+        float   along = to.x * fwd.x + to.z * fwd.z;
+        float   across = fabsf( to.x * fwd.z - to.z * fwd.x );
+        f.m_aim -= dt;
+        if ( along > 0.0f && along < 14.0f && across < 1.4f && f.m_aim <= 0.0f )
+        {
+            hurtHero( 5.0f, { fwd.x * 7.0f, 0.5f, fwd.z * 7.0f }, f.m_pos );
+            f.m_aim = 0.25f;
+        }
+        if ( f.m_timer <= 0.0f ) f.m_state = FoeStateE::RECOVER, f.m_timer = 0.8f, f.m_spit = 3.0f + rnd() * 1.5f;
+        return;
+    }
+    case FoeStateE::RECOVER:
+        if ( f.m_timer <= 0.0f ) f.m_state = FoeStateE::CHASE;
+        return;
+    default: break;
+    }
+    want = Vector3Scale( path, stage == 2 ? 2.4f : 1.9f );
+    faceYaw = f.m_los ? atan2f( dir.x, dir.z ) : atan2f( path.x, path.z );
+    if ( dist < 4.5f && f.m_timer <= 0.0f )
+        f.m_state = FoeStateE::WINDUP, f.m_timer = 0.8f, f.m_swingT = 0.0f;
+    else if ( f.m_los && f.m_spit <= 0.0f && dist < 14.0f )
+    {
+        f.m_state = FoeStateE::SPIT, f.m_timer = 2.0f, f.m_aim = 0.0f;
+        m_audio.play( SfxE::BURST, f.m_pos, m_camTarget, 0.8f );
+    }
+}
+
 void Game::detonate( Foe &f, float damage, float radius )
 {
     // A ball of fire: it hurts the hero and every enemy near (bombers set each other off).
@@ -574,8 +724,11 @@ void Game::drawFoeHud( int w, int h, float s )
             continue;
         Vector2     q = GetWorldToScreenEx( head, m_cam, w, h );
         Color       c = AffixColor[std::max( 0, f.m_affix )];
+        const char *noun = f.m_variant && f.m_kind == FoeE::GUNNER ? "foe.shocker" : foeKey( (int)f.m_kind );
+        // The gift's word agrees with the name (German: "Gepanzerte Hülle", "Gepanzerter Abschöpfer").
+        bool fem = hasText( TextFormat( "%s.g", noun ) ) && std::string( tr( TextFormat( "%s.g", noun ) ) ) == "f";
         std::string name =
-            std::string( tr( TextFormat( "elite.%d", f.m_affix ) ) ) + " " + tr( foeKey( (int)f.m_kind ) );
+            std::string( tr( TextFormat( fem ? "elite.%d.f" : "elite.%d", f.m_affix ) ) ) + " " + tr( noun );
         text( name.c_str(), q.x, q.y - 30.0f * s, 18, c );
         float bw = 90.0f * s;
         DrawRectangle( (int)( q.x - bw * 0.5f ), (int)( q.y - 8.0f * s ), (int)bw, (int)( 6.0f * s ),
@@ -585,10 +738,10 @@ void Game::drawFoeHud( int w, int h, float s )
     }
     // The boss: a bar across the top once he is awake.
     int b = boss();
-    if ( b < 0 || !m_foes[b].m_awake ) return;
+    if ( b < 0 || !m_foes[b].m_awake || m_foes[b].m_kind == FoeE::SHELL ) return;
     const Foe  &f = m_foes[b];
     std::string name = f.m_kind == FoeE::TAXATOR
-                           ? std::string( tr( "boss.taxator" ) )
+                           ? std::string( tr( f.m_variant ? "boss.hydraulic" : "boss.taxator" ) )
                            : std::string( TextFormat( tr( "boss.guardian" ), tr( foeKey( (int)f.m_kind ) ) ) );
     float       pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s;
     text( name.c_str(), w * 0.5f, py - 4.0f * s, 24, { 255, 210, 150, 240 } );

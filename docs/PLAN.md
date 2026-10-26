@@ -116,17 +116,29 @@ volatile, berserk), a guardian at a depths level's end; **the Taxator** in his e
 help at 60 % and 30 %, a charge that ends stunned against a wall). Enemies grow with the area. The hub's lift asks
 where to when it can go to more than one place.
 
-Open: the drum's gravity towards the axis and Coriolis for level 2 (planned below); skinned heroes and enemies with
-the animation packs' combat clips.
+Built with levels 3–5 (26.10.2026), all generated: **the drum** (level 2): Coriolis bends what flies (`coriolis` in
+the level file; the slugs fly in bent pieces, the auto-aim and the enemies lead it), flocks of birds (`birds`).
+**Vacuum** (level 3, `space`, `vacuum`, `flares`; GameWorld.cpp): open space under the hull plates with the star in
+it, oxygen outdoors (huts, air posts, canisters refill; hits leak), radiation storms with warning and shelter, an edge
+guard instead of falls; **the tug** (GameTug.cpp) as a boss of parts: deck gun, two engines, shells with rings, bridge
+bolts, drones. **Water** (level 4, `genwater`): floating balls with caustics, diving with breath, a current, muffled
+sound, damped movement and shots; shock gunners whose arc is stronger in water; **the Hydrauliker** (jet, hammer,
+flooding). **Fragile targets and a boss of many bodies** (level 5, GameVault.cpp): racks of cores that break (the
+auto-aim spares them, the game remembers a clean run), shells (emptied bodies), **Mother Sevenfold**: seven bodies,
+three radio masts that heal and shield them while they stand. Velm's jobs chain to the end of Act I (Ilka sold to the
+Mill); the lift lists every open place. Enemies and hits grow with the area (1 to 9).
+
+Open: skinned heroes and enemies with the animation packs' combat clips; Ione; voices; balance from the user's play
+(the autopilot's Dorra needs long against the tug, its Corvin dies often against Mother Sevenfold).
 
 Still to come, by first use:
 
 | System | First needed in |
 |---|---|
-| Rotating drum: gravity falls towards the axis, Coriolis bends shots, aim-ahead mode | 2 Knochenmarkt (still open) |
-| Vacuum: oxygen, helmet hits, radiation spikes, only radio and breath | 3 Außenhaut |
-| Floating water spheres: caustics, diving, drowning, current through water | 4 Ertrunkenes Viertel |
-| Fragile targets (core storage), multi-body boss with radio link | 5 Kernbank |
+| Rotating drum: Coriolis bends shots, aim-ahead | 2 Knochenmarkt — done (26.10.2026) |
+| Vacuum: oxygen, helmet hits, radiation spikes, only radio and breath | 3 Außenhaut — done (26.10.2026) |
+| Floating water spheres: caustics, diving, drowning, current through water | 4 Ertrunkenes Viertel — done (26.10.2026) |
+| Fragile targets (core storage), multi-body boss with radio link | 5 Kernbank — done (26.10.2026) |
 | Drone swarm control (Ione), hacking machines | class choice |
 | Breaking ice, enemies from below | 6 Seren |
 | Wind, swaying platforms, cutting balloons | 7 Hesper |
@@ -186,7 +198,8 @@ Still to come, by first use:
 1. **Level 1 „Die Kühlgedärme“** as the playable prototype with Corvin: does the combat feel right? — done
 2. **Prologue** with Dorra and Corvin to choose — done (25.10.2026; Ione's drones still to come).
 3. Velm as hub (bar, trader, workshop, Ysolde) — done (25.10.2026); level 2 generated, with the Depths for replay —
-   done (26.10.2026, without the drum's gravity yet); then levels 3–5, Ione, voices: **Act I complete**.
+   done (26.10.2026); the drum's Coriolis and levels 3–5 with the job chain to the act's end — done (26.10.2026);
+   still Ione and voices for **Act I complete**.
 4. Act II with the ship as hub and the first choices; co-op for two.
 5. Acts III and IV, endings, epilogue cards, flashback levels.
 6. Steam Deck: half-resolution fog, no supersampling, gamepad everywhere.

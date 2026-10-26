@@ -45,7 +45,32 @@ ys22            = The Marrow Market is waiting. So is the Assessor.
 ys30            = The Assessor is dead, and the market is quiet – for the first time in years. What did you find?
 ys30_a          = A receipt. An eye inside a cogwheel.
 ys31            = I've seen that sign before. On papers that shouldn't exist. I need time. Until then: beneath the drum lie the Depths. Whoever goes down there comes back stronger – or not at all.
-ys40            = Nothing yet. The Depths won't run away. They only change their shape.
+ys40            = The receipt told me more than the Assessor would have liked. The bodies from Talgrund are still on Velm – in a container, under a tug at the cargo ring. Outside, on the outer skin.
+ys40_a          = Then I'm going outside.
+ys41            = There's no air out there, and the dwarf is restless. The freight lift takes you to the airlock. And, please: bring them back.
+ys42            = The tug has a launch window. It won't stay open for you.
+
+# Ysolde: after the outer skin.
+ys50            = I saw it on the screen. A container drifting towards the dwarf.
+ys50_a          = I was too late.
+ys51            = You were faster than anyone else here. That isn't the same as in time – but it isn't nothing either. Sleep. I'll keep looking for the eye in the cogwheel.
+
+ys60            = The seal belongs to Mother Sevenfold. Her Skimmers take the cores to the Core Bank – and the way there runs through the Drowned Quarter of the Second Drum.
+ys60_a          = What's there?
+ys61            = Water that doesn't fall. And a man who makes sure it stays that way. The freight lift goes to the Second Drum now too.
+ys62            = The Drowned Quarter. Hold your breath – I mean it.
+
+# Ysolde: after the Drowned Quarter.
+ys70            = The pumps have stopped. Half of Velm heard it. And behind the Pumpwright's lock …
+ys70_a          = … lies the Core Bank.
+ys71            = And in it, perhaps, Ilka. Go. I'll keep your back clear as well as I can.
+ys72            = The Core Bank. Mother Sevenfold. She isn't one enemy – she's seven.
+
+# Ysolde: after the Core Bank – the end of the first act.
+ys80            = You're back. Alone.
+ys80_a          = Ilka has been sold. To the Mill.
+ys81            = The Mill. Then now we know where it all goes – the cores, the bodies, the moons. I've found a ship that will take us there. Not a good one. But one that flies.
+ys82            = Get some rest. Once we leave, there's no coming back to Velm. (End of the first act – to be continued.)
 
 # Ottla, the landlady.
 ot1             = Welcome to the Last Shift. What'll it be?

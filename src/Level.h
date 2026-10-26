@@ -134,6 +134,8 @@ enum class ThemeE : uint8_t
     BRIDGE,      ///< the bridge deck: clean bulkheads, consoles
     BAR,         ///< a bar: warm panels, round tables with stools
     STREET,      ///< a habitat's alley: house fronts with windows and doors, roofs, lights strung across, clutter
+    HULL,        ///< out on a station's skin: plates, radiators, masts, hazard edges over open space
+    VAULT,       ///< a bank's vaults: clean pale bulkheads, polished floors (the racks of cores are the level's)
     COUNT        ///< number of themes
 };
 
@@ -279,6 +281,14 @@ public:
      */
     ThemeE theme( int r, int c ) const;
 
+    /**
+     * @brief Whether a cell is out in the open (no air in a vacuum).
+     * @param[in] r  row
+     * @param[in] c  column
+     * @return true if its zone's theme is an outdoor one ("outdoor" lines)
+     */
+    bool outdoor( int r, int c ) const;
+
     std::string             m_name;                                              ///< key of the name shown at the start
     std::string             m_act;                                               ///< key of the act's name
     float                   m_gravity = 9.81f;                                   ///< m/s²
@@ -309,6 +319,18 @@ public:
     std::string                      m_autotalk;           ///< whom the autopilot talks to
     std::string                      m_intro;              ///< the opening card's text (paragraphs split by '|')
     int                              m_area = 1;           ///< how strong its enemies and its items are
+    float                            m_coriolis = 0.0f;    ///< a drum's spin (rad/s): what flies is bent by it
+    bool                             m_space = false;      ///< open space under the gaps (thin plates, the stars)
+    bool                             m_vacuum = false;     ///< no air outdoors: oxygen runs out, sound is muffled
+    float                            m_flares = 0.0f;      ///< seconds between the star's radiation storms (0 none)
+    Vector4                          m_starAt = { 0, 0, 0, 0 };   ///< the star: where (from the middle), how big
+    Vector3                          m_sunDir = { 0, 0, 0 };      ///< the light's way (0: from the star)
+    Vector3                          m_sunColor = { 0, 0, 0 };    ///< its colour (0: the red dwarf's)
+    int                              m_tugRow = -1, m_tugCol = 0, m_tugSide = 1;   ///< the tug's berth (an edge cell)
+    std::vector<Vector4>             m_water;     ///< balls of water floating in low gravity: cell row, column, radius
+    std::vector<std::pair<int, int>> m_relays;    ///< Mother Sevenfold's relays (cells)
+    std::vector<std::pair<int, int>> m_mothers;   ///< her bodies (cells)
+    int                              m_birds = 0;                      ///< birds that fly over it and never land
     int                              m_ilkaRow = -1, m_ilkaCol = -1;   ///< where Ilka stands at the start
     std::vector<std::pair<int, int>> m_ilkaWay;     ///< where she runs after the alarm (then she is gone)
     std::map<int, std::string>       m_locks;       ///< door cell (row * 1000 + col) -> the event that unlocks it
@@ -316,8 +338,9 @@ public:
     std::map<int, int>               m_elites;      ///< enemy cell (row * 1000 + col) -> 1 a champion, 2 the guardian
     std::string                      m_generated;   ///< a generated level's file (empty for a written one)
     std::vector<std::pair<std::string, std::string>>
-                          m_exits;    ///< (level, flag): where the lift goes once the flag is set
-    std::set<std::string> m_repeat;   ///< exits that stay open once done (the depths)
+                          m_exits;           ///< (level, flag): where the lift goes once the flag is set
+    std::set<std::string> m_repeat;          ///< exits that stay open once done (the depths)
+    std::set<int>         m_outdoorThemes;   ///< themes out in the open (ThemeE as int)
     int                   m_boardRow = -1, m_boardCol = 0, m_boardWidth = 0;   ///< the harvest board
     Vector3               m_boardCorner[4] = {};                               ///< its picture's corners (after build)
     std::vector<Npc>      m_npcs;                                              ///< people to talk to

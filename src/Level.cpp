@@ -163,6 +163,24 @@ const Look Looks[(int)ThemeE::COUNT] = {
       { 205, 196, 186, 255 },
       { 255, 255, 255, 255 },
       0.4f },
+    { 2,
+      { 168, 172, 180, 255 },
+      0.4f,
+      0.4f,
+      1,
+      { 185, 175, 155, 255 },
+      { 176, 180, 188, 255 },
+      { 255, 255, 255, 255 },
+      0.0f },
+    { 2,
+      { 205, 210, 222, 255 },
+      0.95f,
+      0.0f,
+      1,
+      { 200, 205, 215, 255 },
+      { 120, 124, 134, 255 },
+      { 255, 255, 255, 255 },
+      0.0f },
 };
 
 /** @brief Paint of the house fronts in a habitat, faded. */
@@ -191,6 +209,8 @@ ThemeE themeOf( const std::string &name )
     if ( name == "bridge" ) return ThemeE::BRIDGE;
     if ( name == "bar" ) return ThemeE::BAR;
     if ( name == "street" ) return ThemeE::STREET;
+    if ( name == "hull" ) return ThemeE::HULL;
+    if ( name == "vault" ) return ThemeE::VAULT;
     return ThemeE::SERVICE;
 }
 
@@ -400,6 +420,43 @@ bool Level::loadText( const std::string &text )
             kv >> m_ilkaRow >> m_ilkaCol;
         else if ( key == "area" )
             kv >> m_area;
+        else if ( key == "coriolis" )
+            kv >> m_coriolis;
+        else if ( key == "space" || key == "vacuum" )
+        {
+            int on = 0;
+            kv >> on;
+            ( key == "space" ? m_space : m_vacuum ) = on != 0;
+        }
+        else if ( key == "flares" )
+            kv >> m_flares;
+        else if ( key == "star" )
+            kv >> m_starAt.x >> m_starAt.y >> m_starAt.z >> m_starAt.w;
+        else if ( key == "sundir" )
+            kv >> m_sunDir.x >> m_sunDir.y >> m_sunDir.z;
+        else if ( key == "suncolor" )
+            kv >> m_sunColor.x >> m_sunColor.y >> m_sunColor.z;
+        else if ( key == "tug" )
+            kv >> m_tugRow >> m_tugCol >> m_tugSide;
+        else if ( key == "relay" || key == "mother" )
+        {
+            int r = 0, c = 0;
+            kv >> r >> c;
+            ( key == "relay" ? m_relays : m_mothers ).push_back( { r, c } );
+        }
+        else if ( key == "water" )
+        {
+            Vector4 w = { 0, 0, 0, 0 };
+            kv >> w.x >> w.y >> w.z;
+            m_water.push_back( w );
+        }
+        else if ( key == "outdoor" )
+        {
+            std::string name;
+            while ( kv >> name ) m_outdoorThemes.insert( (int)themeOf( name ) );
+        }
+        else if ( key == "birds" )
+            kv >> m_birds;
         else if ( key == "ilkaway" )
         {
             int r, c;
@@ -444,7 +501,8 @@ bool Level::loadText( const std::string &text )
                 cell.m_kind = CellE::DOOR;
             else if ( ch == '&' || ch == '!' )
                 m_markers.push_back( { ch, r, c, {} } );   // a locker to search, a terminal to read
-            else if ( ch == '$' || ch == '%' || ch == '^' || ch == '*' || ch == '?' || ch == '@' )
+            else if ( ch == '$' || ch == '%' || ch == '^' || ch == '*' || ch == '?' || ch == '@' || ch == ':' ||
+                      ch == ';' || ch == '<' || ch == '>' || ch == '|' || ch == ',' )
                 m_markers.push_back( { ch, r, c, {} } );   // the later enemies (see Game::load)
             else if ( ch == 'F' )
                 cell.m_kind = CellE::FIN, cell.m_height = FinHeight;
@@ -479,6 +537,11 @@ void Level::openDoor( int r, int c )
 {
     if ( r < 0 || c < 0 || r >= m_rows || c >= m_cols ) return;
     m_cells[(size_t)r * m_cols + c].m_open = true;
+}
+
+bool Level::outdoor( int r, int c ) const
+{
+    return m_outdoorThemes.count( (int)theme( r, c ) ) > 0;
 }
 
 ThemeE Level::theme( int r, int c ) const
@@ -766,6 +829,58 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
              Vector3Add( cable, Vector3Scale( along, CellSize * 0.5f ) ), 0.025f );
     };
 
+    // A plate of a station's skin: seams, a hazard band along an edge over open space; now and then a tie-down ring,
+    // a conduit, a radiator panel or an antenna mast (those two stand in the way).
+    auto hullPlate = [&]( int r, int c, Vector3 mid )
+    {
+        unsigned h = hashCell( r, c, 140 );
+        metal.m_color = { 70, 72, 78, 255 };
+        metal.box( place( { mid.x - CellSize * 0.5f + 0.02f, 0.006f, mid.z } ), { 0.02f, 0.006f, CellSize * 0.5f } );
+        metal.box( place( { mid.x, 0.006f, mid.z - CellSize * 0.5f + 0.02f } ), { CellSize * 0.5f, 0.006f, 0.02f } );
+        metal.m_color = WHITE;
+        for ( int d = 0; d < 4; ++d )
+        {
+            if ( !isVoid( r + DR[d], c + DC[d] ) ) continue;
+            Vector3 e = { mid.x + DC[d] * ( CellSize * 0.5f - 0.15f ), 0.01f,
+                          mid.z + DR[d] * ( CellSize * 0.5f - 0.15f ) };
+            hazard.box( place( e ), { DC[d] ? 0.12f : CellSize * 0.5f, 0.01f, DR[d] ? 0.12f : CellSize * 0.5f } );
+        }
+        if ( nearMarker( r, c ) ) return;
+        bool edge = nearVoid( r, c );
+        if ( h % 23 == 0 )
+            rust.cylinder( place( { mid.x + 0.4f, 0.0f, mid.z - 0.3f } ), 0.12f, 0.06f, 10 );
+        else if ( h % 31 == 1 && !edge )
+        {
+            // A radiator panel on its frame, faintly warm along its top.
+            float yaw = ( h >> 8 ) % 2 ? 0.0f : PI * 0.5f;
+            metal.box( place( { mid.x, 0.9f, mid.z }, { 0.0f, yaw, 0.0f } ), { 0.85f, 0.75f, 0.06f } );
+            metal.box( place( { mid.x, 0.075f, mid.z }, { 0.0f, yaw, 0.0f } ), { 0.6f, 0.075f, 0.2f } );
+            glows.push_back( { { mid.x, 1.66f, mid.z },
+                               { yaw != 0.0f ? 0.02f : 0.8f, 0.02f, yaw != 0.0f ? 0.8f : 0.02f },
+                               { 1.6f, 0.4f, 0.1f, 0.0f } } );
+            m_props.push_back( { mid, 0.7f } );
+        }
+        else if ( h % 37 == 2 && !edge )
+        {
+            // An antenna mast with a dish and a red light on top.
+            metal.cylinder( place( { mid.x, 0.0f, mid.z } ), 0.07f, 3.6f, 8 );
+            metal.lathe( place( { mid.x, 3.2f, mid.z }, { 0.6f, ( h >> 6 ) % 6 * 1.0f, 0.0f } ),
+                         { { 0.0f, 0.0f }, { 0.55f, 0.18f }, { 0.6f, 0.22f } }, 16 );
+            glows.push_back( { { mid.x, 3.65f, mid.z }, { 0.05f, 0.05f, 0.05f }, { 8.0f, 0.4f, 0.2f, 0.0f } } );
+            m_props.push_back( { mid, 0.3f } );
+        }
+        else if ( h % 13 == 3 )
+        {
+            // A conduit across the plate.
+            if ( ( h >> 9 ) % 2 )
+                rust.cylinder( place( { mid.x - CellSize * 0.5f, 0.1f, mid.z + 0.5f }, { 0.0f, 0.0f, -PI * 0.5f } ),
+                               0.08f, CellSize, 8 );
+            else
+                rust.cylinder( place( { mid.x + 0.5f, 0.1f, mid.z - CellSize * 0.5f }, { PI * 0.5f, 0.0f, 0.0f } ),
+                               0.08f, CellSize, 8 );
+        }
+    };
+
     for ( int r = 0; r < m_rows; ++r )
         for ( int c = 0; c < m_cols; ++c )
         {
@@ -850,7 +965,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     }
                     continue;
                 }
-                float        bottom = nearVoid( r, c ) ? -PitDepth : -0.5f;
+                float        bottom = nearVoid( r, c ) && !m_space ? -PitDepth : -0.5f;
                 MeshBuilder &wall = look.m_walls >= 2 ? hull : rock;
                 wall.m_color = look.m_walls == 3 ? FrontPaint[hashCell( r / 4, c / 4, 98 ) % 5] : look.m_rock;
                 wall.box( place( { mid.x, ( bottom + m_wallHeight ) * 0.5f, mid.z } ),
@@ -930,7 +1045,16 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 }
                 continue;
             }
-            if ( k.m_kind == CellE::VOID )
+            if ( k.m_kind == CellE::VOID && m_space )
+            {
+                // Open space under the plates: now and then a girder of the station's frame far below.
+                unsigned h = hashCell( r, c, 7 );
+                if ( h % 7 == 0 )
+                    metal.box( place( { mid.x, -6.0f - ( h >> 8 ) % 5 * 4.0f, mid.z },
+                                      { 0.0f, ( h >> 4 ) % 2 ? 0.0f : PI * 0.5f, 0.0f } ),
+                               { 0.3f, 0.4f, CellSize * 0.5f } );
+            }
+            else if ( k.m_kind == CellE::VOID )
             {
                 // The shaft: a faint heat glow far down, and girders across at depth.
                 glows.push_back( { { mid.x, -PitDepth, mid.z },
@@ -980,10 +1104,16 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 floor.m_color = WHITE;
                 if ( hashCell( r, c, 3 ) % 9 == 0 )
                     grate.box( place( { mid.x, h + 0.01f, mid.z } ), { 0.7f, 0.012f, 0.7f } );
+                if ( theme( r, c ) == ThemeE::HULL ) hullPlate( r, c, mid );
             }
 
-            // Under a floor next to a shaft: the shaft's wall.
-            if ( k.m_kind != CellE::VOID && k.m_kind != CellE::GRATE && nearVoid( r, c ) )
+            // Under a floor next to a shaft: the shaft's wall (in open space only the plate's edge and a rib).
+            if ( k.m_kind != CellE::VOID && k.m_kind != CellE::GRATE && nearVoid( r, c ) && m_space )
+            {
+                metal.box( place( { mid.x, -0.9f, mid.z } ), { CellSize * 0.5f, 0.4f, CellSize * 0.5f } );
+                if ( ( r + c ) % 2 == 0 ) metal.box( place( { mid.x, -2.0f, mid.z } ), { 0.15f, 0.7f, 0.15f } );
+            }
+            else if ( k.m_kind != CellE::VOID && k.m_kind != CellE::GRATE && nearVoid( r, c ) )
                 rock.box( place( { mid.x, ( -PitDepth - 0.5f ) * 0.5f, mid.z } ),
                           { CellSize * 0.5f, ( PitDepth - 0.5f ) * 0.5f, CellSize * 0.5f } );
 

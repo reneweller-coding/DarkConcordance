@@ -45,7 +45,32 @@ ys22            = Der Knochenmarkt wartet. Der Taxator auch.
 ys30            = Der Taxator ist tot, und der Markt schweigt – zum ersten Mal seit Jahren. Was haben Sie gefunden?
 ys30_a          = Eine Quittung. Ein Auge in einem Zahnrad.
 ys31            = Das Zeichen habe ich schon einmal gesehen. Auf Papieren, die es nicht geben dürfte. Ich brauche Zeit. Bis dahin: Unter der Trommel liegen die Tiefen. Wer dort hinuntergeht, kommt stärker wieder – oder gar nicht.
-ys40            = Noch nichts. Die Tiefen laufen Ihnen nicht weg. Sie ändern nur ihre Form.
+ys40            = Die Quittung hat mir mehr verraten, als dem Taxator lieb gewesen wäre. Die Körper aus Talgrund sind noch auf Velm – in einem Container, unter einem Schlepper am Frachtring. Draußen, auf der Außenhaut.
+ys40_a          = Dann gehe ich raus.
+ys41            = Dort gibt es keine Luft, und der Zwerg ist unruhig. Der Lastenaufzug bringt Sie zur Schleuse. Und, bitte: Bringen Sie sie zurück.
+ys42            = Der Schlepper hat ein Startfenster. Es schließt sich nicht für Sie.
+
+# Ysolde: nach der Außenhaut.
+ys50            = Ich habe es auf dem Schirm gesehen. Ein Container, der auf den Zwerg zutreibt.
+ys50_a          = Ich war zu spät.
+ys51            = Sie waren schneller als jeder andere hier. Das ist nicht dasselbe wie rechtzeitig – aber es ist auch nicht nichts. Schlafen Sie. Ich suche weiter nach dem Auge im Zahnrad.
+
+ys60            = Das Siegel gehört Mutter Siebenfach. Ihre Abschöpfer bringen die Kerne in die Kernbank – und der Weg dorthin führt durch das Ertrunkene Viertel der Zweiten Trommel.
+ys60_a          = Was ist dort?
+ys61            = Wasser, das nicht fällt. Und ein Mann, der dafür sorgt, dass es so bleibt. Der Lastenaufzug fährt jetzt auch in die Zweite Trommel.
+ys62            = Das Ertrunkene Viertel. Halten Sie den Atem an – im Ernst.
+
+# Ysolde: nach dem Ertrunkenen Viertel.
+ys70            = Die Pumpen stehen. Halb Velm hat es gehört. Und hinter der Schleuse des Hydraulikers …
+ys70_a          = … liegt die Kernbank.
+ys71            = Und darin vielleicht Ilka. Gehen Sie. Ich halte Ihnen den Rücken frei, so gut ich kann.
+ys72            = Die Kernbank. Mutter Siebenfach. Sie ist nicht eine Gegnerin – sie ist sieben.
+
+# Ysolde: nach der Kernbank – das Ende des ersten Akts.
+ys80            = Sie sind zurück. Allein.
+ys80_a          = Ilka ist verkauft. An die Mühle.
+ys81            = Die Mühle. Dann wissen wir jetzt, wohin alles geht – die Kerne, die Körper, die Monde. Ich habe ein Schiff gefunden, das uns hinbringt. Kein gutes. Aber eines, das fliegt.
+ys82            = Ruhen Sie sich aus. Wenn wir aufbrechen, gibt es kein Zurück nach Velm. (Ende des ersten Akts – Fortsetzung folgt.)
 
 # Ottla, die Wirtin.
 ot1             = Willkommen in der Letzten Schicht. Was darf's sein?
