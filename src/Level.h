@@ -13,6 +13,7 @@
 
 #include <cstdint>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -171,11 +172,19 @@ class Level
 {
 public:
     /**
-     * @brief Reads a level file.
+     * @brief Reads a level file; a recipe (see LevelGen.h) is generated first.
      * @param[in] path  the file
+     * @param[in] seed  a generated level's seed
      * @return false if it cannot be read
      */
-    bool load( const std::string &path );
+    bool load( const std::string &path, unsigned seed = 0 );
+
+    /**
+     * @brief Reads a level from its text.
+     * @param[in] text  the level file's contents
+     * @return false if it has no map
+     */
+    bool loadText( const std::string &text );
 
     /**
      * @brief Builds the geometry: walls, floors, dressing, lamps; adds the level's lights.
@@ -299,12 +308,16 @@ public:
     std::string                      m_back;               ///< with this flag the level starts with "back", not "start"
     std::string                      m_autotalk;           ///< whom the autopilot talks to
     std::string                      m_intro;              ///< the opening card's text (paragraphs split by '|')
+    int                              m_area = 1;           ///< how strong its enemies and its items are
     int                              m_ilkaRow = -1, m_ilkaCol = -1;   ///< where Ilka stands at the start
-    std::vector<std::pair<int, int>> m_ilkaWay;   ///< where she runs after the alarm (then she is gone)
-    std::map<int, std::string>       m_locks;     ///< door cell (row * 1000 + col) -> the event that unlocks it
-    std::map<int, std::string>       m_notes;     ///< terminal cell (row * 1000 + col) -> the key of its text
+    std::vector<std::pair<int, int>> m_ilkaWay;     ///< where she runs after the alarm (then she is gone)
+    std::map<int, std::string>       m_locks;       ///< door cell (row * 1000 + col) -> the event that unlocks it
+    std::map<int, std::string>       m_notes;       ///< terminal cell (row * 1000 + col) -> the key of its text
+    std::map<int, int>               m_elites;      ///< enemy cell (row * 1000 + col) -> 1 a champion, 2 the guardian
+    std::string                      m_generated;   ///< a generated level's file (empty for a written one)
     std::vector<std::pair<std::string, std::string>>
-                          m_exits;   ///< (level, flag): where the lift goes once the flag is set
+                          m_exits;    ///< (level, flag): where the lift goes once the flag is set
+    std::set<std::string> m_repeat;   ///< exits that stay open once done (the depths)
     int                   m_boardRow = -1, m_boardCol = 0, m_boardWidth = 0;   ///< the harvest board
     Vector3               m_boardCorner[4] = {};                               ///< its picture's corners (after build)
     std::vector<Npc>      m_npcs;                                              ///< people to talk to

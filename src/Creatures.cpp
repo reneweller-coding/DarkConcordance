@@ -23,11 +23,11 @@ const Vector4 Own = { -1.0f, 0.0f, 0.0f, 0.0f };
 
 }   // namespace
 
-void LouseModel::build( int rust, int metal, int glow, bool welder )
+void LouseModel::build( int rust, int metal, int glow, bool welder, float scale )
 {
     m_welder = welder;
     m_metal = metal;
-    float s = welder ? 1.7f : 1.0f;
+    float s = scale > 0.0f ? scale : ( welder ? 1.7f : 1.0f );
     m_scale = s;
     m_height = 0.42f * s;
     m_thigh = 0.42f * s;

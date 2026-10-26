@@ -1,0 +1,25 @@
+# Die Gegner (Deutsch): Namen, die Gaben der Champions, die Bosse, das Ziel des Lastenaufzugs.
+
+foe.louse      = Rostlaus
+foe.welder     = Schweißlaus
+foe.baton      = Abschöpfer
+foe.gunner     = Abschöpfer-Schütze
+foe.shield     = Schildwache
+foe.heavy      = Schwerer Abschöpfer
+foe.drone      = Wachdrohne
+foe.saw        = Sägebot
+foe.bomber     = Zünder
+foe.taxator    = Taxator
+
+elite.0        = Flinker
+elite.1        = Gepanzerter
+elite.2        = Instabiler
+elite.3        = Rasender
+
+boss.taxator   = DER TAXATOR
+boss.guardian  = WÄCHTER: %s
+
+lift.title     = LASTENAUFZUG
+dest.kuehlgedaerme = Die Kühlgedärme
+dest.knochenmarkt  = Der Knochenmarkt · Agrartrommel
+dest.tiefen        = Die Tiefen · Wartungsebenen (jedes Mal anders)

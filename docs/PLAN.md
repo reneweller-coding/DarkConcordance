@@ -88,16 +88,42 @@ prologue rebuilt with corridors and cabins before the hold; people on stools at 
 bare-headed where there is air; a map of what has been seen (over the game or as a page), an inventory and a character
 page with portraits.
 
-Open: real character models and motion. Candidates (all to be downloaded only with the user's OK): Quaternius'
-Universal Animation Library 1 and 2 (CC0, 45 and 42 animations free in glTF; full sets paid) with the Universal Base
-Characters (CC0, six rigged humanoids); the CMU motion capture data (free, not to be resold as data). raylib plays
-glTF skeletal animation; the game's own shaders would need GPU skinning.
+Built with the RPG layer (26.10.2026, after the user asked for Dark Alliance's pull of ever better gear): items in
+four rarities (common, magic, rare, unique) on seven slots (weapon, armour, helmet, gloves, boots, two implants), 50
+kinds in two tiers (the second from item level 7: Gauss Rifle Mk II, Spindle Rail, Forge Hammer, Combat Exo ...),
+17 affixes that grow with the item's level, 18 uniques; drops from kills, champions, lockers and bosses; a bag of 30,
+salvage for scrap; experience and hero levels (to 40) with a skill point each; 16 skills (five passives and three
+actives per hero: Corvin's overcharge, grenade and roll, Dorra's bolts, quake and charge); hits with crits, burning,
+stuns, leech and thorns (GameLoot.cpp, Items.cpp, Skills.cpp, GamePanel.cpp).
+
+Built with real people (26.10.2026): Quaternius' Universal Animation Library 1 and 2 and the Universal Base Characters
+(all CC0, downloaded with the user's OK: quaternius.com/packs/universalanimationlibrary.html,
+quaternius.itch.io/universal-animation-library-2, quaternius.itch.io/universal-base-characters), GPU skinning in the
+game's own shaders, the clips retargeted onto the bodies at load time; the hub's and the ship's people are skinned
+figures with hair and clothes in many colours that walk, sit on stools, talk, fold their arms (Skin.cpp,
+GameSkin.cpp). The heroes and the enemies stay procedural figures for now.
+
+Built with level 2 (26.10.2026): **generated levels** (LevelGen.cpp) in the manner of Diablo II: a level file can be a
+recipe (rooms on the way, side rooms, sizes, themes, enemy packs with weights, champions' share, the set piece at the
+end, terminal texts); from a seed it becomes an ordinary level file: rooms joined by straight corridors (some with
+doors), dressed by theme (market stalls, heat exchangers, shelves, container stacks, a shaft with a grating bridge,
+raised floors), packs and champions, lockers, terminals, capsules on the way, lamps, triggers for the lines, the
+autopilot's route, and a boss hall with the gate and the freight lift. The seed comes from the save, so each new game
+(and each visit to the depths) has another layout; the story's set pieces stay fixed. **New enemies** (GameFoes.cpp):
+market guards behind riot shields (they block from the front), heavies with rotary guns, hovering drones, saw bots in
+swarms, crawlers that run in and go off; **champions** with a coloured ring, a name and one gift (swift, armoured,
+volatile, berserk), a guardian at a depths level's end; **the Taxator** in his exoskeleton (stomp, fanned volleys,
+help at 60 % and 30 %, a charge that ends stunned against a wall). Enemies grow with the area. The hub's lift asks
+where to when it can go to more than one place.
+
+Open: the drum's gravity towards the axis and Coriolis for level 2 (planned below); skinned heroes and enemies with
+the animation packs' combat clips.
 
 Still to come, by first use:
 
 | System | First needed in |
 |---|---|
-| Rotating drum: gravity falls towards the axis, Coriolis bends shots, aim-ahead mode | 2 Knochenmarkt |
+| Rotating drum: gravity falls towards the axis, Coriolis bends shots, aim-ahead mode | 2 Knochenmarkt (still open) |
 | Vacuum: oxygen, helmet hits, radiation spikes, only radio and breath | 3 Außenhaut |
 | Floating water spheres: caustics, diving, drowning, current through water | 4 Ertrunkenes Viertel |
 | Fragile targets (core storage), multi-body boss with radio link | 5 Kernbank |
@@ -159,8 +185,8 @@ Still to come, by first use:
 
 1. **Level 1 „Die Kühlgedärme“** as the playable prototype with Corvin: does the combat feel right? — done
 2. **Prologue** with Dorra and Corvin to choose — done (25.10.2026; Ione's drones still to come).
-3. Velm as hub (bar, trader, workshop, Ysolde) — done (25.10.2026); then levels 2–5, Ione, voices: **Act I
-   complete**.
+3. Velm as hub (bar, trader, workshop, Ysolde) — done (25.10.2026); level 2 generated, with the Depths for replay —
+   done (26.10.2026, without the drum's gravity yet); then levels 3–5, Ione, voices: **Act I complete**.
 4. Act II with the ship as hub and the first choices; co-op for two.
 5. Acts III and IV, endings, epilogue cards, flashback levels.
 6. Steam Deck: half-resolution fog, no supersampling, gamepad everywhere.

@@ -43,6 +43,12 @@ constexpr float TankHp = 450.0f;
 constexpr float CoreHp = 700.0f;
 constexpr float BatonHp = 75.0f;
 constexpr float GunnerHp = 60.0f;
+constexpr float ShieldHp = 150.0f;
+constexpr float HeavyHp = 320.0f;
+constexpr float DroneHp = 42.0f;
+constexpr float SawHp = 26.0f;
+constexpr float BomberHp = 30.0f;
+constexpr float TaxatorHp = 4500.0f;
 // Dorra.
 constexpr float DorraSpeed = 3.9f;
 constexpr float DorraJump = 4.0f;
@@ -76,15 +82,17 @@ enum SurfE
     S_CLOTH2,
     S_CLOTH3,
     S_ILKA,
-    S_YSOLDE,   ///< Ysolde's dark violet coat
-    S_KIRI,     ///< Kiri's orange coverall
-    S_CAVERN,   ///< the asteroid's cavern, seen from far
-    S_CLOTH4,   ///< more clothes for a crowd: a faded red
-    S_CLOTH5,   ///< and a worker's blue
-    S_SKIN,     ///< faces (the hero bare-headed)
-    S_HAIR,     ///< Corvin's dark hair
-    S_HAIR2,    ///< Dorra's red hair
-    S_HAIR3,    ///< grey hair (Ysolde)
+    S_YSOLDE,    ///< Ysolde's dark violet coat
+    S_KIRI,      ///< Kiri's orange coverall
+    S_CAVERN,    ///< the asteroid's cavern, seen from far
+    S_CLOTH4,    ///< more clothes for a crowd: a faded red
+    S_CLOTH5,    ///< and a worker's blue
+    S_SKIN,      ///< faces (the hero bare-headed)
+    S_HAIR,      ///< Corvin's dark hair
+    S_HAIR2,     ///< Dorra's red hair
+    S_HAIR3,     ///< grey hair (Ysolde)
+    S_GUARD,     ///< the market guards' blued plates
+    S_TAXATOR,   ///< the Taxator's brass
     S_COUNT
 };
 

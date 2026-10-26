@@ -1,0 +1,3 @@
+﻿Characters, hairstyles and animations by Quaternius (quaternius.com), CC0 1.0 Universal (public domain).
+Universal Animation Library (Standard), Universal Animation Library 2 (Standard), Universal Base Characters (Standard).
+anim_library.glb = AnimationLibrary_Godot_Standard.glb, anim_library2.glb = UAL2_Standard.glb.

@@ -75,6 +75,21 @@ Gfx::CommonLocs Gfx::locate( Shader s )
     return l;
 }
 
+Gfx::DrawLocs Gfx::drawLocs( Shader s )
+{
+    DrawLocs l;
+    l.m_uv = GetShaderLocation( s, "uvScale" );
+    l.m_params = GetShaderLocation( s, "matParams" );
+    l.m_emissive = GetShaderLocation( s, "emissive" );
+    l.m_mask = GetShaderLocation( s, "emissiveMask" );
+    l.m_variation = GetShaderLocation( s, "variation" );
+    l.m_cutaway = GetShaderLocation( s, "cutaway" );
+    l.m_tint = GetShaderLocation( s, "drawTint" );
+    l.m_cutCentre = GetShaderLocation( s, "cutCentre" );
+    l.m_cutRadius = GetShaderLocation( s, "cutRadius" );
+    return l;
+}
+
 void Gfx::upload( Shader s, const CommonLocs &l )
 {
     const Lighting &L = m_lights;
@@ -183,21 +198,24 @@ void Gfx::init( int width, int height, float ss )
     m_up = load( FullscreenVs, UpFs );
     m_final = load( FullscreenVs, FinalFs );
 
+    m_litSkin = load( LitSkinVs, ( common + LitFs ).c_str() );
+    m_depthSkin = load( DepthSkinVs, DepthFs );
+
     m_lit.locs[SHADER_LOC_MAP_EMISSION] = GetShaderLocation( m_lit, "emissionMap" );
+    m_litSkin.locs[SHADER_LOC_MAP_EMISSION] = GetShaderLocation( m_litSkin, "emissionMap" );
     m_litLocs = locate( m_lit );
+    m_litSkinLocs = locate( m_litSkin );
     m_glassLocs = locate( m_glassShader );
     m_skyLocs = locate( m_sky );
     m_planetLocs = locate( m_planet );
     m_particleLocs = locate( m_particle );
-    m_litUv = GetShaderLocation( m_lit, "uvScale" );
-    m_litParams = GetShaderLocation( m_lit, "matParams" );
-    m_litEmissive = GetShaderLocation( m_lit, "emissive" );
-    m_litMask = GetShaderLocation( m_lit, "emissiveMask" );
-    m_litVariation = GetShaderLocation( m_lit, "variation" );
-    m_litCutaway = GetShaderLocation( m_lit, "cutaway" );
+    m_litDraw = drawLocs( m_lit );
+    m_skinDraw = drawLocs( m_litSkin );
 
     m_depthMat = LoadMaterialDefault();
     m_depthMat.shader = m_depth;
+    m_depthSkinMat = LoadMaterialDefault();
+    m_depthSkinMat.shader = m_depthSkin;
     m_glassMat = LoadMaterialDefault();
     m_glassMat.shader = m_glassShader;
     m_planetMat = LoadMaterialDefault();
@@ -257,10 +275,23 @@ void Gfx::shadows( const Lighting &lights, Vector3 centre, const std::vector<con
     rlSetClipPlanes( 1.0, 160.0 );
     BeginMode3D( sun );
     m_sunVP = MatrixMultiply( rlGetMatrixModelview(), rlGetMatrixProjection() );
+    // A skinned figure casts the shadow of its pose, not of its rest pose.
+    auto depth = [&]( const Drawable &d )
+    {
+        if ( !d.m_bones )
+        {
+            DrawMesh( d.m_mesh, m_depthMat, d.m_transform );
+            return;
+        }
+        Mesh mesh = d.m_mesh;
+        mesh.boneMatrices = const_cast<Matrix *>( d.m_bones );
+        mesh.boneCount = d.m_boneCount;
+        DrawMesh( mesh, m_depthSkinMat, d.m_transform );
+    };
     if ( m_sunShadows )
         for ( const auto *list : lists )
             for ( const Drawable &d : *list )
-                if ( d.m_sunShadow ) DrawMesh( d.m_mesh, m_depthMat, d.m_transform );
+                if ( d.m_sunShadow ) depth( d );
     EndMode3D();
     EndTextureMode();
 
@@ -278,7 +309,7 @@ void Gfx::shadows( const Lighting &lights, Vector3 centre, const std::vector<con
     m_spotVP = MatrixMultiply( rlGetMatrixModelview(), rlGetMatrixProjection() );
     for ( const auto *list : lists )
         for ( const Drawable &d : *list )
-            if ( d.m_spotShadow ) DrawMesh( d.m_mesh, m_depthMat, d.m_transform );
+            if ( d.m_spotShadow ) depth( d );
     EndMode3D();
     EndTextureMode();
 }
@@ -304,13 +335,17 @@ void Gfx::beginScene( const Camera3D &cam, const Lighting &lights, float time, T
     BeginTextureMode( m_hdr );
     ClearBackground( BLACK );
     upload( m_lit, m_litLocs );
+    upload( m_litSkin, m_litSkinLocs );
     upload( m_glassShader, m_glassLocs );
     upload( m_sky, m_skyLocs );
     upload( m_planet, m_planetLocs );
     upload( m_particle, m_particleLocs );
     bindShadows( true );
-    SetShaderValue( m_lit, GetShaderLocation( m_lit, "cutCentre" ), &m_cutCentre, SHADER_UNIFORM_VEC3 );
-    SetShaderValue( m_lit, GetShaderLocation( m_lit, "cutRadius" ), &m_cutRadius, SHADER_UNIFORM_FLOAT );
+    for ( auto [shader, locs] : { std::pair<Shader, DrawLocs>{ m_lit, m_litDraw }, { m_litSkin, m_skinDraw } } )
+    {
+        SetShaderValue( shader, locs.m_cutCentre, &m_cutCentre, SHADER_UNIFORM_VEC3 );
+        SetShaderValue( shader, locs.m_cutRadius, &m_cutRadius, SHADER_UNIFORM_FLOAT );
+    }
 
     Matrix view = MatrixLookAt( cam.position, cam.target, cam.up );
     Matrix proj = MatrixPerspective( cam.fovy * DEG2RAD, (double)w / h, 0.5, 30000.0 );
@@ -333,17 +368,32 @@ void Gfx::draw( const std::vector<Drawable> &list, const std::vector<Surface> &s
     for ( const Drawable &d : list )
     {
         if ( !d.m_visible ) continue;
-        const Surface &s = surfaces[d.m_surface];
-        SetShaderValue( m_lit, m_litUv, &s.m_uvScale, SHADER_UNIFORM_FLOAT );
-        SetShaderValue( m_lit, m_litParams, &s.m_params, SHADER_UNIFORM_VEC4 );
+        const Surface  &s = surfaces[d.m_surface];
+        bool            skin = d.m_bones != nullptr;
+        Shader          shader = skin ? m_litSkin : m_lit;
+        const DrawLocs &l = skin ? m_skinDraw : m_litDraw;
+        SetShaderValue( shader, l.m_uv, &s.m_uvScale, SHADER_UNIFORM_FLOAT );
+        SetShaderValue( shader, l.m_params, &s.m_params, SHADER_UNIFORM_VEC4 );
         const Vector4 &em = d.m_emissive.x >= 0.0f ? d.m_emissive : s.m_emissive;
-        SetShaderValue( m_lit, m_litEmissive, &em, SHADER_UNIFORM_VEC4 );
-        SetShaderValue( m_lit, m_litMask, &s.m_mask, SHADER_UNIFORM_VEC2 );
-        SetShaderValue( m_lit, m_litVariation, &s.m_variation, SHADER_UNIFORM_FLOAT );
+        SetShaderValue( shader, l.m_emissive, &em, SHADER_UNIFORM_VEC4 );
+        SetShaderValue( shader, l.m_mask, &s.m_mask, SHADER_UNIFORM_VEC2 );
+        SetShaderValue( shader, l.m_variation, &s.m_variation, SHADER_UNIFORM_FLOAT );
         float cut = d.m_cutaway ? 1.0f : 0.0f;
-        SetShaderValue( m_lit, m_litCutaway, &cut, SHADER_UNIFORM_FLOAT );
+        SetShaderValue( shader, l.m_cutaway, &cut, SHADER_UNIFORM_FLOAT );
+        SetShaderValue( shader, l.m_tint, &d.m_tint, SHADER_UNIFORM_VEC4 );
         s.m_material.maps[MATERIAL_MAP_ALBEDO].color = s.m_tint;
-        DrawMesh( d.m_mesh, s.m_material, d.m_transform );
+        if ( !skin )
+        {
+            DrawMesh( d.m_mesh, s.m_material, d.m_transform );
+            continue;
+        }
+        // A skinned figure: its own bones on the shared mesh, the skinning shader with the surface's maps.
+        Mesh     mesh = d.m_mesh;
+        Material mat = s.m_material;
+        mesh.boneMatrices = const_cast<Matrix *>( d.m_bones );
+        mesh.boneCount = d.m_boneCount;
+        mat.shader = m_litSkin;
+        DrawMesh( mesh, mat, d.m_transform );
     }
 }
 

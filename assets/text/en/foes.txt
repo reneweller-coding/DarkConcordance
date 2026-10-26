@@ -1,0 +1,25 @@
+# The enemies (English): names, the champions' gifts, the bosses, where the freight lift goes.
+
+foe.louse      = Rust Louse
+foe.welder     = Welder Louse
+foe.baton      = Skimmer
+foe.gunner     = Skimmer Gunner
+foe.shield     = Shield Guard
+foe.heavy      = Heavy Skimmer
+foe.drone      = Watch Drone
+foe.saw        = Saw Bot
+foe.bomber     = Crawler
+foe.taxator    = Assessor
+
+elite.0        = Swift
+elite.1        = Armoured
+elite.2        = Volatile
+elite.3        = Berserk
+
+boss.taxator   = THE ASSESSOR
+boss.guardian  = GUARDIAN: %s
+
+lift.title     = FREIGHT LIFT
+dest.kuehlgedaerme = The Cooling Guts
+dest.knochenmarkt  = The Marrow Market · farm drum
+dest.tiefen        = The Depths · maintenance levels (different every time)

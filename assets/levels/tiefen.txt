@@ -1,0 +1,51 @@
+# Die Tiefen: die Wartungsebenen unter der Dritten Trommel. Bei jedem Besuch neu erzeugt, so tief wie der Held stark
+# ist ("area 0"); am Ende wartet ein Wächter vor dem Lastenaufzug. Zum Sammeln von Erfahrung und Ausrüstung.
+# Die gen...-Zeilen erklärt knochenmarkt.txt.
+
+name     d.name
+act      act.depths
+gravity  7.0
+fog      0.008 0.03 0.6 1.2
+fogcolor 0.0015 0.002 0.003
+ambient  0.02 0.022 0.026 0.014 0.015 0.018
+walls    4.5
+area     0
+next     velm.txt
+gate     bossdead
+ambience tunnels
+
+genrooms      9
+genside       3
+gensize       10 16 8 13
+gentheme      service exchanger shaft coldstore works cargo gangway
+genarenatheme shaft
+genarena      guardian
+genguard      %$WT
+genpack       LLLL    3
+genpack       LLW     2
+genpack       ETT     2
+genpack       $$T     1.5
+genpack       %T      1
+genpack       ^^^^    1.5
+genpack       ******  1.5
+genpack       **??    1
+genpack       WW      0.8
+gendensity    1.35
+genelite      0.3
+gennote       note.depths1 note.depths2 note.depths3
+
+[lines]
+# Schlüssel | Auslöser | Sprecher
+d_start     | a           | hero
+d_champion  | champion    | hero
+d_guard     | g           | hero
+d_end       | bossdead    | hero
+
+[hints]
+# Schlüssel | Auslöser
+h_depths    | a
+h_shield    | shieldguard
+h_champion  | champion
+h_bomber    | bomber
+h_stim      | hurt
+h_lift      | bossdead

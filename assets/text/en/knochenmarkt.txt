@@ -1,0 +1,44 @@
+# Level 2: The Marrow Market (English). Lines, hints, terminals; the level file names only the keys.
+
+l2.name        = The Marrow Market
+l2.intro       = The farm drum. Once it grew grain for four hundred thousand people; the fields have long become alleys, the alleys a market. | Here they sell what is left of people once their cores have been taken. Behind the stalls, in his hall, the Assessor appraises every head himself. | Ysolde says he buys for someone. Find out who.
+
+l2_start       = The Marrow Market. Above me the stalls of the far side hang upside down. And down here they trade in what is left of people.
+l2_market      = Market guards. They belong to the Assessor. Shields in front – so from the side.
+l2_champion    = That one is different. Bigger, faster. One who collects bounties.
+l2_bomber      = Crawlers with charges! They run into your arms and go off.
+l2_cold        = Cold rooms. The bodies lie here until the Assessor has named a price.
+l2_birds       = Birds. Hatched in the drum and never landed. They do not know where down is.
+l2_deep        = The deeper into the market, the dearer the goods. And the more guards.
+l2_hall        = The Assessor's hall. Behind that door, people are appraised.
+l2_taxator     = The Assessor. A man in a machine that makes him bigger than he is.
+l2_tax2        = He calls for help. Of course he does.
+l2_tax3        = The armour is breaking. Now he is angry.
+l2_end         = Weighed and found wanting. Ysolde will want to know who he was buying for.
+
+l2_start.dorra = The Marrow Market. On Kalvar we sold ore. Here they sell what is left of people.
+l2_market.dorra = Market guards with shields. A shield does not hold forever against the ram hammer.
+l2_champion.dorra = That one is bigger than the others. Good. He will fall louder.
+l2_cold.dorra  = Cold rooms. That is how we kept meat on Kalvar. Back then it was meat.
+l2_taxator.dorra = The Assessor. Built himself armour so he could look down on us.
+l2_end.dorra   = That was the Assessor. Someone else can have his scales. I want to know who paid.
+
+h_market       = The market: many rooms, side rooms behind doors (A / E). Rescue capsules remember where you go on from.
+h_shield       = Shield guards block from the front. Attack from the side or from behind.
+h_shield.dorra = Shield guards block from the front. The ram hammer still gets through – from the side it is quicker.
+h_champion     = Champions (coloured ring): more health and a gift – green swift, blue armoured, orange explodes, red berserk. They always drop something.
+h_bomber       = Shoot crawlers from a distance. Their blast hits the other enemies too.
+h_bomber.dorra = Crawlers: throw a blast bolt (B / F) and keep your distance. Their blast hits the others too.
+h_taxator      = The Assessor: keep away when he stomps. His volleys come in a fan – dodge sideways.
+h_rush         = He is taking a run! Sidestep – if he runs into a wall, he stands stunned.
+
+note.ledger.title    = Ledger, page 14
+note.ledger          = Cores: no purchases (see the Core Bank). Bodies, male, well kept: 40. Bodies, female, well kept: 45. Children: on request. | Deduction for frost damage: 10 percent. Deduction for scars: by appraisal.
+note.appraisal.title = Appraisal record
+note.appraisal       = Head 7-311. Core removed on the 3rd of the month, removal clean. Spine intact, joints intact, teeth complete. | Appraised at: 120. The Assessor's remark: For the yard. They pay for hands.
+note.guards.title    = Market watch roster
+note.guards          = Night shift: stalls 1 to 40, cold rooms, the hall. Nobody enters the hall without a badge. | Whoever speaks to a buyer is dismissed. Whoever recognises a buyer is not dismissed.
+note.birds.title     = Note on a cage
+note.birds           = Do not feed. The birds from the drum die when they land. They never learnt how. | – B.
+note.receipt.title   = Receipt, unread
+note.receipt         = Delivery: 61 bodies, origin Talgrund. Recipient: the Yard at the Gate, via the Mill collection point. | Signed: the Assessor. Countersigned: a seal with an eye inside a cogwheel.

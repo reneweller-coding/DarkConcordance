@@ -38,6 +38,64 @@ void main()
 }
 )";
 
+/**
+ * @brief Vertex shader of skinned figures (bones from the glTF, matrices per figure): world position and normal
+ *        skinned; objPos stays in the rest pose (the clothes' pattern sticks to the body), objNormal is skinned.
+ */
+inline const char *LitSkinVs = R"(
+#version 330
+in vec3 vertexPosition;
+in vec2 vertexTexCoord;
+in vec3 vertexNormal;
+in vec4 vertexColor;
+in vec4 vertexBoneIds;
+in vec4 vertexBoneWeights;
+uniform mat4 mvp;
+uniform mat4 matModel;
+uniform mat4 matNormal;
+uniform mat4 boneMatrices[128];
+out vec3 fragPos;
+out vec3 fragNormal;
+out vec3 objPos;
+out vec3 objNormal;
+out vec4 fragColor;
+out vec2 fragTexCoord;
+void main()
+{
+    mat4 skin = boneMatrices[int( vertexBoneIds.x )] * vertexBoneWeights.x +
+                boneMatrices[int( vertexBoneIds.y )] * vertexBoneWeights.y +
+                boneMatrices[int( vertexBoneIds.z )] * vertexBoneWeights.z +
+                boneMatrices[int( vertexBoneIds.w )] * vertexBoneWeights.w;
+    vec4 pos = skin * vec4( vertexPosition, 1.0 );
+    vec3 nrm = normalize( mat3( skin ) * vertexNormal );
+    objPos = vertexPosition;
+    objNormal = nrm;
+    fragPos = vec3( matModel * pos );
+    fragNormal = normalize( vec3( matNormal * vec4( nrm, 0.0 ) ) );
+    fragColor = vertexColor;
+    fragTexCoord = vertexTexCoord;
+    gl_Position = mvp * pos;
+}
+)";
+
+/** @brief Depth only, skinned (the shadow maps). */
+inline const char *DepthSkinVs = R"(
+#version 330
+in vec3 vertexPosition;
+in vec4 vertexBoneIds;
+in vec4 vertexBoneWeights;
+uniform mat4 mvp;
+uniform mat4 boneMatrices[128];
+void main()
+{
+    mat4 skin = boneMatrices[int( vertexBoneIds.x )] * vertexBoneWeights.x +
+                boneMatrices[int( vertexBoneIds.y )] * vertexBoneWeights.y +
+                boneMatrices[int( vertexBoneIds.z )] * vertexBoneWeights.z +
+                boneMatrices[int( vertexBoneIds.w )] * vertexBoneWeights.w;
+    gl_Position = mvp * ( skin * vec4( vertexPosition, 1.0 ) );
+}
+)";
+
 /** @brief What every lit fragment shader shares: the lights, the shadows, the fog. */
 inline const char *CommonFs = R"(
 #version 330
@@ -245,7 +303,8 @@ uniform sampler2D emissionMap;
 uniform vec4 colDiffuse;
 uniform mat4 matNormal;
 uniform float uvScale;
-uniform vec4 matParams;    // roughness scale, metallic scale, normal strength, mapping (0 triplanar, 1 UV)
+uniform vec4 matParams;    // roughness scale, metallic scale, normal strength, mapping (0 triplanar, 1 UV, 2 clothed)
+uniform vec4 drawTint;     // clothed: the clothes' colour, the height (rest pose) the skin shows above
 uniform vec4 emissive;     // rgb, mode (0 plain, 1 grooves glow, 2 emission map)
 uniform vec2 emissiveMask; // the grooves' smoothstep
 uniform float variation;
@@ -312,6 +371,18 @@ void main()
         albedo = toLinear( texture( texture0, uv ).rgb );
         orm = texture( texture1, uv ).rgb;
         nObj = n0;
+    }
+    if( matParams.w > 1.5 && objPos.y < drawTint.w )
+    {
+        // Clothes over the body (below the neck in the rest pose): the colour with a weave in it; boots, a belt and
+        // gloves darker.
+        float weave = noise3( objPos * 60.0 ) * 0.4 + noise3( objPos * 6.0 ) * 0.6;
+        albedo = toLinear( drawTint.rgb ) * ( 0.7 + 0.45 * weave );
+        if( objPos.y < 0.24 || abs( objPos.x ) > 0.64 )
+            albedo *= 0.32;
+        else if( objPos.y > 0.92 && objPos.y < 0.98 )
+            albedo *= 0.4;
+        orm = vec3( 1.0, 0.85, 0.0 );
     }
     albedo *= colDiffuse.rgb * fragColor.rgb;
     float m = noise3( fragPos * 0.35 ) * 0.65 + noise3( fragPos * 1.7 ) * 0.35;

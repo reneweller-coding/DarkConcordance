@@ -70,6 +70,14 @@ struct Options
     int         m_shop = 0;                ///< with --shot: Ottla's (1) or Kiri's (2) menu open
     int         m_panel = -1;              ///< with --shot: the inventory (0), character (1) or map (2) page
     bool        m_map = false;             ///< with --shot: the map over the game
+    bool        m_lineup = false;          ///< with --shot: a row of people in their animations before the hero
+    float       m_zoom = 0.0f;             ///< with --shot: the camera's distance factor (0: as it is)
+    int         m_loot = 0;                ///< tests: items scattered round the hero at the start
+    int         m_xp = 0;                  ///< tests: experience given at the start
+    unsigned    m_seed = 0;                ///< a generated level's seed (0: from the progress)
+    std::string m_dumpGen;                 ///< write the generated level's file here
+    int         m_heroLevel = 0;           ///< tests: the hero's level at the start
+    float       m_trace = 0.0f;            ///< tests: log the run's state every so many seconds
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -149,6 +157,22 @@ Options parse( int argc, char **argv )
             o.m_panel = atoi( next().c_str() );
         else if ( a == "--map" )
             o.m_map = true;
+        else if ( a == "--lineup" )
+            o.m_lineup = true;
+        else if ( a == "--zoom" )
+            o.m_zoom = (float)atof( next().c_str() );
+        else if ( a == "--loot" )
+            o.m_loot = atoi( next().c_str() );
+        else if ( a == "--seed" )
+            o.m_seed = (unsigned)strtoul( next().c_str(), nullptr, 10 );
+        else if ( a == "--dumpgen" )
+            o.m_dumpGen = next();
+        else if ( a == "--trace" )
+            o.m_trace = (float)atof( next().c_str() );
+        else if ( a == "--herolevel" )
+            o.m_heroLevel = atoi( next().c_str() );
+        else if ( a == "--xp" )
+            o.m_xp = atoi( next().c_str() );
     }
     return o;
 }
@@ -203,6 +227,8 @@ GameInput readInput( Vector2 &lastMouse, float dt )
     in.m_special = IsKeyPressed( KEY_F );
     in.m_use = IsKeyPressed( KEY_E );
     in.m_map = IsKeyPressed( KEY_M ) || IsKeyPressed( KEY_TAB );
+    in.m_skill2 = IsKeyPressed( KEY_R );
+    in.m_skill3 = IsKeyPressed( KEY_G );
     in.m_confirm = IsKeyPressed( KEY_ENTER );
     in.m_strafe = IsKeyDown( KEY_LEFT_SHIFT ) || IsKeyDown( KEY_RIGHT_SHIFT );
     in.m_cameraReset = IsKeyPressed( KEY_BACKSPACE );
@@ -233,18 +259,18 @@ GameInput readInput( Vector2 &lastMouse, float dt )
         in.m_special = in.m_special || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT );
         in.m_confirm = in.m_confirm || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT );
         in.m_map = in.m_map || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_UP );
+        in.m_skill2 = in.m_skill2 || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_TRIGGER_1 );
+        in.m_skill3 = in.m_skill3 || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 );
     }
     return in;
 }
 
-/** @brief Zoom from the mouse wheel, the shoulder buttons and the right stick's up and down. */
+/** @brief Zoom from the mouse wheel and the right stick's up and down (the shoulder buttons are skills now). */
 float zoomStep( float dt )
 {
     float zoom = -GetMouseWheelMove() * 0.08f;
     if ( IsGamepadAvailable( 0 ) )
     {
-        if ( IsGamepadButtonDown( 0, GAMEPAD_BUTTON_LEFT_TRIGGER_1 ) ) zoom -= dt;
-        if ( IsGamepadButtonDown( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 ) ) zoom += dt;
         float pull = GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_Y );
         if ( fabsf( pull ) > 0.3f ) zoom += pull * 0.8f * dt;
     }
@@ -348,11 +374,43 @@ bool loadProgress( Progress &p )
 {
     FILE *f = fopen( savePath().c_str(), "r" );
     if ( !f ) return false;
-    char key[32], value[128];
+    char line[1024], key[32], value[128];
     p = Progress();
-    while ( fscanf( f, "%31s %127s", key, value ) == 2 )
+    while ( fgets( line, sizeof( line ), f ) )
     {
-        if ( !strcmp( key, "hero" ) )
+        if ( sscanf( line, "%31s %127s", key, value ) != 2 ) continue;
+        const char *rest = strchr( line, ' ' ) ? strchr( line, ' ' ) + 1 : "";
+        if ( !strcmp( key, "gear" ) )
+        {
+            // gear <slot> <item>
+            int  slot = atoi( value );
+            Item it;
+            if ( slot >= 0 && slot < EquipSlots && strchr( rest, ' ' ) && loadItem( strchr( rest, ' ' ) + 1, it ) )
+                p.m_gear[slot] = it, p.m_worn[slot] = true;
+        }
+        else if ( !strcmp( key, "bag" ) )
+        {
+            Item it;
+            if ( loadItem( rest, it ) ) p.m_bag.push_back( it );
+        }
+        else if ( !strcmp( key, "rank" ) )
+        {
+            int skill = 0, rank = 0;
+            if ( sscanf( rest, "%d %d", &skill, &rank ) == 2 && skill >= 0 && skill < 64 )
+            {
+                if ( (int)p.m_ranks.size() <= skill ) p.m_ranks.resize( skill + 1, 0 );
+                p.m_ranks[skill] = rank;
+            }
+        }
+        else if ( !strcmp( key, "xp" ) )
+            p.m_xp = atoi( value );
+        else if ( !strcmp( key, "herolevel" ) )
+            p.m_heroLevel = std::max( 1, atoi( value ) );
+        else if ( !strcmp( key, "points" ) )
+            p.m_points = atoi( value );
+        else if ( !strcmp( key, "seed" ) )
+            p.m_seed = atoi( value );
+        else if ( !strcmp( key, "hero" ) )
             p.m_hero = !strcmp( value, "dorra" ) ? HeroE::DORRA : HeroE::CORVIN;
         else if ( !strcmp( key, "level" ) )
             p.m_level = value;
@@ -378,6 +436,12 @@ void saveProgress( const Progress &p )
     if ( !f ) return;
     fprintf( f, "hero %s\nlevel %s\nscrap %d\nstims %d\nweapon %d\narmor %d\n", heroKey( p.m_hero ), p.m_level.c_str(),
              p.m_scrap, p.m_stims, p.m_weapon, p.m_armor );
+    fprintf( f, "xp %d\nherolevel %d\npoints %d\nseed %d\n", p.m_xp, p.m_heroLevel, p.m_points, p.m_seed );
+    for ( size_t i = 0; i < p.m_ranks.size(); ++i )
+        if ( p.m_ranks[i] > 0 ) fprintf( f, "rank %d %d\n", (int)i, p.m_ranks[i] );
+    for ( int i = 0; i < EquipSlots; ++i )
+        if ( p.m_worn[i] ) fprintf( f, "gear %d %s\n", i, saveItem( p.m_gear[i] ).c_str() );
+    for ( const Item &it : p.m_bag ) fprintf( f, "bag %s\n", saveItem( it ).c_str() );
     for ( const std::string &flag : p.m_flags ) fprintf( f, "flag %s\n", flag.c_str() );
     fclose( f );
 }
@@ -513,12 +577,16 @@ int runGame( const Options &o, Gfx &gfx )
     }
     auto game = std::make_unique<Game>();
     game->m_heroKind = hero;
+    if ( o.m_heroLevel > 1 ) progress.m_heroLevel = o.m_heroLevel, progress.m_points = o.m_heroLevel;
     game->m_progress = progress;
+    game->m_genSeed = o.m_seed;
     if ( !game->load( gfx, assetsDir(), level, sound ) )
     {
         TraceLog( LOG_ERROR, "LEVEL: %s not found", level.c_str() );
         return 1;
     }
+    if ( !o.m_dumpGen.empty() && !game->generated().empty() )
+        SaveFileText( o.m_dumpGen.c_str(), const_cast<char *>( game->generated().c_str() ) );
     if ( !o.m_difficulty.empty() )
         settings.m_difficulty = o.m_difficulty == "leicht"
                                     ? DifficultyE::EASY
@@ -528,6 +596,9 @@ int runGame( const Options &o, Gfx &gfx )
     game->m_autoplay = o.m_autoplay;
     game->m_camYaw = o.m_camYaw * DEG2RAD;
     if ( o.m_hasAt ) game->putHero( o.m_x, o.m_z, o.m_face );
+    if ( o.m_lineup ) game->lineup();
+    if ( o.m_zoom > 0.0f ) game->m_zoom = o.m_zoom;
+    if ( o.m_loot > 0 || o.m_xp > 0 ) game->testGifts( o.m_loot, o.m_xp );
     if ( o.m_awake ) game->wakeAll();
     auto draw = [&]( const RenderTexture2D *rt ) { game->render( gfx, rt ); };
 
@@ -542,6 +613,8 @@ int runGame( const Options &o, Gfx &gfx )
             in.m_move = o.m_move;
             in.m_map = o.m_map && i == 0;
             game->update( dt, in );
+            if ( o.m_trace > 0.0f && i % std::max( 1, (int)( o.m_trace * 60.0f ) ) == 0 )
+                TraceLog( LOG_WARNING, "TRACE: %s", game->report().c_str() );
         }
         if ( o.m_report ) TraceLog( LOG_WARNING, "RUN: %s", game->report().c_str() );
         if ( !o.m_talk.empty() || o.m_shop ) game->openForPicture( o.m_talk, o.m_shop );
@@ -621,7 +694,7 @@ int runGame( const Options &o, Gfx &gfx )
             else if ( ( inventory || character ) && !game->finished() )
             {
                 mode = PANEL;
-                panelTab = character ? 1 : 0;
+                panelTab = character ? 2 : 0;
                 panelRow = 0;
             }
             else
@@ -652,9 +725,16 @@ int runGame( const Options &o, Gfx &gfx )
             int      turn = k.m_change;
             if ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_TRIGGER_1 ) ) turn = -1;
             if ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 ) ) turn = 1;
-            panelTab = ( panelTab + turn + 3 ) % 3;
-            int rows = game->panelRows();
+            if ( turn ) panelTab = ( panelTab + turn + 4 ) % 4, panelRow = 0;
+            int rows = game->panelRows( panelTab );
             if ( rows > 0 ) panelRow = ( panelRow + k.m_move + rows ) % rows;
+            // A or Enter: put on, take off, learn; X or Delete: salvage.
+            if ( k.m_confirm ) game->panelAction( panelTab, panelRow, 0 );
+            if ( IsKeyPressed( KEY_DELETE ) || IsKeyPressed( KEY_X ) ||
+                 ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT ) ) )
+                game->panelAction( panelTab, panelRow, 1 );
+            rows = game->panelRows( panelTab );
+            if ( panelRow >= rows ) panelRow = std::max( 0, rows - 1 );
             if ( k.m_back || IsKeyPressed( KEY_I ) || IsKeyPressed( KEY_C ) ||
                  ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_LEFT ) ) )
                 mode = PLAY;

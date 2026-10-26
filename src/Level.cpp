@@ -6,6 +6,7 @@
  */
 #include "Level.h"
 
+#include "LevelGen.h"
 #include "MeshBuilder.h"
 
 #include <raymath.h>
@@ -195,12 +196,20 @@ ThemeE themeOf( const std::string &name )
 
 }   // namespace
 
-bool Level::load( const std::string &path )
+bool Level::load( const std::string &path, unsigned seed )
 {
     char *text = LoadFileText( path.c_str() );
     if ( !text ) return false;
-    std::stringstream in( text );
+    std::string all( text );
     UnloadFileText( text );
+    // A recipe becomes a level file first: generated from the seed.
+    if ( isRecipe( all ) ) all = m_generated = generateLevel( all, seed );
+    return loadText( all );
+}
+
+bool Level::loadText( const std::string &text )
+{
+    std::stringstream in( text );
 
     enum
     {
@@ -380,18 +389,28 @@ bool Level::load( const std::string &path )
             kv >> m_intro;
         else if ( key == "exit" )
         {
-            std::string to, flag;
-            kv >> to >> flag;
+            std::string to, flag, again;
+            kv >> to >> flag >> again;
             m_exits.push_back( { to, flag } );
+            if ( again == "again" ) m_repeat.insert( to );
         }
         else if ( key == "board" )
             kv >> m_boardRow >> m_boardCol >> m_boardWidth;
         else if ( key == "ilka" )
             kv >> m_ilkaRow >> m_ilkaCol;
+        else if ( key == "area" )
+            kv >> m_area;
         else if ( key == "ilkaway" )
         {
             int r, c;
             while ( kv >> r >> c ) m_ilkaWay.push_back( { r, c } );
+        }
+        else if ( key == "elite" )
+        {
+            int         r = 0, c = 0;
+            std::string boss;
+            kv >> r >> c >> boss;
+            m_elites[r * 1000 + c] = boss == "boss" ? 2 : 1;
         }
         else if ( key == "lock" || key == "note" )
         {
@@ -425,6 +444,8 @@ bool Level::load( const std::string &path )
                 cell.m_kind = CellE::DOOR;
             else if ( ch == '&' || ch == '!' )
                 m_markers.push_back( { ch, r, c, {} } );   // a locker to search, a terminal to read
+            else if ( ch == '$' || ch == '%' || ch == '^' || ch == '*' || ch == '?' || ch == '@' )
+                m_markers.push_back( { ch, r, c, {} } );   // the later enemies (see Game::load)
             else if ( ch == 'F' )
                 cell.m_kind = CellE::FIN, cell.m_height = FinHeight;
             else if ( ch >= '1' && ch <= '9' )

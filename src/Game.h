@@ -17,7 +17,10 @@
 #include "Creatures.h"
 #include "Figure.h"
 #include "Gfx.h"
+#include "Items.h"
 #include "Level.h"
+#include "Skills.h"
+#include "Skin.h"
 
 #include <raylib.h>
 #include <raymath.h>
@@ -40,6 +43,8 @@ struct GameInput
     bool    m_special = false;          ///< special pressed this frame (Dorra: throw a blast bolt; menus: back)
     bool    m_use = false;              ///< use pressed this frame (talk; A does it too where there is someone)
     bool    m_map = false;              ///< the map over the game toggled (M, Tab, the pad's up)
+    bool    m_skill2 = false;           ///< the second skill (R, LB) pressed this frame
+    bool    m_skill3 = false;           ///< the third skill (G, RB) pressed this frame
     bool    m_confirm = false;          ///< confirm pressed this frame (restart after the end)
     bool    m_mouseAim = false;         ///< the mouse aims (it moved or a button is held)
     bool    m_strafe = false;           ///< keep facing where the hero looks (left trigger, Shift; Dorra: shield up)
@@ -70,13 +75,21 @@ enum class HeroE : int
 /** @brief What carries over from level to level, and into the save. */
 struct Progress
 {
-    HeroE                 m_hero = HeroE::CORVIN;   ///< who is played
-    std::string           m_level;                  ///< the level to play (next)
-    int                   m_scrap = 0;              ///< scrap
-    int                   m_stims = 1;              ///< stims
-    int                   m_weapon = 0;             ///< the workshop's work on the weapon (0..3)
-    int                   m_armor = 0;              ///< and on the armour (0..3)
-    std::set<std::string> m_flags;                  ///< what has happened (job1, done.<level> ...)
+    HeroE                 m_hero = HeroE::CORVIN;    ///< who is played
+    std::string           m_level;                   ///< the level to play (next)
+    int                   m_scrap = 0;               ///< scrap
+    int                   m_stims = 1;               ///< stims
+    int                   m_weapon = 0;              ///< the workshop's work on the weapon (0..3)
+    int                   m_armor = 0;               ///< and on the armour (0..3)
+    std::set<std::string> m_flags;                   ///< what has happened (job1, done.<level> ...)
+    int                   m_xp = 0;                  ///< experience
+    int                   m_heroLevel = 1;           ///< the hero's level
+    int                   m_points = 1;              ///< skill points to spend
+    std::vector<int>      m_ranks;                   ///< per skill (skillDefs()): its rank
+    std::vector<Item>     m_bag;                     ///< what is carried
+    Item                  m_gear[EquipSlots];        ///< what is worn: weapon, armour, helmet, gloves, boots, implants
+    bool                  m_worn[EquipSlots] = {};   ///< whether a slot holds something
+    int                   m_seed = 1;                ///< the random generator's state for items (and generated levels)
 };
 
 /**
@@ -157,6 +170,9 @@ public:
      */
     void openForPicture( const std::string &who, int menu );
 
+    /** @return a generated level's file ("" for a written one) */
+    const std::string &generated() const { return m_level.m_generated; }
+
     /** @return a line about the run (autopilot) */
     std::string report() const;
 
@@ -179,13 +195,34 @@ public:
      * @brief Draws the inventory, the character page or the map over the frame (the game waits meanwhile).
      * @param[in] w    width (pixels)
      * @param[in] h    height (pixels)
-     * @param[in] tab  0 inventory, 1 character, 2 map
-     * @param[in] sel  the inventory's chosen row
+     * @param[in] tab  0 inventory, 1 skills, 2 character, 3 map
+     * @param[in] sel  the chosen row
      */
     void drawPanel( int w, int h, int tab, int sel );
 
-    /** @return how many inventory rows can be chosen */
-    int panelRows() const;
+    /**
+     * @param[in] tab  the page
+     * @return how many rows can be chosen on it
+     */
+    int panelRows( int tab ) const;
+
+    /**
+     * @brief Does what a page offers for its chosen row: put on or take off, salvage, learn a skill.
+     * @param[in] tab     the page
+     * @param[in] row     the chosen row
+     * @param[in] action  0 the main one (A, Enter), 1 salvage (X, Delete)
+     */
+    void panelAction( int tab, int row, int action );
+
+    /** @brief Pictures: a row of people in front of the hero, each in another animation. */
+    void lineup();
+
+    /**
+     * @brief Tests and pictures: items scattered round the hero, experience given.
+     * @param[in] items  how many items
+     * @param[in] xp     how much experience
+     */
+    void testGifts( int items, int xp );
 
     bool        m_autoplay = false;                   ///< the autopilot plays
     float       m_zoom = 1.0f;                        ///< camera distance factor
@@ -195,14 +232,21 @@ public:
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
     HeroE       m_heroKind = HeroE::CORVIN;           ///< who is played (set before load)
     Progress    m_progress;                           ///< what the level starts with (set before load)
+    unsigned    m_genSeed = 0;                        ///< a generated level's seed (0: from the progress and the level)
 
 private:
     enum class FoeE : uint8_t
     {
         LOUSE,
         WELDER,
-        BATON,   ///< a boarder with a shock baton
-        GUNNER   ///< a boarder with a carbine
+        BATON,    ///< a boarder with a shock baton
+        GUNNER,   ///< a boarder with a carbine
+        SHIELD,   ///< a market guard behind a riot shield, with a shock maul
+        HEAVY,    ///< a heavy boarder with a rotary gun: long bursts, much armour
+        DRONE,    ///< a hovering drone that keeps its distance and shoots
+        SAW,      ///< a small saw bot: fast, in swarms, cuts on contact
+        BOMBER,   ///< a crawler with a charge on its back: runs at the hero and goes off
+        TAXATOR   ///< the Taxator in his exoskeleton (the Knochenmarkt's boss)
     };
     enum class FoeStateE : uint8_t
     {
@@ -240,6 +284,20 @@ private:
         float m_down = 0.0f;      ///< fallen (the body stays)
         int   m_group = 0;        ///< 1 the bridge's, 2 coming aboard later
         bool  m_hidden = false;   ///< not aboard yet
+        // What hits did to it.
+        float m_burn = 0.0f;       ///< damage per second while burning
+        float m_burnTime = 0.0f;   ///< seconds it still burns
+        float m_stun = 0.0f;       ///< seconds it still stands stunned
+        // Champions and the later kinds.
+        int     m_elite = 0;            ///< 0 an ordinary one, 1 a champion, 2 a guardian (the level's end)
+        int     m_affix = -1;           ///< a champion's gift: 0 swift, 1 armoured, 2 volatile, 3 berserk
+        float   m_hpMax = 1.0f;         ///< full health (its bar)
+        float   m_fuse = -1.0f;         ///< a bomber's fuse burning down (-1 not lit)
+        float   m_spin = 0.0f;          ///< a saw's blade, a drone's rotors
+        int     m_stage = 0;            ///< the Taxator: 0 .. 2 as he weakens
+        Vector3 m_rush = { 0, 0, 0 };   ///< the Taxator's charge (its direction)
+        Vector3 m_home = { 0, 0, 0 };   ///< where it was put (a boss keeps to its hall)
+        Vector3 m_safe = { 0, 0, 0 };   ///< where it last stood in the open (never left in rock)
     };
     struct Blob
     {
@@ -313,12 +371,15 @@ private:
     {
         Vector3 m_pos, m_vel;
         float   m_life;
+        float   m_damage = 0.0f;   ///< at the middle of the blast (0: a blast bolt's own)
+        float   m_radius = 0.0f;   ///< the blast's reach (0: a blast bolt's own)
     };
     /** @brief A carbine's bolt in flight. */
     struct Shot
     {
         Vector3 m_pos, m_vel;
         float   m_life;
+        float   m_hurt = 0.0f;   ///< what it does (0: a carbine's)
     };
     /** @brief A crate that slides when the ship dodges. */
     struct Cargo
@@ -342,6 +403,16 @@ private:
         float   m_said = -100.0f;              ///< when they last said something (m_time)
         float   m_chair = 0.0f;                ///< on a stool
         float   m_seat = 0.5f;                 ///< the stool's height
+        // Drawn as a skinned figure (Quaternius' bodies) when m_body >= 0.
+        int                 m_body = -1;                      ///< 0 a man, 1 a woman
+        int                 m_hair = -1;                      ///< which hair of that body (-1 none)
+        int                 m_tone = 0;                       ///< 0 dark, 1 light skin
+        int                 m_hairColour = 0;                 ///< black, brown, blond, red, grey
+        Vector3             m_cloth = { 0.5f, 0.5f, 0.5f };   ///< the clothes' colour
+        float               m_scale = 1.0f;                   ///< a child is smaller
+        int                 m_force = -1;                     ///< a clip played regardless (pictures)
+        SkinState           m_skin;
+        std::vector<Matrix> m_bones;   ///< this frame's skin matrices (alive until drawn)
     };
     /** @brief A ship braking far below (the view through the window). */
     struct Ship
@@ -384,7 +455,11 @@ private:
     float rnd();
     float hpMax() const;
     float runSpeed() const;
-    bool human( const Foe &f ) const { return f.m_kind == FoeE::BATON || f.m_kind == FoeE::GUNNER; }
+    bool human( const Foe &f ) const
+    {
+        return f.m_kind == FoeE::BATON || f.m_kind == FoeE::GUNNER || f.m_kind == FoeE::SHIELD ||
+               f.m_kind == FoeE::HEAVY || f.m_kind == FoeE::TAXATOR;
+    }
     float foeRadius( const Foe &f ) const;
     float foeHeight( const Foe &f ) const;
     bool shielded( Vector3 from ) const;
@@ -393,21 +468,113 @@ private:
     void buildCrew( const std::string &assets );
     void updateMelee( float dt, const GameInput &in, Vector2 move );
     void strike( int swing );
-    void throwBolt();
-    void blast( Vector3 p );
+    void shootPellet( bool first );
+    /** @return the exit lift takes the hero: the press destroyed, else the level's gate event has happened */
+    bool liftOpen() const
+    {
+        return m_pressModel.m_origin.x != 0.0f ? m_pressDead : m_fired.count( m_level.m_gate ) > 0;
+    }
+    void throwBolt( float damage = 0.0f, float radius = 0.0f );
+    void blast( Vector3 p, float damage = 0.0f, float radius = 0.0f );
     void updateBoarder( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
     void updateShots( float dt );
     void poseCrew( std::vector<Drawable> &out );
     void burst( const Foe &f );
     void updatePieces( float dt );
     bool autopilotMelee( GameInput &in, const Target &best, float bestDist );
+    void autoSkills( GameInput &in, const Target &best, float bestDist );
+
+    // GameFoes.cpp: the later enemies (guards, heavies, drones, saws, bombers, the Taxator), champions and guardians,
+    // their bars and names.
+    void buildFoes();
+    void makeElite( Foe &f, int elite );
+    float foeTall( const Foe &f ) const;
+    Figure &foeFigure( const Foe &f );
+    void updateGuard( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    void updateHeavy( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    void updateTaxator( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    void updateCritter( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    void detonate( Foe &f, float damage, float radius );
+    void fireShot( Vector3 muzzle, Vector3 at, float speed, float hurt, float spread );
+    void bossDown( Foe &f );
+    void poseFoes( std::vector<Drawable> &out );
+    void drawFoeHud( int w, int h, float s );
+    int boss() const;
+    Figure     m_guardFigure, m_heavyFigure, m_taxatorFigure;   ///< market guards, heavies, the Taxator
+    LouseModel m_saw, m_bomber;                                 ///< the saw bots, the bombers
+    Mesh       m_droneBody = {}, m_droneRotor = {}, m_droneEye = {}, m_blade = {}, m_sac = {}, m_ring = {};
+    float      m_hitScale = 1.0f;                      ///< what the foe acting now does more (champions)
+    float      m_areaHit = 1.0f;                       ///< what enemies do more in a deeper area
+    std::vector<std::pair<FoeE, Vector3>> m_summons;   ///< enemies called this frame (they come in after the update)
+
+    // GameLoot.cpp: the hero's stats from gear, level and skills; hits with crits, burning, stuns and leech; items on
+    // the floor and picking them up; experience and levels; the active skills.
+    /** @brief The hero's numbers as gear, level, skills and the workshop make them. */
+    struct HeroStats
+    {
+        float m_add[(int)StatE::COUNT] = {};   ///< the sums of affixes, the kinds' bonuses and the skills
+        float m_health = 100.0f;               ///< maximum health
+        float m_armor = 0.0f;                  ///< armour
+        float m_damage = 20.0f;                ///< per hit (a pellet, a blow)
+        float m_interval = 0.16f;              ///< Corvin: seconds between shots; Dorra: how long a blow takes
+        float m_heat = 7.5f;                   ///< heat per shot
+        float m_spread = 0.012f, m_splash = 0.0f, m_range = 30.0f;
+        int   m_pellets = 1, m_pierce = 0, m_chain = 0;
+    };
+    /** @brief An item on the floor. */
+    struct Loot
+    {
+        Item    m_item;
+        Vector3 m_pos, m_vel;
+        float   m_t = 0.0f;
+        bool    m_alive = true;
+    };
+    void refreshStats();
+    float stat( StatE s ) const { return m_stats.m_add[(int)s]; }
+    float armorCut() const;
+    int areaLevel() const { return m_level.m_area; }
+    void dealHit( Foe &f, float damage, Vector3 dir, Vector3 at );
+    void gainXp( int xp );
+    int xpFor( const Foe &f ) const;
+    static int xpNeed( int level );
+    void dropItem( Vector3 at, float luck, int slot = -1 );
+    void updateLoot( float dt );
+    void poseLoot( std::vector<Drawable> &out );
+    void useSkills( float dt, const GameInput &in );
+    void quake( int r );
+    void drawLootHud( int w, int h, float s );
+    void equip( int bagIndex );
+    void unequip( int slot );
+    void salvage( int bagIndex );
+    int rank( int skill ) const;
+    HeroStats         m_stats;
+    std::vector<Loot> m_loot;
+    Mesh              m_lootMesh[(int)SlotE::COUNT] = {};
+    Mesh              m_beamMesh = {};
+    float             m_cool[4] = {};        ///< the active skills' cooldowns, by button
+    float             m_overcharge = 0.0f;   ///< Corvin's overcharge still running
+    float             m_dash = 0.0f;         ///< a roll or a charge still running
+    Vector3           m_dashDir = { 0, 0, 1 };
+    std::set<int>     m_dashHit;        ///< who the charge has struck already
+    int               m_dashKind = 0;   ///< 0 a roll, 1 a charge
+    float             m_dashDamage = 0.0f;
+    float             m_levelUp = 0.0f;   ///< the level-up banner still showing
+    Color             m_toastColor = { 240, 235, 225, 255 };
+    float             m_bagFull = 0.0f;
+    float             m_regenStore = 0.0f;
 
     // GamePanel.cpp: the map (what the hero has seen), the inventory, the character page.
     struct PanelRow
     {
         std::string m_title, m_value, m_detail;
         bool        m_header = false;
+        int         m_slot = -1;                        ///< a worn item's slot
+        int         m_bag = -1;                         ///< an item in the bag
+        int         m_skill = -1;                       ///< a skill
+        Color       m_color = { 210, 205, 195, 230 };   ///< the value's colour
     };
+    std::vector<PanelRow> skillRows() const;
+    std::string itemDetail( const Item &it ) const;
     void loadPanel();
     void updateMap( float dt );
     void drawMap( Rectangle area, float alpha, float s );
@@ -438,6 +605,8 @@ private:
     Vector3 strollTo( const Person &q );
     void poseHub( std::vector<Drawable> &out );
     void drawHubHud( int w, int h, float s );
+    /** @return where the hub's lift may go now (the flag set, not done yet unless it may be done again) */
+    std::vector<std::string> openExits( bool &promised ) const;
     float weaponBoost() const { return 1.0f + 0.2f * m_progress.m_weapon; }
 
     // GameShip.cpp: the dodges, the cargo, the people, the view, the last scene.
@@ -450,6 +619,17 @@ private:
     void drawView( Gfx &gfx );
     void drawPlumes( Gfx &gfx );
     void poseShip( std::vector<Drawable> &out );
+
+    // GameSkin.cpp: people as skinned figures with real animations (Quaternius' bodies and animation libraries).
+    void loadSkins( Gfx &gfx );
+    void dressPerson( Person &q, unsigned seed );
+    void updateSkins( float dt );
+    void poseSkin( Person &q, std::vector<Drawable> &out );
+    bool                       m_skins = false;       ///< the bodies are there
+    SkinModel                  m_body[2];             ///< a man, a woman
+    std::vector<int>           m_bodySurface[2][2];   ///< per mesh of each body: its surface, per skin tone
+    std::vector<int>           m_hairSurface[2][5];   ///< per hair of each body, per colour
+    std::map<std::string, int> m_clip;                ///< the clips by name (the same in both bodies)
     void drawShipHud( int w, int h, float s );
 
     Level                 m_level;
@@ -546,15 +726,16 @@ private:
     // The hub.
     struct NpcState
     {
-        int     m_def;    ///< its line in the level
-        Vector3 m_pos;    ///< where it stands
-        float   m_yaw;    ///< where it looks
-        int     m_look;   ///< which figure (-1: the terminal)
+        int     m_def;      ///< its line in the level
+        Vector3 m_pos;      ///< where it stands
+        float   m_yaw;      ///< where it looks
+        int     m_look;     ///< which figure (-1: the terminal)
+        Person  m_figure;   ///< drawn as a skinned figure when its m_body >= 0
     };
     std::vector<NpcState>            m_npcs;
     const TalkNode                  *m_talk = nullptr;   ///< the conversation's step on screen
     int                              m_talkNpc = -1, m_choice = 0;
-    int                              m_menu = 0, m_menuChoice = 0;   ///< 1 Ottla's stims, 2 Kiri's workshop
+    int                              m_menu = 0, m_menuChoice = 0;   ///< 1 Ottla's stims, 2 Kiri's workshop, 3 the lift
     float                            m_navY = 0.0f;                  ///< the stick's last up and down (menus)
     std::map<std::string, Texture2D> m_portraits;
     Texture2D                        m_boardTex = {};
@@ -566,6 +747,8 @@ private:
     Vector2                          m_rawMove = { 0, 0 };   ///< the stick before the camera's turn (menus)
     Vector3                          m_exit = { 0, 0, 0 };
     bool                             m_hasExit = false;
+    bool                             m_padArmed = true;   ///< the lift's plate reacts (again once one has stepped off)
+    std::vector<std::string>         m_liftChoices;       ///< where the lift may go (its menu)
     std::string                      m_exitTo, m_levelFile;
     float                            m_spin = 0.0f;                 ///< how far the drum has turned (radians)
     int                              m_barks = 0, m_barkNext = 0;   ///< overheard lines ("bark.1".."bark.n"), next one
@@ -621,11 +804,14 @@ private:
     float    m_camPull = 1.0f;   ///< extra distance in the arena
 
     // Autopilot.
-    std::vector<int> m_path;
-    float            m_planTimer = 0.0f, m_stuckTimer = 0.0f, m_runup = 0.0f;
-    Vector3          m_lastPos = { 0, 0, 0 };
-    size_t           m_waypoint = 0;   ///< the next of the level's route
-    unsigned         m_seed = 4242;
+    std::vector<int>  m_path;
+    float             m_planTimer = 0.0f, m_stuckTimer = 0.0f, m_runup = 0.0f;
+    float             m_unstick = 0.0f;   ///< the autopilot frees itself: seconds left
+    Vector2           m_unstickDir = { 0, 0 };
+    std::vector<char> m_propCells;   ///< cells a crate or a stall stands in (the autopilot goes round)
+    Vector3           m_lastPos = { 0, 0, 0 };
+    size_t            m_waypoint = 0;   ///< the next of the level's route
+    unsigned          m_seed = 4242;
 };
 
 }   // namespace spaceopera

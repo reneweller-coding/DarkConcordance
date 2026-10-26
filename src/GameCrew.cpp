@@ -93,7 +93,7 @@ void Game::updateMelee( float dt, const GameInput &in, Vector2 move )
     {
         if ( in.m_fire && m_swingT > 0.3f ) m_comboNext = true;
         float before = m_swingT;
-        m_swingT += dt / SwingTime[m_swing];
+        m_swingT += dt / ( SwingTime[m_swing] * m_stats.m_interval );
         if ( before < 0.5f && m_swingT >= 0.5f ) strike( m_swing );
         if ( m_swingT >= 1.0f )
         {
@@ -124,8 +124,11 @@ void Game::updateMelee( float dt, const GameInput &in, Vector2 move )
     m_boltTimer -= dt;
     if ( in.m_special && m_boltTimer <= 0.0f && m_scene == 0 )
     {
-        throwBolt();
-        m_boltTimer = BoltCooldown * ( 1.0f - 0.1f * m_progress.m_weapon );
+        // Bolzenmeisterin: harder bolts, sooner again.
+        int r = rank( activeSkill( 1, 1 ) );
+        throwBolt( BoltDamage * weaponBoost() * ( 1.0f + 0.15f * r ) * ( 1.0f + stat( StatE::DAMAGE ) / 100.0f ) );
+        m_boltTimer = BoltCooldown * ( 1.0f - 0.1f * m_progress.m_weapon ) * ( 1.0f - 0.08f * r ) *
+                      ( 1.0f - fminf( 0.6f, stat( StatE::COOLDOWN ) / 100.0f ) );
     }
 }
 
@@ -133,8 +136,8 @@ void Game::strike( int swing )
 {
     Vector3 fwd = { sinf( m_yaw ), 0.0f, cosf( m_yaw ) };
     bool    slam = swing == 2;
-    float   reach = slam ? 2.3f : 2.2f, cone = slam ? 0.9f : 1.25f,
-            damage = ( slam ? SlamDamage : SwingDamage ) * weaponBoost();
+    float   reach = ( slam ? 2.3f : 2.2f ) * m_stats.m_range / 2.0f, cone = slam ? 0.9f : 1.25f,
+            damage = m_stats.m_damage * ( slam ? SlamDamage / SwingDamage : 1.0f );
     Vector3 head = Vector3Add( m_pos, Vector3Scale( fwd, slam ? 1.3f : 1.1f ) );
     bool    hit = false;
     for ( Foe &f : m_foes )
@@ -145,12 +148,16 @@ void Game::strike( int swing )
         if ( dist > reach + foeRadius( f ) || fabsf( f.m_pos.y - m_pos.y ) > 2.0f ) continue;
         if ( dist > 0.3f && acosf( Clamp( Vector3DotProduct( d, fwd ) / dist, -1.0f, 1.0f ) ) > cone ) continue;
         Vector3 dir = dist > 1e-3f ? Vector3Scale( d, 1.0f / dist ) : fwd;
-        hurtFoe( f, damage, dir );
-        // A blow knocks back; the overhead one throws them.
-        float knock = slam ? 5.0f : 2.8f;
-        f.m_vel = Vector3Add( f.m_vel, { dir.x * knock, slam ? 2.2f : 0.8f, dir.z * knock } );
-        f.m_ground = false;
-        if ( human( f ) )
+        dealHit( f, damage, dir, Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } ) );
+        // A blow knocks back; the overhead one throws them (the Taxator stands, a heavy hardly moves).
+        float knock =
+            ( slam ? 5.0f : 2.8f ) * ( f.m_kind == FoeE::TAXATOR ? 0.0f : ( f.m_kind == FoeE::HEAVY ? 0.3f : 1.0f ) );
+        if ( knock > 0.0f )
+        {
+            f.m_vel = Vector3Add( f.m_vel, { dir.x * knock, slam ? 2.2f : 0.8f, dir.z * knock } );
+            f.m_ground = f.m_kind == FoeE::DRONE;
+        }
+        if ( human( f ) && f.m_kind != FoeE::TAXATOR )
         {
             // Staggered: the blow or the aim breaks off.
             f.m_swingT = -1.0f;
@@ -188,6 +195,9 @@ void Game::strike( int swing )
     {
         m_audio.play( SfxE::SMASH, head, m_camTarget, 0.9f );
         m_shake = fmaxf( m_shake, slam ? 0.35f : 0.15f );
+        // The bolt breaker blasts with every blow that lands.
+        if ( m_stats.m_splash > 0.0f )
+            blast( Vector3Add( head, { 0.0f, 0.5f, 0.0f } ), damage * 0.4f, m_stats.m_splash );
     }
     if ( slam )
     {
@@ -220,7 +230,7 @@ void Game::strike( int swing )
     }
 }
 
-void Game::throwBolt()
+void Game::throwBolt( float damage, float radius )
 {
     // Lobbed at what the auto-aim picks, else a few metres ahead.
     Vector3 from = Vector3Add( m_pos, { 0.0f, 1.7f, 0.0f } );
@@ -233,12 +243,15 @@ void Game::throwBolt()
     float   flat = sqrtf( d.x * d.x + d.z * d.z );
     float   time = Clamp( flat / 12.0f, 0.35f, 1.1f );
     float   g = m_level.m_gravity;
-    m_bolts.push_back( { from, { d.x / time, ( d.y + 0.5f * g * time * time ) / time, d.z / time }, time + 0.6f } );
+    m_bolts.push_back(
+        { from, { d.x / time, ( d.y + 0.5f * g * time * time ) / time, d.z / time }, time + 0.6f, damage, radius } );
     m_audio.play( SfxE::THROW, from, m_camTarget, 0.7f );
 }
 
-void Game::blast( Vector3 p )
+void Game::blast( Vector3 p, float damage, float radius )
 {
+    if ( damage <= 0.0f ) damage = BoltDamage * weaponBoost();
+    if ( radius <= 0.0f ) radius = BlastRadius;
     explode( p, 1.1f );
     m_shake = fmaxf( m_shake, 0.4f );
     for ( Foe &f : m_foes )
@@ -246,9 +259,10 @@ void Game::blast( Vector3 p )
         if ( !f.m_alive || f.m_hidden ) continue;
         Vector3 d = Vector3Subtract( Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } ), p );
         float   dist = Vector3Length( d );
-        if ( dist > BlastRadius + foeRadius( f ) ) continue;
+        if ( dist > radius + foeRadius( f ) ) continue;
         Vector3 dir = dist > 1e-3f ? Vector3Scale( d, 1.0f / dist ) : Vector3{ 0, 1, 0 };
-        hurtFoe( f, BoltDamage * weaponBoost() * ( 1.0f - 0.5f * fminf( 1.0f, dist / BlastRadius ) ), dir );
+        dealHit( f, damage * ( 1.0f - 0.5f * fminf( 1.0f, dist / radius ) ), dir, f.m_pos );
+        if ( f.m_kind == FoeE::TAXATOR || f.m_kind == FoeE::DRONE ) continue;
         f.m_vel = Vector3Add( f.m_vel, { dir.x * 3.0f, 1.5f, dir.z * 3.0f } );
         f.m_ground = false;
     }
@@ -259,10 +273,9 @@ void Game::blast( Vector3 p )
         for ( int side = 0; side < 2; ++side )
         {
             float flat = Vector2Distance( { p.x, p.z }, { o.x + ( side ? 9.2f : -9.2f ), o.z + 0.5f } ) - 1.15f;
-            if ( flat < BlastRadius && p.y < 5.2f ) hitTank( side, BoltDamage * 1.3f * weaponBoost(), p, { 0, 1, 0 } );
+            if ( flat < radius && p.y < 5.2f ) hitTank( side, damage * 1.3f, p, { 0, 1, 0 } );
         }
-        if ( Vector3Distance( p, { o.x, 3.4f, o.z - 0.4f } ) < BlastRadius + 0.4f )
-            hitCore( BoltDamage * 1.3f * weaponBoost(), p, { 0, 0, 1 } );
+        if ( Vector3Distance( p, { o.x, 3.4f, o.z - 0.4f } ) < radius + 0.4f ) hitCore( damage * 1.3f, p, { 0, 0, 1 } );
     }
 }
 
@@ -320,7 +333,7 @@ void Game::updateBoarder( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
             Vector3 aim = Vector3Add(
                 m_pos, { m_vel.x * 0.15f + ( rnd() - 0.5f ) * 0.5f, 1.2f, m_vel.z * 0.15f + ( rnd() - 0.5f ) * 0.5f } );
             Vector3 v = Vector3Scale( Vector3Normalize( Vector3Subtract( aim, muzzle ) ), ShotSpeed );
-            m_shotsInFlight.push_back( { muzzle, v, 1.6f } );
+            m_shotsInFlight.push_back( { muzzle, v, 1.6f, ShotHurt * m_hitScale } );
             m_flashes.push_back( { muzzle, { 16.0f, 5.0f, 1.5f }, 3.5f, 0.06f, 0.06f } );
             m_audio.play( SfxE::ZAP, muzzle, m_camTarget, 0.6f );
             --f.m_burst;
@@ -390,7 +403,7 @@ void Game::updateShots( float dt )
             m_particles.push_back( { b.m_pos, { 0.0f, 0.3f, 0.0f }, 0.3f, 0.3f, 0.025f, { 255, 160, 60, 255 }, 3 } );
         if ( done )
         {
-            blast( b.m_pos );
+            blast( b.m_pos, b.m_damage, b.m_radius );
             m_bolts[i] = m_bolts.back();
             m_bolts.pop_back();
         }
@@ -409,7 +422,7 @@ void Game::updateShots( float dt )
         float   flat = Vector2Distance( { s.m_pos.x, s.m_pos.z }, { m_pos.x, m_pos.z } );
         if ( !done && !m_dead && flat < 0.45f && s.m_pos.y > m_pos.y + 0.2f && s.m_pos.y < m_pos.y + 1.9f )
         {
-            hurtHero( ShotHurt, Vector3Scale( Vector3Normalize( s.m_vel ), 0.6f ),
+            hurtHero( s.m_hurt > 0.0f ? s.m_hurt : ShotHurt, Vector3Scale( Vector3Normalize( s.m_vel ), 0.6f ),
                       Vector3Subtract( s.m_pos, s.m_vel ) );
             done = true;
         }
@@ -437,8 +450,8 @@ void Game::burst( const Foe &f )
     p.m_yaw = f.m_yaw;
     p.m_phase = f.m_phase;
     p.m_time = m_time + f.m_id;
-    ( f.m_kind == FoeE::BATON ? m_boarderBaton : m_boarderGun ).pose( p, { 0.25f, 0.02f, 0.01f, 0.0f }, parts );
-    Vector3 chest = Vector3Add( f.m_pos, { 0.0f, 1.1f, 0.0f } );
+    foeFigure( f ).pose( p, { 0.25f, 0.02f, 0.01f, 0.0f }, parts );
+    Vector3 chest = Vector3Add( f.m_pos, { 0.0f, foeTall( f ) * 0.6f, 0.0f } );
     Vector3 away = { f.m_pos.x - m_pos.x, 0.0f, f.m_pos.z - m_pos.z };
     away = Vector3Length( away ) > 1e-3f ? Vector3Normalize( away ) : Vector3{ 0.0f, 0.0f, 1.0f };
     for ( const Drawable &d : parts )
@@ -550,11 +563,18 @@ void Game::poseCrew( std::vector<Drawable> &out )
             p.m_swing = 0;
             p.m_swingT = f.m_swingT;
         }
-        // The visor: red, white when hit, dark once fallen.
-        Vector4 visor =
-            f.m_alive ? Vector4{ 3.5f + 4.0f * f.m_flash, 0.25f + 4.0f * f.m_flash, 0.15f + 4.0f * f.m_flash, 0.0f }
-                      : Vector4{ 0.25f, 0.02f, 0.01f, 0.0f };
-        ( f.m_kind == FoeE::BATON ? m_boarderBaton : m_boarderGun ).pose( p, visor, out );
+        else if ( f.m_kind == FoeE::SHIELD )
+            p.m_block = 1.0f;   // the shield up while it walks
+        if ( f.m_kind == FoeE::HEAVY || f.m_kind == FoeE::TAXATOR )
+            p.m_recoil = f.m_burst > 0 && f.m_timer > 0.0f ? 0.6f : 0.0f;
+        // The visor: red (a guard's white, a champion's gold), white when hit; the Taxator's burns before a charge.
+        Vector4 visor = { 3.5f, 0.25f, 0.15f, 0.0f };
+        if ( f.m_kind == FoeE::SHIELD ) visor = { 2.4f, 2.6f, 3.0f, 0.0f };
+        if ( f.m_kind == FoeE::TAXATOR ) visor = { 3.8f, 2.2f, 0.3f, 0.0f };
+        if ( f.m_elite ) visor = { 4.5f, 3.2f, 0.6f, 0.0f };
+        if ( f.m_kind == FoeE::TAXATOR && f.m_state == FoeStateE::LEAP ) visor = { 9.0f, 0.4f, 0.2f, 0.0f };
+        visor = Vector4Add( visor, { 4.0f * f.m_flash, 4.0f * f.m_flash, 4.0f * f.m_flash, 0.0f } );
+        foeFigure( f ).pose( p, visor, out );
     }
 }
 
@@ -568,20 +588,26 @@ bool Game::autopilotMelee( GameInput &in, const Target &best, float bestDist )
     float   dist = Vector2Length( d );
     if ( dist < 1e-3f ) return false;
     in.m_stick = Vector2Scale( d, 1.0f / dist );
-    bool shooter = best.m_kind == 0 && m_foes[best.m_index].m_kind == FoeE::GUNNER;
+    FoeE kind = best.m_kind == 0 ? m_foes[best.m_index].m_kind : FoeE::LOUSE;
+    bool shooter = best.m_kind == 0 && ( kind == FoeE::GUNNER || kind == FoeE::HEAVY || kind == FoeE::DRONE );
     bool tank = best.m_kind == 1 || best.m_kind == 2;
     if ( m_boltTimer <= 0.0f && ( best.m_kind == 3 || ( shooter && dist > 5.0f ) || ( tank && dist > 4.0f ) ) )
         in.m_special = true;
     if ( best.m_kind == 3 || dist > 9.0f ) return false;
     bool aimedAt = false;
     for ( const Foe &f : m_foes )
-        if ( f.m_alive && !f.m_hidden && f.m_kind == FoeE::GUNNER && f.m_aim > 0.3f ) aimedAt = true;
+        if ( f.m_alive && !f.m_hidden && ( f.m_kind == FoeE::GUNNER || f.m_kind == FoeE::HEAVY ) && f.m_aim > 0.3f )
+            aimedAt = true;
     float reach = best.m_kind == 0 ? 1.6f : 2.9f;
-    // Never straight across a shaft: then the path decides (and a bolt flies).
+    // Never straight across a shaft, nor into a stall or a block in the way: then the path decides (and a bolt flies).
     for ( float step : { 0.8f, 1.6f, 2.4f } )
         if ( step < dist &&
              groundAt( { m_pos.x + in.m_stick.x * step, 0.0f, m_pos.z + in.m_stick.y * step } ) < -100.0f )
             return false;
+    Vector3 hit, n;
+    if ( dist > reach &&
+         m_level.raycast( Vector3Add( m_pos, { 0.0f, 0.6f, 0.0f } ), { p.x, m_pos.y + 0.6f, p.z }, hit, n ) )
+        return false;
     if ( dist > reach )
     {
         in.m_move = in.m_stick;

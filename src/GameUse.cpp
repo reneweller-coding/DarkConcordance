@@ -146,8 +146,11 @@ bool Game::updateUse( float dt, GameInput &in )
         }
         else
             m_toast = tr( "use.empty" );
+        m_toastColor = { 240, 235, 225, 255 };
         m_toastTimer = 2.5f;
         m_audio.play( SfxE::PICKUP, u.m_at, m_camTarget, 0.7f );
+        // Often something more in it: a piece of gear.
+        if ( ( h * 7u ) % 10 < 4 ) dropItem( Vector3Add( u.m_pos, { 0.0f, 1.0f, 0.0f } ), 1.2f );
     }
     else
     {
@@ -253,7 +256,9 @@ void Game::drawUseHud( int w, int h, float s )
     // What a locker held, or "locked".
     if ( m_toastTimer > 0.0f )
         text( m_toast.c_str(), w * 0.5f, h * 0.62f, 28,
-              { 240, 235, 225, (unsigned char)( 255 * Clamp( m_toastTimer * 2.0f, 0.0f, 1.0f ) ) }, true );
+              { m_toastColor.r, m_toastColor.g, m_toastColor.b,
+                (unsigned char)( 255 * Clamp( m_toastTimer * 2.0f, 0.0f, 1.0f ) ) },
+              true );
     // A terminal's text.
     if ( !m_reading.empty() )
     {

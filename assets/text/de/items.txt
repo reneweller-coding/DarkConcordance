@@ -1,0 +1,287 @@
+# Gegenstände, Affixe, Fertigkeiten (Deutsch, die Quelle). Formate mit %d / %.0f bleiben stehen.
+
+# Seltenheit, Plätze
+rarity.0            = Gewöhnlich
+rarity.1            = Magisch
+rarity.2            = Selten
+rarity.3            = Einzigartig
+slot.0              = Waffe
+slot.1              = Panzerung
+slot.2              = Helm
+slot.3              = Handschuhe
+slot.4              = Stiefel
+slot.5              = Implantat
+slot.6              = Implantat
+
+# Waffen (item.rifle und item.hammer stehen in ui.txt)
+item.carbine        = Bolzenkarabiner
+item.carbine.about  = Schnell und leicht: viele kleine Bolzen, wenig Hitze.
+item.scatter        = Streuflinte
+item.scatter.about  = Sieben Splitter auf einmal. Aus der Nähe verheerend, auf Abstand wirkungslos.
+item.rail           = Schienengewehr
+item.rail.about     = Ein schwerer Bolzen, der durch drei Ziele geht. Langsam, heiß, unerbittlich.
+item.plasma         = Plasmawerfer
+item.plasma.about   = Eine Kugel aus Plasma, die beim Aufschlag platzt und in Brand setzt.
+item.arc            = Lichtbogenwerfer
+item.arc.about      = Ein Blitz, der vom ersten Ziel auf die nächsten überspringt.
+item.axe            = Spaltaxt
+item.axe.about      = Leichter als der Hammer und schneller; ihre Schnitte bluten nach.
+item.pick           = Grubenhauer
+item.pick.about     = Langsam und schwer; die Spitze geht durch jede Panzerung.
+item.maul           = Schockkeule
+item.maul.about     = Ein Treffer setzt Strom frei und lähmt.
+item.breaker        = Bolzenbrecher
+item.breaker.about  = Jeder Schlag zündet einen Bolzen im Kopf: eine Druckwelle um das Ziel.
+
+# Rüstung
+item.vest           = Polsterweste
+item.vest.about     = Das Billigste, was im Saum gegen Bolzen hilft.
+item.plate          = Plattenanzug
+item.plate.about    = Schwere Platten: viel Schutz, etwas langsamer.
+item.exo            = Exoskelett
+item.exo.about      = Ein Rahmen aus Servos: Schutz und schnellere Beine.
+item.helm           = Helm
+item.helm.about     = Ein Helm, der schon andere Köpfe gesehen hat.
+item.visor          = Zielvisier
+item.visor.about    = Ein Visier mit Zielhilfe: kritische Treffer werden häufiger.
+item.rebreather     = Atemschutz
+item.rebreather.about = Filtert, was in den Gängen in der Luft hängt: langsame Heilung.
+item.gloves         = Handschuhe
+item.gloves.about   = Verstärkte Handschuhe.
+item.grips          = Servohandschuhe
+item.grips.about    = Kleine Motoren in den Fingern: schnellere Angriffe.
+item.boots          = Stiefel
+item.boots.about    = Feste Stiefel mit Stahlkappen.
+item.magboots       = Magnetstiefel
+item.magboots.about = Halten auf jedem Deck: schneller unterwegs.
+item.implant.reflex = Reflexchip
+item.implant.reflex.about = Ein Chip im Rückenmark: kritische Treffer.
+item.implant.cardio = Herzpumpe
+item.implant.cardio.about = Eine zweite Pumpe neben dem Herzen: Leben kehrt zurück.
+item.implant.cooler = Kühlkern
+item.implant.cooler.about = Kühlt das Blut: Fertigkeiten sind schneller wieder bereit.
+item.implant.scav   = Schrottnase
+item.implant.scav.about = Riecht Metall durch Wände: mehr Schrott und Gegenstände.
+item.implant.adren  = Adrenalindrüse
+item.implant.adren.about = Pumpt im Kampf nach: mehr Schaden.
+item.implant.stim   = Stimverstärker
+item.implant.stim.about = Stims wirken stärker.
+
+# Angaben zu Gegenständen
+item.quote.open     = »
+item.quote.close    = «
+item.ilevel         = Stufe %d
+item.dmg            = %d Schaden
+item.rate           = %.1f Schuss/s
+item.pierce         = durchschlägt %d
+item.splash         = Explosion
+item.chain          = springt auf %d über
+item.armorval       = %d Panzerung
+item.value          = Zerlegt: %d Schrott
+
+# Affixe: der Name eines magischen Gegenstands nach seinem ersten, und wie sie sich lesen
+suffix.damage       = der Wucht
+suffix.rate         = der Eile
+suffix.crit         = des Auges
+suffix.critdmg      = der Klinge
+suffix.burn         = der Glut
+suffix.shock        = des Sturms
+suffix.leech        = des Blutegels
+suffix.health       = des Bären
+suffix.armor        = des Panzers
+suffix.regen        = der Heilung
+suffix.speed        = des Windes
+suffix.heat         = der Kälte
+suffix.cooldown     = der Ruhe
+suffix.find         = des Glücks
+suffix.xp           = der Erfahrung
+suffix.thorns       = der Dornen
+suffix.stims        = des Arztes
+affix.damage        = %+.0f %% Schaden
+affix.rate          = %+.0f %% Angriffstempo
+affix.crit          = %+.0f %% kritische Treffer
+affix.critdmg       = %+.0f %% kritischer Schaden
+affix.burn          = %.0f %% Brand
+affix.shock         = %.0f %% Lähmung
+affix.leech         = %.0f %% Lebensraub
+affix.health        = %+.0f Leben
+affix.armor         = %+.0f Panzerung
+affix.regen         = %+.1f Leben pro Sekunde
+affix.speed         = %+.0f %% Laufgeschwindigkeit
+affix.heat          = %.0f %% weniger Hitze
+affix.cooldown      = %.0f %% kürzere Abklingzeit
+affix.find          = %+.0f %% Fundglück
+affix.xp            = %+.0f %% Erfahrung
+affix.thorns        = %.0f Schaden zurück an Angreifer
+affix.stims         = %+.0f %% Stim-Heilung
+
+# Namen seltener Gegenstände
+rare.1              = Witwenmacher
+rare.2              = Kaltes Echo
+rare.3              = Nachtwache
+rare.4              = Rostzahn
+rare.5              = Letzter Atem
+rare.6              = Stiller Bruder
+rare.7              = Schwarzer Spin
+rare.8              = Mühlstein
+rare.9              = Saumhund
+rare.10             = Ascheregen
+rare.11             = Kernräuber
+rare.12             = Tiefenruf
+rare.13             = Graue Ernte
+rare.14             = Splitterherz
+rare.15             = Funkenflug
+rare.16             = Eiserne Geduld
+rare.17             = Bodensatz
+rare.18             = Achsbruch
+rare.19             = Fernes Licht
+rare.20             = Bittere Schicht
+rare.21             = Schuldschein
+rare.22             = Leerlauf
+rare.23             = Kältebrand
+rare.24             = Zahltag
+
+# Einzigartige
+unique.1            = Witwenmachers Schiene
+unique.2            = Talgrunds Zorn
+unique.3            = Ilkas Versprechen
+unique.4            = Kalvars Faust
+unique.5            = Letzte Schicht
+unique.6            = Die Nachtwache
+unique.7            = Der Stille Bruder
+unique.8            = Rostzahn
+
+# Inventar, Beute
+inv.empty           = Hier ist nichts angelegt.
+inv.bag             = TASCHE  %d / %d
+inv.instead         = Statt: %s
+loot.full           = Die Tasche ist voll.
+loot.wrong          = Nicht für diese Figur.
+loot.salvaged       = Zerlegt: %d Schrott
+panel.skills        = Fähigkeiten
+panel.help.inventory = A / Enter: anlegen, ablegen   X / Entf: zerlegen   LB / RB, A / D: Seite   B / Esc: zurück
+panel.help.skills   = A / Enter: einen Punkt setzen   LB / RB, A / D: Seite   B / Esc: zurück
+
+# Werte der Figur
+stat.xp             = Erfahrung %d / %d
+stat.speed          = Angriffe pro Sekunde
+stat.crit           = Kritische Treffer
+stat.burn           = Brand
+stat.shock          = Lähmung
+stat.leech          = Lebensraub
+stat.regen          = Leben pro Sekunde
+stat.find           = Fundglück
+
+# Anzeige
+hud.level           = Stufe %d
+hud.points          = %d Punkte (I)
+hud.key1            = B / F
+hud.key2            = LB / R
+hud.key3            = RB / G
+hud.levelup         = Stufe %d
+hud.levelup.sub     = Ein Fähigkeitspunkt – I öffnet das Inventar, dann Fähigkeiten.
+skill.unlearnt      = Noch nicht gelernt.
+skills.points       = PUNKTE  %d
+skills.from         = Ab Stufe %d
+skills.cooldown     = Abklingzeit %.0f s
+
+# Fertigkeiten: Corvin
+skill.cold          = Kalter Lauf
+skill.cold.about    = Das Gewehr erhitzt sich je Rang um 8 % weniger.
+skill.aim           = Präzision
+skill.aim.about     = Je Rang 3 % mehr kritische Treffer.
+skill.marksman      = Treffsicherheit
+skill.marksman.about = Je Rang 7 % mehr Schaden.
+skill.nano          = Nanoheilung
+skill.nano.about    = Je Rang 0,5 Leben pro Sekunde.
+skill.scav          = Abschöpferblick
+skill.scav.about    = Je Rang 10 % mehr Schrott und Gegenstände: Corvin weiß, wo sie es verstecken.
+skill.overcharge    = Überladung
+skill.overcharge.short = Überladung
+skill.overcharge.about = Einige Sekunden doppelt so schnell und ohne Hitze. Höhere Ränge: länger, früher wieder bereit.
+skill.grenade       = Splittergranate
+skill.grenade.short = Granate
+skill.grenade.about = Eine Granate im Bogen: Schaden in drei Metern. Höhere Ränge: mehr Schaden, größer.
+skill.roll          = Ausweichrolle
+skill.roll.short    = Rolle
+skill.roll.about    = Eine Rolle in Laufrichtung, kurz unverwundbar. Höhere Ränge: früher wieder bereit.
+
+# Fertigkeiten: Dorra
+skill.heavy         = Schwerweltlerin
+skill.heavy.about   = Je Rang 15 Leben mehr.
+skill.force         = Wucht
+skill.force.about   = Je Rang 8 % mehr Schaden.
+skill.iron          = Eisenhaut
+skill.iron.about    = Je Rang 6 Panzerung mehr.
+skill.blood         = Blutrausch
+skill.blood.about   = Je Rang 2 % des Schadens kehren als Leben zurück.
+skill.wall          = Schildwall
+skill.wall.about    = Wer sie trifft, bekommt je Rang 10 Schaden zurück.
+skill.bolts         = Bolzenmeisterin
+skill.bolts.short   = Bolzen
+skill.bolts.about   = Die Sprengbolzen (B / F) kann Dorra immer werfen; jeder Rang macht sie härter und früher wieder bereit.
+skill.quake         = Erdstoß
+skill.quake.short   = Erdstoß
+skill.quake.about   = Der Hammer in das Deck: ein Ring, der alle nahen Gegner wirft und lähmt.
+skill.charge        = Sturmangriff
+skill.charge.short  = Ansturm
+skill.charge.about  = Sieben Meter geradeaus, durch alles, was im Weg steht: Schaden, zurückgeworfen, kurz gelähmt.
+
+# Die zweite Stufe (ab Gegenstandsstufe 7: der Knochenmarkt, die Tiefen)
+item.rifle2         = Gaußgewehr Mk II
+item.rifle2.about   = Die Militärfassung: härter, kühler, weiter.
+item.carbine2       = Sturmkarabiner
+item.carbine2.about = Ein Bolzenhagel, der kaum warm wird.
+item.scatter2       = Breitstreuer
+item.scatter2.about = Neun Splitter: ein Gang wird zur Wand aus Blei.
+item.rail2          = Spindelschiene
+item.rail2.about    = Ein Bolzen durch vier Ziele. Was dahinter steht, merkt es auch.
+item.plasma2        = Sonnenwerfer
+item.plasma2.about  = Eine größere Sonne als die des Plasmawerfers, und sie brennt länger.
+item.arc2           = Kettenblitz
+item.arc2.about     = Der Blitz springt auf drei weitere Ziele und lähmt.
+item.hammer2        = Schmiedehammer
+item.hammer2.about  = Ein Rammhammer aus der Werft, für Nieten von Daumendicke.
+item.axe2           = Schlachtbeil
+item.axe2.about     = Schneller als jeder Hammer; die Wunden brennen nach.
+item.pick2          = Tiefenhauer
+item.pick2.about    = Für das Gestein unter den Trommeln. Geht durch jede Panzerung.
+item.maul2          = Donnerkeule
+item.maul2.about    = Jeder Schlag ein Stromstoß, der lähmt.
+item.breaker2       = Felsbrecher
+item.breaker2.about = Zwei Bolzen im Kopf: eine weite Druckwelle um jedes Ziel.
+item.vest2          = Splitterweste
+item.vest2.about    = Lagen aus Gewebe und Keramik.
+item.plate2         = Schottplatte
+item.plate2.about   = Aus einem Schott geschnitten. Schwer, aber nichts kommt durch.
+item.exo2           = Kampfexo
+item.exo2.about     = Ein Rahmen aus der Werft: viel Schutz, schnelle Beine.
+item.helm2          = Sturmhelm
+item.helm2.about    = Ein Helm für Leute, die als Erste durch die Tür gehen.
+item.visor2         = Jägervisier
+item.visor2.about   = Markiert die Schwachstellen: viele kritische Treffer.
+item.gloves2        = Panzerhandschuhe
+item.gloves2.about  = Platten auf jedem Knöchel.
+item.grips2         = Präzisionsgriffe
+item.grips2.about   = Servos, die nicht zittern: schnellere Angriffe.
+item.boots2         = Kampfstiefel
+item.boots2.about   = Stahlkappen, Stahlsohlen, Stahlnerven.
+item.magboots2      = Gravstiefel
+item.magboots2.about = Kleine Gravplatten in den Sohlen: schnell auf jedem Deck.
+item.implant.focus  = Fokuslinse
+item.implant.focus.about = Eine Linse hinter dem Auge: kritische Treffer treffen härter.
+item.implant.leech  = Blutfilter
+item.implant.leech.about = Holt sich aus jedem Treffer etwas Leben zurück.
+item.implant.ward   = Dornennetz
+item.implant.ward.about = Ein Netz unter der Haut: wer zuschlägt, bekommt etwas zurück.
+
+unique.9            = Ysoldes Schweigen
+unique.10           = Das Letzte Wort
+unique.11           = Marktschreier
+unique.12           = Die Waage des Taxators
+unique.13           = Erdbebenmacher
+unique.14           = Mutter Siebenfachs Umarmung
+unique.15           = Fingerfertig
+unique.16           = Nie Gelandet
+unique.17           = Das Dritte Auge
+unique.18           = Die Ernte

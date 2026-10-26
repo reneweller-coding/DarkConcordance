@@ -50,8 +50,9 @@ public:
      * @param[in] metal   surface of joints and legs
      * @param[in] glow    surface of the eye and torch
      * @param[in] welder  the larger kind with a torch and a tank
+     * @param[in] scale   its size (0: the kind's own)
      */
-    void build( int rust, int metal, int glow, bool welder );
+    void build( int rust, int metal, int glow, bool welder, float scale = 0.0f );
 
     /**
      * @brief Moves the feet: a foot steps when it lags too far behind, three at a time.

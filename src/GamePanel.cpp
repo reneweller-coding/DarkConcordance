@@ -22,7 +22,8 @@ using namespace play;
 namespace
 {
 
-constexpr int SightCells = 8;   ///< how far the hero sees for the map (cells)
+constexpr int   SightCells = 8;       ///< how far the hero sees for the map (cells)
+constexpr float BaseCritPct = 5.0f;   ///< the crit chance without anything (as in GameLoot.cpp)
 
 /** @brief Text with a shadow; sizes in pixels. */
 void label( const Font &font, const char *t, float x, float y, float size, Color c, int align = 0 )
@@ -193,13 +194,41 @@ void Game::drawMap( Rectangle area, float alpha, float s )
 std::vector<Game::PanelRow> Game::inventory() const
 {
     std::vector<PanelRow> rows;
-    bool                  dorra = m_heroKind == HeroE::DORRA;
     auto has = [&]( const std::string &flag ) { return m_progress.m_flags.count( flag ) || m_fired.count( flag ); };
+    // What is worn, slot by slot.
     rows.push_back( { tr( "inv.gear" ), "", "", true } );
-    rows.push_back( { tr( dorra ? "item.hammer" : "item.rifle" ), TextFormat( tr( "item.level" ), m_progress.m_weapon ),
-                      tr( dorra ? "item.hammer.about" : "item.rifle.about" ) } );
-    rows.push_back( { tr( dorra ? "item.armor.dorra" : "item.armor" ),
-                      TextFormat( tr( "item.level" ), m_progress.m_armor ), tr( "item.armor.about" ) } );
+    for ( int i = 0; i < EquipSlots; ++i )
+    {
+        PanelRow row;
+        row.m_title = tr( TextFormat( "slot.%d", i ) );
+        row.m_slot = i;
+        if ( m_progress.m_worn[i] )
+        {
+            const Item &it = m_progress.m_gear[i];
+            row.m_value = itemName( it );
+            row.m_color = rarityColor( it.m_rarity );
+            row.m_detail = itemDetail( it );
+        }
+        else
+        {
+            row.m_value = "-";
+            row.m_detail = tr( "inv.empty" );
+        }
+        rows.push_back( row );
+    }
+    // What is carried.
+    rows.push_back( { TextFormat( tr( "inv.bag" ), (int)m_progress.m_bag.size(), BagSize ), "", "", true } );
+    for ( size_t i = 0; i < m_progress.m_bag.size(); ++i )
+    {
+        const Item &it = m_progress.m_bag[i];
+        PanelRow    row;
+        row.m_title = itemName( it );
+        row.m_value = TextFormat( tr( "item.ilevel" ), it.m_level );
+        row.m_color = rarityColor( it.m_rarity );
+        row.m_bag = (int)i;
+        row.m_detail = itemDetail( it );
+        rows.push_back( row );
+    }
     rows.push_back( { tr( "inv.supplies" ), "", "", true } );
     rows.push_back( { tr( "item.stims" ), TextFormat( "%d", m_stims ), tr( "item.stims.about" ) } );
     rows.push_back( { tr( "item.scrap" ), TextFormat( "%d", m_scrap ), tr( "item.scrap.about" ) } );
@@ -222,11 +251,96 @@ std::vector<Game::PanelRow> Game::inventory() const
     return rows;
 }
 
-int Game::panelRows() const
+std::string Game::itemDetail( const Item &it ) const
 {
+    // Kind, level and rarity; what it does; its affixes; what it is worth; and, for the bag, what it would replace.
+    const ItemBase &b = itemBases()[it.m_base];
+    std::string     d = std::string( tr( TextFormat( "rarity.%d", (int)it.m_rarity ) ) ) + " · " +
+                        TextFormat( tr( "item.ilevel" ), it.m_level ) + " | ";
+    if ( b.m_slot == SlotE::WEAPON )
+    {
+        d += TextFormat( tr( "item.dmg" ), (int)roundf( itemDamage( it ) ) );
+        if ( b.m_pellets > 1 ) d += TextFormat( " x %d", b.m_pellets );
+        if ( b.m_hero == 0 ) d += std::string( " · " ) + TextFormat( tr( "item.rate" ), 1.0f / b.m_interval );
+        if ( b.m_pierce > 0 ) d += std::string( " · " ) + TextFormat( tr( "item.pierce" ), b.m_pierce );
+        if ( b.m_splash > 0.0f ) d += std::string( " · " ) + tr( "item.splash" );
+        if ( b.m_chain > 0 ) d += std::string( " · " ) + TextFormat( tr( "item.chain" ), b.m_chain );
+        d += " | ";
+    }
+    else if ( b.m_armor > 0.0f )
+        d += std::string( TextFormat( tr( "item.armorval" ), (int)roundf( itemArmor( it ) ) ) ) + " | ";
+    if ( b.m_bonus != StatE::COUNT ) d += affixText( { b.m_bonus, b.m_bonusValue } ) + " | ";
+    for ( const Affix &a : it.m_affixes ) d += affixText( a ) + " | ";
+    d += tr( std::string( b.m_key ) + ".about" );
+    if ( b.m_hero >= 0 && b.m_hero != ( m_heroKind == HeroE::DORRA ? 1 : 0 ) )
+        d += std::string( " | " ) + tr( "loot.wrong" );
+    d += std::string( " | " ) + TextFormat( tr( "item.value" ), std::max( 1, itemValue( it ) / 3 ) );
+    return d;
+}
+
+std::vector<Game::PanelRow> Game::skillRows() const
+{
+    std::vector<PanelRow> rows;
+    int                   hero = m_heroKind == HeroE::DORRA ? 1 : 0;
+    const char           *keys[4] = { "", "hud.key1", "hud.key2", "hud.key3" };
+    rows.push_back( { TextFormat( tr( "skills.points" ), m_progress.m_points ), "", "", true } );
+    const std::vector<SkillDef> &defs = skillDefs();
+    for ( size_t k = 0; k < defs.size(); ++k )
+    {
+        const SkillDef &def = defs[k];
+        if ( def.m_hero != hero ) continue;
+        PanelRow row;
+        row.m_skill = (int)k;
+        row.m_title = tr( def.m_key );
+        if ( def.m_slot > 0 ) row.m_title += std::string( "  (" ) + tr( keys[def.m_slot] ) + ")";
+        int r = rank( (int)k );
+        row.m_value = TextFormat( "%d / %d", r, MaxRank );
+        row.m_color = r > 0 ? Color{ 140, 220, 255, 255 } : Color{ 160, 160, 160, 220 };
+        row.m_detail = std::string( tr( std::string( def.m_key ) + ".about" ) ) + " | " +
+                       TextFormat( tr( "skills.from" ), def.m_level );
+        if ( def.m_slot > 0 && def.m_cooldown > 0.0f )
+            row.m_detail += std::string( " | " ) + TextFormat( tr( "skills.cooldown" ), def.m_cooldown );
+        if ( m_progress.m_heroLevel < def.m_level ) row.m_color = { 110, 110, 110, 200 };
+        rows.push_back( row );
+    }
+    return rows;
+}
+
+int Game::panelRows( int tab ) const
+{
+    if ( tab != 0 && tab != 1 ) return 0;
     int n = 0;
-    for ( const PanelRow &row : inventory() ) n += row.m_header ? 0 : 1;
+    for ( const PanelRow &row : tab == 0 ? inventory() : skillRows() ) n += row.m_header ? 0 : 1;
     return n;
+}
+
+void Game::panelAction( int tab, int row, int action )
+{
+    std::vector<PanelRow> rows = tab == 0 ? inventory() : tab == 1 ? skillRows() : std::vector<PanelRow>();
+    int                   index = 0;
+    for ( const PanelRow &r : rows )
+    {
+        if ( r.m_header ) continue;
+        if ( index++ != row ) continue;
+        if ( r.m_bag >= 0 )
+            action == 0 ? equip( r.m_bag ) : salvage( r.m_bag );
+        else if ( r.m_slot >= 0 && action == 0 )
+            unequip( r.m_slot );
+        else if ( r.m_skill >= 0 && action == 0 )
+        {
+            // Learn a rank: a point, the hero's level, not past the top.
+            const SkillDef &def = skillDefs()[r.m_skill];
+            int            &k = m_progress.m_ranks[r.m_skill];
+            if ( m_progress.m_points > 0 && k < MaxRank && m_progress.m_heroLevel >= def.m_level )
+            {
+                ++k;
+                --m_progress.m_points;
+                refreshStats();
+                m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.7f );
+            }
+        }
+        return;
+    }
 }
 
 void Game::drawPanel( int w, int h, int tab, int sel )
@@ -235,10 +349,10 @@ void Game::drawPanel( int w, int h, int tab, int sel )
     const Font &font = m_font;
     DrawRectangle( 0, 0, w, h, { 3, 5, 8, 248 } );
     // The tabs, the help line.
-    const char *tabs[3] = { "panel.inventory", "panel.character", "panel.map" };
-    for ( int i = 0; i < 3; ++i )
+    const char *tabs[4] = { "panel.inventory", "panel.skills", "panel.character", "panel.map" };
+    for ( int i = 0; i < 4; ++i )
     {
-        float x = w * 0.5f + ( i - 1 ) * 320.0f * s;
+        float x = w * 0.5f + ( i - 1.5f ) * 300.0f * s;
         bool  on = i == tab;
         label( font, tr( tabs[i] ), x, 48.0f * s, 34.0f * s,
                on ? Color{ 255, 200, 130, 255 } : Color{ 150, 150, 150, 220 }, 1 );
@@ -246,97 +360,141 @@ void Game::drawPanel( int w, int h, int tab, int sel )
             DrawRectangle( (int)( x - 90.0f * s ), (int)( 92.0f * s ), (int)( 180.0f * s ), (int)( 3.0f * s ),
                            { 255, 170, 80, 220 } );
     }
-    label( font, tr( "panel.help" ), w * 0.5f, h - 56.0f * s, 20.0f * s, { 150, 150, 150, 220 }, 1 );
-    float left = w * 0.12f, right = w * 0.88f, top = 140.0f * s;
+    label( font,
+           tr( tab == 0   ? "panel.help.inventory"
+               : tab == 1 ? "panel.help.skills"
+                          : "panel.help" ),
+           w * 0.5f, h - 56.0f * s, 20.0f * s, { 150, 150, 150, 220 }, 1 );
+    float left = w * 0.08f, right = w * 0.92f, top = 140.0f * s;
 
-    if ( tab == 0 )
+    if ( tab == 0 || tab == 1 )
     {
-        // The list on the left (the chosen row lit), what it is on the right.
-        std::vector<PanelRow> rows = inventory();
-        float                 y = top, listW = w * 0.36f;
-        int                   index = 0;
-        const PanelRow       *chosen = nullptr;
+        // The list on the left (scrolled so the chosen row shows), what it is on the right.
+        std::vector<PanelRow> rows = tab == 0 ? inventory() : skillRows();
+        float                 listW = w * 0.4f, rowH = 38.0f * s, bottom = h - 100.0f * s;
+        // Where the chosen row would sit, to scroll.
+        float y = 0.0f, chosenY = 0.0f;
+        int   index = 0;
+        for ( const PanelRow &row : rows )
+        {
+            if ( row.m_header )
+                y += 48.0f * s;
+            else
+            {
+                if ( index++ == sel ) chosenY = y;
+                y += rowH;
+            }
+        }
+        float scroll = fmaxf( 0.0f, chosenY - ( bottom - top ) * 0.6f );
+        y = top - scroll;
+        index = 0;
+        const PanelRow *chosen = nullptr;
+        BeginScissorMode( 0, (int)top - 4, w, (int)( bottom - top ) );
         for ( const PanelRow &row : rows )
         {
             if ( row.m_header )
             {
-                y += 14.0f * s;
+                y += 12.0f * s;
                 label( font, row.m_title.c_str(), left, y, 22.0f * s, { 255, 170, 90, 230 } );
-                y += 38.0f * s;
+                y += 36.0f * s;
                 continue;
             }
             bool on = index++ == sel;
             if ( on )
             {
                 chosen = &row;
-                DrawRectangle( (int)( left - 12.0f * s ), (int)( y - 6.0f * s ), (int)( listW + 24.0f * s ),
-                               (int)( 40.0f * s ), { 255, 170, 80, 40 } );
+                DrawRectangle( (int)( left - 12.0f * s ), (int)( y - 5.0f * s ), (int)( listW + 24.0f * s ),
+                               (int)( 36.0f * s ), { 255, 170, 80, 40 } );
             }
-            Color c = on ? Color{ 255, 220, 170, 255 } : Color{ 210, 205, 195, 230 };
-            label( font, row.m_title.c_str(), left, y, 26.0f * s, c );
-            label( font, row.m_value.c_str(), left + listW, y, 26.0f * s, c, 2 );
-            y += 42.0f * s;
+            Color title =
+                row.m_bag >= 0 ? row.m_color : ( on ? Color{ 255, 220, 170, 255 } : Color{ 210, 205, 195, 230 } );
+            label( font, row.m_title.c_str(), left, y, 24.0f * s, title );
+            label( font, row.m_value.c_str(), left + listW, y, 24.0f * s,
+                   row.m_bag >= 0 ? Color{ 170, 170, 165, 220 } : row.m_color, 2 );
+            y += rowH;
         }
+        EndScissorMode();
         if ( chosen )
         {
-            float x = w * 0.54f, dy = top;
-            label( font, chosen->m_title.c_str(), x, dy, 36.0f * s, { 245, 236, 222, 255 } );
-            dy += 60.0f * s;
-            for ( const std::string &line : wrap( font, chosen->m_detail, 26.0f * s, right - x ) )
+            float       x = w * 0.54f, dy = top;
+            Color       c = chosen->m_bag >= 0 || chosen->m_slot >= 0 ? chosen->m_color : Color{ 245, 236, 222, 255 };
+            std::string title = chosen->m_bag >= 0    ? chosen->m_title
+                                : chosen->m_slot >= 0 ? chosen->m_value
+                                                      : chosen->m_title;
+            label( font, title.c_str(), x, dy, 34.0f * s, c );
+            dy += 56.0f * s;
+            for ( const std::string &line : wrap( font, chosen->m_detail, 24.0f * s, right - x ) )
             {
-                label( font, line.c_str(), x, dy, 26.0f * s, { 215, 210, 200, 240 } );
-                dy += 36.0f * s;
+                label( font, line.c_str(), x, dy, 24.0f * s, { 215, 210, 200, 240 } );
+                dy += 32.0f * s;
+            }
+            // For something in the bag: what it would replace.
+            if ( chosen->m_bag >= 0 )
+            {
+                const Item &it = m_progress.m_bag[chosen->m_bag];
+                int         slot = itemSlot( it ) == SlotE::IMPLANT ? 5 : (int)itemSlot( it );
+                if ( m_progress.m_worn[slot] )
+                {
+                    dy += 20.0f * s;
+                    label( font, TextFormat( tr( "inv.instead" ), itemName( m_progress.m_gear[slot] ).c_str() ), x, dy,
+                           22.0f * s, rarityColor( m_progress.m_gear[slot].m_rarity ) );
+                }
             }
         }
         return;
     }
-    if ( tab == 1 )
+    if ( tab == 2 )
     {
-        // The portrait, the name, what they are; then what they can do now.
+        // The portrait, the name, what they are; then their numbers as they stand.
         float x = left;
         auto  portrait = m_portraits.find( "hero" );
         if ( portrait != m_portraits.end() )
         {
-            float     size = 420.0f * s;
+            float     size = 400.0f * s;
             Texture2D t = portrait->second;
             DrawTexturePro( t, { 0, 0, (float)t.width, (float)t.height }, { left, top, size, size }, { 0, 0 }, 0.0f,
                             WHITE );
             DrawRectangleLinesEx( { left, top, size, size }, 2.0f * s, { 255, 180, 100, 120 } );
+            label( font, TextFormat( tr( "hud.level" ), m_progress.m_heroLevel ), left, top + size + 16 * s, 30.0f * s,
+                   { 255, 210, 140, 240 } );
+            label( font, TextFormat( tr( "stat.xp" ), m_progress.m_xp, xpNeed( m_progress.m_heroLevel ) ), left,
+                   top + size + 56 * s, 22.0f * s, { 200, 195, 185, 230 } );
             x = left + size + 50.0f * s;
         }
         const char *who = heroKey( m_heroKind );
         float       y = top;
-        label( font, tr( std::string( "hero." ) + who ), x, y, 48.0f * s, { 245, 236, 222, 255 } );
-        y += 70.0f * s;
+        label( font, tr( std::string( "hero." ) + who ), x, y, 44.0f * s, { 245, 236, 222, 255 } );
+        y += 62.0f * s;
         for ( const std::string &line :
-              wrap( font, tr( std::string( "choose." ) + who + ".about" ), 24.0f * s, right - x ) )
+              wrap( font, tr( std::string( "choose." ) + who + ".about" ), 22.0f * s, right - x ) )
         {
-            label( font, line.c_str(), x, y, 24.0f * s, { 200, 195, 185, 240 } );
-            y += 34.0f * s;
-        }
-        y += 30.0f * s;
-        bool  dorra = m_heroKind == HeroE::DORRA;
-        float damage = ( dorra ? SwingDamage : ShotDamage ) * weaponBoost();
-        auto  stat = [&]( const char *key, const std::string &value )
-        {
-            label( font, tr( key ), x, y, 26.0f * s, { 255, 190, 120, 235 } );
-            label( font, value.c_str(), right, y, 26.0f * s, { 235, 230, 220, 255 }, 2 );
-            y += 42.0f * s;
-        };
-        stat( "stat.health", TextFormat( "%d / %d", (int)ceilf( m_hp ), (int)hpMax() ) );
-        stat( "stat.damage", TextFormat( "%d", (int)roundf( damage ) ) );
-        stat( "stat.weapon", TextFormat( tr( "item.level" ), m_progress.m_weapon ) );
-        stat( "stat.armor", TextFormat( tr( "item.level" ), m_progress.m_armor ) );
-        stat( "stat.stims", TextFormat( "%d", m_stims ) );
-        stat( "stat.scrap", TextFormat( "%d", m_scrap ) );
-        stat( "stat.place", tr( m_level.m_name ) );
-        y += 16.0f * s;
-        for ( const std::string &line :
-              wrap( font, tr( dorra ? "stat.special.dorra" : "stat.special.corvin" ), 22.0f * s, right - x ) )
-        {
-            label( font, line.c_str(), x, y, 22.0f * s, { 170, 170, 165, 230 } );
+            label( font, line.c_str(), x, y, 22.0f * s, { 200, 195, 185, 240 } );
             y += 30.0f * s;
         }
+        y += 20.0f * s;
+        bool dorra = m_heroKind == HeroE::DORRA;
+        auto stat2 = [&]( const char *key, const std::string &value )
+        {
+            label( font, tr( key ), x, y, 24.0f * s, { 255, 190, 120, 235 } );
+            label( font, value.c_str(), right, y, 24.0f * s, { 235, 230, 220, 255 }, 2 );
+            y += 34.0f * s;
+        };
+        float perSecond = dorra ? 1.0f / ( 0.55f * m_stats.m_interval ) : 1.0f / m_stats.m_interval;
+        stat2( "stat.health", TextFormat( "%d / %d", (int)ceilf( m_hp ), (int)hpMax() ) );
+        stat2( "stat.armor", TextFormat( "%d  (-%d %%)", (int)m_stats.m_armor, (int)( armorCut() * 100.0f ) ) );
+        stat2( "stat.damage", TextFormat( m_stats.m_pellets > 1 ? "%d x %d" : "%d", (int)roundf( m_stats.m_damage ),
+                                          m_stats.m_pellets ) );
+        stat2( "stat.speed", TextFormat( "%.1f", perSecond ) );
+        stat2( "stat.crit", TextFormat( "%d %%  (x%.1f)", (int)( BaseCritPct + stat( StatE::CRIT ) ),
+                                        1.5f + stat( StatE::CRIT_DAMAGE ) / 100.0f ) );
+        if ( stat( StatE::BURN ) > 0.0f ) stat2( "stat.burn", TextFormat( "%d %%", (int)stat( StatE::BURN ) ) );
+        if ( stat( StatE::SHOCK ) > 0.0f ) stat2( "stat.shock", TextFormat( "%d %%", (int)stat( StatE::SHOCK ) ) );
+        if ( stat( StatE::LEECH ) > 0.0f ) stat2( "stat.leech", TextFormat( "%d %%", (int)stat( StatE::LEECH ) ) );
+        if ( stat( StatE::REGEN ) > 0.0f ) stat2( "stat.regen", TextFormat( "%.1f", stat( StatE::REGEN ) ) );
+        if ( stat( StatE::FIND ) > 0.0f ) stat2( "stat.find", TextFormat( "+%d %%", (int)stat( StatE::FIND ) ) );
+        stat2( "stat.stims", TextFormat( "%d", m_stims ) );
+        stat2( "stat.scrap", TextFormat( "%d", m_scrap ) );
+        stat2( "stat.place", tr( m_level.m_name ) );
         return;
     }
     // The map: the whole of what has been seen, the place's name over it.

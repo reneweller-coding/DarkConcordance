@@ -1,0 +1,45 @@
+# Level 2: Der Knochenmarkt (Deutsch, die Quelle). Zeilen, Hinweise, Terminals; die Leveldatei nennt nur die Schlüssel.
+
+l2.name        = Der Knochenmarkt
+l2.intro       = Die Agrartrommel. Einst wuchs hier Getreide für vierhunderttausend Menschen; die Felder sind längst Gassen, die Gassen ein Markt. | Hier wird verkauft, was von Leuten übrig bleibt, wenn man ihnen den Kern genommen hat. Hinter den Ständen, in seiner Halle, schätzt der Taxator jeden Kopf selbst. | Ysolde sagt, er kauft für jemanden. Finde heraus, für wen.
+
+l2_start       = Der Knochenmarkt. Über mir hängen die Stände der anderen Seite, kopfüber. Und hier unten handelt man mit dem, was von Leuten übrig bleibt.
+l2_market      = Marktwächter. Die gehören dem Taxator. Schilde vorn – also von der Seite.
+l2_champion    = Der da ist anders. Größer, schneller. Einer, der Prämien kassiert.
+l2_bomber      = Zünder! Die laufen einem in die Arme und gehen hoch.
+l2_cold        = Kühlräume. Hier liegen die Körper, bis der Taxator den Preis gemacht hat.
+l2_birds       = Vögel. In der Trommel geschlüpft und nie gelandet. Sie wissen nicht, wo unten ist.
+l2_deep        = Je tiefer in den Markt, desto teurer die Ware. Und desto mehr Wachen.
+l2_hall        = Die Halle des Taxators. Hinter der Tür wird geschätzt.
+l2_taxator     = Der Taxator. Ein Mann in einer Maschine, die ihn größer macht, als er ist.
+l2_tax2        = Er ruft Verstärkung. Natürlich.
+l2_tax3        = Die Panzerung bricht. Jetzt wird er wütend.
+l2_end         = Geschätzt und für zu leicht befunden. Ysolde wird wissen wollen, für wen er gekauft hat.
+
+# So sagt es Dorra.
+l2_start.dorra = Der Knochenmarkt. Auf Kalvar haben wir Erz verkauft. Hier verkaufen sie, was von Leuten übrig ist.
+l2_market.dorra = Marktwächter mit Schilden. Gegen den Rammhammer hält so ein Schild nicht ewig.
+l2_champion.dorra = Der da ist größer als die anderen. Gut. Dann fällt er lauter.
+l2_cold.dorra  = Kühlräume. So haben wir auf Kalvar das Fleisch gelagert. Damals war es Fleisch.
+l2_taxator.dorra = Der Taxator. Hat sich eine Rüstung gebaut, damit er auf uns runterschauen kann.
+l2_end.dorra   = Das war der Taxator. Seine Waage kann jemand anders haben. Ich will wissen, wer bezahlt hat.
+
+h_market       = Der Markt: viele Räume, Nebenräume hinter Türen (A / E). Rettungskapseln merken sich, wo du weitermachst.
+h_shield       = Schildwachen blocken von vorn. Von der Seite oder von hinten angreifen.
+h_shield.dorra = Schildwachen blocken von vorn. Der Rammhammer kommt trotzdem durch – von der Seite geht es schneller.
+h_champion     = Champions (farbiger Ring): mehr Leben und eine Gabe – grün flink, blau gepanzert, orange explodiert, rot rasend. Sie lassen immer etwas fallen.
+h_bomber       = Zünder auf Abstand erschießen. Ihre Explosion trifft auch die anderen Gegner.
+h_bomber.dorra = Zünder: einen Sprengbolzen werfen (B / F) und Abstand halten. Ihre Explosion trifft auch die anderen.
+h_taxator      = Der Taxator: Abstand halten, wenn er stampft. Seine Salven kommen im Fächer – seitlich ausweichen.
+h_rush         = Er nimmt Anlauf! Zur Seite – rennt er gegen die Wand, steht er still.
+
+note.ledger.title    = Kassenbuch, Stand 14
+note.ledger          = Kerne: keine Ankäufe (siehe Kernbank). Körper, männlich, gut erhalten: 40. Körper, weiblich, gut erhalten: 45. Kinder: auf Anfrage. | Abzug für Kälteschäden: 10 Prozent. Abzug für Narben: nach Schätzung.
+note.appraisal.title = Schätzprotokoll
+note.appraisal       = Kopf 7-311. Kern entnommen am 3. des Monats, Entnahme sauber. Rückenmark intakt, Gelenke intakt, Zähne vollständig. | Schätzung: 120. Bemerkung des Taxators: Für die Werft. Die zahlen für Hände.
+note.guards.title    = Dienstplan Marktwache
+note.guards          = Nachtschicht: Stände 1 bis 40, Kühlräume, Halle. Niemand betritt die Halle ohne Marke. | Wer einen Käufer anspricht, wird entlassen. Wer einen Käufer erkennt, wird nicht entlassen.
+note.birds.title     = Zettel an einem Käfig
+note.birds           = Nicht füttern. Die Vögel aus der Trommel sterben, wenn sie landen. Sie haben nie gelernt, wie das geht. | – B.
+note.receipt.title   = Quittung, ungelesen
+note.receipt         = Lieferung: 61 Körper, Herkunft Talgrund. Empfänger: Werft am Tor, über Sammelstelle Mühle. | Gezeichnet: der Taxator. Gegengezeichnet: ein Siegel mit einem Auge in einem Zahnrad.

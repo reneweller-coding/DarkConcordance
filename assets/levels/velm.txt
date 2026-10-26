@@ -8,7 +8,8 @@
 #
 #   zone r0 c0 r1 c1 thema   (bar, street; die erste passende zählt)
 #   board r c breite         die Abbautafel an der Nordwand dieser Zellen
-#   exit level flag          wohin der Aufzug fährt, sobald das Ereignis geschehen ist (und solange das Level offen ist)
+#   exit level flag [again]  wohin der Aufzug fährt, sobald das Ereignis geschehen ist (und solange das Level offen ist;
+#                            "again": immer wieder); fährt er an mehr als ein Ziel, wählt man am Aufzug
 #   back flag                mit diesem Ereignis beginnt das Level mit "back" statt "start"
 #   [npcs]  Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...  (das letzte zutreffende zählt)
 #   [talk]  Knoten | Sprecher | Ereignis | Antwort>Knoten ...  ("-" beendet; Ereignisse: Merker, scrapN, shop, workshop)
@@ -28,6 +29,7 @@ back     done.kuehlgedaerme
 autotalk ysolde
 exit     kuehlgedaerme.txt job1
 exit     knochenmarkt.txt job2
+exit     tiefen.txt done.kuehlgedaerme again
 board    3 17 10
 zone     2 11 14 34 bar
 zone     0 0 29 43 street
@@ -71,7 +73,7 @@ route    19 6  17 7  17 22  14 22  11 29  14 22  17 23  17 38  16 40
 
 [npcs]
 # Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...
-ysolde      | 11 30 | ysolde   | ys1 | job1:ys7 done.kuehlgedaerme:ys10 l1told:ys20
+ysolde      | 11 30 | ysolde   | ys1 | job1:ys7 done.kuehlgedaerme:ys10 l1told:ys20 job2:ys22 done.knochenmarkt:ys30 l2told:ys40
 ottla       | 4 22  | ottla    | ot1
 kiri        | 23 33 | kiri     | ki1
 hausmeister | 15 9  | terminal | hm1
@@ -88,15 +90,21 @@ ys7  | ysolde      | -            |
 ys10 | ysolde      | -            | ys10_a>ys11
 ys11 | ysolde      | -            | ys11_a>ys12
 ys12 | ysolde      | l1told       |
-ys20 | ysolde      | -            |
+ys20 | ysolde      | -            | ys20_a>ys21
+ys21 | ysolde      | job2         |
+ys22 | ysolde      | -            |
+ys30 | ysolde      | -            | ys30_a>ys31
+ys31 | ysolde      | l2told       |
+ys40 | ysolde      | -            |
 ot1  | ottla       | -            | ot1_a>ot2 ot1_b>ot4 ot1_c>-
 ot2  | ottla       | -            | ot2_a>ot3
 ot3  | ottla       | -            |
 ot4  | ottla       | shop         |
 ki1  | kiri        | -            | ki1_a>ki2 ki1_b>-
 ki2  | kiri        | workshop     |
-hm1  | hausmeister | -            | hm1_a>hm2 hm1_b>-
+hm1  | hausmeister | -            | hm1_a>hm2 hm1_c>hm3 hm1_b>-
 hm2  | hausmeister | -            |
+hm3  | hausmeister | -            |
 
 [lines]
 # Schlüssel | Auslöser | Sprecher

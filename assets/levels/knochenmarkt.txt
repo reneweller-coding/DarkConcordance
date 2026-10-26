@@ -1,0 +1,75 @@
+# Level 2: Der Knochenmarkt (Akt I). Ein Markt in der Agrartrommel, wo einst Getreide wuchs; heute wird hier geschätzt,
+# was von Leuten übrig ist. Am Ende die Halle des Taxators. Die Karte wird erzeugt (bei jedem neuen Spiel anders):
+#
+#   genrooms N            Räume auf dem Weg, Start und Halle mitgezählt
+#   genside N             Nebenräume hinter Türen (Spinde, ein Champion, Terminals)
+#   gensize b0 b1 h0 h1   Breite und Höhe der Räume in Zellen
+#   gentheme ...          Themen der Räume (street, works, service, cargo, coldstore, exchanger, shaft, gangway)
+#   genarenatheme t       Thema der Halle am Ende
+#   genarena taxator      der Endgegner (taxator; guardian: ein Wächter-Champion aus genguard)
+#   genpack Zeichen w     eine Gruppe und ihr Gewicht. L Rostlaus, W Schweißlaus, E Schlagstock, T Karabiner,
+#                         $ Schildwache, % Schwerer, ^ Drohne, * Sägebot, ? Zünder
+#   gendensity d          Gruppen je 100 Bodenzellen
+#   genelite p            Anteil der Gruppen mit einem Champion
+#   gennote ...           Texte der Terminals (note.<schlüssel> und note.<schlüssel>.title)
+#   Auslöser der Zeilen: a Start, b erster Gang, c / e / d Gänge auf dem Weg, g der Gang zur Halle.
+
+name     l2.name
+act      act.1
+intro    l2.intro
+gravity  8.5
+fog      0.004 0.016 0.6 1.0
+fogcolor 0.0045 0.0032 0.0018
+ambient  0.045 0.038 0.03 0.03 0.024 0.02
+walls    5.0
+area     3
+next     velm.txt
+gate     bossdead
+ambience tunnels
+
+genrooms      12
+genside       4
+gensize       11 17 9 14
+gentheme      street street cargo coldstore works service
+genarenatheme works
+genarena      taxator
+genpack       $$T     3
+genpack       ETT     3
+genpack       EET     2
+genpack       $E      2
+genpack       %T      1.2
+genpack       ^^^     2
+genpack       ^^T     1.5
+genpack       *****   1.5
+genpack       ***?    1
+genpack       ??E     0.6
+genpack       $%      0.7
+gendensity    1.1
+genelite      0.25
+gennote       note.ledger note.appraisal note.guards note.birds note.receipt
+
+[lines]
+# Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/knochenmarkt.txt)
+l2_start    | a           | hero
+l2_market   | b           | hero
+l2_champion | champion    | hero
+l2_bomber   | bomber      | hero
+l2_cold     | c           | hero
+l2_birds    | e           | hero
+l2_deep     | d           | hero
+l2_hall     | g           | hero
+l2_taxator  | bossstart   | hero
+l2_tax2     | taxator2    | hero
+l2_tax3     | taxator3    | hero
+l2_end      | bossdead    | hero
+
+[hints]
+# Schlüssel | Auslöser
+h_market    | a
+h_shield    | shieldguard
+h_champion  | champion
+h_bomber    | bomber
+h_stim      | hurt
+h_taxator   | bossstart
+h_rush      | taxator3
+h_lift      | bossdead

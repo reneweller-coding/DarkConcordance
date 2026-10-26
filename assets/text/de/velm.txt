@@ -12,7 +12,7 @@ speaker.hausmeister = HAUSMEISTER
 
 v_start         = Die Dritte Trommel. Irgendwo hier wartet eine Frau namens Ysolde Varn. Sie hat meine Rechnung bezahlt.
 v_start.dorra   = Die Dritte Trommel. Ysolde Varn hat mich bezahlt, bevor ich wach war. So was kostet immer zweimal.
-v_back          = Zurück in der Letzten Schicht. Ysolde wird wissen wollen, was in den Kühlgedärmen war.
+v_back          = Zurück in der Letzten Schicht. Ysolde wird wissen wollen, was ich gefunden habe.
 
 # Ysolde: das erste Gespräch.
 ys1             = Sie sind also wach. Ysolde Varn. Ich habe Ihre Behandlung bezahlt – betrachten Sie es als Anzahlung.
@@ -36,7 +36,16 @@ ys10_a          = Gestapelt wie Ware. Die Spur führt zum Knochenmarkt.
 ys11            = Dann ist es der Taxator. Er schätzt, was ein Kopf wert ist, und er irrt sich selten. Geben Sie mir ein paar Tage – ich finde heraus, wo er kauft.
 ys11_a          = Ein paar Tage hat Ilka nicht.
 ys12            = Ilka hat Zeit, glauben Sie mir. Mehr, als Ihnen lieb sein wird. Ruhen Sie sich aus. Ich lasse Sie rufen.
-ys20            = Noch nichts Neues. Kiri hat übrigens nach Ihnen gefragt.
+ys20            = Ich habe ihn. Der Taxator schätzt im Knochenmarkt, in der Agrartrommel – in einer Halle hinter den Ständen. Er kauft nicht für sich.
+ys20_a          = Für wen dann?
+ys21            = Das sollen Sie herausfinden. Der Lastenaufzug fährt jetzt auch in die Agrartrommel. Die Marktwächter gehören ihm – und sie tragen Schilde.
+ys22            = Der Knochenmarkt wartet. Der Taxator auch.
+
+# Ysolde: nach dem Knochenmarkt.
+ys30            = Der Taxator ist tot, und der Markt schweigt – zum ersten Mal seit Jahren. Was haben Sie gefunden?
+ys30_a          = Eine Quittung. Ein Auge in einem Zahnrad.
+ys31            = Das Zeichen habe ich schon einmal gesehen. Auf Papieren, die es nicht geben dürfte. Ich brauche Zeit. Bis dahin: Unter der Trommel liegen die Tiefen. Wer dort hinuntergeht, kommt stärker wieder – oder gar nicht.
+ys40            = Noch nichts. Die Tiefen laufen Ihnen nicht weg. Sie ändern nur ihre Form.
 
 # Ottla, die Wirtin.
 ot1             = Willkommen in der Letzten Schicht. Was darf's sein?
@@ -58,11 +67,13 @@ ki2             = Schau's dir an. Bezahlt wird in Schrott – Ausreden nehme ich
 hm1             = HAUSMEISTER. Druck: normal. Rotation: normal. Bewohner: 401.112. Anliegen?
 hm1_a           = Denkst du eigentlich?
 hm1_b           = Nichts.
+hm1_c           = Was ist unter der Trommel?
 hm2             = Nein. Ich zähle. Das Denken überlasse ich dem Stationsrat. Der Stationsrat ist sich darüber noch nicht einig.
+hm3             = Wartungsebenen. Gesperrt seit vierzehn Jahren. Bewohner: unbekannt. Die Gänge stimmen nicht mit dem Plan überein. Der Lastenaufzug fährt trotzdem hin.
 
 h_talk          = A / E: sprechen
 h_exitlocked    = Der Lastenaufzug fährt zur Achse. Erst mit Ysolde Varn reden – in der Letzten Schicht.
-h_exitlater     = Der Knochenmarkt: Fortsetzung folgt.
+h_exitlater     = Ysolde hat noch keinen neuen Auftrag: Fortsetzung folgt.
 h_window        = Unter dem Boden dreht sich Velm vorbei: die Höhle im Asteroiden, die anderen beiden Trommeln.
 
 shop.title      = OTTLAS STIMS

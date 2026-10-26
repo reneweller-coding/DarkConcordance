@@ -12,7 +12,7 @@ speaker.hausmeister = CARETAKER
 
 v_start         = The Third Drum. Somewhere around here a woman called Ysolde Varn is waiting. She paid my bill.
 v_start.dorra   = The Third Drum. Ysolde Varn paid for me before I was even awake. That kind of thing always costs twice.
-v_back          = Back at the Last Shift. Ysolde will want to know what was in the Cooling Guts.
+v_back          = Back at the Last Shift. Ysolde will want to know what I found.
 
 # Ysolde: the first conversation.
 ys1             = So you're awake. Ysolde Varn. I paid for your treatment – consider it a down payment.
@@ -36,7 +36,16 @@ ys10_a          = Stacked like goods. The trail leads to the Marrow Market.
 ys11            = Then it's the Assessor. He prices what a head is worth, and he's rarely wrong. Give me a few days – I'll find out where he buys.
 ys11_a          = Ilka doesn't have a few days.
 ys12            = Ilka has time, believe me. More than you'll like. Get some rest. I'll send for you.
-ys20            = Nothing new yet. Kiri was asking after you, by the way.
+ys20            = I have him. The Assessor does his pricing in the Marrow Market, in the farm drum – in a hall behind the stalls. He doesn't buy for himself.
+ys20_a          = Then for whom?
+ys21            = That's what you'll find out. The freight lift goes to the farm drum now too. The market guards are his – and they carry shields.
+ys22            = The Marrow Market is waiting. So is the Assessor.
+
+# Ysolde: after the Marrow Market.
+ys30            = The Assessor is dead, and the market is quiet – for the first time in years. What did you find?
+ys30_a          = A receipt. An eye inside a cogwheel.
+ys31            = I've seen that sign before. On papers that shouldn't exist. I need time. Until then: beneath the drum lie the Depths. Whoever goes down there comes back stronger – or not at all.
+ys40            = Nothing yet. The Depths won't run away. They only change their shape.
 
 # Ottla, the landlady.
 ot1             = Welcome to the Last Shift. What'll it be?
@@ -58,11 +67,13 @@ ki2             = Take a look. Payment in scrap – I don't take excuses.
 hm1             = CARETAKER. Pressure: nominal. Rotation: nominal. Residents: 401,112. Request?
 hm1_a           = Do you actually think?
 hm1_b           = Nothing.
+hm1_c           = What is beneath the drum?
 hm2             = No. I count. I leave the thinking to the Station Council. The Station Council has not yet agreed on it.
+hm3             = Maintenance levels. Closed for fourteen years. Residents: unknown. The corridors do not match the plan. The freight lift goes there anyway.
 
 h_talk          = A / E: talk
 h_exitlocked    = The freight lift goes up to the axis. Talk to Ysolde Varn first – in the Last Shift.
-h_exitlater     = The Marrow Market: to be continued.
+h_exitlater     = Ysolde has no new job yet: to be continued.
 h_window        = Velm turns past beneath the floor: the cavern inside the asteroid, the other two drums.
 
 shop.title      = OTTLA'S STIMS

@@ -60,14 +60,17 @@ struct Surface
 /** @brief Something to draw: a mesh, its surface, where it is. */
 struct Drawable
 {
-    Mesh    m_mesh;                         ///< the mesh
-    int     m_surface = 0;                  ///< index of its surface
-    Matrix  m_transform;                    ///< where it is
-    Vector4 m_emissive = { -1, 0, 0, 0 };   ///< its own glow (x < 0: the surface's)
-    bool    m_visible = true;               ///< drawn (false: it only casts shadows, like the ceiling)
-    bool    m_sunShadow = true;             ///< casts a sun shadow
-    bool    m_spotShadow = true;            ///< casts a lamp shadow
-    bool    m_cutaway = false;              ///< dissolves where it stands between the camera and the hero
+    Mesh          m_mesh;                         ///< the mesh
+    int           m_surface = 0;                  ///< index of its surface
+    Matrix        m_transform;                    ///< where it is
+    Vector4       m_emissive = { -1, 0, 0, 0 };   ///< its own glow (x < 0: the surface's)
+    bool          m_visible = true;               ///< drawn (false: it only casts shadows, like the ceiling)
+    bool          m_sunShadow = true;             ///< casts a sun shadow
+    bool          m_spotShadow = true;            ///< casts a lamp shadow
+    bool          m_cutaway = false;              ///< dissolves where it stands between the camera and the hero
+    const Matrix *m_bones = nullptr;              ///< a skinned figure's bone matrices (they must live until drawn)
+    int           m_boneCount = 0;                ///< how many
+    Vector4       m_tint = { 1, 1, 1, 0 };   ///< clothed surfaces: the clothes' colour, the height the skin shows above
 };
 
 /** @brief The renderer. */
@@ -184,10 +187,19 @@ private:
     /** @brief Binds the shadow maps to their units (12, 13) or unbinds them. */
     void bindShadows( bool on );
 
+    /** @brief Where the per-draw uniforms of a lit shader are. */
+    struct DrawLocs
+    {
+        int m_uv, m_params, m_emissive, m_mask, m_variation, m_cutaway, m_tint, m_cutCentre, m_cutRadius;
+    };
+    /** @brief Finds them. */
+    DrawLocs drawLocs( Shader s );
+
     Shader     m_lit, m_glassShader, m_sky, m_planet, m_particle, m_depth, m_prefilter, m_down, m_up, m_final;
-    CommonLocs m_litLocs, m_glassLocs, m_skyLocs, m_planetLocs, m_particleLocs;
-    int        m_litUv, m_litParams, m_litEmissive, m_litMask, m_litVariation, m_litCutaway;
-    Material   m_depthMat;
+    Shader     m_litSkin, m_depthSkin;   ///< the same for skinned figures
+    CommonLocs m_litLocs, m_glassLocs, m_skyLocs, m_planetLocs, m_particleLocs, m_litSkinLocs;
+    DrawLocs   m_litDraw, m_skinDraw;
+    Material   m_depthMat, m_depthSkinMat;
     Material   m_glassMat;
     Material   m_planetMat;
 

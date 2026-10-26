@@ -430,8 +430,13 @@ void Game::poseShip( std::vector<Drawable> &out )
     bool taken = m_fired.count( "bridgeclear" ) > 0;
     for ( size_t i = 0; i < m_people.size(); ++i )
     {
-        const Person &q = m_people[i];
-        FigurePose    p;
+        Person &q = m_people[i];
+        if ( q.m_body >= 0 && q.m_pos.y > -50.0f )
+        {
+            poseSkin( q, out );
+            continue;
+        }
+        FigurePose p;
         p.m_pos = q.m_pos;
         p.m_yaw = q.m_yaw;
         p.m_time = m_time + (float)i * 1.7f;

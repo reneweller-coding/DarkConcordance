@@ -51,7 +51,9 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
     // The lines one overhears in passing, started somewhere in the list.
     while ( hasText( TextFormat( "bark.%d", m_barks + 1 ) ) ) ++m_barks;
     m_barkNext = m_barks ? (int)( rnd() * m_barks ) % m_barks : 0;
-    // Guests on most of the stools, at the tables and the counter (in a hub's bar, in a ship's mess).
+    // Guests on most of the stools, at the tables and the counter (in a hub's bar, in a ship's mess; not at a
+    // market's stalls while it is fought over).
+    if ( m_level.m_generated.empty() )
     {
         const int adults[5] = { 0, 1, 2, 6, 7 };
         for ( size_t i = 0; i < m_level.m_seats.size(); ++i )
@@ -79,6 +81,21 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
         s.m_pos = m_level.centre( n.m_row, n.m_col );
         s.m_yaw = 0.0f;
         s.m_look = look == "terminal" ? -1 : look == "ysolde" ? 4 : look == "kiri" ? 5 : look == "ottla" ? 1 : 0;
+        // Drawn as a skinned figure where the bodies are there: Ysolde's hair pinned up and grey, Ottla's cropped
+        // and grey, Kiri's long and black.
+        s.m_figure.m_pos = s.m_pos;
+        s.m_figure.m_yaw = 0.0f;
+        s.m_figure.m_look = std::max( s.m_look, 0 );
+        s.m_figure.m_sit = 0.0f;
+        s.m_figure.m_down = 0.0f;
+        if ( s.m_look >= 0 ) dressPerson( s.m_figure, (unsigned)( i * 131u + 7u ) );
+        if ( s.m_figure.m_body >= 0 )
+        {
+            s.m_figure.m_body = 1;
+            s.m_figure.m_hair = look == "ysolde" ? 1 : look == "ottla" ? 2 : 0;
+            s.m_figure.m_hairColour = look == "kiri" ? 0 : 4;
+            s.m_figure.m_tone = look == "kiri" ? 0 : 1;
+        }
         m_npcs.push_back( s );
         m_blocked.insert( n.m_row * m_level.cols() + n.m_col );
         std::string portrait = assets + "/textures/portrait_" + n.m_id + ".png";
@@ -298,6 +315,20 @@ int Game::nearNpc() const
     return best;
 }
 
+std::vector<std::string> Game::openExits( bool &promised ) const
+{
+    std::vector<std::string> open;
+    promised = false;
+    for ( const auto &e : m_level.m_exits )
+    {
+        std::string done = "done." + e.first.substr( 0, e.first.find( '.' ) );
+        if ( !m_fired.count( e.second ) ) continue;
+        promised = true;
+        if ( !m_fired.count( done ) || m_level.m_repeat.count( e.first ) ) open.push_back( e.first );
+    }
+    return open;
+}
+
 void Game::openTalk( int npc )
 {
     // Where the conversation starts depends on what has happened.
@@ -489,10 +520,17 @@ bool Game::updateHub( float dt, GameInput &in )
     bool ok = in.m_jump || in.m_confirm || in.m_use;
     if ( m_menu )
     {
-        int count = m_menu == 1 ? 2 : 3;
+        int count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 3 );
         m_menuChoice = ( m_menuChoice + step + count ) % count;
         if ( ok && m_menuChoice == count - 1 )
             m_menu = 0;
+        else if ( ok && m_menu == 3 )
+        {
+            m_exitTo = m_liftChoices[m_menuChoice];
+            m_finished = true;
+            m_menu = 0;
+            m_audio.play( SfxE::KLAXON, m_exit, m_camTarget, 0.6f );
+        }
         else if ( ok )
             buy( m_menuChoice );
         if ( back ) m_menu = 0;
@@ -533,35 +571,44 @@ bool Game::updateHub( float dt, GameInput &in )
     if ( m_hasExit && !m_finished )
     {
         float d = Vector2Distance( { m_pos.x, m_pos.z }, { m_exit.x, m_exit.z } );
-        if ( d < 1.2f )
+        if ( d < 1.2f && m_padArmed )
         {
-            std::string to;
-            bool        promised = false;
-            for ( const auto &e : m_level.m_exits )
+            // One way: it goes. Several (or one that is always open): the lift asks where to.
+            bool                     promised = false;
+            std::vector<std::string> open = openExits( promised );
+            m_padArmed = false;
+            if ( open.size() == 1 && !m_level.m_repeat.count( open[0] ) )
             {
-                std::string done = "done." + e.first.substr( 0, e.first.find( '.' ) );
-                if ( m_fired.count( e.second ) ) promised = true;
-                if ( m_fired.count( e.second ) && !m_fired.count( done ) && to.empty() ) to = e.first;
-            }
-            if ( !to.empty() )
-            {
-                m_exitTo = to;
+                m_exitTo = open[0];
                 m_finished = true;
                 m_audio.play( SfxE::KLAXON, m_exit, m_camTarget, 0.6f );
+            }
+            else if ( !open.empty() )
+            {
+                m_liftChoices = open;
+                m_menu = 3;
+                m_menuChoice = 0;
             }
             else
                 fire( promised ? "exitlater" : "exitlocked" );
         }
         else if ( d > 3.0f )
-            m_fired.erase( "exitlater" ), m_fired.erase( "exitlocked" );
+            m_padArmed = true, m_fired.erase( "exitlater" ), m_fired.erase( "exitlocked" );
     }
     return false;
 }
 
 void Game::poseHub( std::vector<Drawable> &out )
 {
-    for ( const NpcState &n : m_npcs )
+    for ( NpcState &n : m_npcs )
     {
+        if ( n.m_figure.m_body >= 0 )
+        {
+            n.m_figure.m_pos = n.m_pos;
+            n.m_figure.m_yaw = n.m_yaw;
+            poseSkin( n.m_figure, out );
+            continue;
+        }
         if ( n.m_look >= 0 )
         {
             FigurePose p;
@@ -586,11 +633,9 @@ void Game::poseHub( std::vector<Drawable> &out )
     if ( m_hasExit )
     {
         // The lift's plate: green once it goes somewhere, red until then.
-        bool     open = false;
+        bool     promised = false;
+        bool     open = !openExits( promised ).empty();
         Drawable d;
-        for ( const auto &e : m_level.m_exits )
-            open = open || ( m_fired.count( e.second ) &&
-                             !m_fired.count( "done." + e.first.substr( 0, e.first.find( '.' ) ) ) );
         d.m_transform = MatrixTranslate( m_exit.x, m_exit.y + 0.01f, m_exit.z );
         d.m_mesh = m_padMesh;
         d.m_surface = S_HAZARD;
@@ -719,13 +764,15 @@ void Game::drawHubHud( int w, int h, float s )
     {
         // Ottla's stims or Kiri's workshop: a panel in the middle, the scrap in hand, the items with their prices.
         float pw = 1000.0f * s, x0 = w * 0.5f - pw * 0.5f, y0 = h * 0.25f;
-        int   count = m_menu == 1 ? 2 : 3;
+        int   count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 3 );
         float ph = ( 130.0f + 52.0f * count ) * s;
         DrawRectangle( (int)x0, (int)y0, (int)pw, (int)ph, { 8, 10, 12, 230 } );
         DrawRectangleLinesEx( { x0, y0, pw, ph }, 2.0f * s, { 255, 190, 120, 140 } );
-        text( tr( m_menu == 1 ? "shop.title" : "workshop.title" ), w * 0.5f, y0 + 20.0f * s, 32, { 255, 200, 130, 255 },
-              true );
-        text( TextFormat( tr( "shop.have" ), m_scrap ), w * 0.5f, y0 + 62.0f * s, 22, { 200, 220, 210, 230 }, true );
+        text( tr( m_menu == 3 ? "lift.title" : ( m_menu == 1 ? "shop.title" : "workshop.title" ) ), w * 0.5f,
+              y0 + 20.0f * s, 32, { 255, 200, 130, 255 }, true );
+        if ( m_menu != 3 )
+            text( TextFormat( tr( "shop.have" ), m_scrap ), w * 0.5f, y0 + 62.0f * s, 22, { 200, 220, 210, 230 },
+                  true );
         for ( int i = 0; i < count; ++i )
         {
             float       y = y0 + ( 110.0f + 52.0f * i ) * s;
@@ -733,6 +780,8 @@ void Game::drawHubHud( int w, int h, float s )
             std::string label, price;
             if ( i == count - 1 )
                 label = tr( "shop.back" );
+            else if ( m_menu == 3 )
+                label = tr( ( "dest." + m_liftChoices[i].substr( 0, m_liftChoices[i].find( '.' ) ) ).c_str() );
             else if ( m_menu == 1 )
             {
                 label = TextFormat( "%s  (%d/%d)", tr( "shop.stim" ), m_stims, MaxStims );

@@ -72,6 +72,41 @@ events), their words in `assets/text/<language>/velm.txt`.
 ![The harvest board](docs/screenshots/hub_board.jpg)
 ![The workshop](docs/screenshots/hub_workshop.jpg)
 
+## Level 2 „Der Knochenmarkt“ and the Depths
+
+The farm drum, where grain once grew; now a market for what is left of people. Ysolde gives the job after level 1
+(talk to her again once she has sent for you); the lift asks where to. The level is **generated** from a recipe
+([assets/levels/knochenmarkt.txt](assets/levels/knochenmarkt.txt)): twelve rooms on the way (market alleys with stalls
+and cowering market folk, warehouses with container stacks, cold rooms, works), four side rooms behind doors with
+lockers, a champion and terminals (the Taxator's ledger, an appraisal, a receipt with a seal), rescue capsules on the
+way, and at the end the Taxator's hall behind a door: the boss in a brass exoskeleton who stomps, fires fanned volleys,
+calls for help at 60 % and 30 % and finally charges. Each new game lays the market out anew; the hall stays.
+
+**The Depths** ([assets/levels/tiefen.txt](assets/levels/tiefen.txt)): the maintenance levels under the drum, open
+from the hub's lift after level 1 and again and again, laid out anew on every visit, as strong as the hero, with a
+guardian champion before the lift. For experience and gear.
+
+**Enemies:** besides lice and boarders, market guards with riot shields (attack from the side), heavies with rotary
+guns (a spin-up, then a long burst), hovering drones, saw bots in swarms, crawlers with charges (they go off near you
+and take their friends with them). **Champions** wear a coloured ring and a name: swift (green), armoured (blue),
+volatile (orange, explodes when killed), berserk (red); they always drop an item.
+
+![A shield guard in the market](docs/screenshots/l2_guard.jpg)
+![The Taxator's volley](docs/screenshots/l2_volley.jpg)
+![The Taxator](docs/screenshots/l2_taxator.jpg)
+![The market on the map](docs/screenshots/l2_map.jpg)
+![The lift asks where to](docs/screenshots/hub_lift.jpg)
+
+## Items, levels, skills
+
+Kills, champions, lockers and bosses drop gear with a beam and a label: common, magic, rare and unique, for seven
+slots (weapon, armour, helmet, gloves, boots, two implants), 50 kinds in two tiers, 17 affixes (damage, rate, crits,
+burning, shock, leech, health, armour, regeneration, speed, cooling, cooldowns, finding, experience, thorns, stims) that
+grow with the item's level, 18 uniques. Walking over an item picks it up (and puts it on if the slot is empty); the
+inventory compares, puts on, takes off and salvages for scrap. Experience gives hero levels (to 40) and a skill point
+each: per hero five passives and three active skills (Corvin: overcharge B/F, grenade R/LB, roll G/RB; Dorra: blast
+bolts B/F, quake R/LB, charge G/RB).
+
 ## Map, inventory, character
 
 ![Inventory](docs/screenshots/ui_inventory.jpg)
@@ -151,13 +186,17 @@ Tests and pictures without a window (always silent):
     bin\msvc\SpaceOpera.exe --shot work\d.png --level velm.txt --flags job1,done.kuehlgedaerme --talk ysolde
     bin\msvc\SpaceOpera.exe --shot work\b.png --level kuehlgedaerme.txt --at 25,25 --face 180 --awake --fire --warm 4
     bin\msvc\SpaceOpera.exe --lookdev --shot work\c.png --at 0.6,-4.3 --face 145 --walk
+    bin\msvc\SpaceOpera.exe --shot work\k.png --level knochenmarkt.txt --seed 3 --herolevel 5 --loot 12 --autoplay --report --warm 1500
+    bin\msvc\SpaceOpera.exe --shot work\t.png --level tiefen.txt --seed 1 --dumpgen work\tiefen_1.txt --warm 1
 
 `--report` writes the run (finished, time, deaths, kills, shots) into `spaceopera.log` beside the program; `--bench n`
 renders n frames first and logs the time per frame. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
 `--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
 language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue; `--flags a,b`
 sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture;
-`--panel 0|1|2` shows the inventory, character or map page, `--map` the map over the game.
+`--panel 0|1|2|3` shows the inventory, skills, character or map page, `--map` the map over the game; `--seed n` picks
+a generated level's layout, `--dumpgen FILE` writes the generated level file, `--herolevel n`, `--loot n` (items
+scattered round the hero) and `--xp n` set up a hero for tests, `--trace s` logs the run every s seconds.
 
 ## Textures
 

@@ -1,0 +1,19 @@
+# The Depths (English): the maintenance levels under the Third Drum, generated anew on every visit.
+
+d.name         = The Depths
+act.depths     = Velm · Maintenance levels
+
+d_start        = The maintenance levels. The corridors never match the plan. CARETAKER says that is the plan's fault.
+d_champion     = One with a ring. Things grow old down here, and what grows old grows dangerous.
+d_guard        = Something keeps watch up ahead. Something that is not on the plan.
+d_end          = The lift goes back up. Next time everything down here will look different.
+d_start.dorra  = The maintenance levels. Reminds me of the galleries on Kalvar. Only those kept still.
+
+h_depths       = The Depths: laid out anew every time, the enemies as strong as you. At the end a guardian waits by the freight lift.
+
+note.depths1.title = Maintenance log, broken off
+note.depths1       = Level 4: corridor 12 ends in a wall that was not there yesterday. Corridor 13 now leads to level 6. | Requesting a survey. Requesting relief. Requesting anyone.
+note.depths2.title = Scrawl on the wall
+note.depths2       = Whoever lives down here pays no rent. Whoever lives down here does not live here long.
+note.depths3.title = Message from CARETAKER
+note.depths3       = This level is closed. This level has always been closed. If you are reading this message, you are not here.
