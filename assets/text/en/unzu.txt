@@ -1,0 +1,73 @@
+# Hub in Act II: the »Insufficiently Equipped« (English). Conversations, lines, hints.
+
+unzu.name       = The »Insufficiently Equipped«
+unzu.intro      = Under the Core Bank an old survey ship lay in the dock, and in its hull slept an archon the Skimmers had used as a data store. Its name is »Insufficiently Equipped«. The crew it does not have would call it Unzu. | Ilka's core has been sold to the Mill. But the cores do not travel there directly: they move along a cold chain, from store to store, from buyer to buyer. Ysolde has the route. | Velm stays behind. Ahead lies the Harvest.
+
+speaker.unzu    = Unzu
+speaker.funk    = Trader radio
+
+s_start         = A ship that talks. And a window in the floor, with a gas giant drifting past beneath it.
+s_start.dorra   = A ship with opinions. On Kalvar we'd have scrapped it. Out here it flies us.
+s_back          = Back aboard. Unzu hums something that is meant to sound like a greeting.
+s_back.dorra    = Back aboard. It smells of old oil and warm circuits. Almost like home.
+
+h_ship          = Aboard: Ysolde in the mess gives the jobs, Kiri patches things in the workshop, the trader radio sells stims, Unzu talks from the bridge. The airlock in the hold leads to the next destination.
+h_exitlocked2   = The airlock goes nowhere until Ysolde names a destination – she sits in the mess.
+h_exitlater2    = No new destination. Ysolde has said nothing yet: to be continued.
+
+y100            = Welcome aboard. The ship is old, its archon is in a bad mood, and it is the best I could get in a hurry.
+y100_a          = Where are we going?
+y101            = The cores from Velm don't go straight to the Mill. They travel along a cold chain: stores, waypoints, buyers. I have the route. First stop: Seren, an ice moon. The Concession stores cores there under the ice, in the cold. Perhaps Ilka's too.
+y102            = Seren. The airlock is in the hold; Unzu will take us.
+y110            = You're back. What was under the ice?
+y110_a          = Ilka's store was there. It has already moved on.
+y111            = Then on along the chain. The cores from Seren went down to Hesper, the gas giant below the moon. The refinery there floats on balloons, and every balloon needs a control core to keep it up.
+y112            = Hesper. Hold on tight, it's windy down there.
+y120            = Hesper is behind us. You look like you talked to someone.
+y120_a          = A core asked me to switch it off.
+y121            = And? … No. Don't tell me. The route goes on to Halden. There, cores aren't sold. There, they are procured.
+y122            = Halden. A world that doesn't turn. Take something against the heat. And against the cold.
+y130            = You met Okafor.
+y130_a          = She has two children in the Concordance.
+y131            = Everyone has children somewhere. Listen: a distress call came in. An ark, seven hundred years in flight, is just arriving – and the Concession wants to »take it over«. Eighty thousand sleepers.
+y132            = The ark »Forbearance«. Be quiet. People are sleeping in there.
+y140            = The ark …
+y140_a          = A program kept watch for seven hundred years.
+y141            = Longer than me. Good. The cold chain leads to Kael, to the star lifter. There the cores are built into machines. Whoever builds them in gets paid. Whoever takes the radiation doesn't.
+y142            = Kael. Take the radiation seriously. It's the only thing there that doesn't lie.
+y150            = Kael …
+y150_a          = The workers there pay with their cells.
+y151            = And someone keeps the books. The Concession's headquarters lies on a planet without a sun, the Wanderer. The lists are there. And Director Hale.
+y152            = The Wanderer. Dark, cold – and the woman who signed everything is waiting there.
+y160            = Hale …
+y160_a          = Ilka is number 212.
+y161            = Then we know where she went. The next transport takes three thousand cores to the Mill. We board it in flight. After that there is no way back.
+y162            = The cold-chain transport. Unzu will hold to its flank; you go across.
+y170            = (End of the second act – to be continued.)
+
+u1              = I have no weapons, hardly any armour and a low opinion of you. Get in.
+u1_a            = Who are you?
+u1_b            = Thank you.
+u2              = A survey archon in retirement. »Insufficiently Equipped«, according to my launch; the name was given to me by a committee that didn't like me. Thirteen years ago I surveyed the Fringe. I think. Part of my memory has been … abridged.
+u3              = Don't thank me. I have no choice but to fly. Neither do you.
+u4              = Bridge. I'm here if you want to know something nobody asked.
+u5              = Seren: an ice moon over a gas giant. An ocean under the crust, 412 metres deep in my survey. I fear the figure is no longer true.
+u10             = Seren has lost twelve metres of water every year. My data says: stable. Either my data lied, or I did.
+u20             = Hesper: forty-one balloons in my survey. Now there are sixty-four. Each with a core. I should have counted what keeps them up.
+u30             = Halden: twenty-three settlements in the twilight ring, fourteen thousand people. I counted them. I no longer know whom I gave the figure to.
+u40             = The ark. A program without consciousness kept watch for seven hundred years. I know of no archon that was as faithful. Myself included.
+u40_a           = You sound as if you knew something more.
+u40_b           = Later.
+u41             = In the comet cloud of Tesh drifts an object nobody built. Thirty kilometres, 1.4 billion years old. I surveyed it and did not understand it. Now the Concession is cutting it up by weight. A detour, if you want – the cold chain will wait.
+u42             = Tesh is on the way, if you take a detour. The navigation knows it.
+u50             = Kael. I measured the radiation levels there. Who asked me to measure them? At that point my memory is empty.
+u60             = The lists. Forty thousand. The contract cites a survey of the Fringe. Mine, presumably. I don't want to talk now.
+
+k1              = Ottla said you'd need someone to patch your gear together. So I came along. The workshop is small, but the tools are mine.
+k1_a            = Show me what you can do.
+k1_b            = Later.
+k2              = Put it on the bench.
+f1              = TRADER RADIO – channel 7. Stims, fresh from the store of Ottla's cousin. Delivery by drone to the airlock.
+f1_a            = What have you got?
+f1_b            = Nothing.
+f2              = Order open.

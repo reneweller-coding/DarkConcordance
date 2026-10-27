@@ -33,6 +33,7 @@ exit     knochenmarkt.txt job2
 exit     aussenhaut.txt job3
 exit     ertrunken.txt job4
 exit     kernbank.txt job5
+exit     unzu.txt act1done
 exit     tiefen.txt done.kuehlgedaerme again
 board    3 17 10
 zone     2 11 14 34 bar

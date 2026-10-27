@@ -1,0 +1,48 @@
+# Level 12: The Wanderer (English).
+
+l12.name       = The Wanderer
+l12.intro      = A planet without a sun, flung out of its system billions of years ago. Under a shell of frozen nitrogen, radioactive decay keeps an ocean liquid. Total darkness, only floodlights on a plain of nitrogen snow – and above it the Milky Way, clearer than anywhere else. | Here sits the headquarters of the Deepground Concession, at no star anyone could watch. Here are the lists. | And here sits Director Marit Hale.
+
+speaker.hale   = Director Marit Hale
+
+l12_start      = The Wanderer. No light but my own.
+l12_dark       = In the dark they only see me when I'm close. But I don't see them either.
+l12_geyser     = The ground is hissing. Nitrogen – it's about to blow.
+l12_sky        = The Milky Way above me. I've never seen it like this. Nobody here looks up.
+l12_sniper     = A red laser in the dark! Sniper!
+l12_champion   = Works security, but not the cheap kind.
+l12_deep       = The headquarters. Warmth behind every window, and outside snow made of nitrogen.
+l12_hq         = The last hall before the archive. The security has dug in.
+l12_end        = The security is down. A woman stands between the shelves. She doesn't even have a weapon.
+l12_hale       = Come closer, by all means. I don't fight. I talk.
+
+l12_start.dorra = The Wanderer. On Kalvar the shafts were never this dark. At least there were lamps.
+
+h12a           = Marit Hale. You know who I am, or you wouldn't be here. I was born in the Fringe. At fourteen I was down the pit. Today I am a citizen of the Concordance – and for every mining contract, a hundred people from my old settlement get citizenship.
+h12a_a         = And for that you sell children to machines.
+h12b           = I got four thousand people out of there. How many have you saved? … The lists are over there. Number 212 is your Ilka. And now decide what happens to me.
+h12b_a         = Ysolde Varn wants you. She'll get you.
+h12b_b         = Go. I never want to see you again.
+h12b_c         = You come with us. As a witness – before the Concordance.
+h12c           = Varn. Of course. You don't know who she works for, do you? … I'll go. I'm not afraid of her. I should have been.
+h12d           = Generous. Or stupid. I don't know. Farewell.
+h12e           = A witness. Against whom? Against an archon who didn't ask? … Fine. I'll testify. You won't like what I say.
+h12f           = Varn's people are on their way.
+h12g           = (She is gone.)
+h12h           = I'm packing a few files. The right ones.
+
+h_dark         = Darkness: enemies only see you up close – unless you stand in a mast's light. But you see little too.
+h_geyser       = Nitrogen geysers: first a hiss, then an ice-cold column erupts. Away from the bright rings.
+h_warmth12     = Cold: the suit's warmth fades outside. Indoors and at the heater posts (orange) it warms up again.
+h_hale         = Director Hale wants to talk: step up to her and press E. What you decide stays.
+
+note.list.title     = Performance list, control cores, extract
+note.list           = 40,000 control cores, sorted by performance. | No. 211: core 7716, Talgrund, 34 y. – No. 212: core T-1207, Talgrund, 9 y., »exceptional adaptability«. Assignment: the Mill's control centre. – No. 213: …
+note.contract.title = Contract Deepground Concession – Concordance, annex C
+note.contract       = The Concession is entitled to deploy »suitable control solutions« to increase output. | Countersigned: With All Due Regret. No queries.
+note.hale.title     = Note on Hale's desk
+note.hale           = Greywillow: 100 citizenships, list attached. Please give the Okafor family priority, the mother has proved herself.
+note.relay12.title  = Mill transport plan
+note.relay12        = Next cold-chain transport: 3,000 cores, departure in two days, destination the Mill (halfway to Velm). Escort: transport guard, level 2.
+note.shift12.title  = Security shift plan
+note.shift12        = Whoever stands in the dark sees nothing and isn't seen. Whoever stands in the light, the other way round. Remember that.

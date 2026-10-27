@@ -1,0 +1,92 @@
+# Level 6: Seren, das Glasmeer (Akt II). Ein Eismond über einem Gasriesen: Schollen aus klarem Eis über einem Ozean, in
+# dem Kolonien von Leuchtorganismen pulsieren; dazwischen offenes Wasser und Gitterstege der Konzession, die das Wasser
+# abpumpt. Kälte (die Wärme des Anzugs schwindet draußen; Hütten und Heizpfosten ";" wärmen, Wärmepacks ":"), Eis,
+# das unter Explosionen und Hammerschlägen bricht (wer einbricht, kommt an die letzte sichere Stelle zurück, kalt und
+# verletzt), Bohrlöcher "(" mit Pumpendrohnen darunter. Am Ende der Eisbrecher, ein Bohrturm im offenen Wasser.
+#
+#   below ocean / ice 1     unter den Lücken der Ozean; die offenen Böden sind Eis, das bricht
+#   meter warmth s 0        die Wärme reicht s Sekunden im Freien (1 statt 0: auch drinnen)
+#   planet tex glow         der Himmelskörper (star: wo, wie groß)
+#   faction concession      die Leute tragen die Farben der Konzession
+#   genfeature sym n        je Raum n-mal dieses Zeichen (Bohrlöcher, Geysire, Spulen, Energiezellen)
+#   genarena rig            der Eisbrecher am Rand der Halle (sie ist eine Plattform der Konzession: Stahl, kein Eis)
+
+name     l6.name
+act      act.2
+intro    l6.intro
+gravity  3.4
+fog      0.002 0.008 0.4 0.75
+fogcolor 0.0006 0.0012 0.002
+ambient  0.04 0.05 0.065 0.02 0.028 0.04
+walls    4.0
+sky      nebula
+space    1
+below    ocean
+ice      1
+planet   gasgiant 0.3
+star     -3200 2600 -9000 5600
+sundir   0.3 -0.8 0.5
+suncolor 1.05 1.0 0.95
+meter    warmth 150 0
+faction  concession
+area     10
+next     unzu.txt
+gate     bossdead
+ambience ice
+music    seren
+bossmusic boss2
+
+genrooms      14
+genside       5
+gensize       12 18 10 15
+gentheme      ice ice ice works coldstore
+genoutdoor    ice deck
+genstarttheme works
+genarenatheme deck
+genarena      rig
+genvoid       1
+genoxygen     0.7
+genfeature    (  1.3
+genpack       ETT     3
+genpack       $TT     2
+genpack       %T      1.5
+genpack       ^^T     1.5
+genpack       ''T     1.1
+genpack       ""E     1.2
+genpack       $$E     1
+gendensity    1.15
+genelite      0.3
+gennote       note.pump note.colony note.settler note.miner note.relay6
+
+[lines]
+# Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/seren.txt)
+l6_start    | a                | hero
+l6_ice      | b                | hero
+l6_colony   | c                | hero
+l6_pump     | pumpdrone        | hero
+l6_count    | d                | pump
+l6_crack    | icebreak         | hero
+l6_dunk     | dunk             | hero
+l6_champion | champion         | hero
+l6_deep     | e                | hero
+l6_rig      | g                | hero
+l6_shift    | bossstart        | rig
+l6_drill    | rig.drilldown    | rig
+l6_pumps    | rig.pumpdown     | hero
+l6_late     | tug2             | rig
+l6_home     | bossdead         | rig
+l6_end      | bossdead         | hero
+
+[hints]
+# Schlüssel | Auslöser
+h_warmth    | b
+h_ice       | c
+h_dunk      | dunk
+h_pumpdrone | pumpdrone
+h_sniper    | sniper
+h_cutter    | cutter
+h_shield    | shieldguard
+h_champion  | champion
+h_stim      | hurt
+h_lowwarmth | lowmeter
+h_rig       | bossstart

@@ -1,0 +1,73 @@
+# Hub in Akt II: die »Unzureichend Ausgestattet« (Deutsch, die Quelle). Gespräche, Zeilen, Hinweise.
+
+unzu.name       = Die »Unzureichend Ausgestattet«
+unzu.intro      = Unter der Kernbank lag ein altes Vermessungsschiff im Dock, und in seinem Rumpf schlief ein Archont, den die Abschöpfer als Datenspeicher benutzt hatten. Er heißt »Unzureichend Ausgestattet«. Die Crew, die er nicht hat, würde ihn Unzu nennen. | Ilkas Kern ist an die Mühle verkauft. Aber die Kerne reisen nicht direkt dorthin: Sie wandern eine Kühlkette entlang, von Lager zu Lager, von Käufer zu Käufer. Ysolde hat die Route. | Velm bleibt zurück. Vor uns liegt die Ernte.
+
+speaker.unzu    = Unzu
+speaker.funk    = Händlerfunk
+
+s_start         = Ein Schiff, das redet. Und ein Fenster im Boden, unter dem ein Gasriese vorbeitreibt.
+s_start.dorra   = Ein Schiff mit eigener Meinung. Auf Kalvar hätten wir es verschrottet. Hier fliegt es uns.
+s_back          = Zurück an Bord. Unzu brummt etwas, das wie eine Begrüßung klingen soll.
+s_back.dorra    = Zurück an Bord. Es riecht nach altem Öl und warmen Schaltkreisen. Fast wie zu Hause.
+
+h_ship          = An Bord: Ysolde in der Messe gibt die Aufträge, Kiri flickt in der Werkstatt, der Händlerfunk verkauft Stims, Unzu spricht von der Brücke aus. Die Schleuse im Frachtraum führt zum nächsten Ziel.
+h_exitlocked2   = Die Schleuse führt nirgendwohin, solange Ysolde kein Ziel genannt hat – sie sitzt in der Messe.
+h_exitlater2    = Kein neues Ziel. Ysolde hat noch nichts gesagt: Fortsetzung folgt.
+
+y100            = Willkommen an Bord. Das Schiff ist alt, sein Archont schlecht gelaunt, und es ist das Beste, was ich in der Eile bekommen konnte.
+y100_a          = Wohin fliegen wir?
+y101            = Die Kerne aus Velm gehen nicht direkt zur Mühle. Sie reisen eine Kühlkette entlang: Lager, Zwischenstationen, Käufer. Ich habe die Route. Erste Station: Seren, ein Eismond. Die Konzession lagert dort Kerne unter dem Eis, in der Kälte. Vielleicht auch Ilkas.
+y102            = Seren. Die Schleuse ist im Frachtraum; Unzu bringt uns hin.
+y110            = Sie sind zurück. Was lag unter dem Eis?
+y110_a          = Ilkas Speicher war dort. Er ist schon weitergereist.
+y111            = Dann weiter die Kette entlang. Die Kerne aus Seren gingen hinunter nach Hesper, zu dem Gasriesen unter dem Mond. Die Raffinerie dort schwebt an Ballonen, und jeder Ballon braucht einen Steuerkern, der ihn oben hält.
+y112            = Hesper. Halten Sie sich fest, da unten weht es.
+y120            = Hesper liegt hinter uns. Sie sehen aus, als hätten Sie mit jemandem gesprochen.
+y120_a          = Ein Kern hat mich gebeten, ihn abzuschalten.
+y121            = Und? … Nein. Sagen Sie es mir nicht. Die Route geht weiter nach Halden. Dort werden Kerne nicht verkauft. Dort werden sie beschafft.
+y122            = Halden. Eine Welt, die sich nicht dreht. Nehmen Sie etwas gegen die Hitze mit. Und gegen die Kälte.
+y130            = Sie haben Okafor getroffen.
+y130_a          = Sie hat zwei Kinder in der Konkordanz.
+y131            = Alle haben Kinder irgendwo. Hören Sie: Ein Notruf ist eingegangen. Eine Arche, siebenhundert Jahre unterwegs, kommt gerade an – und die Konzession will sie »übernehmen«. Achtzigtausend Schläfer.
+y132            = Die Arche »Langmut«. Seien Sie leise. Da drin schlafen Leute.
+y140            = Die Arche …
+y140_a          = Ein Programm hat siebenhundert Jahre lang Wache gehalten.
+y141            = Länger als ich. Gut. Die Kühlkette führt nach Kael, zum Sternheber. Dort werden die Kerne in Maschinen eingebaut. Wer sie einbaut, wird bezahlt. Wer die Strahlung abbekommt, nicht.
+y142            = Kael. Nehmen Sie die Strahlung ernst. Sie ist das Einzige dort, das nicht lügt.
+y150            = Kael …
+y150_a          = Die Arbeiter dort zahlen mit ihren Zellen.
+y151            = Und jemand führt Buch darüber. Die Zentrale der Konzession liegt auf einem Planeten ohne Sonne, dem Wanderer. Dort liegen die Listen. Und dort sitzt Direktorin Hale.
+y152            = Der Wanderer. Dunkel, kalt – und dort wartet die Frau, die alles unterschrieben hat.
+y160            = Hale …
+y160_a          = Ilka steht auf Platz 212.
+y161            = Dann wissen wir, wohin sie ist. Der nächste Transport bringt dreitausend Kerne zur Mühle. Wir entern ihn im Flug. Danach gibt es keinen Weg zurück.
+y162            = Der Kühltransport. Unzu hält sich an seine Flanke; Sie gehen hinüber.
+y170            = (Ende des zweiten Akts – Fortsetzung folgt.)
+
+u1              = Ich habe keine Waffen, kaum Panzerung und eine schlechte Meinung von euch. Steigt ein.
+u1_a            = Wer bist du?
+u1_b            = Danke.
+u2              = Ein Vermessungsarchont im Ruhestand. »Unzureichend Ausgestattet«, laut Stapellauf; den Namen hat mir ein Komitee gegeben, das mich nicht leiden konnte. Ich habe vor dreizehn Jahren den Saum vermessen. Glaube ich. Ein Teil meines Gedächtnisses ist … gekürzt.
+u3              = Bedank dich nicht. Ich habe keine andere Wahl als zu fliegen. Du auch nicht.
+u4              = Brücke. Ich bin da, falls du etwas wissen willst, das niemand gefragt hat.
+u5              = Seren: Eismond über einem Gasriesen. Ozean unter der Decke, 412 Meter tief bei meiner Vermessung. Ich fürchte, die Zahl stimmt nicht mehr.
+u10             = Seren hat jedes Jahr zwölf Meter Wasser verloren. In meinen Daten steht: stabil. Entweder haben meine Daten gelogen, oder ich.
+u20             = Hesper: einundvierzig Ballone bei meiner Vermessung. Jetzt sind es vierundsechzig. Jeder mit einem Kern. Ich hätte zählen sollen, was sie oben hält.
+u30             = Halden: dreiundzwanzig Siedlungen im Zwielichtring, vierzehntausend Menschen. Ich habe sie gezählt. Ich weiß nicht mehr, wem ich die Zahl gegeben habe.
+u40             = Die Arche. Ein Programm ohne Bewusstsein hat siebenhundert Jahre Wache gehalten. Ich kenne keinen Archonten, der so treu war. Mich eingeschlossen.
+u40_a           = Du klingst, als wüsstest du noch etwas.
+u40_b           = Später.
+u41             = In der Kometenwolke von Tesh treibt ein Objekt, das niemand gebaut hat. Dreißig Kilometer, 1,4 Milliarden Jahre alt. Ich habe es vermessen und nicht verstanden. Jetzt zerschneidet die Konzession es nach Gewicht. Ein Umweg, wenn ihr wollt – die Kühlkette wartet.
+u42             = Tesh liegt auf dem Weg, wenn man einen Umweg macht. Die Navigation kennt es.
+u50             = Kael. Ich habe dort die Strahlungswerte gemessen. Wer hat mich gebeten, sie zu messen? An der Stelle ist mein Gedächtnis leer.
+u60             = Die Listen. Vierzigtausend. Der Vertrag beruft sich auf eine Vermessung des Saums. Meine, vermutlich. Ich möchte jetzt nicht reden.
+
+k1              = Ottla hat gesagt, ihr braucht jemanden, der euren Kram zusammenflickt. Also bin ich mit. Die Werkstatt ist klein, aber das Werkzeug ist meins.
+k1_a            = Zeig mal, was du machen kannst.
+k1_b            = Später.
+k2              = Leg's auf die Bank.
+f1              = HÄNDLERFUNK – Kanal 7. Stims, frisch aus dem Lager von Ottlas Cousine. Lieferung per Drohne an die Schleuse.
+f1_a            = Was hast du?
+f1_b            = Nichts.
+f2              = Bestellung offen.

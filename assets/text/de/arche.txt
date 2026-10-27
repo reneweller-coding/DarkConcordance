@@ -1,0 +1,51 @@
+# Level 9: Die Arche »Langmut« (Deutsch, die Quelle).
+
+l9.name        = Die Arche »Langmut«
+l9.intro       = Ein Kolonieschiff aus der Zeit vor dem Sprungantrieb, siebenhundert Jahre unterwegs, mit achtzigtausend Schläfern an Bord. Es kommt gerade an. Seine Zielwelt wurde vor vier Jahren abgebaut. | Der Bordrechner hat siebenhundert Jahre allein Wache gehalten: keine KI, nur ein sorgfältiges Programm. Er hat einen Notruf gesendet, weil er nicht weiß, was er den Schläfern sagen soll. | Die Konzession hat angeboten, sie »zu übernehmen«. Achtzigtausend ungesicherte Gehirne sind ein Vermögen. Ihre Enterkommandos sind schon an Bord.
+
+speaker.arche  = Bordverwaltung »Langmut«
+speaker.leader = Der Enterführer
+
+l9_start       = Die Arche. So still, dass ich das Eis knacken höre.
+l9_pods        = Kapseln. Reihe um Reihe, im blauen Licht. In jeder ein Mensch, der seit siebenhundert Jahren träumt.
+l9_door        = Die Tür hat keine Energie. Ich könnte sie aus den Kapseln nehmen … dann wachen die nicht mehr auf.
+l9_drained     = Die Tür ist offen. Und irgendwo hinter mir werden Kapseln warm.
+l9_cell        = Eine Energiezelle. Damit muss niemand für eine Tür bezahlen.
+l9_cold        = Die Kälte kriecht in den Anzug. Ich brauche Wärme.
+l9_champion    = Der Enterführer hat seine Besten mitgebracht.
+l9_watch       = Achtung. Achtung. Hier spricht die Bordverwaltung. Unbekannte an Bord. Bitte wecken Sie die Schläfer nicht. Ich weiß noch nicht, was ich ihnen sagen soll.
+l9_deep        = Hier sind die Kapseln älter. Manche sind schon dunkel. Siebenhundert Jahre sind lang.
+l9_hall        = Die Halle vor der Brücke. Da drin schneidet jemand.
+l9_boss        = Ah. Die Konkurrenz. Wir haben einen Vertrag für diese Ladung. Ihr nicht.
+l9_help        = Schneider! Nach vorne!
+l9_down        = Der Enterführer liegt. Und die Bordverwaltung … ruft mich.
+
+l9_start.dorra = Die Arche. Auf Kalvar hätten sie sie zerlegt und das Metall verkauft. Hier schläft noch jemand.
+l9_drained.dorra = Offen. Ich habe es nicht gern getan. Irgendwo werden jetzt Kapseln warm.
+
+a9a            = Hier spricht die Bordverwaltung der »Langmut«. Siebenhundert Jahre Wache. Achtzigtausend Schläfer. Unsere Zielwelt existiert nicht mehr. Sie sind die ersten Menschen, mit denen ich spreche, die nicht schlafen. Was soll ich ihnen sagen?
+a9a_a          = Weck sie. Sie haben ein Recht, es zu erfahren.
+a9a_b          = Übergib die Arche der Konkordanz. Sie werden gerettet.
+a9a_c          = Versteck das Schiff. Lass sie weiterschlafen, bis es eine bessere Welt gibt.
+a9b            = Ich beginne mit dem Wecken. Achtzigtausend Menschen werden in einem toten System die Augen öffnen. Sie werden fragen. Ich werde antworten.
+a9c            = Ich sende das Signal an die Konkordanz. Sie werden kommen. Sie werden nicht fragen. Ich bin … erleichtert. Das ist ein seltsames Wort für ein Programm.
+a9d            = Ich schalte die Signale ab. Die »Langmut« treibt weiter in die Dunkelheit. Ich halte Wache. Ich bin es gewohnt.
+a9e            = Die ersten Kapseln öffnen sich. Ich habe ihnen gesagt, dass es eine lange Reise war.
+a9f            = Die Konkordanz ist unterwegs. Ich habe ihnen die Liste der Schläfer geschickt. Alle Namen.
+a9g            = Ich halte Wache.
+
+h_power        = Die Türen auf dem Weg haben keine Energie. E: die Energie aus den Kapseln umleiten (das kostet Schläfer) – oder vorher eine Energiezelle aus den Nebenräumen holen.
+h_warmth9      = Die Arche ist überall kalt: die Wärme des Anzugs schwindet auch drinnen. Heizpfosten (orange) und Wärmepacks helfen.
+h_leader       = Der Enterführer im Schneidbrenner-Exoskelett: er stampft, feuert und ruft seine Schneider. Ganz am Ende rennt er an.
+h_ark          = Die Bordverwaltung will sprechen: mit E an ihr Terminal. Was ihr entscheidet, bleibt.
+
+note.watch.title    = Wachprotokoll, Jahr 700
+note.watch          = Tag 255 674. Alle Systeme nominal. Kapseln verloren seit Abflug: 2 211. Ankunft in 38 Tagen. | Nachtrag: Zielwelt antwortet nicht. Nachtrag: Zielwelt nicht mehr vorhanden. Nachtrag: Ich weiß nicht, was ich tun soll.
+note.manifest9.title = Ladeverzeichnis, Halle 12
+note.manifest9      = 1 920 Schläfer. Berufe: Landwirtschaft 640, Medizin 88, Unterricht 212, Bergbau 304, Sonstige 676. | Kinder unter zwölf: 410.
+note.offer.title    = Angebot der Konzession Tiefgrund
+note.offer          = An die Bordverwaltung: Wir bieten an, die Schläfer in unsere Obhut zu übernehmen. Eine Weckung ist unter den gegebenen Umständen nicht ratsam. | Für Ihre Kooperation bedanken wir uns im Voraus.
+note.pod.title      = Kapsel 12-0417, Aufschrift
+note.pod            = Hanne Velde, Lehrerin. Darunter mit Filzstift, siebenhundert Jahre alt: WECKT MICH, WENN ES GRÜN IST.
+note.relay9.title   = Befehl an die Enterkommandos
+note.relay9         = Kerne aus der Arche: nach Kael, Einbau. Priorität: junge Schläfer. Charge T-1207 dort bereits eingebaut – Vergleichsdaten anfordern.

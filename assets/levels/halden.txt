@@ -1,0 +1,88 @@
+# Level 8: Halden, die Zwielichtwelt (Akt II). Ein gebunden rotierender Planet: im Westen die Tagseite (Hitze), im
+# Osten die Nachtseite (Frost), dazwischen ein schmaler Ring ewiger Dämmerung mit Siedlungen. Ein heißer Wind weht von
+# der Tag- zur Nachtseite und treibt Geschosse ab. Räumkommandos (oliv) mit Flammenwerfern "}" und Räumhunden "-". Am
+# Ende Räumleiterin Okafor in ihrem Kampfläufer; besiegt, bietet sie einen Handel an.
+#
+#   meter climate s         Hitze und Frost: die Anzeige schwindet außerhalb des Dämmerungsbands
+#   climate a b             das Band als Anteil der Kartenbreite (westlich von a heiß, östlich von b kalt)
+#   bossvariant 2           der Taxator-Platz trägt Okafor
+
+name     l8.name
+act      act.2
+intro    l8.intro
+gravity  9.0
+fog      0.003 0.009 0.5 0.85
+fogcolor 0.009 0.004 0.003
+ambient  0.12 0.07 0.06 0.04 0.025 0.03
+walls    5.0
+sundir   0.9 -0.18 0.1
+suncolor 2.6 1.1 0.5
+meter    climate 110 0
+climate  0.32 0.68
+wind     90 3.5 40
+faction  clearance
+bossvariant 2
+area     12
+next     unzu.txt
+gate     bossdead
+ambience dusk
+music    halden
+bossmusic boss2
+npcafter okafor bossdead
+
+genrooms      15
+genside       6
+gensize       12 18 10 15
+gentheme      dusk dusk street street cargo dusk
+genoutdoor    dusk street
+genstarttheme cargo
+genarenatheme dusk
+genarena      taxator
+genoxygen     0.5
+genpack       }TT     2
+genpack       --T     2
+genpack       $}      1.5
+genpack       %T      1.2
+genpack       ---     1.2
+genpack       ETT     2
+genpack       ''      0.8
+gendensity    1.15
+genelite      0.32
+gennote       note.notice8 note.camp note.okafor note.relay8 note.child
+
+[npcs]
+okafor | -1 -1 | okafor | o8a | okafor.deal:o8d okafor.taken:o8e
+
+[talk]
+o8a | okafor | -            | o8a_a>o8b o8a_b>o8c
+o8b | okafor | okafor.deal  |
+o8c | okafor | okafor.taken |
+o8d | okafor | -            |
+o8e | okafor | -            |
+
+[lines]
+l8_start    | a                | hero
+l8_dusk     | b                | hero
+l8_hot      | c                | hero
+l8_camp     | d                | hero
+l8_hound    | hound            | hero
+l8_flamer   | flamer           | hero
+l8_champion | champion         | hero
+l8_column   | e                | hero
+l8_hall     | g                | hero
+l8_boss     | bossstart        | okafor
+l8_help     | taxator2         | okafor
+l8_dogs     | taxator3         | okafor
+l8_down     | bossdead         | hero
+
+[hints]
+h_climate   | b
+h_wind8     | c
+h_flamer    | flamer
+h_hound     | hound
+h_shield    | shieldguard
+h_champion  | champion
+h_stim      | hurt
+h_lowclimate | lowmeter
+h_okafor    | bossstart
+h_deal      | appear.okafor

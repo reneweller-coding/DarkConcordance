@@ -1,0 +1,48 @@
+# Level 12: Der Wanderer (Deutsch, die Quelle).
+
+l12.name       = Der Wanderer
+l12.intro      = Ein Planet ohne Sonne, vor Jahrmilliarden aus seinem System geschleudert. Unter einem Panzer aus gefrorenem Stickstoff hält radioaktiver Zerfall einen Ozean flüssig. Völlige Dunkelheit, nur Scheinwerfer auf einer Ebene aus Stickstoffschnee – und darüber die Milchstraße, so klar wie nirgends sonst. | Hier sitzt die Zentrale der Konzession Tiefgrund, an keinem Stern, den man beobachten könnte. Hier liegen die Listen. | Und hier sitzt Direktorin Marit Hale.
+
+speaker.hale   = Direktorin Marit Hale
+
+l12_start      = Der Wanderer. Kein Licht außer meinem eigenen.
+l12_dark       = Im Dunkeln sehen sie mich erst, wenn ich nah bin. Ich sie aber auch nicht.
+l12_geyser     = Der Boden zischt. Stickstoff – gleich bricht er aus.
+l12_sky        = Über mir die Milchstraße. Ich habe sie noch nie so gesehen. Niemand hier sieht hinauf.
+l12_sniper     = Ein roter Laser im Dunkeln! Scharfschütze!
+l12_champion   = Werkschutz, aber nicht der billige.
+l12_deep       = Die Zentrale. Wärme hinter jedem Fenster, und draußen Schnee aus Stickstoff.
+l12_hq         = Die letzte Halle vor dem Archiv. Der Werkschutz hat sich verschanzt.
+l12_end        = Der Werkschutz liegt. Da steht eine Frau zwischen den Regalen. Sie hat nicht einmal eine Waffe.
+l12_hale       = Kommen Sie ruhig näher. Ich kämpfe nicht. Ich rede.
+
+l12_start.dorra = Der Wanderer. Auf Kalvar war es in den Stollen nie so dunkel. Da gab es wenigstens Lampen.
+
+h12a           = Marit Hale. Sie wissen, wer ich bin, sonst wären Sie nicht hier. Ich bin im Saum geboren. Mit vierzehn war ich in der Grube. Heute bin ich Bürgerin der Konkordanz – und für jeden Abbauvertrag bekommen hundert Leute aus meiner alten Siedlung das Bürgerrecht.
+h12a_a         = Und dafür verkaufen Sie Kinder an Maschinen.
+h12b           = Ich habe viertausend Menschen da rausgeholt. Wie viele haben Sie gerettet? … Die Listen liegen dort. Platz 212 ist Ihre Ilka. Und jetzt entscheiden Sie, was mit mir passiert.
+h12b_a         = Ysolde Varn will Sie haben. Sie bekommt Sie.
+h12b_b         = Gehen Sie. Ich will Sie nie wiedersehen.
+h12b_c         = Sie kommen mit. Als Zeugin – vor der Konkordanz.
+h12c           = Varn. Natürlich. Sie wissen nicht, für wen sie arbeitet, oder? … Ich gehe mit. Ich habe keine Angst vor ihr. Ich hätte welche haben sollen.
+h12d           = Großzügig. Oder dumm. Ich weiß es nicht. Leben Sie wohl.
+h12e           = Eine Zeugin. Gegen wen? Gegen einen Archonten, der nicht gefragt hat? … Gut. Ich sage aus. Sie werden nicht mögen, was ich sage.
+h12f           = Varns Leute sind unterwegs.
+h12g           = (Sie ist fort.)
+h12h           = Ich packe ein paar Akten. Die richtigen.
+
+h_dark         = Dunkelheit: Gegner sehen dich nur aus der Nähe – außer du stehst im Licht eines Mastes. Du siehst aber auch wenig.
+h_geyser       = Stickstoffgeysire: erst zischt es, dann bricht eine eiskalte Säule aus. Weg von den hellen Ringen.
+h_warmth12     = Kälte: die Wärme des Anzugs schwindet draußen. Drinnen und an den Heizpfosten (orange) wärmt sie wieder auf.
+h_hale         = Direktorin Hale will reden: mit E an sie herantreten. Was ihr entscheidet, bleibt.
+
+note.list.title     = Leistungsliste Steuerkerne, Auszug
+note.list           = 40 000 Steuerkerne, sortiert nach Leistung. | Platz 211: Kern 7716, Talgrund, 34 J. – Platz 212: Kern T-1207, Talgrund, 9 J., »außergewöhnliche Anpassungsfähigkeit«. Zuordnung: Leitwerk der Mühle. – Platz 213: …
+note.contract.title = Vertrag Konzession Tiefgrund – Konkordanz, Anhang C
+note.contract       = Die Konzession ist berechtigt, zur Steigerung der Förderleistung »geeignete Steuerungslösungen« einzusetzen. | Gegengezeichnet: Mit Allem Gebotenen Bedauern. Keine Rückfragen.
+note.hale.title     = Notiz auf Hales Schreibtisch
+note.hale           = Grauweide: 100 Bürgerrechte, Liste anbei. Bitte die Familie Okafor bevorzugen, die Mutter hat sich bewährt.
+note.relay12.title  = Transportplan Mühle
+note.relay12        = Nächster Kühltransport: 3 000 Kerne, Abflug in zwei Tagen, Ziel Mühle (auf halbem Weg nach Velm). Begleitschutz: Transportwache, Stufe 2.
+note.shift12.title  = Schichtplan Werkschutz
+note.shift12        = Wer im Dunkeln steht, sieht nichts und wird nicht gesehen. Wer im Licht steht, umgekehrt. Merkt euch das.

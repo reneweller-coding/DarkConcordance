@@ -1,0 +1,84 @@
+# Level 10: Das Objekt von Tesh (Akt II, freiwillig). In der Kometenwolke eines unbewohnten Systems treibt etwas, das
+# niemand gebaut hat: dreißig Kilometer lang, glatt, kalt, 1,4 Milliarden Jahre alt. Innen Hallen und Kanäle in einer
+# Geometrie, die für nichts Menschliches passt. Kaum Schwerkraft (weite Sprünge), Kälte nahe dem Nullpunkt überall
+# (nur die Heizer der Bergungstrupps helfen), langsam wandernde Bauteile "]", die einen zerquetschen. Bergungstrupps der
+# Konzession; am Ende der Bergungsmeister in seinem Schneidlaser-Gerüst. Danach Pell, der letzte Forscher.
+#
+#   bossvariant 4           der Bergungsmeister im Schneidgerüst (die Gestalt des Exoskeletts)
+#   genfeature ] n          wandernde Bauteile je Raum
+
+name     l10.name
+act      act.2
+intro    l10.intro
+gravity  2.6
+fog      0.002 0.007 0.5 0.85
+fogcolor 0.0007 0.0009 0.0014
+ambient  0.03 0.035 0.05 0.015 0.018 0.03
+walls    6.0
+meter    warmth 150 1
+faction  concession
+bossvariant 4
+area     13
+next     unzu.txt
+gate     bossdead
+ambience alien
+music    tesh
+bossmusic boss2
+npcafter pell bossdead
+
+genrooms      16
+genside       6
+gensize       12 18 10 15
+gentheme      alien alien alien works alien
+genstarttheme works
+genarenatheme alien
+genarena      taxator
+genfeature    ]  0.8
+genfeature    ;  0.6
+genfeature    :  0.5
+genpack       EET     2.5
+genpack       ""E     1.5
+genpack       $TT     1.5
+genpack       ^^^     1.5
+genpack       %T      1
+genpack       ''T     0.8
+gendensity    0.95
+genelite      0.3
+gennote       note.pell note.salvage note.isotope note.motion note.weight
+
+[npcs]
+pell | -1 -1 | pell | p10a | pell.saved:p10d pell.stays:p10e
+
+[talk]
+p10a | pell | -          | p10a_a>p10b p10a_b>p10c
+p10b | pell | pell.saved |
+p10c | pell | pell.stays |
+p10d | pell | -          |
+p10e | pell | -          |
+
+[lines]
+l10_start    | a                | hero
+l10_halls    | b                | hero
+l10_float    | c                | hero
+l10_move     | d                | hero
+l10_crush    | crushed          | hero
+l10_champion | champion         | hero
+l10_deep     | e                | hero
+l10_hall     | g                | hero
+l10_boss     | bossstart        | hero
+l10_cutter   | taxator2         | hero
+l10_end      | bossdead         | hero
+l10_pell     | appear.pell      | pell
+
+[hints]
+h_tesh       | b
+h_float      | c
+h_move       | d
+h_cutter     | cutter
+h_sniper     | sniper
+h_shield     | shieldguard
+h_champion   | champion
+h_stim       | hurt
+h_lowwarmth  | lowmeter
+h_scaffold   | bossstart
+h_pell       | appear.pell

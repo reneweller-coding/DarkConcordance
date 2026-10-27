@@ -1,0 +1,48 @@
+# Level 8: Halden, die Zwielichtwelt (Deutsch, die Quelle).
+
+l8.name        = Halden, die Zwielichtwelt
+l8.intro       = Halden dreht sich nicht. Eine Seite schaut ewig zur Sonne, die andere ewig ins All, und bewohnbar ist nur ein schmaler Ring dazwischen: ewige Abenddämmerung um den ganzen Planeten. Von der Tagseite fegt ein heißer Wind in die Nacht und lässt an der Grenze Eisregen fallen. | Hier werden Kerne nicht verkauft. Hier werden sie beschafft. Die Konzession räumt die letzten Siedlungen, höflich und gründlich, und wer die Umsiedlung verweigert, kommt in ein Lager. Die Lager heißen offiziell »Übergangsquartiere«. | Aus den Lagern verschwinden Leute.
+
+speaker.okafor = Räumleiterin Okafor
+
+l8_start       = Halden. Der Himmel brennt im Westen und ist schwarz im Osten. Wir stehen dazwischen.
+l8_dusk        = Ein heißer Wind von der Tagseite. Er schiebt meine Schüsse nach Osten.
+l8_hot         = Weiter nach Westen, und der Anzug kocht. Weiter nach Osten, und er friert. Ich bleibe in der Dämmerung.
+l8_camp        = Ein Zaun, Container, Nummern an den Türen. Ein Übergangsquartier.
+l8_hound       = Räumhunde! Sie jagen in Rudeln.
+l8_flamer      = Flammenwerfer. Damit räumen sie also.
+l8_champion    = Der führt hier das Kommando. Oder er tut so.
+l8_column      = Eine Räumkolonne. Ganze Familien, in Reihe, mit Nummern auf den Mänteln.
+l8_hall        = Da vorne steht ein Kampfläufer. Sie wartet auf uns.
+l8_boss        = Räumkommando Halden, hier spricht Okafor. Ihr seid nicht auf meiner Liste. Ändern wir das.
+l8_help        = Kommando, zu mir! Sofort!
+l8_dogs        = Lasst die Hunde los. Alle.
+l8_down        = Der Läufer ist hin. Sie klettert raus. Sie hebt die Hände.
+
+l8_start.dorra = Halden. Ein Planet, der stehen geblieben ist. Wie Kalvar, nachdem sie kamen.
+l8_camp.dorra  = Ein Lager. Auf Kalvar nannten sie es auch anders. Es war trotzdem ein Lager.
+
+o8a            = Gut gekämpft. Ich bin keine Idiotin: Ich weiß, wann ich verloren habe. Hört zu. Im Quartier drei sitzen zweihundert Leute. Ich lasse sie frei – sofort, mit meinem Code. Dafür lasst ihr mich gehen. Ich habe zwei Kinder in der Konkordanz. Ich will sie wiedersehen.
+o8a_a          = Abgemacht. Lass sie frei, und dann verschwinde.
+o8a_b          = Nein. Du kommst mit. Die Leute holen wir selbst raus.
+o8b            = (Sie tippt einen Code. Irgendwo öffnen sich Tore.) Zweihundert. Wie versprochen. Und jetzt vergesst mein Gesicht.
+o8c            = Dann holt sie raus. Viel Glück mit dem Wachpersonal. Und viel Glück mir.
+o8d            = Ich bin schon weg.
+o8e            = Ich laufe nicht weg. Wohin auch.
+
+h_climate      = Halden: im Westen die Hitze der Tagseite, im Osten der Frost der Nacht. Die Anzeige über dem Leben schwindet außerhalb der Dämmerung; Kühl- und Heizpfosten helfen.
+h_wind8        = Der Wind von der Tagseite treibt Geschosse nach Osten. Vorhalten.
+h_lowclimate   = Der Anzug hält es nicht mehr lange aus: zurück in die Dämmerung oder an einen Pfosten.
+h_okafor       = Okafor im Kampfläufer: sie stampft aus der Nähe, feuert Salven aus der Ferne und ruft ihr Kommando. Ganz am Ende rennt sie an.
+h_deal         = Okafor will reden: mit E an sie herantreten. Ihr Angebot gilt nur jetzt.
+
+note.notice8.title = Aushang, Siedlung Grauweide
+note.notice8       = Die Siedlung Grauweide wird am 14. geräumt. Bitte halten Sie Ihre Papiere bereit. Haustiere können nicht mitgenommen werden. Für Ihre Sicherheit ist gesorgt. | Ihre Konzession Tiefgrund.
+note.camp.title    = Belegungsliste Übergangsquartier 3
+note.camp          = Belegt: 214. Abgänge diese Woche: 31 (Ziel: »Weiterverwendung«). Zugänge: 40. | Bemerkung: Die Kinder werden bevorzugt abgeholt. Sie passen sich schneller an.
+note.okafor.title  = Persönliche Nachricht, nicht gesendet
+note.okafor        = Liebe Mira, lieber Jonas, Mama arbeitet noch ein Jahr hier draußen, dann sind wir Bürger. Alle drei. Ihr bekommt ein Zimmer mit Fenster. Ich verspreche es.
+note.relay8.title  = Ausgangsbuch Sammelstelle
+note.relay8        = Charge T-1207 (»Kind«), aus Hesper: nicht hier verwendet. Weitergeleitet: Arche-Bergung? NEIN – korrigiert: Kael, Einbau. Unterschrift unleserlich.
+note.child.title   = Kreidezeichnung an einer Containerwand
+note.child         = Ein Haus, eine Sonne, die genau in der Mitte steht. Darunter in Kinderschrift: SO WAR ES ZU HAUSE.

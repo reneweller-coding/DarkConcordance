@@ -1,0 +1,48 @@
+# Level 10: The object of Tesh (English).
+
+l10.name       = The object of Tesh
+l10.intro      = In the comet cloud of an uninhabited system drifts something nobody built: thirty kilometres long, smooth, cold, 1.4 billion years old by its isotopes. For centuries researchers studied it, without result. | Now the Concession is cutting it to pieces and selling the parts by weight. | The last researcher, an old man named Pell, has barricaded himself inside.
+
+speaker.pell   = Pell
+
+l10_start      = The object. No window, no seam, no light. Only what the salvage crews brought along.
+l10_halls      = These halls are built. Clearly built. But for nobody who looks like me.
+l10_float      = There's hardly any gravity here. A jump carries far – careful.
+l10_move       = Something's moving. Very slowly. The walls themselves.
+l10_crush      = It caught me! Don't get between the components!
+l10_champion   = The salvage foreman. He has cut a lot already.
+l10_deep       = The deeper, the colder. The gear is freezing at the joints.
+l10_hall       = Up ahead a scaffold is cutting a piece out of the wall. The sound goes through your whole body.
+l10_boss       = The salvage master. His scaffold has a laser that cuts through a billion years. And through me.
+l10_cutter     = The cutting laser is off!
+l10_end        = The scaffold stands still. And out of the debris comes an old man.
+l10_pell       = You're not Concession. Good. Listen before you go.
+
+l10_start.dorra = The object. On Kalvar we'd have drilled into it. Here I don't dare.
+
+p10a           = I am Pell. I have spent forty-one years here. I don't know who built it. I don't know what for. I only know that it moves, very slowly, over hours – and that it remembers us. They're cutting it up by weight.
+p10a_a         = Come with us. Out here you'll die.
+p10a_b         = Stay, if you want. It's your object.
+p10b           = Come along? … Yes. Perhaps someone who has seen it must tell it. I'll take my notes. All of them.
+p10c           = Thank you. I'm staying. When they come back, I'll be here. And perhaps … it will still be here too.
+p10d           = I'm packing my notes.
+p10e           = Go. It's watching you leave.
+
+h_tesh         = The object is cold everywhere: the suit's warmth fades in the halls too. Only the salvage crews' heaters (orange) help.
+h_float        = Hardly any gravity: jumps carry far, even over gaps. Miss, and the fall is long.
+h_move         = Wandering components: big black blocks that glide slowly through the halls. Whoever stands between one and a wall is crushed.
+h_scaffold     = The salvage master in his cutting scaffold: he stomps, cuts with the laser from afar and calls drones and cutters. At the very end he charges.
+h_pell         = Pell wants to talk: step up to him and press E.
+
+note.pell.title    = Pell's notebook, page 1,104
+note.pell          = It moved again. Hall 7 has wandered two metres north, in eleven hours. I measured. Nobody reads my measurements.
+note.salvage.title = Salvage order Tesh
+note.salvage       = Dismantling in sections of 20 tonnes each. Material: unknown, market value: high. Interfering persons are to be removed.
+note.isotope.title = Age determination
+note.isotope       = 1.4 billion years (± 0.1). The sample re-formed after the measurement.
+note.motion.title  = Warning to the crews
+note.motion        = The components wander. Do not stand between them. Three men lost this week.
+note.weight.title  = Invoice
+note.weight        = Section 41: 20 tonnes at 140 notes. Buyer: the Yard at the Gate. Purpose: armour.
+
+boss.salvager  = THE SALVAGE MASTER

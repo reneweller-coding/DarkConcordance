@@ -136,8 +136,20 @@ have less health (Corvin: 3 and 4 deaths, before 7 and 5, most of them from guar
 Built with the soundtrack (27.10.2026): music that follows what happens (Score.cpp, see the README) and recorded
 backgrounds per place, both made locally (tools/make_audio.py) and stored as OGG Vorbis (~50 MB together: 60 music files, 8 backgrounds).
 
-Open: skinned heroes and enemies with the animation packs' combat clips; Ione; voices; the user's play (balance, the
-music's choices and levels).
+Built with Act II (27.10.2026): the ship as hub (Unzu, Ysolde, Kiri, the trader radio, the navigation); seven levels
+(6–9, 11–13) and the wreck field, all generated, each with its own themes (ICE, DECK, DUSK, PODS, STATION, SNOW, HOLD;
+stone, dust and snow as ground out in nature), mechanic (GameElements.cpp: the suit's warmth, dose or temperature;
+wind and gusts; ice that breaks over a glowing ocean; geysers; darkness and the hero's lamp; magnetic coils; power
+doors; a guard that keeps sending squads; the act's white-out), enemies (GameFoes2.cpp: faction colours, flamers,
+snipers, balloon guards, torch cutters, turrets, hounds, pump drones), bosses (the machine at the berth as the
+Icebreaker, the Bell and the Plasma Lance; the exoskeleton as Okafor and the boarding leader) and choices (people who
+show where the boss fell, in a fight's level); music and backgrounds made like Act I's.
+
+Built with Tesh (27.10.2026): the ALIEN theme, wandering components (GameElements.cpp), the salvage master (the
+exoskeleton's fourth man), Pell (a choice); Unzu offers the detour after the ark.
+
+Open: the epilogue cards; skinned heroes and enemies with the animation packs' combat clips;
+Ione; voices; the user's play (balance, the music's choices and levels).
 
 Still to come, by first use:
 
@@ -148,13 +160,13 @@ Still to come, by first use:
 | Floating water spheres: caustics, diving, drowning, current through water | 4 Ertrunkenes Viertel — done (26.10.2026) |
 | Fragile targets (core storage), multi-body boss with radio link | 5 Kernbank — done (26.10.2026) |
 | Drone swarm control (Ione), hacking machines | class choice |
-| Breaking ice, enemies from below | 6 Seren |
-| Wind, swaying platforms, cutting balloons | 7 Hesper |
-| Drift of shots in wind, heat and cold zones | 8 Halden |
-| Power routing (doors against sleeper pods), choices with epilogue cards | 9 Arche |
-| Zero g, freezing gear | 10 Tesh |
-| Radiation as a running resource, magnetic fields | 11 Kael |
-| Darkness as cover, geysers | 12 Wanderer |
+| Breaking ice, enemies from below | 6 Seren — done (27.10.2026) |
+| Wind, swaying platforms, cutting balloons | 7 Hesper — done (27.10.2026: wind, gusts, balloon guards; the platforms do not sway) |
+| Drift of shots in wind, heat and cold zones | 8 Halden — done (27.10.2026) |
+| Power routing (doors against sleeper pods), choices with epilogue cards | 9 Arche — done (27.10.2026; the epilogue cards still to come) |
+| Zero g, freezing gear | 10 Tesh — done as low gravity, cold everywhere and wandering components (27.10.2026) |
+| Radiation as a running resource, magnetic fields | 11 Kael — done (27.10.2026) |
+| Darkness as cover, geysers | 12 Wanderer — done (27.10.2026) |
 | Talking to control cores instead of fighting (the night shift remembers) | 6 onwards |
 | New bodies: talents redistributed once | 14 |
 | Arena waves with changing rules | 15 |
@@ -208,7 +220,8 @@ Still to come, by first use:
 3. Velm as hub (bar, trader, workshop, Ysolde) — done (25.10.2026); level 2 generated, with the Depths for replay —
    done (26.10.2026); the drum's Coriolis and levels 3–5 with the job chain to the act's end — done (26.10.2026);
    still Ione and voices for **Act I complete**.
-4. Act II with the ship as hub and the first choices; co-op for two.
+4. Act II with the ship as hub and the first choices — done (27.10.2026: the ship, levels 6–13 with Tesh as a detour,
+   the wreck field; the epilogue cards still to come); co-op for two.
 5. Acts III and IV, endings, epilogue cards, flashback levels.
 6. Steam Deck: half-resolution fog, no supersampling, gamepad everywhere.
 

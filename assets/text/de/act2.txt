@@ -1,0 +1,63 @@
+# Akt II (Deutsch, die Quelle): was alle Orte des Akts teilen – Anzeigen, Gegner, Bosse, Ziele der Navigation.
+
+act.2          = Akt II · Die Ernte
+act.2hub       = Akt II · An Bord
+act.2end       = Ende des zweiten Akts – Fortsetzung folgt
+
+hud.warmth     = WÄRME
+hud.dose       = STRAHLENDOSIS
+hud.heat       = HITZE
+hud.frost      = KÄLTE
+hud.safe       = (sicher)
+hud.gustwarn   = BÖE KOMMT – FESTHALTEN
+hud.gust       = BÖE!
+hud.clock      = Ankunft an der Mühle in %d:%02d
+
+foe.flamer     = Flammenwerfer
+foe.sniper     = Scharfschütze
+foe.balloon    = Ballonwache
+foe.balloon.g  = f
+foe.cutter     = Brennschneider
+foe.turret     = Geschützturm
+foe.hound      = Räumhund
+foe.pumpdrone  = Pumpendrohne
+foe.pumpdrone.g = f
+
+boss.rig       = DER EISBRECHER
+boss.bell      = DIE GLOCKE
+boss.lance     = DIE PLASMALANZE
+boss.okafor    = RÄUMLEITERIN OKAFOR
+boss.leader    = DER ENTERFÜHRER
+rig.pump       = Pumpe
+rig.drill      = Bohrkopf
+bell.engine    = Triebwerk
+bell.gun       = Glockengeschütz
+lance.coil     = Spule
+lance.emitter  = Lanze
+
+use.power      = E: Energie umleiten (%d Schläfer verlieren die Kühlung)
+use.cell       = E: Energiezelle einsetzen
+use.cellfitted = Energiezelle eingesetzt – die Kapseln bleiben kalt.
+use.drained    = %d Schläfer ohne Kühlung.
+
+h_flamer       = Flammenwerfer: auf Abstand halten. Ihre Flamme reicht nur ein paar Meter, brennt dafür ordentlich.
+h_flamer.dorra = Flammenwerfer: mit dem Schild nach vorn rein, oder einen Sprengbolzen werfen, bevor sie nah sind.
+h_sniper       = Scharfschützen: ein roter Laser verrät, wohin sie zielen. Aus der Linie gehen, bevor er ruhig wird.
+h_balloon      = Ballonwachen hängen über dem Abgrund. Den Ballon treffen – dann fallen sie.
+h_balloon.dorra = Ballonwachen hängen über dem Abgrund. Ein Sprengbolzen auf den Ballon, und sie fallen.
+h_cutter       = Brennschneider: schnell, zäh, ihr Brenner geht durch jede Platte. Nicht nah ranlassen.
+h_turret       = Geschütztürme drehen sich, laufen aber nicht weg. Hinter Deckung vorbei oder von der Seite angreifen.
+h_hound        = Räumhunde: schnell und in Rudeln. Den Rücken frei halten.
+h_pumpdrone    = Pumpendrohnen steigen aus den Bohrlöchern im Eis. Wo ein dunkler Ring ist, kommt gleich eine.
+h_cell         = Eine Energiezelle: an einer gesperrten Tür eingesetzt, öffnet sie sie, ohne die Schläfer zu wecken.
+
+nav.title      = NAVIGATION
+dest.unzu      = Das Dock · die »Unzureichend Ausgestattet«
+dest.seren     = Seren, das Glasmeer
+dest.hesper    = Hesper, die Raffinerie in den Wolken
+dest.halden    = Halden, die Zwielichtwelt
+dest.arche     = Die Arche »Langmut«
+dest.kael      = Der Sternheber von Kael
+dest.wanderer  = Der Wanderer
+dest.kuehltransport = Der Kühltransport
+dest.wracks    = Das Wrackfeld (jedes Mal anders)

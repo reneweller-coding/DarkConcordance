@@ -1,0 +1,81 @@
+# Level 11: Der Sternheber von Kael (Akt II). Eine Station neben einem roten Zwerg, dem die Konzession Material
+# abzieht: Ein Fluss aus glühendem Sternenmaterial schwingt sich durch den Himmel. Draußen sammelt sich die Strahlendosis
+# (Abschirmungen ";" grün, im Schatten von etwas Hohem ist man sicher), Plasmaböen alle paar Dutzend Sekunden, Spulen
+# "[" lenken Geschosse ab und ziehen am Anzug. Geschütztürme "`". Am Ende die Plasmalanze, eine Abwehrplattform.
+#
+#   meter dose s            die Dosis, die man draußen verträgt (in Sekunden)
+#   plasma 1                der Sternenstrom im Himmel
+
+name     l11.name
+act      act.2
+intro    l11.intro
+gravity  6.5
+fog      0.002 0.007 0.45 0.8
+fogcolor 0.008 0.003 0.0015
+ambient  0.08 0.05 0.04 0.035 0.02 0.02
+walls    4.0
+sky      nebula
+space    1
+plasma   1
+flares   50
+star     -2500 -5200 -8000 6200
+sundir   0.4 -0.75 0.5
+suncolor 2.8 1.0 0.4
+meter    dose 130 0
+faction  concession
+area     14
+next     unzu.txt
+gate     bossdead
+ambience plasma
+music    kael
+bossmusic boss2
+
+genrooms      15
+genside       6
+gensize       11 17 9 14
+gentheme      station station hull gangway works
+genoutdoor    station hull
+genstarttheme gangway
+genarenatheme station
+genarena      lance
+genvoid       1
+genoxygen     0.6
+genfeature    [  0.7
+genpack       ETT     2.5
+genpack       `T      1.5
+genpack       $TT     1.5
+genpack       %T      1.2
+genpack       ^^^     1.5
+genpack       ''T     1
+genpack       ""E     1
+gendensity    1.15
+genelite      0.32
+gennote       note.dose note.debt note.ione note.relay11 note.install
+
+[lines]
+l11_start    | a                | hero
+l11_river    | b                | hero
+l11_coil     | c                | hero
+l11_flare    | flarewarn        | hero
+l11_dose     | lowmeter         | hero
+l11_turret   | turret           | hero
+l11_champion | champion         | hero
+l11_workers  | d                | hero
+l11_deep     | e                | hero
+l11_lance    | g                | hero
+l11_boss     | bossstart        | lance
+l11_coils    | lance.coildown   | hero
+l11_stage    | tug2             | lance
+l11_end      | bossdead         | hero
+
+[hints]
+h_dose      | b
+h_coil      | c
+h_flare11   | flarewarn
+h_turret    | turret
+h_sniper    | sniper
+h_shield    | shieldguard
+h_champion  | champion
+h_stim      | hurt
+h_lowdose   | lowmeter
+h_lance     | bossstart

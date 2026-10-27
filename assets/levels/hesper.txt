@@ -1,0 +1,89 @@
+# Level 7: Hesper, die Raffinerie in den Wolken (Akt II). Plattformen einer Raffinerie über tausend Kilometern Sturm,
+# getragen von Ballonen; Wind, der alles, was fliegt, abtreibt, und Böen, die die Gegner von den Kanten fegen (die
+# Stiefel des Helden halten). Ballonwachen "{" hängen über dem Abgrund – ein Treffer in den Ballon, und sie fallen. Am
+# Ende die Glocke, ein Wachluftschiff. Ein Steuerkern bittet darum, abgeschaltet zu werden.
+#
+#   below clouds            unter den Lücken die Wolken (Blitze, Ballone ringsum)
+#   wind grad stärke böen   wohin der Wind weht, wie stark er Geschosse abtreibt, Sekunden zwischen den Böen
+#   genhover sym n          je Raum n solche über dem Abgrund daneben
+
+name     l7.name
+act      act.2
+intro    l7.intro
+gravity  9.0
+fog      0.004 0.012 0.5 0.9
+fogcolor 0.0028 0.0016 0.0008
+ambient  0.09 0.06 0.04 0.04 0.025 0.018
+walls    4.0
+space    1
+below    clouds
+skycolor 0.16 0.085 0.04
+wind     270 3.0 24
+sundir   -0.6 -0.5 0.3
+suncolor 2.2 1.3 0.7
+faction  concession
+area     11
+next     unzu.txt
+gate     bossdead
+ambience clouds
+music    hesper
+bossmusic boss2
+npcafter kern bossdead
+
+genrooms      14
+genside       5
+gensize       11 17 9 14
+gentheme      deck deck deck works gangway
+genoutdoor    deck
+genstarttheme gangway
+genarenatheme deck
+genarena      bell
+genvoid       1
+genhover      {  0.9
+genpack       ETT     3
+genpack       $TT     2
+genpack       %T      1.5
+genpack       ^^^     2
+genpack       ''T     1
+genpack       **?     1
+gendensity    1.1
+genelite      0.3
+gennote       note.balloon17 note.refinery note.workers note.relay7
+
+[npcs]
+# Name | Zeile Spalte (-1: wo der Boss fiel) | Aussehen | erster Knoten | Ereignis:Knoten ...
+kern | -1 -1 | terminal | k7a | hesper.off:k7d hesper.on:k7e
+
+[talk]
+k7a | kern | -          | k7a_a>k7b k7a_b>k7c
+k7b | kern | hesper.off |
+k7c | kern | hesper.on  |
+k7d | kern | -          |
+k7e | kern | -          |
+
+[lines]
+l7_start    | a                | hero
+l7_deck     | b                | hero
+l7_gust     | gust             | hero
+l7_balloon  | balloonpop       | hero
+l7_plea1    | c                | kern
+l7_plea2    | e                | kern
+l7_champion | champion         | hero
+l7_bell     | g                | hero
+l7_boss     | bossstart        | hero
+l7_gun      | bell.gundown     | hero
+l7_cast     | tug2             | hero
+l7_end      | bossdead         | hero
+l7_core     | appear.kern      | kern
+
+[hints]
+h_wind      | b
+h_gust      | gustwarn
+h_balloon   | balloon
+h_sniper    | sniper
+h_shield    | shieldguard
+h_champion  | champion
+h_bomber    | bomber
+h_stim      | hurt
+h_bell      | bossstart
+h_core      | appear.kern

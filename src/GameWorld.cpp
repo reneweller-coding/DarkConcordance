@@ -190,7 +190,11 @@ void Game::poseWorld( std::vector<Drawable> &out )
         float pulse = 0.7f + 0.3f * sinf( m_time * ( 3.0f + 6.0f * near ) );
         d.m_mesh = m_postRing;
         d.m_surface = S_GLOW;
-        d.m_emissive = { 0.4f * pulse, 1.6f * pulse, 4.0f * pulse, 0.0f };
+        // Blue for air; a heater glows orange, a radiation shield green.
+        d.m_emissive = m_level.m_meter == "warmth" || m_level.m_meter == "climate"
+                           ? Vector4{ 4.0f * pulse, 1.4f * pulse, 0.3f * pulse, 0.0f }
+                       : m_level.m_meter == "dose" ? Vector4{ 1.2f * pulse, 4.0f * pulse, 0.6f * pulse, 0.0f }
+                                                   : Vector4{ 0.4f * pulse, 1.6f * pulse, 4.0f * pulse, 0.0f };
         d.m_spotShadow = d.m_sunShadow = false;
         out.push_back( d );
     }

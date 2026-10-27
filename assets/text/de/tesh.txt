@@ -1,0 +1,48 @@
+# Level 10: Das Objekt von Tesh (Deutsch, die Quelle).
+
+l10.name       = Das Objekt von Tesh
+l10.intro      = In der Kometenwolke eines unbewohnten Systems treibt etwas, das niemand gebaut hat: dreißig Kilometer lang, glatt, kalt, nach Isotopenmessungen 1,4 Milliarden Jahre alt. Jahrhundertelang haben Forscher es untersucht, ohne Ergebnis. | Jetzt schneidet die Konzession es in Stücke und verkauft die Teile nach Gewicht. | Der letzte Forscher, ein alter Mann namens Pell, hat sich im Inneren verbarrikadiert.
+
+speaker.pell   = Pell
+
+l10_start      = Das Objekt. Kein Fenster, keine Naht, kein Licht. Nur das, was die Bergungstrupps mitgebracht haben.
+l10_halls      = Diese Hallen sind gebaut. Eindeutig gebaut. Aber für niemanden, der so aussieht wie ich.
+l10_float      = Hier gibt es kaum Schwerkraft. Ein Sprung trägt weit – vorsichtig.
+l10_move       = Da bewegt sich etwas. Ganz langsam. Die Wände selbst.
+l10_crush      = Es hat mich erwischt! Nicht zwischen die Bauteile geraten!
+l10_champion   = Der Vorarbeiter der Bergung. Er hat schon viel zerschnitten.
+l10_deep       = Je tiefer, desto kälter. Die Ausrüstung friert an den Gelenken.
+l10_hall       = Da vorne schneidet ein Gerüst ein Stück aus der Wand. Das Geräusch geht durch den ganzen Körper.
+l10_boss       = Der Bergungsmeister. Sein Gerüst hat einen Laser, der Milliarden Jahre durchschneidet. Und mich.
+l10_cutter     = Der Schneidlaser ist aus!
+l10_end        = Das Gerüst steht still. Und zwischen den Trümmern kommt ein alter Mann hervor.
+l10_pell       = Ihr seid nicht von der Konzession. Gut. Hört zu, bevor ihr geht.
+
+l10_start.dorra = Das Objekt. Auf Kalvar hätten wir es angebohrt. Hier traue ich mich nicht.
+
+p10a           = Ich bin Pell. Ich habe einundvierzig Jahre hier verbracht. Ich weiß nicht, wer es gebaut hat. Ich weiß nicht, wozu. Ich weiß nur, dass es sich bewegt, ganz langsam, über Stunden – und dass es sich an uns erinnert. Sie zerschneiden es nach Gewicht.
+p10a_a         = Komm mit uns. Hier draußen stirbst du.
+p10a_b         = Bleib, wenn du willst. Es ist dein Objekt.
+p10b           = Mitkommen? … Ja. Vielleicht muss es jemand erzählen, der es gesehen hat. Ich nehme meine Notizen mit. Alle.
+p10c           = Danke. Ich bleibe. Wenn sie wiederkommen, bin ich da. Und vielleicht … ist es dann auch noch da.
+p10d           = Ich packe meine Notizen.
+p10e           = Geht. Es schaut euch nach.
+
+h_tesh         = Das Objekt ist überall kalt: die Wärme des Anzugs schwindet auch in den Hallen. Nur die Heizer der Bergungstrupps (orange) helfen.
+h_float        = Kaum Schwerkraft: Sprünge tragen weit, auch über Lücken. Wer danebenspringt, fällt lange.
+h_move         = Wandernde Bauteile: große schwarze Blöcke, die langsam durch die Hallen gleiten. Wer zwischen ihnen und einer Wand steht, wird zerquetscht.
+h_scaffold     = Der Bergungsmeister im Schneidgerüst: er stampft, schneidet mit dem Laser aus der Ferne und ruft Drohnen und Schneider. Ganz am Ende rennt er an.
+h_pell         = Pell will reden: mit E an ihn herantreten.
+
+note.pell.title    = Pells Notizbuch, Seite 1 104
+note.pell          = Es hat sich wieder bewegt. Halle 7 ist zwei Meter nach Norden gewandert, in elf Stunden. Ich habe gemessen. Niemand liest meine Messungen.
+note.salvage.title = Bergungsauftrag Tesh
+note.salvage       = Abbau in Abschnitten zu je 20 Tonnen. Material: unbekannt, Marktwert: hoch. Störende Personen sind zu entfernen.
+note.isotope.title = Altersbestimmung
+note.isotope       = 1,4 Milliarden Jahre (± 0,1). Die Probe hat sich nach der Messung neu gebildet.
+note.motion.title  = Warnung an die Trupps
+note.motion        = Die Bauteile wandern. Nicht dazwischen stehen. Drei Mann verloren diese Woche.
+note.weight.title  = Rechnung
+note.weight        = Abschnitt 41: 20 Tonnen zu 140 Scheinen. Käufer: Werft am Tor. Verwendungszweck: Panzerung.
+
+boss.salvager  = DER BERGUNGSMEISTER

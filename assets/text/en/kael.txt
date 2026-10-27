@@ -1,0 +1,40 @@
+# Level 11: The star lifter of Kael (English).
+
+l11.name       = The star lifter of Kael
+l11.intro      = Kael is a red dwarf from which the Concession draws material: a ring of lasers and magnetic coils heats one spot of its surface and guides the escaping plasma into a collecting stream – a river of glowing star matter that swings in an arc hundreds of thousands of kilometres into space. | In the station beside it, stolen cores are built into machines. The workers are debt bondsmen; their radiation doses are booked to an account they may never see. | Ione Sarrath worked here. Here she took her dose.
+
+speaker.lance  = Plasma Lance (radio)
+
+l11_start      = Kael. The sky is a river of fire.
+l11_river      = The collecting stream. Hundreds of thousands of kilometres of glowing star matter. And I'm standing on a sheet of metal beside it.
+l11_coil       = The coil pulls at the suit. And at my shots.
+l11_flare      = Plasma gust! Into the shadow, quick!
+l11_dose       = The dose is rising. I need shielding.
+l11_turret     = Turrets. The station defends itself.
+l11_champion   = That one wears shielding like armour.
+l11_workers    = Workers in thin suits. Their dosimeters are painted over.
+l11_deep       = Down here the cores are installed. The workbenches are still warm.
+l11_lance      = Up ahead. A platform holding an arm of plasma.
+l11_boss       = Signature recognised … no. Not Sarrath. Sarrath installed me. You are not Sarrath. Defence active.
+l11_coils      = One coil less. The lance flickers.
+l11_stage      = Sarrath, if you hear this: it still hurts.
+l11_end        = The lance is silent. Its data sheet has a name: installed by I. Sarrath. And Ilka's core … was assessed here. Her list is at the headquarters.
+
+l11_start.dorra = Kael. On Kalvar we had a sun you could look at. This one eats you.
+
+h_dose         = Radiation: the dose (green bar) builds up in the open. In the shadow of something tall, indoors and at the green shields it slowly falls.
+h_coil         = Magnetic coils pull shots towards them and tug at the suit. Don't shoot right past one.
+h_flare11      = Plasma gust: whoever stands in the open burns – and the dose rises three times as fast. Into the shadow.
+h_lowdose      = The dose is nearly full: into the shadow or to a shield.
+h_lance        = The Plasma Lance: two coils and the lance. Red rings show where its plasma strikes.
+
+note.dose.title     = Dosimeter booking, worker 4471
+note.dose           = Monthly dose: 41 millisieverts. Booked to debt account 4471. Balance: not viewable. | Remaining debt: will be communicated.
+note.debt.title     = Employment contract, page 2
+note.debt           = Radiation exposure is booked as a service of the Concession and offset against wages. Objection is not provided for.
+note.ione.title     = Installation log, defence platform »Lance«
+note.ione           = Control core 2281 installed. Technician: I. Sarrath. Technician's remark: »The core asked for help over the maintenance line. I demand a review.« | Review denied. Technician has resigned.
+note.relay11.title  = Assessment report T-1207
+note.relay11        = Batch T-1207, »child«: suitability for fleet control high. Not installed here – reserved for the Mill's control centre. List entry at the headquarters (Wanderer).
+note.install.title  = Note on a workbench
+note.install        = When they start talking, cut the line. They don't stop, but you don't hear it any more.

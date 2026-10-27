@@ -1,0 +1,71 @@
+# Level 13: Der Kühltransport (Aktfinale von Akt II). Ein Transporter mit dreitausend Kernen auf dem Weg zur Mühle,
+# im Flug geentert: Laderäume voller Kernkisten, die blau glühen (die Kerne darin sind wach). Die Transportwache schickt
+# immer neue Leute (pressure: Sekunden zwischen den Trupps; die Uhr zur Mühle läuft). Am Ende der Wachführer – dann
+# kommen die Schiffe des Kollegiums, und alles wird weiß.
+#
+#   pressure s              alle s Sekunden ein Trupp (nach Ablauf der Uhr schneller)
+#   whiteout ereignis       nach diesem Ereignis wird alles weiß: das Ende des Akts
+#   next end level          das Spiel geht danach ins Titelmenü; gespeichert wird bei diesem Level
+#   genfeature _ n          Frachtfenster im Boden; darunter (view planet, planet mill) die Mühle
+
+name     l13.name
+act      act.2
+intro    l13.intro
+gravity  9.0
+fog      0.003 0.01 0.55 0.9
+fogcolor 0.0012 0.0016 0.0028
+ambient  0.045 0.05 0.065 0.02 0.025 0.035
+walls    4.5
+sky      nebula
+view     planet
+planet   mill 0.7
+star     900 -2600 -3200 1500
+faction  concession
+pressure 70
+whiteout collegium
+area     16
+next     end unzu.txt
+gate     never
+ambience transport
+music    kuehltransport
+bossmusic boss2
+
+genrooms      16
+genside       6
+gensize       12 18 10 14
+gentheme      hold hold cargo gangway hold
+genarenatheme hold
+genarena      guardian
+genguard      %$
+genpack       ETT     2.5
+genpack       $TT     2
+genpack       %T      1.5
+genpack       `T      1.2
+genpack       ""E     1.2
+genpack       ''T     1
+gendensity    1.15
+genelite      0.35
+genfeature    _  0.35
+gennote       note.manifest13 note.ilka13 note.awake note.route13 note.collegium
+
+[lines]
+l13_start    | a                | hero
+l13_cores    | b                | hero
+l13_awake    | c                | hero
+l13_reinforce | reinforce       | hero
+l13_champion | champion         | hero
+l13_window   | d                | hero
+l13_deep     | e                | hero
+l13_hall     | g                | hero
+l13_down     | bossdead         | hero
+l13_collegium | collegiumcall   | unzu
+l13_white    | collegium        | hero
+
+[hints]
+h_pressure  | a
+h_turret    | turret
+h_cutter    | cutter
+h_sniper    | sniper
+h_shield    | shieldguard
+h_champion  | champion
+h_stim      | hurt

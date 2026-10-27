@@ -1,0 +1,40 @@
+# Level 11: Der Sternheber von Kael (Deutsch, die Quelle).
+
+l11.name       = Der Sternheber von Kael
+l11.intro      = Kael ist ein roter Zwerg, dem die Konzession Material abzieht: Ein Ring aus Lasern und Magnetspulen heizt eine Stelle seiner Oberfläche auf und lenkt das ausströmende Plasma in einen Sammelstrom – einen Fluss aus glühendem Sternenmaterial, der sich in einem Bogen Hunderttausende Kilometer ins All schwingt. | In der Station daneben werden geraubte Kerne in Maschinen eingebaut. Die Arbeiter sind Schuldknechte; ihre Strahlendosen werden auf ein Konto gebucht, das sie nie einsehen dürfen. | Hier hat Ione Sarrath gearbeitet. Hier hat sie sich verstrahlt.
+
+speaker.lance  = Plasmalanze (Funk)
+
+l11_start      = Kael. Der Himmel ist ein Fluss aus Feuer.
+l11_river      = Der Sammelstrom. Hunderttausende Kilometer glühendes Sternenmaterial. Und ich stehe auf einem Blech daneben.
+l11_coil       = Die Spule zieht am Anzug. Und an meinen Schüssen.
+l11_flare      = Plasmaböe! In den Schatten, schnell!
+l11_dose       = Die Dosis steigt. Ich brauche eine Abschirmung.
+l11_turret     = Geschütztürme. Die Station verteidigt sich selbst.
+l11_champion   = Der da trägt eine Abschirmung wie eine Rüstung.
+l11_workers    = Arbeiter in dünnen Anzügen. Ihre Dosimeter sind übermalt.
+l11_deep       = Hier unten werden die Kerne eingebaut. Die Werkbänke sind noch warm.
+l11_lance      = Da vorne. Eine Plattform, die einen Arm aus Plasma hält.
+l11_boss       = Kennung erkannt … nein. Nicht Sarrath. Sarrath hat mich eingebaut. Ihr seid nicht Sarrath. Abwehr aktiv.
+l11_coils      = Eine Spule weniger. Die Lanze flackert.
+l11_stage      = Sarrath, wenn du das hörst: Es tut immer noch weh.
+l11_end        = Die Lanze ist still. In ihrem Datenblatt steht ein Name: eingebaut von I. Sarrath. Und Ilkas Kern … wurde hier vermessen. Ihre Liste liegt in der Zentrale.
+
+l11_start.dorra = Kael. Auf Kalvar hatten wir eine Sonne, die man ansehen konnte. Diese hier frisst einen.
+
+h_dose         = Strahlung: die Dosis (grüner Balken) sammelt sich im Freien. Im Schatten von etwas Hohem, drinnen und an den grünen Abschirmungen baut sie sich langsam ab.
+h_coil         = Magnetspulen lenken Geschosse zu sich hin und ziehen am Anzug. Nicht direkt an einer vorbei schießen.
+h_flare11      = Plasmaböe: wer im Freien steht, verbrennt – und die Dosis steigt dreimal so schnell. In den Schatten.
+h_lowdose      = Die Dosis ist fast voll: in den Schatten oder zu einer Abschirmung.
+h_lance        = Die Plasmalanze: zwei Spulen und die Lanze. Rote Ringe zeigen, wo ihr Plasma einschlägt.
+
+note.dose.title     = Dosimeterbuchung, Arbeiter 4471
+note.dose           = Monatsdosis: 41 Millisievert. Gebucht auf Schuldkonto 4471. Kontostand: nicht einsehbar. | Restschuld: wird mitgeteilt.
+note.debt.title     = Arbeitsvertrag, Seite 2
+note.debt           = Die Strahlenbelastung wird als Leistung der Konzession verbucht und mit dem Lohn verrechnet. Einspruch ist nicht vorgesehen.
+note.ione.title     = Einbauprotokoll, Abwehrplattform »Lanze«
+note.ione           = Steuerkern 2281 eingebaut. Technikerin: I. Sarrath. Bemerkung der Technikerin: »Der Kern hat über die Wartungsleitung um Hilfe gebeten. Ich verlange eine Prüfung.« | Prüfung abgelehnt. Technikerin hat gekündigt.
+note.relay11.title  = Vermessungsbericht T-1207
+note.relay11        = Charge T-1207, »Kind«: Eignung für Flottensteuerung hoch. Nicht hier eingebaut – Reserviert für das Leitwerk der Mühle. Listeneintrag in der Zentrale (Wanderer).
+note.install.title  = Zettel an einer Werkbank
+note.install        = Wenn sie anfangen zu reden, Leitung trennen. Sie hören nicht auf, aber man hört es nicht mehr.

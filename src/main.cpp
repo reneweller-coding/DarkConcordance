@@ -795,15 +795,18 @@ int runGame( const Options &o, Gfx &gfx )
                 bool onward = game->autoAdvance() ? game->finishedFor() > 1.2f : in.m_confirm;
                 if ( game->finished() && onward )
                 {
-                    // On to the next level with the same hero and what was gained; saved at its start.
+                    // On to the next level with the same hero and what was gained; saved at its start. "end <level>":
+                    // an act is over; saved where the story goes on, and back to the title.
+                    bool ending = game->next().compare( 0, 4, "end " ) == 0;
                     if ( !game->next().empty() )
                     {
                         progress = game->progress();
-                        level = game->next();
+                        level = ending ? game->next().substr( 4 ) : game->next();
                         progress.m_level = level;
                         if ( o.m_hero.empty() ) saveProgress( progress ), hasSave = true;
                     }
                     restart();
+                    if ( ending && !o.m_autoplay ) mode = TITLE, chosen = 0;
                 }
             }
         }

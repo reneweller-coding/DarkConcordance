@@ -1,0 +1,46 @@
+# Level 6: Seren, the Glass Sea (English). Lines, hints, terminals.
+
+l6.name        = Seren, the Glass Sea
+l6.intro       = Seren is an ice moon over a gas giant. Under its crust lies an ocean, and in many places the ice is so clear that you can see it glow: colonies of native organisms, as big as city blocks, pulsing in slow waves. | The Concession pumps the water out, as reaction mass for its tugs. Every year the ocean sinks by twelve metres. And in the cold under the ice it stores cores for a while before they travel on. | Somewhere here was Ilka's store.
+
+speaker.pump   = Pump drone (radio)
+speaker.rig    = Icebreaker (radio)
+
+l6_start       = Seren. It's so cold the suit creaks.
+l6_ice         = Clear ice. And under it … light. It's moving.
+l6_colony      = The colonies. As big as houses. They glow as if they were breathing.
+l6_pump        = Something's coming out of the bore hole! A pump drone.
+l6_count       = … three thousand four hundred and twelve … three thousand four hundred and thirteen …
+l6_crack       = The ice is breaking! Away from the crack!
+l6_dunk        = Cold … so cold … I have to get out!
+l6_champion    = That one's no ordinary guard. The Concession pays well for its ice.
+l6_deep        = It's getting dark beneath me. The colonies here have already gone out.
+l6_rig         = Up ahead a drilling tower stands in the open water. It's still drilling.
+l6_shift       = Shift forty-two thousand and six. Foreign object at the bore hole. I'll clear it.
+l6_drill       = The drill head … foreman? The drill head's gone. There'll be trouble.
+l6_pumps       = One pump less. He's slowing down.
+l6_late        = Is it late already? It's always late. I've been drilling for … how long have I been drilling?
+l6_home        = Is the shift … over? May I … go home?
+l6_end         = He thought he was working. For eighty years. And Ilka's store has moved on – to Hesper.
+
+l6_start.dorra = Seren. Colder than any shaft on Kalvar. And that's saying something.
+l6_crack.dorra = The ice is breaking! Careful with the hammer – here it hits more than enemies.
+l6_end.dorra   = A miner. Eighty years in a drilling tower. That could have been me. On to Hesper.
+
+h_warmth       = Cold: the suit's warmth (orange bar) fades out in the open. In the huts and at the heater posts (orange) it warms up again, heat packs add some.
+h_ice          = The ice breaks under explosions and heavy blows. Whoever falls through ends up at the last safe spot – cold and hurt.
+h_ice.dorra    = The ice breaks under explosions and under Dorra's hammer blows. Whoever falls through ends up at the last safe spot – cold and hurt.
+h_dunk         = Fell through: that costs health and warmth. Keep away from cracks and dark patches in the ice.
+h_lowwarmth    = Little warmth left: get to a hut or a heater post before the cold goes for your health.
+h_rig          = The Icebreaker: two pumps and the drill head. Red rings show where the drill strikes – the ice breaks there too.
+
+note.pump.title    = Production log, pump station 4
+note.pump          = Output week 41: 2.1 million cubic metres. Level drop since the start of the year: 12.3 metres. | Concession note: the colonies under station 4 have fallen dry. No effect on production.
+note.colony.title  = A biologist's note
+note.colony        = They don't glow to be seen. They glow because they live. When the water under them is gone, they glow for three more days. Then no more. | I reported it. The answer was a form.
+note.settler.title = Relocation offer, Hot Spring settlement
+note.settler       = Dear residents, the water supply of your settlement can no longer be guaranteed. The Concession generously offers you a place in a transitional quarter. | Please register by the end of the month.
+note.miner.title   = Data sheet, control core 7731
+note.miner         = Origin: Fringe, sector 11. Formerly: miner, 51 years. Deployment: autonomous drilling tower »Icebreaker«. Subjective runtime: 80 years. | Remark: believes himself on duty. Do not correct – performance drops otherwise.
+note.relay6.title  = Seren interim store, intake
+note.relay6        = Batch T-1207 (Talgrund, class C, 1 unit) stored. Forwarded to Hesper, balloon control, 6 days later. | Signed: store management, Deepground Concession.

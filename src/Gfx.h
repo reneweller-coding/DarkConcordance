@@ -135,7 +135,7 @@ public:
      * @param[in] mesh       the panes
      * @param[in] transform  where
      */
-    void glass( const Mesh &mesh, const Matrix &transform );
+    void glass( const Mesh &mesh, const Matrix &transform, float ice = 0.0f );
 
     /**
      * @brief Draws a ball of water (after the opaque scene; it does not write depth).

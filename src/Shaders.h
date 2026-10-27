@@ -457,8 +457,10 @@ void main()
 }
 )";
 
-/** @brief The glass floor: smudges and scratches catch the light, the lights mirror in it; premultiplied alpha. */
+/** @brief The glass floor: smudges and scratches catch the light, the lights mirror in it; premultiplied alpha. As ice
+ *         (iceMode 1): frost in drifts and cracks, a pale cyan body one still sees through. */
 inline const char *GlassFs = R"(
+uniform float iceMode;
 in vec3 fragPos;
 in vec3 fragNormal;
 in vec3 objPos;
@@ -489,6 +491,15 @@ void main()
     float line = abs( fract( q.x * 0.7 + q.y * 0.31 + noise3( vec3( q * 0.4, 2.0 ) ) * 2.0 ) - 0.5 );
     float scratch = smoothstep( 0.015, 0.0, line ) * step( 0.62, noise3( vec3( q * 0.7, 7.0 ) ) );
     float dirt = clamp( smudge * 0.55 + scratch * 0.22, 0.0, 1.0 );
+    float frost = 0.0;
+    if( iceMode > 0.5 )
+    {
+        // Frost blown into drifts, white cracks running through the clear: the glow below shows between them.
+        frost = smoothstep( 0.5, 0.9, noise3( vec3( p * 0.35, 3.7 ) ) * 0.6 + noise3( vec3( p * 1.7, 8.2 ) ) * 0.4 );
+        float crack = abs( fract( noise3( vec3( p * 0.6, 5.5 ) ) * 4.0 ) - 0.5 );
+        frost = clamp( frost + smoothstep( 0.03, 0.0, crack ) * 0.22, 0.0, 1.0 );
+        dirt = frost;
+    }
     float rough = 0.05 + dirt * 0.25;
 
     vec3 diff = mix( ambDown, ambUp, 0.8 );
@@ -518,6 +529,12 @@ void main()
     vec3 c = spec * F * 3.0 + min( diff, vec3( 4.0 ) ) * dirt * 0.012 * vec3( 0.85, 0.9, 1.0 ) +
              mix( ambDown, ambUp, 0.5 ) * F * 2.0;
     float alpha = clamp( 0.06 + F * 0.45 + dirt * 0.3, 0.0, 0.95 );
+    if( iceMode > 0.5 )
+    {
+        vec3 body = vec3( 0.55, 0.78, 0.9 ) * ( min( diff, vec3( 3.0 ) ) * 0.02 + mix( ambDown, ambUp, 0.5 ) * 0.7 );
+        c = c * 0.6 + body * ( 0.15 + frost * 0.6 );
+        alpha = clamp( 0.08 + F * 0.25 + frost * 0.32, 0.0, 0.9 );
+    }
     vec4 fog = volumetric( viewPos, fragPos );
     finalColor = vec4( c * fog.a, alpha );
 }

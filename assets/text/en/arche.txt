@@ -1,0 +1,51 @@
+# Level 9: The ark »Forbearance« (English).
+
+l9.name        = The ark »Forbearance«
+l9.intro       = A colony ship from the time before the jump drive, seven hundred years in flight, with eighty thousand sleepers aboard. It is just arriving. Its target world was mined out four years ago. | The ship's computer kept watch alone for seven hundred years: no AI, just a careful program. It sent a distress call because it does not know what to tell the sleepers. | The Concession has offered to »take them over«. Eighty thousand unprotected brains are a fortune. Its boarding parties are already aboard.
+
+speaker.arche  = Ship's administration »Forbearance«
+speaker.leader = The boarding leader
+
+l9_start       = The ark. So quiet I can hear the ice crack.
+l9_pods        = Pods. Row after row, in blue light. In each a person who has been dreaming for seven hundred years.
+l9_door        = The door has no power. I could take it from the pods … then those won't wake again.
+l9_drained     = The door is open. And somewhere behind me pods are getting warm.
+l9_cell        = A power cell. With this nobody has to pay for a door.
+l9_cold        = The cold is creeping into the suit. I need warmth.
+l9_champion    = The boarding leader brought his best.
+l9_watch       = Attention. Attention. This is the ship's administration. Unknown persons aboard. Please do not wake the sleepers. I do not yet know what to tell them.
+l9_deep        = The pods are older here. Some have gone dark. Seven hundred years is long.
+l9_hall        = The hall before the bridge. Someone is cutting in there.
+l9_boss        = Ah. The competition. We have a contract for this cargo. You don't.
+l9_help        = Cutters! Forward!
+l9_down        = The boarding leader is down. And the ship's administration … is calling me.
+
+l9_start.dorra = The ark. On Kalvar they'd have taken it apart and sold the metal. Here someone is still sleeping.
+l9_drained.dorra = Open. I didn't like doing it. Somewhere pods are getting warm now.
+
+a9a            = This is the administration of the »Forbearance«. Seven hundred years of watch. Eighty thousand sleepers. Our target world no longer exists. You are the first people I have spoken to who are not asleep. What should I tell them?
+a9a_a          = Wake them. They have a right to know.
+a9a_b          = Hand the ark to the Concordance. They will be rescued.
+a9a_c          = Hide the ship. Let them sleep on until there is a better world.
+a9b            = I am beginning the waking. Eighty thousand people will open their eyes in a dead system. They will ask. I will answer.
+a9c            = I am sending the signal to the Concordance. They will come. They will not ask. I am … relieved. That is a strange word for a program.
+a9d            = I am switching off the signals. The »Forbearance« drifts on into the dark. I will keep watch. I am used to it.
+a9e            = The first pods are opening. I told them it was a long journey.
+a9f            = The Concordance is on its way. I sent them the list of sleepers. All the names.
+a9g            = I keep watch.
+
+h_power        = The doors on the way have no power. E: route power from the pods (it costs sleepers) – or first fetch a power cell from the side rooms.
+h_warmth9      = The ark is cold everywhere: the suit's warmth fades indoors too. Heater posts (orange) and heat packs help.
+h_leader       = The boarding leader in his cutting-torch exoskeleton: he stomps, fires and calls his cutters. At the very end he charges.
+h_ark          = The ship's administration wants to talk: step up to its terminal and press E. What you decide stays.
+
+note.watch.title    = Watch log, year 700
+note.watch          = Day 255,674. All systems nominal. Pods lost since departure: 2,211. Arrival in 38 days. | Addendum: target world does not answer. Addendum: target world no longer present. Addendum: I do not know what to do.
+note.manifest9.title = Cargo register, hall 12
+note.manifest9      = 1,920 sleepers. Professions: agriculture 640, medicine 88, teaching 212, mining 304, other 676. | Children under twelve: 410.
+note.offer.title    = Offer of the Deepground Concession
+note.offer          = To the ship's administration: we offer to take the sleepers into our care. A waking is not advisable under the circumstances. | We thank you in advance for your cooperation.
+note.pod.title      = Pod 12-0417, label
+note.pod            = Hanne Velde, teacher. Below it in marker, seven hundred years old: WAKE ME WHEN IT'S GREEN.
+note.relay9.title   = Order to the boarding parties
+note.relay9         = Cores from the ark: to Kael, installation. Priority: young sleepers. Batch T-1207 already installed there – request comparison data.

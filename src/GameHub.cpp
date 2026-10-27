@@ -309,6 +309,7 @@ int Game::nearNpc() const
     float bestDist = TalkReach;
     for ( size_t i = 0; i < m_npcs.size(); ++i )
     {
+        if ( m_npcs[i].m_hidden ) continue;
         float d = Vector2Distance( { m_npcs[i].m_pos.x, m_npcs[i].m_pos.z }, { m_pos.x, m_pos.z } );
         if ( d < bestDist ) bestDist = d, best = (int)i;
     }
@@ -498,7 +499,7 @@ void Game::updateCrowd( float dt )
 
 bool Game::updateHub( float dt, GameInput &in )
 {
-    if ( !m_level.m_peaceful ) return false;
+    if ( !m_level.m_peaceful ) return updateFightTalk( in );
     // No fighting here: the trigger does nothing, B goes back in the menus.
     in.m_fire = false;
     bool back = in.m_special;
@@ -536,30 +537,7 @@ bool Game::updateHub( float dt, GameInput &in )
         if ( back ) m_menu = 0;
         return true;
     }
-    if ( m_talk )
-    {
-        int n = (int)m_talk->m_answers.size();
-        if ( n > 0 ) m_choice = ( m_choice + step + n ) % n;
-        if ( back )
-            m_talk = nullptr;
-        else if ( ok && n == 0 )
-        {
-            // Read: the conversation ends; the shop or the workshop opens if it said so.
-            const std::string &e = m_talk->m_event;
-            m_menu = e.find( "workshop" ) != std::string::npos ? 2 : ( e.find( "shop" ) != std::string::npos ? 1 : 0 );
-            m_menuChoice = 0;
-            m_talk = nullptr;
-        }
-        else if ( ok )
-        {
-            const auto &a = m_talk->m_answers[m_choice];
-            if ( a.second == "-" )
-                m_talk = nullptr;
-            else
-                enterNode( m_level.talk( a.second ) );
-        }
-        return true;
-    }
+    if ( m_talk ) return talkStep( step, ok, back );
     // Not talking: A or E near someone starts a conversation (instead of a jump).
     int near = nearNpc();
     if ( near >= 0 && ( in.m_jump || in.m_use ) )
@@ -598,10 +576,53 @@ bool Game::updateHub( float dt, GameInput &in )
     return false;
 }
 
+bool Game::talkStep( int step, bool ok, bool back )
+{
+    int n = (int)m_talk->m_answers.size();
+    if ( n > 0 ) m_choice = ( m_choice + step + n ) % n;
+    if ( back )
+        m_talk = nullptr;
+    else if ( ok && n == 0 )
+    {
+        // Read: the conversation ends; the shop or the workshop opens if it said so.
+        const std::string &e = m_talk->m_event;
+        m_menu = e.find( "workshop" ) != std::string::npos ? 2 : ( e.find( "shop" ) != std::string::npos ? 1 : 0 );
+        m_menuChoice = 0;
+        m_talk = nullptr;
+    }
+    else if ( ok )
+    {
+        const auto &a = m_talk->m_answers[m_choice];
+        if ( a.second == "-" )
+            m_talk = nullptr;
+        else
+            enterNode( m_level.talk( a.second ) );
+    }
+    return true;
+}
+
+bool Game::updateFightTalk( GameInput &in )
+{
+    // In a fight's level someone may wait to be spoken to (E): the game holds while the conversation is open.
+    if ( m_npcs.empty() ) return false;
+    int step = 0;
+    if ( fabsf( m_rawMove.y ) > 0.5f && fabsf( m_navY ) <= 0.5f ) step = m_rawMove.y > 0.0f ? 1 : -1;
+    m_navY = m_rawMove.y;
+    if ( m_talk ) return talkStep( step, in.m_jump || in.m_confirm || in.m_use, in.m_special );
+    int near = nearNpc();
+    if ( near >= 0 && in.m_use )
+    {
+        openTalk( near );
+        return true;
+    }
+    return false;
+}
+
 void Game::poseHub( std::vector<Drawable> &out )
 {
     for ( NpcState &n : m_npcs )
     {
+        if ( n.m_hidden ) continue;
         if ( n.m_figure.m_body >= 0 )
         {
             n.m_figure.m_pos = n.m_pos;

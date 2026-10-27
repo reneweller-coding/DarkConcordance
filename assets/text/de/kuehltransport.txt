@@ -1,0 +1,36 @@
+# Level 13: Der Kühltransport (Deutsch, die Quelle), und das Wrackfeld.
+
+l13.name       = Der Kühltransport
+l13.intro      = Der nächste Transport bringt dreitausend Kerne zur Mühle, die inzwischen auf halbem Weg nach Velm ist: ein ausgehöhlter Mond von dreihundert Kilometern Durchmesser mit angeflanschten Triebwerken, vor sich einen Fächer aus glühendem Erz. | Unzu hält sich an die Flanke des Transporters. Wir gehen hinüber, im Flug. | Die Kerne an Bord sind wach. Sie wissen, wohin es geht.
+
+l13_start      = An Bord. Die Transportwache weiß, dass wir hier sind. Sie wird nicht aufhören, Leute zu schicken.
+l13_cores      = Kisten voller Kerne. Sie glühen blau. Dreitausend Menschen in einem Laderaum.
+l13_awake      = Sie sind wach. Ich höre sie über die Wartungsleitung. Sie zählen die Minuten bis zur Mühle.
+l13_reinforce  = Noch ein Trupp. Sie kommen von hinten.
+l13_champion   = Der da gehört zur Transportwache. Die Elite.
+l13_window     = Durch das Frachtfenster: die Mühle. Ein ausgehöhlter Mond, und vor ihm ein Fächer aus glühendem Erz.
+l13_deep       = Ilkas Speicher ist nicht an Bord. Der Liste nach wurde sie schon vor Monaten überspielt. Direkt ins Leitwerk.
+l13_hall       = Die Brücke des Transporters. Der Wachführer wartet.
+l13_down       = Der Wachführer liegt. Jetzt halten wir den Transport an, und …
+l13_collegium  = Zwei Schiffe auf dem Schirm. Kennung: Stilles Kollegium. Sie zielen. Auf euch. Ich kann nichts …
+l13_white      = Was …
+
+h_pressure     = Die Transportwache schickt immer neue Trupps. Nicht trödeln – die Uhr bis zur Mühle läuft.
+
+note.manifest13.title = Ladeliste Kühltransport
+note.manifest13       = 3 000 Kerne, gekühlt, Ziel Mühle. Klassen A bis C. | Bemerkung: Ladung wach. Kühlung um zwei Grad senken, das beruhigt sie.
+note.ilka13.title     = Suchergebnis T-1207
+note.ilka13           = Kern T-1207 nicht an Bord. Bereits vor 4 Monaten direkt in das Leitwerk der Mühle überspielt. Subjektive Laufzeit seitdem: ca. 30 Jahre.
+note.awake.title      = Wartungsleitung, mitgeschnitten
+note.awake            = … wir sind dreitausend … wir wissen, wohin … sagt unseren Familien … sagt ihnen …
+note.route13.title    = Flugplan
+note.route13          = Ankunft Mühle in 20 Minuten. Annäherung über den Erzfächer. Funkstille.
+note.collegium.title  = Gesperrte Nachricht
+note.collegium        = An alle Einheiten des Stillen Kollegiums: Der Transport ist kompromittiert. Keine Zeugen. Gezeichnet: Y.
+
+wracks.name    = Das Wrackfeld
+act.wracks     = Akt II · Treibgut
+w_start        = Das Wrackfeld. Die Konzession schlachtet hier aus, was die Ernte übrig gelassen hat.
+w_end          = Der Wächter liegt. Zurück zur Schleuse.
+note.wreck.title = Bergungsprotokoll
+note.wreck     = Wrack Nr. 4411: Rumpf verkauft nach Gewicht. Besatzung: nicht erfasst.

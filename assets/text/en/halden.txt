@@ -1,0 +1,48 @@
+# Level 8: Halden, the twilight world (English).
+
+l8.name        = Halden, the twilight world
+l8.intro       = Halden does not turn. One side faces the sun forever, the other faces space forever, and only a narrow ring between them is habitable: an endless evening around the whole planet. A hot wind sweeps from the day side into the night and drops ice rain at the border. | Here cores are not sold. Here they are procured. The Concession clears the last settlements, politely and thoroughly, and whoever refuses relocation goes to a camp. The camps are officially called »transitional quarters«. | People disappear from the camps.
+
+speaker.okafor = Clearance leader Okafor
+
+l8_start       = Halden. The sky burns in the west and is black in the east. We stand between.
+l8_dusk        = A hot wind from the day side. It pushes my shots east.
+l8_hot         = Further west, and the suit boils. Further east, and it freezes. I'll stay in the twilight.
+l8_camp        = A fence, containers, numbers on the doors. A transitional quarter.
+l8_hound       = Clearance hounds! They hunt in packs.
+l8_flamer      = Flamers. So that's how they clear.
+l8_champion    = That one's in command here. Or pretends to be.
+l8_column      = A clearance column. Whole families, in a row, with numbers on their coats.
+l8_hall        = Up ahead stands a combat walker. She's waiting for us.
+l8_boss        = Clearance squad Halden, this is Okafor. You're not on my list. Let's change that.
+l8_help        = Squad, to me! Now!
+l8_dogs        = Let the dogs loose. All of them.
+l8_down        = The walker's done. She's climbing out. She raises her hands.
+
+l8_start.dorra = Halden. A planet that stopped. Like Kalvar, after they came.
+l8_camp.dorra  = A camp. On Kalvar they called it something else too. It was still a camp.
+
+o8a            = Well fought. I'm no fool: I know when I've lost. Listen. In quarter three there are two hundred people. I'll release them – now, with my code. In return you let me go. I have two children in the Concordance. I want to see them again.
+o8a_a          = Deal. Let them go, and then disappear.
+o8a_b          = No. You come with us. We'll get the people out ourselves.
+o8b            = (She types a code. Somewhere gates open.) Two hundred. As promised. And now forget my face.
+o8c            = Then get them out. Good luck with the guards. And good luck to me.
+o8d            = I'm already gone.
+o8e            = I'm not running. Where to?
+
+h_climate      = Halden: in the west the day side's heat, in the east the night's frost. The readout above your health fades outside the twilight; cooling and heating posts help.
+h_wind8        = The wind from the day side carries shots east. Lead them.
+h_lowclimate   = The suit won't take it much longer: back into the twilight or to a post.
+h_okafor       = Okafor in her combat walker: she stomps up close, fires volleys from afar and calls her squad. At the very end she charges.
+h_deal         = Okafor wants to talk: step up to her and press E. Her offer stands only now.
+
+note.notice8.title = Notice, Greywillow settlement
+note.notice8       = Greywillow settlement will be cleared on the 14th. Please have your papers ready. Pets cannot be taken along. Your safety is assured. | Your Deepground Concession.
+note.camp.title    = Occupancy list, transitional quarter 3
+note.camp          = Occupied: 214. Departures this week: 31 (destination: »further use«). Arrivals: 40. | Remark: children are collected first. They adapt faster.
+note.okafor.title  = Personal message, not sent
+note.okafor        = Dear Mira, dear Jonas, Mum is working out here for one more year, then we're citizens. All three of us. You'll get a room with a window. I promise.
+note.relay8.title  = Collection point ledger
+note.relay8        = Batch T-1207 (»child«), from Hesper: not used here. Forwarded: ark salvage? NO – corrected: Kael, installation. Signature illegible.
+note.child.title   = Chalk drawing on a container wall
+note.child         = A house, a sun standing exactly in the middle. Below it in a child's writing: THAT'S HOW IT WAS AT HOME.

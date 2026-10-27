@@ -8,3 +8,12 @@ dark maintenance tunnels, heavy machinery rumble, slow rhythmic clanking, electr
 inside a space suit helmet, slow calm breathing, soft radio static hiss, quiet suit fan hum | name=suit
 underwater ambience, muffled bubbles, deep water pressure rumble, distant groaning metal | name=water
 cold server vault, electrical hum of server racks, faint clicking relays, cold air ventilation, eerie quiet | name=vault
+small old spaceship interior, soft ventilation hum, quiet computer beeps, faint engine drone | name=shiphub
+icy wind across a frozen sea, distant cracking ice, deep groaning under the ice | name=ice
+storm winds high in a gas giant's atmosphere, distant thunder, creaking cables, flapping canvas | name=clouds
+hot dry wind over a dusty plain, sand hiss, distant rumble, faint ice rain far away | name=dusk
+cold cavernous hall, ticking cryo pumps, ice creaking, low electrical hum | name=ark
+roaring plasma stream, electrical crackle, heavy coil hum, metal ticking in heat | name=plasma
+dead silence of a frozen dark world, faint thin wind, hiss of nitrogen vents | name=snow
+cargo spaceship under full thrust, deep engine rumble, refrigeration hum, metallic creaks | name=transport
+vast cold alien hall, deep slow resonant hum, faint crystalline ticking, distant metallic groans, no music | name=alien

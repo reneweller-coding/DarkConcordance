@@ -152,10 +152,49 @@ The vaults where Mother Sevenfold stores the harvested cores until they are sold
 ## Act I
 
 After each level Ysolde has the next job (the lift lists every place already open; the Depths stay open). After the
-Core Bank she learns where Ilka went – sold to the Mill – and the act ends there: „Ende des ersten Akts – Fortsetzung
-folgt“. Act II begins at the Mill.
+Core Bank she learns where Ilka went – sold to the Mill – and names a ship in the dock below the bank: the lift takes
+the hero there, and Act II begins.
 
 ![Back on Velm after the Core Bank](docs/screenshots/hub_act1.jpg)
+
+## Act II: the Harvest
+
+**Hub: the »Unzureichend Ausgestattet«** ([assets/levels/unzu.txt](assets/levels/unzu.txt)), an old survey ship whose
+retired archon, Unzu, the Skimmers had used as a data store: the bridge with a window in the floor (a gas giant drifts
+by beneath it), the mess with Ysolde, Kiri's workshop, the trader radio (stims), the hold with the airlock. Ysolde
+follows the cold chain of the stolen cores from place to place; Unzu comments each one with figures from his old
+survey and slowly notices that memories are missing. The airlock's navigation lists every open destination, and the
+**wreck field** (generated anew each time, as strong as the hero) stays open for practice and loot.
+
+Every place has its own look (new themes: ice, refinery deck, twilight rock, sleeper halls, star lifter station, snow,
+transport hold; out in nature the ground is stone, dust or snow), its own mechanic, enemies, boss, music and background:
+
+| Level | Mechanic | Enemies | Boss |
+|---|---|---|---|
+| 6 Seren, the Glass Sea | floes of clear ice over a glowing ocean; ice breaks under blasts and Dorra's hammer, a fall through costs health and warmth; the suit's warmth fades in the open (huts, heater posts) | Concession guards in white and orange, snipers, torch cutters, pump drones rising out of bore holes | the Icebreaker, a drilling rig in the open water whose control core thinks the fight is another shift |
+| 7 Hesper, the refinery in the clouds | platforms over a thousand kilometres of storm; wind bends what flies, gusts sweep enemies off the edges; lightning, balloons | balloon guards hanging over the abyss (shoot the balloon), snipers, drones | the Bell, a guard airship; then a control core asks to be switched off (a choice) |
+| 8 Halden, the twilight world | heat on the day side, frost on the night side, a twilight band between; a hot wind bends shots | clearance squads in olive: flamers, hounds | Clearance leader Okafor in a combat walker; beaten, she offers a deal (a choice) |
+| 9 The ark »Langmut« | cold everywhere, little light; every door needs power – route it from the sleepers' pods (it costs sleepers) or fit a power cell from a side room | Concession boarders with torch cutters | the boarding leader in a cutting exoskeleton; then the ship's administration asks what to tell 80,000 sleepers (a choice) |
+| 10 The object of Tesh (optional) | an alien structure; hardly any gravity, cold everywhere, wandering components that crush | salvage crews | the salvage master in his cutting scaffold; then Pell, the last researcher (a choice) |
+| 11 The star lifter of Kael | a river of star matter across the sky; the radiation dose builds up in the open, plasma gusts, magnetic coils that bend shots | turrets, snipers, cutters | the Plasma Lance, whose control core was installed by Ione |
+| 12 The Wanderer | total darkness (enemies see the hero only up close unless he stands in a mast's light; he carries a lamp), cold, nitrogen geysers | works security in black, snipers, turrets | the works security's guardian; then Director Hale talks (a choice) |
+| 13 The cold-chain transport | the guard keeps sending squads, the clock to the Mill runs; cargo windows show the Mill | the transport guard | the guard leader – then two ships of the Silent Collegium, and everything goes white: the end of Act II |
+
+The choices (balloon 17, Okafor, the ark, Hale) are kept as flags for the epilogue. The level numbers follow the
+story's outline; level 10, the object of Tesh, is an optional detour Unzu offers after the ark: an alien structure in
+the comet cloud, hardly any gravity, cold everywhere, wandering components that crush, the salvage master in his
+cutting scaffold, and Pell, the last researcher (a choice). Someone who waits to be spoken to in a
+fight's level (`npcafter id event` in the level file) shows where the boss fell once it has happened.
+
+![Aboard the »Unzureichend Ausgestattet«: Ysolde in the mess](docs/screenshots/hub_ship.jpg)
+![Seren: floes of clear ice over the ocean](docs/screenshots/l6_seren.jpg)
+![Hesper: a refinery deck over the storm](docs/screenshots/l7_hesper.jpg)
+![Halden: a settlement in the twilight](docs/screenshots/l8_halden.jpg)
+![The ark: a door without power](docs/screenshots/l9_arche.jpg)
+![Tesh: a wandering component in the object's halls](docs/screenshots/l10_tesh.jpg)
+![Kael: the Plasma Lance](docs/screenshots/l11_kael.jpg)
+![The Wanderer: the hero's lamp in the dark](docs/screenshots/l12_wanderer.jpg)
+![The cold-chain transport: crates of cores, awake](docs/screenshots/l13_transport.jpg)
 
 ## Items, levels, skills
 

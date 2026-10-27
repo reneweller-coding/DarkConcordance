@@ -70,7 +70,7 @@ ys72            = The Core Bank. Mother Sevenfold. She isn't one enemy – she's
 ys80            = You're back. Alone.
 ys80_a          = Ilka has been sold. To the Mill.
 ys81            = The Mill. Then now we know where it all goes – the cores, the bodies, the moons. I've found a ship that will take us there. Not a good one. But one that flies.
-ys82            = Get some rest. Once we leave, there's no coming back to Velm. (End of the first act – to be continued.)
+ys82            = Under the Core Bank an old survey ship lay in the dock. The Skimmers used its archon as a data store. Its name is »Insufficiently Equipped«, and it has agreed to take us. The lift will bring you there. Once we leave, there's no coming back to Velm.
 
 # Ottla, the landlady.
 ot1             = Welcome to the Last Shift. What'll it be?

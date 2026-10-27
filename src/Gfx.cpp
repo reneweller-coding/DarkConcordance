@@ -415,8 +415,11 @@ void Gfx::planet( const Mesh &mesh, const Matrix &transform, Texture2D map, floa
     DrawMesh( mesh, m_planetMat, transform );
 }
 
-void Gfx::glass( const Mesh &mesh, const Matrix &transform )
+void Gfx::glass( const Mesh &mesh, const Matrix &transform, float ice )
 {
+    static int iceLoc = -2;
+    if ( iceLoc == -2 ) iceLoc = GetShaderLocation( m_glassShader, "iceMode" );
+    if ( iceLoc >= 0 ) SetShaderValue( m_glassShader, iceLoc, &ice, SHADER_UNIFORM_FLOAT );
     BeginBlendMode( BLEND_ALPHA_PREMULTIPLY );
     rlDisableDepthMask();
     DrawMesh( mesh, m_glassMat, transform );

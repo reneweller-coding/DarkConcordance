@@ -136,6 +136,14 @@ enum class ThemeE : uint8_t
     STREET,      ///< a habitat's alley: house fronts with windows and doors, roofs, lights strung across, clutter
     HULL,        ///< out on a station's skin: plates, radiators, masts, hazard edges over open space
     VAULT,       ///< a bank's vaults: clean pale bulkheads, polished floors (the racks of cores are the level's)
+    ICE,         ///< an ice moon: ridges of blue ice, snow, pump housings (the open floors are clear ice)
+    DECK,        ///< a refinery deck in the clouds: rust-red plating, tanks, valves
+    DUSK,        ///< the twilight belt: warm rock, dust, boulders
+    PODS,        ///< an ark's sleeper halls: white bulkheads, rows of pods with blue windows
+    STATION,     ///< the star lifter's station: dark plates, coolant tanks with glowing bands
+    SNOW,        ///< a dark world of nitrogen snow: black rock, white ground, floodlight masts
+    HOLD,        ///< a transport's hold: container walls, crates of cores glowing blue
+    ALIEN,       ///< the object of Tesh: black smooth walls with faint lines of light, terraces, crystal nodes
     COUNT        ///< number of themes
 };
 
@@ -340,13 +348,39 @@ public:
     std::map<int, int>               m_elites;      ///< enemy cell (row * 1000 + col) -> 1 a champion, 2 the guardian
     std::string                      m_generated;   ///< a generated level's file (empty for a written one)
     std::vector<std::pair<std::string, std::string>>
-                          m_exits;           ///< (level, flag): where the lift goes once the flag is set
-    std::set<std::string> m_repeat;          ///< exits that stay open once done (the depths)
-    std::set<int>         m_outdoorThemes;   ///< themes out in the open (ThemeE as int)
-    int                   m_boardRow = -1, m_boardCol = 0, m_boardWidth = 0;   ///< the harvest board
-    Vector3               m_boardCorner[4] = {};                               ///< its picture's corners (after build)
-    std::vector<Npc>      m_npcs;                                              ///< people to talk to
-    std::vector<TalkNode> m_talk;                                              ///< the conversations' steps
+                                       m_exits;           ///< (level, flag): where the lift goes once the flag is set
+    std::set<std::string>              m_repeat;          ///< exits that stay open once done (the depths)
+    std::set<int>                      m_outdoorThemes;   ///< themes out in the open (ThemeE as int)
+    int                                m_boardRow = -1, m_boardCol = 0, m_boardWidth = 0;   ///< the harvest board
+    Vector3                            m_boardCorner[4] = {};   ///< its picture's corners (after build)
+    std::vector<Npc>                   m_npcs;                  ///< people to talk to
+    std::map<std::string, std::string> m_npcAfter;   ///< in a fight's level: who shows only once something happened
+    // Act II's places.
+    std::string m_meter;                 ///< the suit's other need: "warmth" (cold), "dose" (radiation), "climate"
+    float       m_meterSecs = 120.0f;    ///< how long it lasts where it drains
+    bool        m_meterIndoor = false;   ///< it drains indoors too (only heaters help)
+    int         m_bandHot = -1;          ///< "climate": west of this column the day side burns
+    int         m_bandCold = 1 << 20;    ///< ... east of this one the night side freezes
+    float       m_bandHotF = 0.0f, m_bandColdF = 0.0f;   ///< "climate a b": the band as shares of the width
+    std::string m_talkMusic;                             ///< the piece while someone talks in a fight's level (Hale)
+    Vector3     m_skyColor = { -1, -1, -1 };             ///< a sky of one colour instead of a picture (x < 0: none)
+    Vector3     m_windDir = { 0, 0, 0 };                 ///< where the wind blows to
+    float       m_windStrength = 0.0f;                   ///< how hard it bends what flies (m/s²)
+    float       m_gusts = 0.0f;                          ///< seconds between gusts that push (0 none)
+    bool        m_ice = false;                ///< the glass is ice over an ocean: it breaks; falling in is cold
+    std::string m_below;                      ///< what open space shows below: "" the stars, "ocean", "clouds"
+    bool        m_dark = false;               ///< darkness: enemies see near only, the hero carries a lamp
+    std::string m_planetTex = "reddwarf";     ///< the body in the sky ("star")
+    float       m_planetGlow = 2.2f;          ///< its own light
+    std::string m_faction;                    ///< whose men: "" the Skimmers, "concession", "clearance", "security"
+    float       m_pressure = 0.0f;            ///< seconds between the guard's reinforcements (0 none)
+    std::string m_machine = "tug";            ///< the machine at the berth: tug, rig, bell, lance
+    std::string m_menuTitle = "lift.title";   ///< the exit's menu: a lift, a ship's navigation
+    int         m_consoleCost = 0;            ///< sleepers a power console costs when no cell is fitted
+    std::string m_whiteout;          ///< after the boss: this event, then the screen goes white and the act is over
+    int         m_bossVariant = 0;   ///< the exoskeleton's man: 0 the Taxator, 2 Okafor, 3 the boarding leader
+    bool        m_plasma = false;    ///< a river of star matter arcs through the sky
+    std::vector<TalkNode> m_talk;    ///< the conversations' steps
 
     /**
      * @brief A conversation's step by its key.

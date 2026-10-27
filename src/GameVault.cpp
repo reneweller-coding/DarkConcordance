@@ -239,6 +239,7 @@ void Game::updateVault( float dt )
     if ( alive == 0 && m_motherAwake )
     {
         m_motherDone = true;
+        m_bossAt = m_pos;
         fire( "bossdead" );
         fire( m_racksBroken == 0 ? "clean" : "broken" );
         if ( m_racksBroken == 0 ) m_progress.m_flags.insert( "cores.spared" );

@@ -473,8 +473,23 @@ private:
     bool human( const Foe &f ) const
     {
         return f.m_kind == FoeE::BATON || f.m_kind == FoeE::GUNNER || f.m_kind == FoeE::SHIELD ||
-               f.m_kind == FoeE::HEAVY || f.m_kind == FoeE::TAXATOR;
+               ( f.m_kind == FoeE::HEAVY && f.m_variant == 0 ) || f.m_kind == FoeE::TAXATOR;
     }
+    // Act II's enemies (GameFoes2.cpp).
+    void buildFoes2();
+    bool spawnMarker( char kind, Vector3 p );
+    bool updateVariant( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    void updateBoreHoles();
+    void popBalloon( int i );
+    int balloonOnRay( Vector3 from, Vector3 dir, float &t ) const;
+    void poseVariants( std::vector<Drawable> &out );
+    const char *foeNoun( const Foe &f ) const;
+    LouseModel           m_hound;   ///< the clearance squads' hounds
+    Mesh                 m_turretBase = {}, m_turretHead = {}, m_guardBalloon = {}, m_guardPallet = {};
+    std::vector<Vector3> m_boreHoles;          ///< holes in the ice where the pump drones wait
+    int                  m_cells = 0;          ///< power cells carried (the ark's consoles take them)
+    int                  m_sleepersLost = 0;   ///< the ark: sleepers whose pods lost their power for a door
+    Vector3              m_bossAt = {};        ///< where the boss fell (someone may step out there)
     float foeRadius( const Foe &f ) const;
     float foeHeight( const Foe &f ) const;
     bool shielded( Vector3 from ) const;
@@ -530,14 +545,22 @@ private:
     float danger() const;
     /** @brief The fight's music on at three (or a champion, or badly hurt), off after five quiet seconds. */
     void updateMusic( float dt );
-    bool       m_fightMusic = false;                            ///< the place's fight piece plays
-    float      m_quiet = 0.0f;                                  ///< seconds without danger
-    Figure     m_guardFigure, m_heavyFigure, m_taxatorFigure;   ///< market guards, heavies, the Taxator
-    LouseModel m_saw, m_bomber;                                 ///< the saw bots, the bombers
+    bool   m_fightMusic = false;                            ///< the place's fight piece plays
+    float  m_quiet = 0.0f;                                  ///< seconds without danger
+    Figure m_guardFigure, m_heavyFigure, m_taxatorFigure;   ///< market guards, heavies, the Taxator
+    Figure m_okaforFigure, m_leaderFigure,
+        m_salvagerFigure;         ///< Okafor's walker, the boarding leader's cutting exoskeleton
+    LouseModel m_saw, m_bomber;   ///< the saw bots, the bombers
     Mesh       m_droneBody = {}, m_droneRotor = {}, m_droneEye = {}, m_blade = {}, m_sac = {}, m_ring = {};
-    float      m_hitScale = 1.0f;                      ///< what the foe acting now does more (champions)
-    float      m_areaHit = 1.0f;                       ///< what enemies do more in a deeper area
-    std::vector<std::pair<FoeE, Vector3>> m_summons;   ///< enemies called this frame (they come in after the update)
+    float      m_hitScale = 1.0f;   ///< what the foe acting now does more (champions)
+    float      m_areaHit = 1.0f;    ///< what enemies do more in a deeper area
+    struct Summon
+    {
+        FoeE    first;
+        Vector3 second;
+        int     variant = 0;
+    };
+    std::vector<Summon> m_summons;   ///< enemies called this frame (they come in after the update)
 
     // GameTug.cpp: the tug at the hull's edge (level 3's boss) and the boss parts one hits (its gun, its engines).
     struct BossPart
@@ -554,6 +577,7 @@ private:
         float   m_t;    ///< until it does
     };
     void loadTug();
+    void loadMachine( const std::string &kind, float out, float tough );
     void updateTug( float dt );
     void poseTug( std::vector<Drawable> &out );
     void drawTugHud( int w, int h, float s );
@@ -570,6 +594,9 @@ private:
     std::vector<Mesh>     m_tugMeshes;
     std::vector<int>      m_tugSurfaces;
     Mesh                  m_tugGunMesh = {}, m_tugEngineMesh = {}, m_tugNozzle = {}, m_tugPodMesh = {};
+    Vector3               m_tugGunAt = { 0.0f, 2.8f, -1.0f };    ///< where the main weapon turns (in its frame)
+    Vector3               m_tugBridge = { -1.6f, 3.6f, 5.6f };   ///< where its bolts come from
+    float                 m_tugSlide = 5.0f, m_tugBob = 0.15f;   ///< how far it slides cast off, how it bobs
     Vector3               m_podPos = { 0, 0, 0 }, m_podVel = { 0, 0, 0 };
     float                 m_podSpin = 0.0f;
 
@@ -603,6 +630,49 @@ private:
         Vector3 m_pos, m_vel;
         float   m_phase;
     };
+    // Act II's elements (GameElements.cpp).
+    void loadElements();
+    void updateElements( float dt );
+    void poseElements( std::vector<Drawable> &out );
+    void drawSea( Gfx &gfx );
+    void drawElementsHud( int w, int h, float s );
+    void rebuildGlass();
+    void crackIce( Vector3 p, float radius, float amount );
+    Vector3 drift( Vector3 p, Vector3 v ) const;
+    bool heroLit() const;
+    float sightRange() const;
+    struct Geyser
+    {
+        Vector3 m_pos;
+        float   m_t;       ///< seconds left in its state
+        int     m_state;   ///< 0 quiet, 1 hissing, 2 erupting
+    };
+    std::vector<Geyser>  m_geysers;
+    std::vector<Vector3> m_coils;   ///< magnetic coils
+    struct Mover
+    {
+        Vector3 m_a, m_b;   ///< the ends of its track
+        float   m_t;        ///< where on it (0..1)
+        float   m_dir;      ///< which way it goes
+        float   m_len;      ///< the track's length
+    };
+    std::vector<Mover>   m_movers;   ///< the object's wandering components
+    Mesh                 m_moverMesh = {}, m_moverSeam = {};
+    std::map<int, float> m_iceHp;      ///< panes of ice (row * 1000 + col) and what they still take
+    std::vector<Vector4> m_colonies;   ///< glowing colonies under the ice: where, phase
+    std::vector<Vector4> m_balloons;   ///< balloons over the clouds: where, size
+    Vector3              m_oceanLo = {}, m_oceanHi = {};
+    Mesh    m_seaMesh = {}, m_deepMesh = {}, m_colonyMesh = {}, m_balloonMesh = {}, m_plasmaMesh = {}, m_ventMesh = {};
+    Mesh    m_coilMesh = {}, m_coilCore = {};
+    Vector3 m_safeSpot = {};                                     ///< on the ice: where the hero last stood safe
+    float   m_gust = 0.0f, m_gustT = 0.0f, m_gustTimer = 0.0f;   ///< the wind's gust: strength now, its clock
+    int     m_gustState = 0;                                     ///< 0 calm, 1 warning, 2 blowing
+    float   m_pressureT = 0.0f, m_clock = 0.0f;         ///< the transport guard's next men; the time to the Mill
+    float   m_lightning = 0.0f;                         ///< the screen's flash from the clouds
+    float   m_whiteT = 0.0f;                            ///< the act's end: seconds since it began
+    float   m_collegiumT = 0.0f;                        ///< ... seconds since the boss fell
+    Texture2D m_skyColorTex = {};                       ///< a sky of one colour ("skycolor"; no picture)
+    bool      m_metering = false, m_meterHot = false;   ///< the meter drains now; on the day side (heat, not frost)
     void loadWorld();
     void updateWorld( float dt );
     void poseWorld( std::vector<Drawable> &out );
@@ -732,6 +802,8 @@ private:
     void runEvent( const std::string &event );
     void buy( int item );
     void updateCrowd( float dt );
+    bool talkStep( int step, bool ok, bool back );
+    bool updateFightTalk( GameInput &in );
     Vector3 strollTo( const Person &q );
     void poseHub( std::vector<Drawable> &out );
     void drawHubHud( int w, int h, float s );
@@ -856,11 +928,12 @@ private:
     // The hub.
     struct NpcState
     {
-        int     m_def;      ///< its line in the level
-        Vector3 m_pos;      ///< where it stands
-        float   m_yaw;      ///< where it looks
-        int     m_look;     ///< which figure (-1: the terminal)
-        Person  m_figure;   ///< drawn as a skinned figure when its m_body >= 0
+        int     m_def;              ///< its line in the level
+        Vector3 m_pos;              ///< where it stands
+        float   m_yaw;              ///< where it looks
+        int     m_look;             ///< which figure (-1: the terminal)
+        Person  m_figure;           ///< drawn as a skinned figure when its m_body >= 0
+        bool    m_hidden = false;   ///< not there yet (see Level::m_npcAfter)
     };
     std::vector<NpcState>            m_npcs;
     const TalkNode                  *m_talk = nullptr;   ///< the conversation's step on screen

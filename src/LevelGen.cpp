@@ -83,22 +83,27 @@ struct Pack
 /** @brief What the gen... lines ask for. */
 struct Recipe
 {
-    int                      m_rooms = 8;   ///< rooms on the way, both ends included
-    int                      m_side = 3;    ///< side rooms
-    int                      m_wMin = 10, m_wMax = 16, m_hMin = 8, m_hMax = 13;   ///< a room's size (cells)
-    std::vector<std::string> m_themes;                                            ///< themes to choose from
-    std::string              m_arenaTheme;                                        ///< the set piece's theme
-    std::vector<Pack>        m_packs;                                             ///< enemy packs
-    float                    m_density = 1.0f;                                    ///< packs per 100 floor cells
-    float                    m_elite = 0.2f;                                      ///< share of packs led by a champion
-    std::string              m_arena = "guardian";                                ///< the set piece: taxator, guardian
-    std::string              m_guard = "%";                                       ///< the guardian's kinds (letters)
-    std::vector<std::string> m_notes;                                             ///< terminal texts to scatter
-    bool                     m_void = false;    ///< open space around the rooms instead of rock
-    std::set<std::string>    m_outdoor;         ///< themes out in the open: no walls, no air
-    std::string              m_startTheme;      ///< the start's theme (an airlock, say)
-    float                    m_oxygen = 0.0f;   ///< chance of an oxygen canister in a room out in the open
-    float                    m_water = 0.0f;    ///< chance of a ball of water floating in a room
+    int                                 m_rooms = 8;   ///< rooms on the way, both ends included
+    int                                 m_side = 3;    ///< side rooms
+    int                                 m_wMin = 10, m_wMax = 16, m_hMin = 8, m_hMax = 13;   ///< a room's size (cells)
+    std::vector<std::string>            m_themes;                                            ///< themes to choose from
+    std::string                         m_arenaTheme;                                        ///< the set piece's theme
+    std::vector<Pack>                   m_packs;                                             ///< enemy packs
+    float                               m_density = 1.0f;       ///< packs per 100 floor cells
+    float                               m_elite = 0.2f;         ///< share of packs led by a champion
+    std::string                         m_arena = "guardian";   ///< the set piece: taxator, guardian
+    std::string                         m_guard = "%";          ///< the guardian's kinds (letters)
+    std::vector<std::string>            m_notes;                ///< terminal texts to scatter
+    bool                                m_void = false;         ///< open space around the rooms instead of rock
+    std::set<std::string>               m_outdoor;              ///< themes out in the open: no walls, no air
+    std::string                         m_startTheme;           ///< the start's theme (an airlock, say)
+    float                               m_oxygen = 0.0f;   ///< chance of an oxygen canister in a room out in the open
+    float                               m_water = 0.0f;    ///< chance of a ball of water floating in a room
+    std::vector<std::pair<char, float>> m_features;        ///< things per room: bore holes, geysers, coils, power cells
+    char                                m_hover = 0;   ///< who hangs over the abyss beside the rooms (balloon guards)
+    float                               m_hoverRate = 0.0f;   ///< how many per room
+    int m_power = 0;   ///< the ark: every door on the way locked until powered (its cost)
+    bool machine() const { return m_arena == "tug" || m_arena == "rig" || m_arena == "bell" || m_arena == "lance"; }
 };
 
 const int DR[4] = { -1, 0, 1, 0 };   ///< north, east, south, west
@@ -177,6 +182,24 @@ Recipe parse( const std::string &text, std::string &head, std::string &tail )
             kv >> r.m_oxygen;
         else if ( key == "genwater" )
             kv >> r.m_water;
+        else if ( key == "genfeature" )
+        {
+            std::string sym;
+            float       rate = 0.0f;
+            kv >> sym >> rate;
+            if ( !sym.empty() ) r.m_features.push_back( { sym[0], rate } );
+        }
+        else if ( key == "genhover" )
+        {
+            std::string sym;
+            kv >> sym >> r.m_hoverRate;
+            r.m_hover = sym.empty() ? 0 : sym[0];
+        }
+        else if ( key == "genpower" )
+        {
+            kv >> r.m_power;
+            head += "console " + std::to_string( r.m_power ) + "\n";
+        }
     }
     if ( r.m_themes.empty() ) r.m_themes.push_back( "service" );
     if ( r.m_arenaTheme.empty() ) r.m_arenaTheme = r.m_themes[0];
@@ -319,7 +342,7 @@ private:
                 int h = arena ? m_rng.range( 15, 18 ) : m_rng.range( m_rc.m_hMin, m_rc.m_hMax );
                 int len = m_rng.range( 2, 9 );
                 int width = m_rng.chance( 0.25f ) ? 2 : 3;
-                if ( arena ) width = 3, len = std::max( len, 4 );
+                if ( arena || m_rc.m_power ) width = 3, len = std::max( len, 4 );
                 Room room;
                 Hall hall;
                 if ( !place( cur, dir, w, h, len, width, room, hall ) ) continue;
@@ -332,7 +355,7 @@ private:
                     for ( const Room &o : m_rooms ) clash = clash || exit.hits( o.m_r, 2 );
                     for ( const Hall &o : m_halls ) clash = clash || exit.hits( o.m_r, 1 );
                     clash = clash || exit.hits( hall.m_r, 1 );
-                    if ( m_rc.m_arena == "tug" )
+                    if ( m_rc.machine() )
                     {
                         // The tug lies in the open beside the hall, on the side away from the way in (never the
                         // exit's south).
@@ -350,10 +373,11 @@ private:
                 room.m_kind = arena ? ARENA : MAIN;
                 room.m_theme = arena ? m_rc.m_arenaTheme : pickTheme( m_rooms[cur].m_theme );
                 room.m_in = (int)m_halls.size();
-                hall.m_door = width == 3 && ( arena || m_rng.chance( 0.2f ) ) && !outdoor( room.m_theme );
+                hall.m_door =
+                    width == 3 && ( arena || m_rc.m_power || m_rng.chance( 0.2f ) ) && !outdoor( room.m_theme );
                 m_rooms.push_back( room );
                 m_halls.push_back( hall );
-                if ( arena ) m_exit = exit, m_hasExit = true, m_hasTug = m_rc.m_arena == "tug";
+                if ( arena ) m_exit = exit, m_hasExit = true, m_hasTug = m_rc.machine();
                 prev = dir;
                 cur = i;
                 ok = true;
@@ -579,6 +603,44 @@ private:
                 }
             return;
         }
+        if ( t == "alien" )
+        {
+            // Terraces in a geometry made for nobody: raised steps and slabs at odd places.
+            for ( int k = m_rng.range( 1, 3 ); k > 0; --k )
+                block( r, anywhere( r, m_rng.range( 2, 4 ), m_rng.range( 2, 5 ) ), m_rng.chance( 0.5f ) ? '1' : '2' );
+            for ( int k = m_rng.range( 1, 2 ); k > 0; --k ) block( r, anywhere( r, 1, m_rng.range( 2, 3 ) ), '#' );
+            return;
+        }
+        if ( t == "ice" || t == "dusk" || t == "snow" )
+        {
+            // Out in the open: ridges of pressure ice, boulders, black rock; mounds one can stand on.
+            for ( int k = m_rng.range( 1, 3 ); k > 0; --k )
+                block( r, m_rng.chance( 0.5f ) ? anywhere( r, 2, 2 ) : anywhere( r, 1, m_rng.range( 2, 4 ) ), '#' );
+            if ( big && m_rng.chance( 0.5f ) ) block( r, anywhere( r, m_rng.range( 3, 4 ), m_rng.range( 3, 5 ) ), '1' );
+            return;
+        }
+        if ( t == "pods" || t == "hold" )
+        {
+            // Rows of sleepers' pods (crates of cores in a hold), waist high, with aisles between them.
+            for ( int y = r.m_r0 + 2; y <= r.m_r1 - 2; y += 3 )
+                for ( int x = r.m_c0 + 2; x <= r.m_c1 - 3; )
+                {
+                    int len = m_rng.range( 2, 5 );
+                    block( r, { y, x, y, std::min( x + len - 1, r.m_c1 - 2 ) }, '+' );
+                    x += len + 2;
+                }
+            if ( t == "hold" )
+                for ( int k = m_rng.range( 1, 2 ); k > 0; --k ) block( r, anywhere( r, 2, 3 ), '#' );
+            return;
+        }
+        if ( t == "deck" || t == "station" )
+        {
+            // Holes in the plating (the depths show through), housings, a heat sink.
+            for ( int k = m_rng.range( 1, 2 ); k > 0; --k ) block( r, anywhere( r, 2, m_rng.range( 2, 3 ) ), '~' );
+            for ( int k = m_rng.range( 1, 3 ); k > 0; --k ) block( r, anywhere( r, 2, 2 ), '#' );
+            if ( m_rng.chance( 0.6f ) ) block( r, anywhere( r, 2, 4 ), t == "station" ? '+' : 'F' );
+            return;
+        }
         if ( t == "hull" )
         {
             // Out on the hull: holes in the plating (the stars show through), equipment housings, radiators.
@@ -659,6 +721,16 @@ private:
         // Now and then a raised floor with a step round it.
         if ( big && t != "street" && m_rng.chance( 0.3f ) )
             block( r, anywhere( r, m_rng.range( 4, 5 ), m_rng.range( 4, 6 ) ), '1', '2' );
+    }
+
+    /** @return the cell lies in or on the wall of a room of this kind */
+    bool inRoom( int y, int x, int kind ) const
+    {
+        for ( const Room &r : m_rooms )
+            if ( r.m_kind == kind && y >= r.m_r.m_r0 - 1 && y <= r.m_r.m_r1 + 1 && x >= r.m_r.m_c0 - 1 &&
+                 x <= r.m_r.m_c1 + 1 )
+                return true;
+        return false;
     }
 
     /** @brief A free cell against a wall of the room (not by a door); false if none was found. */
@@ -824,6 +896,7 @@ private:
                 // The tug's berth: by the middle of the hall's edge on its side; a boarding party on the deck.
                 int er = ( r.m_r0 + r.m_r1 ) / 2, ec = m_tugSide == 1 ? r.m_c1 : r.m_c0;
                 m_extra.push_back( "tug " + cellText( er, ec ) + " " + std::to_string( m_tugSide ) );
+                m_extra.push_back( "machine " + m_rc.m_arena );
                 // Two air posts on the deck: the fight is long.
                 for ( float f : { 0.3f, 0.7f } )
                 {
@@ -949,6 +1022,40 @@ private:
             if ( outdoor( room.m_theme ) && m_rng.chance( m_rc.m_oxygen * 0.5f ) ) put( r, ';' );
             if ( outdoor( room.m_theme ) && m_rng.chance( m_rc.m_oxygen * 0.4f ) ) put( r, ':' );
             if ( room.m_theme == "exchanger" && m_rng.chance( 0.2f ) ) put( r, 'D' );
+            // The place's own things: bore holes in the ice, geysers, coils, power cells (in the side rooms).
+            for ( const auto &f : m_rc.m_features )
+            {
+                if ( f.first == '0' && room.m_kind != SIDE ) continue;
+                int count = (int)f.second + ( m_rng.chance( f.second - (int)f.second ) ? 1 : 0 );
+                for ( int k = 0; k < count; ++k ) put( r, f.first );
+            }
+            // Guards hanging under balloons over the abyss beside the room.
+            if ( m_rc.m_hover && room.m_kind != SIDE )
+            {
+                int count =
+                    (int)m_rc.m_hoverRate + ( m_rng.chance( m_rc.m_hoverRate - (int)m_rc.m_hoverRate ) ? 1 : 0 );
+                for ( int k = 0; k < count; ++k )
+                    for ( int t = 0; t < 40; ++t )
+                    {
+                        int y = m_rng.range( r.m_r0 - 3, r.m_r1 + 3 ), x = m_rng.range( r.m_c0 - 3, r.m_c1 + 3 );
+                        if ( y < 1 || x < 1 || y >= m_rows - 1 || x >= m_cols - 1 || m_g[y][x] != '~' ) continue;
+                        bool beside = false;
+                        for ( int dy = -2; dy <= 2; ++dy )
+                            for ( int dx = -2; dx <= 2; ++dx ) beside = beside || m_g[y + dy][x + dx] == '.';
+                        if ( !beside ) continue;
+                        m_g[y][x] = m_rc.m_hover;
+                        break;
+                    }
+            }
+        }
+        // The ark: every door on the way stays shut until power is routed to it.
+        if ( m_rc.m_power )
+        {
+            int k = 0;
+            for ( int y = 0; y < m_rows; ++y )
+                for ( int x = 0; x < m_cols; ++x )
+                    if ( m_g[y][x] == '/' && !inRoom( y, x, SIDE ) )
+                        m_extra.push_back( "lock " + cellText( y, x ) + " power" + std::to_string( k++ ) );
         }
         put( m_rooms[0].m_r, 'H' );
         // Corridors on the way: now and then one or two waiting in a long one.

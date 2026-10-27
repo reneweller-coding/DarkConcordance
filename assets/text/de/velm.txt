@@ -70,7 +70,7 @@ ys72            = Die Kernbank. Mutter Siebenfach. Sie ist nicht eine Gegnerin �
 ys80            = Sie sind zurück. Allein.
 ys80_a          = Ilka ist verkauft. An die Mühle.
 ys81            = Die Mühle. Dann wissen wir jetzt, wohin alles geht – die Kerne, die Körper, die Monde. Ich habe ein Schiff gefunden, das uns hinbringt. Kein gutes. Aber eines, das fliegt.
-ys82            = Ruhen Sie sich aus. Wenn wir aufbrechen, gibt es kein Zurück nach Velm. (Ende des ersten Akts – Fortsetzung folgt.)
+ys82            = Unter der Kernbank lag ein altes Vermessungsschiff im Dock. Die Abschöpfer haben seinen Archonten als Datenspeicher benutzt. Er heißt »Unzureichend Ausgestattet«, und er hat zugesagt, uns mitzunehmen. Der Aufzug bringt Sie hin. Wenn wir aufbrechen, gibt es kein Zurück nach Velm.
 
 # Ottla, die Wirtin.
 ot1             = Willkommen in der Letzten Schicht. Was darf's sein?

@@ -21,3 +21,23 @@ victory stinger 2 main
 death stinger 2 main
 loss oneshot 1 main
 actend oneshot 1 main
+ship loop 2 main
+seren loop 2 low mid
+seren_fight loop 2 main
+hesper loop 2 low mid
+hesper_fight loop 2 main
+halden loop 2 low mid
+halden_fight loop 2 main
+arche loop 2 low mid
+arche_fight loop 2 main
+kael loop 2 low mid
+kael_fight loop 2 main
+wanderer loop 2 low mid
+wanderer_fight loop 2 main
+kuehltransport loop 2 low mid
+kuehltransport_fight loop 2 main
+boss2 loop 2 fight rage
+hale loop 2 main
+act2end oneshot 1 main
+tesh loop 2 low mid
+tesh_fight loop 2 main

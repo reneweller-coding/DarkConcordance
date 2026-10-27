@@ -83,17 +83,22 @@ enum SurfE
     S_CLOTH2,
     S_CLOTH3,
     S_ILKA,
-    S_YSOLDE,    ///< Ysolde's dark violet coat
-    S_KIRI,      ///< Kiri's orange coverall
-    S_CAVERN,    ///< the asteroid's cavern, seen from far
-    S_CLOTH4,    ///< more clothes for a crowd: a faded red
-    S_CLOTH5,    ///< and a worker's blue
-    S_SKIN,      ///< faces (the hero bare-headed)
-    S_HAIR,      ///< Corvin's dark hair
-    S_HAIR2,     ///< Dorra's red hair
-    S_HAIR3,     ///< grey hair (Ysolde)
-    S_GUARD,     ///< the market guards' blued plates
-    S_TAXATOR,   ///< the Taxator's brass
+    S_YSOLDE,       ///< Ysolde's dark violet coat
+    S_KIRI,         ///< Kiri's orange coverall
+    S_CAVERN,       ///< the asteroid's cavern, seen from far
+    S_CLOTH4,       ///< more clothes for a crowd: a faded red
+    S_CLOTH5,       ///< and a worker's blue
+    S_SKIN,         ///< faces (the hero bare-headed)
+    S_HAIR,         ///< Corvin's dark hair
+    S_HAIR2,        ///< Dorra's red hair
+    S_HAIR3,        ///< grey hair (Ysolde)
+    S_GUARD,        ///< the market guards' blued plates
+    S_TAXATOR,      ///< the Taxator's brass
+    S_CONCESSION,   ///< the Concession's white and orange plates
+    S_CLEARANCE,    ///< the clearance squads' olive
+    S_SECURITY,     ///< the works security's black
+    S_ICE,          ///< walls of ice, pale blue
+    S_SNOW,         ///< nitrogen snow, white
     S_COUNT
 };
 

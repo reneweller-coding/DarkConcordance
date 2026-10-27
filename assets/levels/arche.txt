@@ -1,0 +1,86 @@
+# Level 9: Die Arche »Langmut« (Akt II). Ein siebenhundert Jahre altes Kolonieschiff, achtzigtausend Schläfer in
+# Hallen voller Kapseln im blauen Licht der Kühlung. Kälte überall (nur Heizpfosten und Wärmepacks helfen), wenig
+# Licht. Jede Tür auf dem Weg ist ohne Energie: Man leitet sie aus den Kapseln um (das kostet Schläfer) oder setzt eine
+# Energiezelle ein ("0", in den Nebenräumen). Enterkommandos der Konzession mit Brennschneidern; am Ende der Enterführer
+# im Schneidbrenner-Exoskelett, danach spricht die Bordverwaltung.
+#
+#   genpower n              jede Tür auf dem Weg gesperrt; ohne Energiezelle kostet sie n Schläfer
+#   meter warmth s 1        die Kälte auch drinnen
+
+name     l9.name
+act      act.2
+intro    l9.intro
+gravity  7.0
+fog      0.003 0.011 0.55 0.9
+fogcolor 0.0008 0.0014 0.0026
+ambient  0.03 0.04 0.06 0.015 0.02 0.035
+walls    4.2
+meter    warmth 160 1
+faction  concession
+bossvariant 3
+area     13
+next     unzu.txt
+gate     bossdead
+ambience ark
+music    arche
+bossmusic boss2
+npcafter arche bossdead
+
+genrooms      15
+genside       6
+gensize       12 18 10 14
+gentheme      pods pods pods gangway coldstore
+genarenatheme pods
+genarena      taxator
+genpower      2400
+genfeature    0  1
+genfeature    ;  0.5
+genfeature    :  0.6
+genpack       ""T     2.5
+genpack       ETT     2
+genpack       $"      1.5
+genpack       %T      1.2
+genpack       ^^      1.2
+genpack       ""      1
+gendensity    1.1
+genelite      0.3
+gennote       note.watch note.manifest9 note.offer note.pod note.relay9
+
+[npcs]
+arche | -1 -1 | terminal | a9a | arche.wake:a9e arche.concord:a9f arche.hide:a9g
+
+[talk]
+a9a | arche | -             | a9a_a>a9b a9a_b>a9c a9a_c>a9d
+a9b | arche | arche.wake    |
+a9c | arche | arche.concord |
+a9d | arche | arche.hide    |
+a9e | arche | -             |
+a9f | arche | -             |
+a9g | arche | -             |
+
+[lines]
+l9_start    | a                | hero
+l9_pods     | b                | hero
+l9_door     | c                | hero
+l9_drained  | drained          | hero
+l9_cell     | cell             | hero
+l9_cold     | lowmeter         | hero
+l9_champion | champion         | hero
+l9_watch    | d                | arche
+l9_deep     | e                | hero
+l9_hall     | g                | hero
+l9_boss     | bossstart        | leader
+l9_help     | taxator2         | leader
+l9_down     | bossdead         | hero
+
+[hints]
+h_power     | c
+h_cell      | cell
+h_warmth9   | b
+h_cutter    | cutter
+h_shield    | shieldguard
+h_champion  | champion
+h_stim      | hurt
+h_lowwarmth | lowmeter
+h_leader    | bossstart
+h_ark       | appear.arche

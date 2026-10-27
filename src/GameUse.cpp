@@ -118,6 +118,27 @@ bool Game::updateUse( float dt, GameInput &in )
     Usable &u = m_usables[m_near];
     if ( u.m_kind == 0 )
     {
+        if ( !u.m_key.empty() && !m_fired.count( u.m_key ) && u.m_key.compare( 0, 5, "power" ) == 0 )
+        {
+            // The ark's doors: a power cell fitted, or the power routed from the sleepers' pods.
+            if ( m_cells > 0 )
+            {
+                --m_cells;
+                m_toast = tr( "use.cellfitted" );
+                m_toastColor = { 170, 230, 255, 255 };
+            }
+            else
+            {
+                m_sleepersLost += m_level.m_consoleCost;
+                m_toast = TextFormat( tr( "use.drained" ), m_level.m_consoleCost );
+                m_toastColor = { 255, 150, 120, 255 };
+                fire( "drained" );
+            }
+            m_toastTimer = 3.0f;
+            fire( u.m_key );
+            m_audio.play( SfxE::OVERHEAT, u.m_pos, m_camTarget, 0.6f );
+            return false;
+        }
         if ( !u.m_key.empty() && !m_fired.count( u.m_key ) )
         {
             m_toast = tr( "use.locked" );
@@ -245,13 +266,16 @@ void Game::drawUseHud( int w, int h, float s )
     {
         const Usable &u = m_usables[m_near];
         bool          locked = u.m_kind == 0 && !u.m_key.empty() && !m_fired.count( u.m_key );
-        const char   *key = u.m_kind == 0   ? ( locked ? "use.locked" : "use.open" )
+        bool          power = locked && u.m_key.compare( 0, 5, "power" ) == 0;
+        const char   *key = power           ? ( m_cells > 0 ? "use.cell" : "use.power" )
+                            : u.m_kind == 0 ? ( locked ? "use.locked" : "use.open" )
                             : u.m_kind == 1 ? "use.search"
                                             : "use.read";
         Vector3       at = u.m_kind == 0 ? Vector3Add( u.m_pos, { 0.0f, DoorHeight + 0.5f, 0.0f } )
                                          : Vector3Add( u.m_at, { 0.0f, 2.2f, 0.0f } );
         Vector2       p = GetWorldToScreenEx( at, m_cam, w, h );
-        text( tr( key ), p.x, p.y, 22, locked ? Color{ 255, 120, 100, 235 } : Color{ 255, 220, 160, 235 }, true );
+        text( power && m_cells == 0 ? TextFormat( tr( key ), m_level.m_consoleCost ) : tr( key ), p.x, p.y, 22,
+              locked ? Color{ 255, 120, 100, 235 } : Color{ 255, 220, 160, 235 }, true );
     }
     // What a locker held, or "locked".
     if ( m_toastTimer > 0.0f )

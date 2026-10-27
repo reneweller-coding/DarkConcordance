@@ -1,0 +1,125 @@
+# Hub in Akt II: die »Unzureichend Ausgestattet«, ein altes Vermessungsschiff mit einem Archonten im Ruhestand, der
+# Unzu genannt wird. Die Brücke mit einem Fenster im Boden (darunter treibt ein Gasriese vorbei), der Gang, die Messe,
+# Kiris Werkstatt, der Händlerfunk, der Frachtraum mit der Schleuse. Kein Kampf: A / E spricht. Die Schleuse "O"
+# führt zu den Zielen, die Ysolde nennt (die Navigation fragt, wohin). Kartenzeichen und Abschnitte wie in velm.txt.
+#   view planet           im Fenster ein Planet (planet: seine Textur und sein eigenes Leuchten), keine Flotte
+#   menutitle nav.title   der Name des Ausgangsmenüs
+
+name     unzu.name
+act      act.2hub
+intro    unzu.intro
+gravity  7.0
+fog      0.003 0.01 0.6 0.9
+fogcolor 0.0018 0.002 0.0028
+ambient  0.06 0.06 0.07 0.035 0.035 0.04
+walls    3.6
+peaceful 1
+sky      nebula
+view     planet
+planet   gasgiant 0.35
+ambience shiphub
+music    ship
+menutitle nav.title
+back     done.seren
+autotalk ysolde
+exit     seren.txt job6
+exit     hesper.txt job7
+exit     halden.txt job8
+exit     arche.txt job9
+exit     tesh.txt job10
+exit     kael.txt job11
+exit     wanderer.txt job12
+exit     kuehltransport.txt job13
+exit     wracks.txt job6 again
+zone     2 13 7 28 bridge
+zone     13 4 18 13 bar
+zone     13 27 18 36 works
+zone     19 16 21 24 cargo
+zone     0 0 23 39 gangway
+route    9 21  11 9  13 8  14 7  11 9  11 20  16 20  20 20
+
+[map]
+########################################
+########################################
+#############A..............A###########
+#############................###########
+#############...__________...###########
+#############...__________...###########
+#############................###########
+#############................###########
+#####################/##################
+####A................P...............A##
+####.......aaaaa.....................A##
+####..................................##
+########/##########...#########/########
+####A.........#####...#####.........A###
+####..........#####...#####..........###
+####...++++...#####...#####..........###
+####...++++...#####...#####..........###
+####..........#####...#####..........###
+####A.........#####...#####.........A###
+################.........###############
+################....O....###############
+################R.......R###############
+########################################
+########################################
+
+[npcs]
+# Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...  (das letzte zutreffende zählt)
+ysolde | 14 6  | ysolde   | y100 | job6:y102 done.seren:y110 job7:y112 done.hesper:y120 job8:y122 done.halden:y130 job9:y132 done.arche:y140 job11:y142 done.kael:y150 job12:y152 done.wanderer:y160 job13:y162 act2done:y170
+unzu   | 3 20  | terminal | u1   | talked.unzu:u4 job6:u5 done.seren:u10 done.hesper:u20 done.halden:u30 done.arche:u40 job10:u42 done.kael:u50 done.wanderer:u60
+kiri   | 16 32 | kiri     | k1
+funk   | 10 35 | terminal | f1
+
+[talk]
+# Knoten | Sprecher | Ereignis | Antwort>Knoten ...
+y100 | ysolde | -      | y100_a>y101
+y101 | ysolde | job6   |
+y102 | ysolde | -      |
+y110 | ysolde | -      | y110_a>y111
+y111 | ysolde | job7   |
+y112 | ysolde | -      |
+y120 | ysolde | -      | y120_a>y121
+y121 | ysolde | job8   |
+y122 | ysolde | -      |
+y130 | ysolde | -      | y130_a>y131
+y131 | ysolde | job9   |
+y132 | ysolde | -      |
+y140 | ysolde | -      | y140_a>y141
+y141 | ysolde | job11  |
+y142 | ysolde | -      |
+y150 | ysolde | -      | y150_a>y151
+y151 | ysolde | job12  |
+y152 | ysolde | -      |
+y160 | ysolde | -      | y160_a>y161
+y161 | ysolde | job13  |
+y162 | ysolde | -      |
+y170 | ysolde | -      |
+u1   | unzu   | -      | u1_a>u2 u1_b>u3
+u2   | unzu   | -      |
+u3   | unzu   | -      |
+u4   | unzu   | -      |
+u5   | unzu   | -      |
+u10  | unzu   | -      |
+u20  | unzu   | -      |
+u30  | unzu   | -      |
+u40  | unzu   | -      | u40_a>u41 u40_b>-
+u41  | unzu   | job10  |
+u50  | unzu   | -      |
+u60  | unzu   | -      |
+u42  | unzu   | -      |
+k1   | kiri   | -      | k1_a>k2 k1_b>-
+k2   | kiri   | workshop |
+f1   | funk   | -      | f1_a>f2 f1_b>-
+f2   | funk   | shop   |
+
+[lines]
+# Schlüssel | Auslöser | Sprecher
+s_start     | start    | hero
+s_back      | back     | hero
+
+[hints]
+# Schlüssel | Auslöser
+h_ship      | a
+h_exitlocked2 | exitlocked
+h_exitlater2  | exitlater

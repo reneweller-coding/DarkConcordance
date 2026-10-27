@@ -1,0 +1,46 @@
+# Level 7: Hesper, the refinery in the clouds (English).
+
+l7.name        = Hesper, the refinery in the clouds
+l7.intro       = Hesper is the gas giant below Seren. In its atmosphere the Concession extracts deuterium and helium-3 for its fusion drives, and the refinery floats on balloons of hot hydrogen – the only thing that floats in a hydrogen atmosphere. | Balloons as big as city quarters, below them a thousand kilometres of storm. Lightning that stands between the cloud bands for minutes. | Each balloon is held aloft by a control core. The cores from Seren went here.
+
+speaker.kern   = Balloon 17 (radio)
+
+l7_start       = Hesper. Under the deck nothing but clouds. And wind.
+l7_deck        = The wind tugs at everything that flies. I'll have to lead my shots.
+l7_gust        = Gust! Hold on – the others don't have mag boots.
+l7_balloon     = The balloon's gone – and him with it. A thousand kilometres to the ground. There is no ground.
+l7_plea1       = This is balloon seventeen. You … you're not Concession. I can hear it in your voices.
+l7_plea2       = Please. If you reach my controls: switch me off. I can't bear it any more. I haven't been able to bear it for eleven years.
+l7_champion    = That one's armoured differently. The Concession spends a lot on its clouds.
+l7_bell        = Something's hanging out there in the storm. As big as a block of flats.
+l7_boss        = The Bell. A guard airship. And it has seen us.
+l7_gun         = The bell gun is silent!
+l7_cast        = She's turning away! She wants distance – not with me.
+l7_end         = The Bell falls into the clouds. And somewhere here are the controls of balloon seventeen.
+l7_core        = You came. My controls are here. Twelve workers on my platform. If I switch off, they fall with me. I know. I know. Please.
+
+l7_start.dorra = Hesper. On Kalvar at least we had ground under our feet. Here there's only storm.
+l7_balloon.dorra = One bolt into the balloon, and it's gone. It doesn't get prettier with practice.
+
+k7a            = I am the core of balloon seventeen. I was a person, I think. I don't remember my name. I only know that I haven't slept for eleven years. Switch me off.
+k7a_a          = (switch off) I'm sorry.
+k7a_b          = (don't switch off) I can't. There are twelve people down there.
+k7b            = … thank you. At last it's quiet. (Balloon seventeen sinks. It sinks for a long time.)
+k7c            = Then on. Always on. I keep them up. I always keep them up.
+k7d            = (The controls are cold. Balloon seventeen is gone.)
+k7e            = … I keep them up. Go. Just go.
+
+h_wind         = Wind: it carries off everything that flies – shots, bolts, grenades. Lead against the wind.
+h_gust         = A gust is coming: it sweeps enemies standing near an edge off it. Your own boots hold.
+h_balloon      = Balloon guards hang over the abyss: hit the balloon, and they fall.
+h_bell         = The Bell: two engines and the bell gun. Red rings show where its bombs fall.
+h_core         = A control core wants to talk: step up to its controls and press E. What you decide stays.
+
+note.balloon17.title = Maintenance report, balloon 17
+note.balloon17       = Control core shows increased error rate. Frequent radio interference on channel 9 (content: requests for shutdown). | Measure: channel 9 blocked. Performance within norm.
+note.refinery.title  = Production report, Hesper refinery
+note.refinery        = Deuterium: 104 percent of target. Helium-3: 97 percent. Balloon losses this quarter: two. Control cores: resupply from Seren arrived.
+note.workers.title   = A note in a locker door
+note.workers         = We're twelve on platform 17. If you read this and we fall: it was good being with you. – Teo
+note.relay7.title    = Hesper transfer list
+note.relay7          = Batch T-1207 (1 unit, class C, »child«): rejected for balloon control (»too young, too unstable«). Forwarded: Halden, collection point transitional quarter 3.

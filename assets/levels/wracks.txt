@@ -1,0 +1,48 @@
+# Das Wrackfeld: Wracks im Treibgut der Ernte, von der Konzession ausgeschlachtet. Jedes Mal anders, so stark wie der
+# Held, ein Wächter am Ende (wie die Tiefen in Akt I). Zum Üben, für Erfahrung und Ausrüstung.
+
+name     wracks.name
+act      act.wracks
+gravity  6.0
+fog      0.002 0.007 0.45 0.8
+fogcolor 0.001 0.0012 0.002
+ambient  0.05 0.05 0.06 0.025 0.025 0.03
+walls    4.0
+sky      nebula
+space    1
+faction  concession
+area     0
+next     unzu.txt
+gate     bossdead
+ambience transport
+music    tiefen
+bossmusic boss2
+
+genrooms      10
+genside       4
+gensize       10 16 8 13
+gentheme      hull cargo gangway hold works
+genoutdoor    hull
+genstarttheme gangway
+genarenatheme cargo
+genarena      guardian
+genguard      %$`
+genvoid       1
+genpack       ETT     2
+genpack       $TT     1.5
+genpack       %T      1.2
+genpack       ^^^     1.5
+genpack       ""E     1
+genpack       `T      1
+genpack       ****    1
+gendensity    1.1
+genelite      0.3
+gennote       note.wreck
+
+[lines]
+w_start     | a                | hero
+w_end       | bossdead         | hero
+
+[hints]
+h_champion  | champion
+h_stim      | hurt

@@ -1,0 +1,61 @@
+# Act II (English): what all the act's places share – readouts, enemies, bosses, the navigation's destinations.
+
+act.2          = Act II · The Harvest
+act.2hub       = Act II · Aboard
+act.2end       = End of the second act – to be continued
+
+hud.warmth     = WARMTH
+hud.dose       = RADIATION DOSE
+hud.heat       = HEAT
+hud.frost      = COLD
+hud.safe       = (safe)
+hud.gustwarn   = GUST COMING – HOLD ON
+hud.gust       = GUST!
+hud.clock      = Arrival at the Mill in %d:%02d
+
+foe.flamer     = Flamer
+foe.sniper     = Sniper
+foe.balloon    = Balloon guard
+foe.cutter     = Torch cutter
+foe.turret     = Turret
+foe.hound      = Clearance hound
+foe.pumpdrone  = Pump drone
+
+boss.rig       = THE ICEBREAKER
+boss.bell      = THE BELL
+boss.lance     = THE PLASMA LANCE
+boss.okafor    = CLEARANCE LEADER OKAFOR
+boss.leader    = THE BOARDING LEADER
+rig.pump       = Pump
+rig.drill      = Drill head
+bell.engine    = Engine
+bell.gun       = Bell gun
+lance.coil     = Coil
+lance.emitter  = Lance
+
+use.power      = E: route power (%d sleepers lose their cooling)
+use.cell       = E: fit a power cell
+use.cellfitted = Power cell fitted – the pods stay cold.
+use.drained    = %d sleepers without cooling.
+
+h_flamer       = Flamers: keep your distance. Their flame reaches only a few metres, but it burns.
+h_flamer.dorra = Flamers: go in shield first, or throw a blast bolt before they are close.
+h_sniper       = Snipers: a red laser shows where they aim. Step out of its line before it steadies.
+h_balloon      = Balloon guards hang over the abyss. Hit the balloon – and they fall.
+h_balloon.dorra = Balloon guards hang over the abyss. A blast bolt on the balloon, and down they go.
+h_cutter       = Torch cutters: quick, tough, their torch goes through any plate. Do not let them close.
+h_turret       = Turrets turn, but they do not run. Slip past behind cover or attack from the side.
+h_hound        = Clearance hounds: fast and in packs. Keep your back clear.
+h_pumpdrone    = Pump drones rise out of the bore holes in the ice. Where there is a dark ring, one is coming.
+h_cell         = A power cell: fitted at a locked door, it opens it without taking power from the sleepers.
+
+nav.title      = NAVIGATION
+dest.unzu      = The dock · the »Insufficiently Equipped«
+dest.seren     = Seren, the Glass Sea
+dest.hesper    = Hesper, the refinery in the clouds
+dest.halden    = Halden, the twilight world
+dest.arche     = The ark »Forbearance«
+dest.kael      = The star lifter of Kael
+dest.wanderer  = The Wanderer
+dest.kuehltransport = The cold-chain transport
+dest.wracks    = The wreck field (different every time)

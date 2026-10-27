@@ -122,7 +122,7 @@ void Game::loadShip( Gfx &gfx, const std::string &assets )
 
     if ( m_level.m_sky.empty() ) return;
     m_skyTex = LoadTexture( ( assets + "/textures/" + m_level.m_sky + ".png" ).c_str() );
-    m_starTex = LoadTexture( ( assets + "/textures/reddwarf.png" ).c_str() );
+    m_starTex = LoadTexture( ( assets + "/textures/" + m_level.m_planetTex + ".png" ).c_str() );
     m_cardTex = LoadTexture( ( assets + "/textures/clinic.png" ).c_str() );
     SetTextureFilter( m_cardTex, TEXTURE_FILTER_BILINEAR );
     m_sphere = GenMeshSphere( 1.0f, 96, 96 );
@@ -150,7 +150,7 @@ void Game::loadShip( Gfx &gfx, const std::string &assets )
     if ( m_level.m_starAt.w > 0.0f )
         m_star = Vector3Add( c, { m_level.m_starAt.x, m_level.m_starAt.y, m_level.m_starAt.z } ),
         m_starRadius = m_level.m_starAt.w;
-    if ( m_level.m_glass.empty() ) return;   // out in the open: no ships braking in a chain
+    if ( m_level.m_glass.empty() || m_level.m_view == "planet" ) return;   // no ships braking in a chain
     for ( int i = 0; i < 12; ++i )
     {
         float d = 500.0f + 300.0f * i;
@@ -350,8 +350,8 @@ void Game::drawView( Gfx &gfx )
         MatrixMultiply( MatrixScale( m_starRadius, m_starRadius, m_starRadius ), MatrixRotateX( 0.3f ) ),
         MatrixTranslate( m_star.x, m_star.y, m_star.z ) );
     float storm = m_flareState == 1 ? m_flareT / 8.0f : ( m_flareState == 2 ? 3.0f : 0.0f );
-    gfx.planet( m_sphere, star, m_starTex, m_time * 0.0004f, 2.2f * ( 1.0f + storm ) );
-    if ( !m_level.m_glass.empty() ) drawPlumes( gfx );
+    gfx.planet( m_sphere, star, m_starTex, m_time * 0.0004f, m_level.m_planetGlow * ( 1.0f + storm ) );
+    if ( !m_level.m_glass.empty() && m_level.m_view != "planet" ) drawPlumes( gfx );
 }
 
 void Game::drawPlumes( Gfx &gfx )

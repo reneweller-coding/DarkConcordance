@@ -1,0 +1,36 @@
+# Level 13: The cold-chain transport (English), and the wreck field.
+
+l13.name       = The cold-chain transport
+l13.intro      = The next transport takes three thousand cores to the Mill, which by now is halfway to Velm: a hollowed-out moon three hundred kilometres across with engines flanged to it, a fan of glowing ore before it. | Unzu holds to the transporter's flank. We go across, in flight. | The cores aboard are awake. They know where they are going.
+
+l13_start      = Aboard. The transport guard knows we're here. It won't stop sending people.
+l13_cores      = Crates full of cores. They glow blue. Three thousand people in one hold.
+l13_awake      = They're awake. I can hear them over the maintenance line. They're counting the minutes to the Mill.
+l13_reinforce  = Another squad. They're coming from behind.
+l13_champion   = That one belongs to the transport guard. The elite.
+l13_window     = Through the cargo window: the Mill. A hollowed-out moon, and before it a fan of glowing ore.
+l13_deep       = Ilka's store isn't aboard. According to the list she was transferred months ago. Straight into the control centre.
+l13_hall       = The transporter's bridge. The guard leader is waiting.
+l13_down       = The guard leader is down. Now we stop the transport, and …
+l13_collegium  = Two ships on the screen. Signature: Silent Collegium. They're aiming. At you. I can't …
+l13_white      = What …
+
+h_pressure     = The transport guard keeps sending new squads. Don't dawdle – the clock to the Mill is running.
+
+note.manifest13.title = Cargo list, cold-chain transport
+note.manifest13       = 3,000 cores, cooled, destination the Mill. Classes A to C. | Remark: cargo awake. Lower cooling by two degrees, it calms them.
+note.ilka13.title     = Search result T-1207
+note.ilka13           = Core T-1207 not aboard. Transferred directly into the Mill's control centre 4 months ago. Subjective runtime since: approx. 30 years.
+note.awake.title      = Maintenance line, recorded
+note.awake            = … we are three thousand … we know where … tell our families … tell them …
+note.route13.title    = Flight plan
+note.route13          = Arrival at the Mill in 20 minutes. Approach over the ore fan. Radio silence.
+note.collegium.title  = Locked message
+note.collegium        = To all units of the Silent Collegium: the transport is compromised. No witnesses. Signed: Y.
+
+wracks.name    = The wreck field
+act.wracks     = Act II · Flotsam
+w_start        = The wreck field. The Concession strips here what the Harvest left behind.
+w_end          = The guardian is down. Back to the airlock.
+note.wreck.title = Salvage log
+note.wreck     = Wreck no. 4411: hull sold by weight. Crew: not recorded.

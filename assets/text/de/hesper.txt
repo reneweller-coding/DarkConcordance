@@ -1,0 +1,46 @@
+# Level 7: Hesper, die Raffinerie in den Wolken (Deutsch, die Quelle).
+
+l7.name        = Hesper, die Raffinerie in den Wolken
+l7.intro       = Hesper ist der Gasriese unter Seren. In seiner Atmosphäre gewinnt die Konzession Deuterium und Helium-3 für ihre Fusionsantriebe, und die Raffinerie schwebt an Ballonen aus heißem Wasserstoff – dem Einzigen, was in einer Wasserstoffatmosphäre trägt. | Ballone so groß wie Stadtviertel, darunter tausend Kilometer Sturm. Blitze, die minutenlang zwischen den Wolkenbändern stehen. | Jeder Ballon wird von einem Steuerkern in der Schwebe gehalten. Die Kerne aus Seren sind hierher gegangen.
+
+speaker.kern   = Ballon 17 (Funk)
+
+l7_start       = Hesper. Unter dem Deck nichts als Wolken. Und Wind.
+l7_deck        = Der Wind zerrt an allem, was fliegt. Ich werde vorhalten müssen.
+l7_gust        = Böe! Festhalten – die anderen haben keine Magnetstiefel.
+l7_balloon     = Der Ballon ist hin – und er mit ihm. Tausend Kilometer bis zum Boden. Es gibt keinen Boden.
+l7_plea1       = Hier Ballon siebzehn. Ihr … ihr seid nicht von der Konzession. Ich höre es an euren Stimmen.
+l7_plea2       = Bitte. Wenn ihr an meine Steuerung kommt: schaltet mich ab. Ich halte das nicht mehr aus. Ich halte es seit elf Jahren nicht mehr aus.
+l7_champion    = Der da ist anders gepanzert. Die Konzession lässt sich die Wolken was kosten.
+l7_bell        = Da draußen hängt etwas im Sturm. Groß wie ein Wohnblock.
+l7_boss        = Die Glocke. Ein Wachluftschiff. Und es hat uns gesehen.
+l7_gun         = Das Glockengeschütz schweigt!
+l7_cast        = Sie dreht ab! Sie will Abstand – nicht mit mir.
+l7_end         = Die Glocke fällt in die Wolken. Und irgendwo hier ist die Steuerung von Ballon siebzehn.
+l7_core        = Ihr seid gekommen. Meine Steuerung ist hier. Zwölf Arbeiter auf meiner Plattform. Wenn ich abschalte, fallen sie mit. Ich weiß. Ich weiß es. Bitte.
+
+l7_start.dorra = Hesper. Auf Kalvar hatten wir wenigstens Boden unter den Füßen. Hier ist da nur Sturm.
+l7_balloon.dorra = Ein Bolzen in den Ballon, und weg ist er. Das wird nicht schöner, wenn man es öfter macht.
+
+k7a            = Ich bin der Kern von Ballon siebzehn. Ich war ein Mensch, glaube ich. Ich weiß nicht mehr, wie ich hieß. Ich weiß nur, dass ich seit elf Jahren nicht schlafe. Schalt mich ab.
+k7a_a          = (abschalten) Es tut mir leid.
+k7a_b          = (nicht abschalten) Ich kann nicht. Da unten sind zwölf Menschen.
+k7b            = … danke. Endlich ist es still. (Ballon siebzehn sinkt. Er sinkt lange.)
+k7c            = Dann eben weiter. Immer weiter. Ich halte sie oben. Ich halte sie immer oben.
+k7d            = (Die Steuerung ist kalt. Ballon siebzehn ist fort.)
+k7e            = … ich halte sie oben. Geht. Geht einfach.
+
+h_wind         = Wind: er treibt alles ab, was fliegt – Schüsse, Bolzen, Granaten. Gegen den Wind vorhalten.
+h_gust         = Eine Böe kommt: die Gegner, die nah an der Kante stehen, fegt sie hinunter. Die eigenen Stiefel halten.
+h_balloon      = Ballonwachen hängen über dem Abgrund: den Ballon treffen, und sie fallen.
+h_bell         = Die Glocke: zwei Triebwerke und das Glockengeschütz. Rote Ringe zeigen, wo ihre Bomben fallen.
+h_core         = Ein Steuerkern will sprechen: mit E an seine Steuerung herantreten. Was ihr entscheidet, bleibt.
+
+note.balloon17.title = Wartungsbericht Ballon 17
+note.balloon17       = Steuerkern zeigt erhöhte Fehlerrate. Häufige Funkstörungen auf Kanal 9 (Inhalt: Bitten um Abschaltung). | Maßnahme: Kanal 9 gesperrt. Leistung im Normbereich.
+note.refinery.title  = Förderbericht Raffinerie Hesper
+note.refinery        = Deuterium: 104 Prozent des Solls. Helium-3: 97 Prozent. Ballonverluste im Quartal: zwei. Steuerkerne: Nachschub aus Seren eingetroffen.
+note.workers.title   = Zettel in einer Schließfachtür
+note.workers         = Wir sind zwölf auf Plattform 17. Wenn ihr das lest und nach unten fallt: Es war schön mit euch. – Teo
+note.relay7.title    = Umschlagliste Hesper
+note.relay7          = Charge T-1207 (1 Stück, Klasse C, »Kind«): für Ballonsteuerung abgelehnt (»zu jung, zu instabil«). Weitergeleitet: Halden, Sammelstelle Übergangsquartier 3.

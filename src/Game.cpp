@@ -80,6 +80,11 @@ void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
     tile( S_HAIR3, "fabric", 4.0f, { 0.9f, 0.0f, 1.0f, 0.0f }, 0.1f, { 150, 146, 140, 255 } );
     tile( S_GUARD, "armor", 1.6f, { 0.9f, 1.0f, 1.5f, 0.0f }, 0.15f, { 58, 76, 104, 255 } );
     tile( S_TAXATOR, "armor", 1.6f, { 1.2f, 1.0f, 1.5f, 0.0f }, 0.15f, { 182, 138, 58, 255 } );
+    tile( S_CONCESSION, "armor", 1.6f, { 1.0f, 1.0f, 1.5f, 0.0f }, 0.15f, { 210, 200, 186, 255 } );
+    tile( S_CLEARANCE, "armor", 1.6f, { 0.9f, 1.0f, 1.5f, 0.0f }, 0.15f, { 96, 100, 74, 255 } );
+    tile( S_SECURITY, "armor", 1.6f, { 0.8f, 1.0f, 1.5f, 0.0f }, 0.15f, { 34, 36, 42, 255 } );
+    tile( S_ICE, "rock", 0.25f, { 0.6f, 0.0f, 1.0f, 0.0f }, 0.6f, { 196, 222, 240, 255 } );
+    tile( S_SNOW, "rock", 0.25f, { 0.9f, 0.0f, 1.0f, 0.0f }, 0.5f, { 232, 236, 244, 255 } );
 }
 
 bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound )
@@ -155,6 +160,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     m_louse.build( S_RUST, S_METAL, S_GLOW, false );
     m_welder.build( S_RUST, S_METAL, S_GLOW, true );
     buildFoes();
+    buildFoes2();
 
     MeshBuilder chunk;
     chunk.box( MatrixIdentity(), { 0.07f, 0.04f, 0.09f } );
@@ -225,7 +231,11 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         case '^': spawnFoe( FoeE::DRONE, Vector3Add( p, { 0.0f, 1.75f, 0.0f } ), false ); break;
         case '*': spawnFoe( FoeE::SAW, p, false ); break;
         case '?': spawnFoe( FoeE::BOMBER, p, false ); break;
-        case '@': spawnFoe( FoeE::TAXATOR, p, false ); break;
+        case '@':
+            spawnFoe( FoeE::TAXATOR, p, false );
+            m_foes.back().m_variant = m_level.m_bossVariant;
+            if ( m_level.m_bossVariant >= 2 ) m_foes.back().m_hp *= 1.3f, m_foes.back().m_hpMax = m_foes.back().m_hp;
+            break;
         case '<':
             spawnFoe( FoeE::GUNNER, p, false );
             m_foes.back().m_variant = 1;
@@ -256,6 +266,14 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
             break;
         }
         case 'H': m_pickups.push_back( { 1, 1, p, { 0, 0, 0 } } ); break;
+        case '(':
+        case '{':
+        case '}':
+        case '"':
+        case '\'':
+        case '`':
+        case '-':
+        case '0': spawnMarker( m.m_kind, p ); break;
         case 'S': m_pickups.push_back( { 0, 10, p, { 0, 0, 0 } } ); break;
         case 'C':
         {
@@ -373,6 +391,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     loadPanel();
     loadWorld();
     loadTug();
+    loadElements();
     loadVault();
     // Who stands, walks or sits on a stool is a skinned figure; those huddled on the floor and Ilka stay as they are.
     for ( size_t i = 0; i < m_people.size(); ++i )
@@ -464,7 +483,12 @@ bool Game::bossRage() const
 std::string Game::musicCue() const
 {
     if ( m_scene > 0 ) return "loss";   // Ilka found too late, the shot, the clinic
-    if ( m_progress.m_flags.count( "act1done" ) || m_fired.count( "act1done" ) ) return "actend";
+    if ( m_whiteT > 0.0f ) return "act2end";
+    if ( m_talk && !m_level.m_peaceful && !m_level.m_talkMusic.empty() ) return m_level.m_talkMusic;
+    if ( ( m_progress.m_flags.count( "act2done" ) || m_fired.count( "act2done" ) ) && m_level.m_music == "ship" )
+        return "act2end";
+    if ( ( m_progress.m_flags.count( "act1done" ) || m_fired.count( "act1done" ) ) && m_level.m_music == "velm" )
+        return "actend";
     if ( bossFight() ) return m_level.m_bossMusic.empty() ? "boss" : m_level.m_bossMusic;
     if ( m_fightMusic && !m_level.m_peaceful && !m_level.m_music.empty() ) return m_level.m_music + "_fight";
     return m_level.m_music;
@@ -499,8 +523,10 @@ std::vector<std::string> Game::musicPieces() const
     std::vector<std::string> ids = { m_level.m_music, "victory", "death" };
     if ( !m_level.m_peaceful ) ids.push_back( m_level.m_bossMusic.empty() ? "boss" : m_level.m_bossMusic );
     if ( !m_level.m_peaceful && !m_level.m_music.empty() ) ids.push_back( m_level.m_music + "_fight" );
+    if ( !m_level.m_talkMusic.empty() ) ids.push_back( m_level.m_talkMusic );
+    if ( !m_level.m_whiteout.empty() ) ids.push_back( "act2end" );
     if ( m_level.m_thrust ) ids.push_back( "loss" );   // the prologue ends in the clinic
-    if ( m_level.m_peaceful ) ids.push_back( "actend" );
+    if ( m_level.m_peaceful ) ids.push_back( "actend" ), ids.push_back( "act2end" );
     return ids;
 }
 
@@ -784,6 +810,7 @@ void Game::explode( Vector3 p, float size )
     }
     m_flashes.push_back( { Vector3Add( p, { 0, 0.5f, 0 } ), { 30.0f, 16.0f, 6.0f }, 7.0f * size, 0.25f, 0.25f } );
     m_audio.play( size > 1.5f ? SfxE::BOOM : SfxE::POP, p, m_camTarget, 1.0f );
+    if ( size >= 1.0f ) crackIce( p, 1.4f * size, 1.0f );   // on an ice moon a blast breaks the panes under it
 }
 
 void Game::killFoe( Foe &f, bool drops )
@@ -1050,6 +1077,12 @@ void Game::shootPellet( bool first )
             float t = raySphere( from, dir, m_parts[i].m_pos, m_parts[i].m_radius );
             if ( t >= 0.0f && t < tBest ) tBest = t, kind = 5, index = i;
         }
+    // A guard's balloon in the way: cut, and down it goes.
+    {
+        float t = tBest;
+        int   b = balloonOnRay( from, dir, t );
+        if ( b >= 0 ) tBest = t, kind = 7, index = b;
+    }
     // A rack of cores in the way takes the slug.
     for ( int i = 0; i < (int)m_racks.size(); ++i )
     {
@@ -1106,7 +1139,9 @@ void Game::shootPellet( bool first )
                      dist > 1e-3f ? Vector3Scale( d, 1.0f / dist ) : dir, f.m_pos );
         }
     }
-    if ( kind == 6 )
+    if ( kind == 7 )
+        popBalloon( index );
+    else if ( kind == 6 )
         breakRack( index );
     else if ( kind == 5 )
         hitPart( index, damage, at );
@@ -1429,6 +1464,8 @@ void Game::moveHero( float dt )
                 m_scrap += (int)roundf( p.m_amount * ( 1.0f + stat( StatE::FIND ) / 100.0f ) );
             else if ( p.m_kind == 2 )
                 m_oxygen = fminf( m_oxygenMax, m_oxygen + p.m_amount );
+            else if ( p.m_kind == 3 )
+                ++m_cells, fire( "cell" );
             else
                 ++m_stims;
             m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.7f );
@@ -1562,7 +1599,7 @@ void Game::updateFoes( float dt )
             f.m_los = los( eye, chest );
             f.m_losTimer = 0.2f + rnd() * 0.1f;
         }
-        if ( !f.m_awake && !m_dead && ( ( dist < 13.0f && f.m_los ) || dist < 4.0f ) )
+        if ( !f.m_awake && !m_dead && ( ( dist < sightRange() && f.m_los ) || dist < 4.0f ) )
         {
             f.m_awake = true;
             if ( f.m_elite == 1 ) fire( "champion" );
@@ -1574,7 +1611,7 @@ void Game::updateFoes( float dt )
         Vector3 want = { 0, 0, 0 };
         float   faceYaw = f.m_yaw;
         bool    chase = f.m_awake && !m_dead && !m_finished && m_scene == 0 && !stunned;
-        bool    drone = f.m_kind == FoeE::DRONE;
+        bool    drone = f.m_kind == FoeE::DRONE || ( f.m_kind == FoeE::GUNNER && f.m_variant == 4 && f.m_stage == 0 );
         f.m_timer -= dt;
         // A champion hits harder (berserk harder still); a swift one is quicker at everything.
         m_hitScale = f.m_elite ? ( f.m_affix == 3 ? 1.6f : 1.25f ) : 1.0f;
@@ -1594,6 +1631,9 @@ void Game::updateFoes( float dt )
                 updateShell( f, dt, dir, dist, path, want, faceYaw );
             else if ( f.m_kind == FoeE::GUNNER && f.m_variant == 1 )
                 updateShocker( f, dt, dir, dist, path, want, faceYaw );
+            else if ( updateVariant( f, dt, dir, dist, path, want, faceYaw ) )
+            {
+            }
             else if ( man )
                 updateBoarder( f, dt, dir, dist, path, want, faceYaw );
             else if ( f.m_kind == FoeE::SAW || f.m_kind == FoeE::BOMBER || drone )
@@ -1813,6 +1853,7 @@ void Game::updateFoes( float dt )
     for ( const auto &s : m_summons )
     {
         spawnFoe( s.first, s.second, true );
+        m_foes.back().m_variant = s.variant;
         explode( Vector3Add( s.second, { 0.0f, 0.3f, 0.0f } ), 0.4f );
     }
     m_summons.clear();
@@ -1838,11 +1879,11 @@ void Game::updateFoes( float dt )
     for ( Foe &f : m_foes )
     {
         if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ) continue;
-        const LouseModel &model =
-            f.m_kind == FoeE::WELDER
-                ? m_welder
-                : ( f.m_kind == FoeE::SAW ? m_saw : ( f.m_kind == FoeE::BOMBER ? m_bomber : m_louse ) );
-        LousePose pose;
+        const LouseModel &model = f.m_kind == FoeE::WELDER
+                                      ? m_welder
+                                      : ( f.m_kind == FoeE::SAW ? ( f.m_variant ? m_hound : m_saw )
+                                                                : ( f.m_kind == FoeE::BOMBER ? m_bomber : m_louse ) );
+        LousePose         pose;
         pose.m_pos = f.m_pos;
         pose.m_yaw = f.m_yaw;
         pose.m_air = !f.m_ground;
@@ -2056,7 +2097,7 @@ void Game::updateEffects( float dt )
         Blob   &b = m_blobs[i];
         Vector3 prev = b.m_pos;
         b.m_vel.y -= g * dt;
-        b.m_vel = Vector3Add( b.m_vel, Vector3Scale( coriolis( b.m_vel ), dt ) );
+        b.m_vel = Vector3Add( b.m_vel, Vector3Scale( drift( b.m_pos, b.m_vel ), dt ) );
         b.m_pos = Vector3Add( b.m_pos, Vector3Scale( b.m_vel, dt ) );
         b.m_life -= dt;
         Vector3 hit, n;
@@ -2255,19 +2296,22 @@ void Game::plan()
     }
     // Out of air: to the nearest hut or air post first (until the suit is full); in a storm into the lee of something.
     std::function<bool( int, int )> want;
-    if ( m_level.m_vacuum || !m_waters.empty() )
+    if ( m_level.m_vacuum || !m_waters.empty() || !m_level.m_meter.empty() )
     {
-        if ( m_outside && m_oxygen < m_oxygenMax * 0.3f ) m_seekAir = true;
+        if ( ( m_outside || m_metering ) && m_oxygen < m_oxygenMax * 0.3f ) m_seekAir = true;
         if ( m_oxygen > m_oxygenMax * 0.95f ) m_seekAir = false;
         if ( m_seekAir )
             want = [&]( int r, int c )
             {
                 Vector3 p = m_level.centre( r, c );
-                if ( waterAt( Vector3Add( p, { 0.0f, 1.0f, 0.0f } ) ) >= 0 ) return false;
-                if ( !m_level.m_vacuum || !m_level.outdoor( r, c ) ) return true;
                 for ( const Vector3 &post : m_airPosts )
                     if ( Vector2Distance( { p.x, p.z }, { post.x, post.z } ) < 2.2f ) return true;
-                return false;
+                if ( waterAt( Vector3Add( p, { 0.0f, 1.0f, 0.0f } ) ) >= 0 ) return false;
+                // The suit's other needs: a hut out of the cold, shelter from the star, the twilight band.
+                if ( m_level.m_meter == "warmth" ) return !m_level.m_meterIndoor && !m_level.outdoor( r, c );
+                if ( m_level.m_meter == "dose" ) return !exposed( p );
+                if ( m_level.m_meter == "climate" ) return c >= m_level.m_bandHot && c <= m_level.m_bandCold;
+                return !m_level.m_vacuum || !m_level.outdoor( r, c );
             };
     }
     if ( m_flareState >= 1 && exposed( m_pos ) )
@@ -2285,14 +2329,18 @@ void Game::plan()
         // How many cells of shaft a running jump clears in this gravity (three at most).
         float jump = m_heroKind == HeroE::DORRA ? DorraJump : JumpSpeed;
         int   maxGap = std::clamp( (int)( ( runSpeed() * 2.0f * jump / m_level.m_gravity - 0.8f ) / CellSize ), 0, 3 );
-        if ( m_level.m_space ) maxGap = 0;   // out over open space the catwalks lead everywhere
+        if ( m_level.m_space && m_level.m_below != "ocean" ) maxGap = 0;   // over open space the catwalks lead
+                                                                           // everywhere (a jump short of a floe
+                                                                           // only means cold water)
         // A shut door is a way through (the autopilot opens it), unless it is locked.
         auto passable = [&]( int r, int c )
         {
             if ( m_level.walkable( r, c ) ) return true;
             if ( m_level.cell( r, c ).m_kind != CellE::DOOR ) return false;
+            // A door the ark's power runs to opens with E (a cell, or the sleepers' power).
             auto lock = m_level.m_locks.find( r * 1000 + c );
-            return lock == m_level.m_locks.end() || m_fired.count( lock->second ) > 0;
+            return lock == m_level.m_locks.end() || m_fired.count( lock->second ) > 0 ||
+                   lock->second.compare( 0, 5, "power" ) == 0;
         };
         while ( !q.empty() )
         {
@@ -2537,7 +2585,7 @@ void Game::autopilot( float dt, GameInput &in )
     if ( door.m_kind == CellE::DOOR && !door.m_open ) in.m_use = true;
     // A jump edge: take a run-up, jump at the brink, and do not shoot in the air.
     int nr = next / cols, nc = next % cols;
-    if ( abs( nr - r ) + abs( nc - c ) > 1 && m_ground && !m_level.m_space )
+    if ( abs( nr - r ) + abs( nc - c ) > 1 && m_ground && ( !m_level.m_space || m_level.m_below == "ocean" ) )
     {
         in.m_fire = false;
         Vector3 ahead = Vector3Add( m_pos, { in.m_move.x * 0.6f, 0.0f, in.m_move.y * 0.6f } );
@@ -2598,12 +2646,14 @@ void Game::update( float dt, const GameInput &inRaw )
     updateThrust( dt );
     useSkills( dt, in );
     updateHero( dt, in );
+    updateBoreHoles();
     updateFoes( dt );
     updateTug( dt );
     updateVault( dt );
     updatePress( dt );
     updateEffects( dt );
     updateWorld( dt );
+    updateElements( dt );
     updatePieces( dt );
     updateLoot( dt );
     updateShots( dt );
@@ -2941,7 +2991,9 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     poseUsables( m_dynamic );
     poseLoot( m_dynamic );
     poseFoes( m_dynamic );
+    poseVariants( m_dynamic );
     poseWorld( m_dynamic );
+    poseElements( m_dynamic );
     poseTug( m_dynamic );
     poseVault( m_dynamic );
     for ( const Foe &f : m_foes )
@@ -2957,9 +3009,9 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
         pose.m_torch = f.m_torch;
         pose.m_time = m_time + f.m_id;
         pose.m_flash = fmaxf( f.m_flash, f.m_fuse >= 0.0f && fmodf( f.m_fuse * 12.0f, 1.0f ) > 0.5f ? 0.6f : 0.0f );
-        ( f.m_kind == FoeE::WELDER
-              ? m_welder
-              : ( f.m_kind == FoeE::SAW ? m_saw : ( f.m_kind == FoeE::BOMBER ? m_bomber : m_louse ) ) )
+        ( f.m_kind == FoeE::WELDER ? m_welder
+                                   : ( f.m_kind == FoeE::SAW ? ( f.m_variant ? m_hound : m_saw )
+                                                             : ( f.m_kind == FoeE::BOMBER ? m_bomber : m_louse ) ) )
             .draw( pose, f.m_legs, m_dynamic );
     }
     if ( m_pressModel.m_origin.x != 0.0f ) m_pressModel.draw( m_pressPose, m_dynamic );
@@ -3075,11 +3127,12 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     gfx.m_cutRadius = 2.6f;
     gfx.m_exposure = 1.7f * m_brightness;
     gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );
-    gfx.beginScene( m_cam, L, m_time, m_skyTex.id > 0 ? m_skyTex : m_dot );
+    gfx.beginScene( m_cam, L, m_time, m_skyTex.id > 0 ? m_skyTex : ( m_skyColorTex.id > 0 ? m_skyColorTex : m_dot ) );
     drawView( gfx );
     gfx.draw( m_static, m_surfaces );
     gfx.draw( m_dynamic, m_surfaces );
-    if ( m_glassMesh.vertexCount > 0 ) gfx.glass( m_glassMesh, MatrixIdentity() );
+    drawSea( gfx );
+    if ( m_glassMesh.vertexCount > 0 ) gfx.glass( m_glassMesh, MatrixIdentity(), m_level.m_ice ? 1.0f : 0.0f );
     drawWater( gfx );
     drawParticles( gfx );
     gfx.endScene();
@@ -3236,6 +3289,7 @@ void Game::drawHud( int w, int h )
 
     drawFoeHud( w, h, s );
     drawWorldHud( w, h, s );
+    drawElementsHud( w, h, s );
     drawTugHud( w, h, s );
     drawVaultHud( w, h, s );
 

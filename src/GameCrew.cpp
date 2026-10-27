@@ -403,7 +403,7 @@ void Game::updateShots( float dt )
         Bolt   &b = m_bolts[i];
         Vector3 prev = b.m_pos;
         b.m_vel.y -= g * dt;
-        b.m_vel = Vector3Add( b.m_vel, Vector3Scale( coriolis( b.m_vel ), dt ) );
+        b.m_vel = Vector3Add( b.m_vel, Vector3Scale( drift( b.m_pos, b.m_vel ), dt ) );
         b.m_pos = Vector3Add( b.m_pos, Vector3Scale( b.m_vel, dt ) );
         b.m_life -= dt;
         Vector3 hit, n;
@@ -444,7 +444,7 @@ void Game::updateShots( float dt )
     {
         Shot   &s = m_shotsInFlight[i];
         Vector3 prev = s.m_pos;
-        s.m_vel = Vector3Add( s.m_vel, Vector3Scale( coriolis( s.m_vel ), dt ) );
+        s.m_vel = Vector3Add( s.m_vel, Vector3Scale( drift( s.m_pos, s.m_vel ), dt ) );
         s.m_pos = Vector3Add( s.m_pos, Vector3Scale( s.m_vel, dt ) );
         s.m_life -= dt;
         Vector3 hit, n;

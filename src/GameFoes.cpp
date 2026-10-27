@@ -140,7 +140,12 @@ Figure &Game::foeFigure( const Foe &f )
     case FoeE::BATON: return m_boarderBaton;
     case FoeE::SHIELD: return m_guardFigure;
     case FoeE::HEAVY: return m_heavyFigure;
-    case FoeE::TAXATOR: return f.m_variant ? m_hydraFigure : m_taxatorFigure;
+    case FoeE::TAXATOR:
+        return f.m_variant == 1   ? m_hydraFigure
+               : f.m_variant == 2 ? m_okaforFigure
+               : f.m_variant == 3 ? m_leaderFigure
+               : f.m_variant == 4 ? m_salvagerFigure
+                                  : m_taxatorFigure;
     default: return m_boarderGun;
     }
 }
@@ -321,9 +326,19 @@ void Game::updateTaxator( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
     {
         f.m_stage = stage;
         fire( stage == 1 ? "taxator2" : "taxator3" );
+        // Okafor calls her clearance squad and its hounds, the boarding leader his cutters.
         std::vector<FoeE> help = stage == 1
                                      ? std::vector<FoeE>{ FoeE::GUNNER, FoeE::GUNNER, FoeE::SHIELD }
                                      : std::vector<FoeE>{ FoeE::SAW, FoeE::SAW, FoeE::SAW, FoeE::SAW, FoeE::BOMBER };
+        int               helpVariant = 0;
+        if ( f.m_variant == 2 )
+            help = stage == 1 ? std::vector<FoeE>{ FoeE::GUNNER, FoeE::GUNNER, FoeE::SAW }
+                              : std::vector<FoeE>{ FoeE::SAW, FoeE::SAW, FoeE::SAW },
+            helpVariant = stage == 1 ? 2 : 1;
+        else if ( f.m_variant == 3 )
+            help = std::vector<FoeE>{ FoeE::BATON, FoeE::BATON, FoeE::BATON }, helpVariant = 1;
+        else if ( f.m_variant == 4 )
+            help = std::vector<FoeE>{ FoeE::DRONE, FoeE::DRONE, FoeE::BATON, FoeE::BATON }, helpVariant = 0;
         for ( size_t i = 0; i < help.size(); ++i )
         {
             // From the room's edges, where there is floor.
@@ -337,7 +352,7 @@ void Game::updateTaxator( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
                      !los( Vector3Add( f.m_pos, { 0, 1.5f, 0 } ), Vector3Add( p, { 0, 1.5f, 0 } ) ) )
                     continue;
                 p.y = floor;
-                m_summons.push_back( { help[i], p } );
+                m_summons.push_back( { help[i], p, helpVariant } );
                 break;
             }
         }
@@ -620,6 +635,7 @@ void Game::detonate( Foe &f, float damage, float radius )
 void Game::bossDown( Foe &f )
 {
     // The way out opens; plenty to pick up; the suit comes apart in three blasts.
+    m_bossAt = f.m_pos;
     fire( "bossdead" );
     for ( int i = 0; i < 3; ++i )
         explode( Vector3Add( f.m_pos, { ( rnd() - 0.5f ) * 2.0f, 0.8f + i * 1.0f, ( rnd() - 0.5f ) * 2.0f } ), 2.0f );
@@ -665,7 +681,7 @@ void Game::poseFoes( std::vector<Drawable> &out )
             add( m_droneEye, S_GLOW, MatrixMultiply( MatrixTranslate( 0.0f, -0.02f, 0.36f ), at ),
                  { 6.0f + w, 0.5f + w, 0.2f + w, 0.0f } );
         }
-        else if ( f.m_kind == FoeE::SAW )
+        else if ( f.m_kind == FoeE::SAW && f.m_variant == 0 )
         {
             Matrix at = MatrixMultiply( MatrixRotateY( f.m_spin ),
                                         MatrixTranslate( f.m_pos.x, f.m_pos.y + m_saw.m_height + 0.2f, f.m_pos.z ) );
@@ -724,7 +740,7 @@ void Game::drawFoeHud( int w, int h, float s )
             continue;
         Vector2     q = GetWorldToScreenEx( head, m_cam, w, h );
         Color       c = AffixColor[std::max( 0, f.m_affix )];
-        const char *noun = f.m_variant && f.m_kind == FoeE::GUNNER ? "foe.shocker" : foeKey( (int)f.m_kind );
+        const char *noun = foeNoun( f );
         // The gift's word agrees with the name (German: "Gepanzerte Hülle", "Gepanzerter Abschöpfer").
         bool fem = hasText( TextFormat( "%s.g", noun ) ) && std::string( tr( TextFormat( "%s.g", noun ) ) ) == "f";
         std::string name =
@@ -741,7 +757,11 @@ void Game::drawFoeHud( int w, int h, float s )
     if ( b < 0 || !m_foes[b].m_awake || m_foes[b].m_kind == FoeE::SHELL ) return;
     const Foe  &f = m_foes[b];
     std::string name = f.m_kind == FoeE::TAXATOR
-                           ? std::string( tr( f.m_variant ? "boss.hydraulic" : "boss.taxator" ) )
+                           ? std::string( tr( f.m_variant == 1   ? "boss.hydraulic"
+                                              : f.m_variant == 2 ? "boss.okafor"
+                                              : f.m_variant == 3 ? "boss.leader"
+                                              : f.m_variant == 4 ? "boss.salvager"
+                                                                 : "boss.taxator" ) )
                            : std::string( TextFormat( tr( "boss.guardian" ), tr( foeKey( (int)f.m_kind ) ) ) );
     float       pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s;
     text( name.c_str(), w * 0.5f, py - 4.0f * s, 24, { 255, 210, 150, 240 } );

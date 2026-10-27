@@ -100,6 +100,15 @@ def nice_run(cmd, cwd, log):
         sys.exit("generator failed (%d), see %s" % (r.returncode, log))
 
 
+def fresh(path, source):
+    """The file is there and younger than what it was made from: left alone (OGG gives every encoding a new stream
+    serial, so an unchanged piece would otherwise change its bytes, and the repository would grow by it each time)."""
+    return not FORCE and os.path.isfile(path) and os.path.getmtime(path) >= os.path.getmtime(source)
+
+
+FORCE = False   # --force: encode everything again (after a change of the loudness targets)
+
+
 def music(encode_only):
     spec = os.path.join(ROOT, "tools", "music.json")
     work = os.path.join(ROOT, "work", "music")
@@ -131,10 +140,14 @@ def music(encode_only):
                  if keep is None or n < keep]
         shown = []
         for layer, take, f in files:
+            path = os.path.join(out, "%s_%s_t%d.ogg" % (cue["id"], layer, take))
+            if fresh(path, os.path.join(src, f)):
+                total += os.path.getsize(path)
+                shown.append("%s%d =" % (layer, take))
+                continue
             x, fs = sf.read(os.path.join(src, f), dtype="float32", always_2d=True)
             loud = lufs(x, fs)
             gain = min(MUSIC_LUFS.get(layer, -20.0) - loud, PEAK_DB - peak_db(x))
-            path = os.path.join(out, "%s_%s_t%d.ogg" % (cue["id"], layer, take))
             encode(x * 10.0 ** (gain / 20.0), fs, path, 4)
             total += os.path.getsize(path)
             shown.append("%s%d %+.1f" % (layer, take, gain))
@@ -168,6 +181,11 @@ def ambience(encode_only):
         if not takes:
             print("%-8s missing" % name)
             continue
+        path = os.path.join(out, "amb_%s.ogg" % name)
+        if all(fresh(path, os.path.join(work, f)) for f in takes):
+            total += os.path.getsize(path)
+            print("%-8s unchanged" % name)
+            continue
         loaded = [(f,) + sf.read(os.path.join(work, f), dtype="float32", always_2d=True) for f in takes]
         f, x, fs = min(loaded, key=lambda t: steadiness(t[1], t[2]))
         # Off the first half second and the last second (the model eases in and out), then the end laid over the
@@ -178,7 +196,6 @@ def ambience(encode_only):
         loop = x[:len(x) - n].copy()
         loop[:n] = x[:n] * np.sin(t * np.pi / 2) + x[len(x) - n:] * np.cos(t * np.pi / 2)
         gain = min(AMBIENCE_LUFS - lufs(loop, fs), PEAK_DB - peak_db(loop))
-        path = os.path.join(out, "amb_%s.ogg" % name)
         encode(loop * 10.0 ** (gain / 20.0), fs, path, 3)
         total += os.path.getsize(path)
         print("%-8s %s, %.1f s, steadiness %.2f dB, gain %+.1f dB" % (name, f, len(loop) / fs,
@@ -190,5 +207,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("what", choices=["music", "ambience"])
     ap.add_argument("--encode-only", action="store_true", help="skip the generator, only level and encode")
+    ap.add_argument("--force", action="store_true", help="encode even what is unchanged")
     a = ap.parse_args()
+    FORCE = a.force
     (music if a.what == "music" else ambience)(a.encode_only)
