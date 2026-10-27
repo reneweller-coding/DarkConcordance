@@ -5,6 +5,7 @@ l14.intro  = Weiß. Dann ein Fenster, und dahinter Land, das zu beiden Seiten in
 
 k14_start        = Ich lebe. Oder jemand, der sich daran erinnert, ich zu sein.
 k14_start.dorra  = Meine Arme. Sie sind leer. Die Namen sind weg.
+k14_start.ione   = Ich atme. Und es tut nicht weh. Seit zwei Jahren hat jeder Atemzug wehgetan.
 k14_window       = Das Land steigt. Es hört nicht auf zu steigen. Bis über meinen Kopf.
 k14_window.dorra = Auf Kalvar war der Himmel unten schwer und oben leer. Hier ist oben Land.
 
@@ -24,12 +25,14 @@ b14b   = Erledigt. Sie dürfen sich jetzt ein wenig anders sortiert fühlen. Das
 b14c   = Ihre Fähigkeiten sind neu sortiert. Ein zweites Mal geht erst nach dem nächsten Tod. Kleiner Scherz.
 s14a        = (Im Spiegel ein Gesicht ohne Narben.) Ich sehe aus wie jemand, der nie etwas getan hat.
 s14a.dorra  = (Im Spiegel glatte Haut, wo einundvierzig Namen waren.) Ich brauche einen Tätowierer. Heute noch.
+s14a.ione   = (Im Spiegel keine Flecken am Hals, keine grauen Lippen.) Sie haben mich geheilt. Niemand hat gefragt, ob ich das will.
 
 gel.name   = Ring Gelassenheit
 gel.intro  = Ein Ringhabitat, tausend Kilometer im Radius, dreihundert breit. Meere, Wälder und Städte auf der Innenseite, und über allem der Bogen der Gegenseite, an dem nachts die Städte glitzern. | Ysolde hat hier eine Wohnung am Garten. Unzu liegt im Dock und schweigt mehr als sonst; Kiri ist mit ihm gekommen. | Ziel des Akts: die Übersteuerungscodes der Mühle. Mit ihnen kommt man ins Leitwerk – und zu Ilka.
 
 g_start        = Gelassenheit. Ein Garten, Kinder, ein Brunnen. Und niemand hat Angst.
 g_start.dorra  = Gelassenheit. Hier riecht es nach Gras. Ich habe vergessen, wie Gras riecht.
+g_start.ione   = Gelassenheit. Hier ist alles gewartet. Jede Lampe, jede Pumpe. Ich weiß nicht, warum mich das wütend macht.
 g_back         = Zurück auf dem Ring. Die Bahn summt. Jemand lacht im Garten.
 g_back.dorra   = Zurück. Der Garten tut so, als wäre nichts geschehen. Für ihn ist auch nichts geschehen.
 
@@ -72,3 +75,35 @@ a300   = AUSGABE GARTEN 4. Was darf es sein? (Rohstoffausgleich in Schrott, für
 a300_a = Stims.
 a300_b = Nichts.
 a301   = Bestellung offen.
+
+# Die Gefährten
+cd3a       = Neue Arme. Leer. Ich habe heute einen Tätowierer gesucht. Auf dem Ring gibt es keinen. Hier will niemand etwas auf der Haut, das bleibt.
+cd3a_a     = Was willst du stechen lassen?
+cd3b       = Einundvierzig Namen. Ich kann sie alle. Ich werde sie dir nicht aufzählen. Noch nicht.
+cd3c       = Sie sterben hier zum Spaß. Auf Kalvar sind wir für etwas gestorben. Ich weiß nicht mehr genau, wofür. Das ist das Problem.
+cd3d       = Die Kalvarer auf der Werft. Einer hatte Mitleid mit mir. Ich will euch erzählen, wofür er Mitleid hatte. Setzt euch. Es ist eine Chronik, keine Geschichte.
+cd3tale    = (Dorra legt ihre Unterarme auf den Tisch, die Innenseite nach oben. Da ist nichts. Sie sieht trotzdem hin.)
+cd3go      = …
+cd3e       = Jetzt kennt ihr Tag einundvierzig. Josse hätte gesagt: Hör auf, es dir immer wieder zu erzählen, Dorra. Er hat nie gesagt, was ich stattdessen tun soll.
+cd3f       = Unzu hat seine Erinnerungen zurück. Ich hätte meine gern los. Wir sollten tauschen.
+cc3a       = Ich habe in den Spiegel gesehen. Kein Kratzer. Ich sehe aus wie jemand, der nie etwas getan hat. Eine Lüge, die mir gut steht.
+cc3a_a     = Gewöhnst du dich daran?
+cc3b       = Nein. Aber ich habe mich an Schlimmeres gewöhnt. Das ist mein einziges Talent, das nichts kostet.
+cc3c       = Eine junge Frau hat mir von ihrem zweihundertsten Tod erzählt. Stolz. Im Saum wären das zweihundert Gräber. Ich habe gelächelt. Was soll man da tun.
+cc3d       = Dorra will reden. Lass sie anfangen. Wenn man sie unterbricht, fängt sie nie wieder an.
+cc3d.dorra = Die Kalvarer, Dorra. Du willst darüber reden, ich sehe es dir an. Und wenn nicht: Ich sitze trotzdem hier.
+cc3e       = Einundvierzig. Ich habe nie gezählt, wie viele es bei mir waren. Dorra hat jeden Namen gelernt. Ich schäme mich auf eine neue Art.
+cc3e.dorra = Einundvierzig, Dorra. Ich habe nie gezählt, wie viele es bei mir waren. Du hast jeden Namen gelernt. Ich weiß nicht, wer von uns beiden das Richtige tut.
+cc3f       = Das Bedauern hat zugegeben, dass es nicht gefragt hat. Ohne Ausflüchte. Ich habe nie jemanden gesehen, der so ehrlich ist und so wenig davon hat.
+cc3td      = (Corvin schenkt nach, ohne zu fragen. Ione stellt ihr Glas ab. Unzu, aus dem Lautsprecher an der Wand: »Ich zeichne auf.«)
+cc3gd      = …
+ci3a       = Ich atme, und es tut nicht weh. Sie haben mich geheilt, ohne zu fragen. Ich weiß nicht, ob ich dankbar sein soll oder wütend. Im Moment bin ich beides, abwechselnd, alle zehn Minuten.
+ci3a_a     = Und jetzt?
+ci3b       = Jetzt habe ich Zeit. Die hatte ich nie. Ich habe eine Liste angefangen, was ich damit tun will. Sie ist noch leer.
+ci3d       = Dorra hat nach der Werft kein Wort gesagt. Ich kenne das. Sie erzählt es, wenn sie es selbst erträgt.
+ci3d.dorra = Dorra. Die Kalvarer. Erzähl es uns, wenn du willst. Ich habe dir meins erzählt.
+ci3e       = Siel hat ihr gesagt, dass noch Leute in der Station sind, und Dorra hat ihr nicht geglaubt. Ich habe Brask auch nicht geglaubt. Bei mir hatte er unrecht. Bei ihr hatte Siel recht. Das ist der ganze Unterschied.
+ci3e.dorra = Siel hat dir gesagt, dass noch Leute in der Station sind, und du hast ihr nicht geglaubt. Ich habe Brask auch nicht geglaubt. Bei mir hatte er unrecht. Bei dir hatte sie recht. Das ist der ganze Unterschied, und er ist nicht deine Schuld.
+ci3f       = Unzu hat seine Erinnerungen zurück und redet nicht mehr. Ich war Technikerin. Ich weiß, wann eine Maschine nachdenkt. Er denkt nach.
+ci3td      = (Ione rückt ihren Stuhl näher. Corvin sieht aus dem Fenster, wo das Land in den Himmel steigt, damit Dorra nicht angesehen wird.)
+ci3gd      = …

@@ -5,6 +5,7 @@ l23.intro = Ein ausgehöhlter Mond von dreihundert Kilometern, der sich für Sch
 
 l23_start        = Die Mühle. Heiß. Und es riecht nach nichts.
 l23_start.dorra  = So sieht es also im Inneren einer Welt aus. Auf Kalvar hätten sie davon geträumt.
+l23_start.ione   = Die Mühle. Ich habe Pläne davon gesehen, als Wartungsschema. Auf Papier sah sie kleiner aus.
 l23_lava         = Flüssiges Metall! Raus da!
 l23_spin         = Die Zentrifuge – sie schleudert alles nach außen!
 l23_miss         = Der da hat danebengeschossen. Absichtlich, glaube ich.

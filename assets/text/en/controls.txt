@@ -10,3 +10,8 @@ h_bolt.dorra    = B / F: throw a blast bolt – for whatever the hammer can't re
 h_stim          = Q / Y: inject a stim (+40 health).
 h_heat          = The rifle has overheated. Ease off for a moment.
 h_heat.dorra    = -
+
+h_fire.ione   = Send the swarm: right trigger or left mouse button. The drones take the nearest target ahead and stay on it while you hold.
+h_strafe.ione = Left trigger / Shift: couple the drones into a screen. It holds from the front and the sides, but it tires the swarm.
+h_bolt.ione   = B / F: takeover. A machine fights for you for a while, then burns out; a person is only jammed for a moment.
+h_heat.ione   = The swarm is spent. Wait a moment, then it holds again.

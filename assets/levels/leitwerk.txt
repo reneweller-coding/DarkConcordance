@@ -37,6 +37,10 @@ genpack       $TT     1.5
 genpack       ''T     1.3
 genpack       ""E     1.2
 genpack       %T      1
+natives       phantom glitch
+genpack       11T     1.5
+genpack       222     1.5
+genpack       12      1.0
 gendensity    1.05
 genelite      0.33
 gennote       note.lullaby24 note.racks24 note.order24 note.ruul24 note.shift24

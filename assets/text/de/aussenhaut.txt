@@ -17,6 +17,7 @@ l3_cast        = Er legt ab! Nicht mit den Körpern!
 l3_end         = Der Container reißt los … er treibt auf den Zwerg zu. Einundsechzig Menschen aus Talgrund. Ich kann nichts mehr tun.
 
 l3_start.dorra = Die Schleuse. Auf Kalvar sind wir ohne Helm in die Stollen. Hier draußen nicht.
+l3_start.ione  = Die Schleuse. Druckausgleich in neunzig Sekunden. Ich habe so eine mal auf vierzig umgebaut, ohne Genehmigung.
 l3_out.dorra   = Draußen. Kein Boden unter dem Boden. Nur der Zwerg.
 l3_flare.dorra = Der Zwerg bricht aus! Hinter was Großes, schnell!
 l3_tug.dorra   = Da liegt er, der Schlepper. Und darunter, im Container, die Leute aus Talgrund.

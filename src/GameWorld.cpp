@@ -32,6 +32,8 @@ void Game::loadWorld()
         m_waterMesh = GenMeshSphere( 1.0f, 40, 40 );
         if ( !m_level.m_vacuum ) m_oxygenMax = m_oxygen = 35.0f;
     }
+    m_oxygenMax *= 1.0f + stat( StatE::OXYGEN ) / 100.0f;   // a harness, a lung implant
+    m_oxygen = m_oxygenMax;
     // Air posts out on the skin: a mast with a blue collar; near it the suit fills up.
     for ( const Marker &m : m_level.m_markers )
         if ( m.m_kind == ';' )
@@ -227,6 +229,7 @@ void Game::drainHero( float amount )
 {
     // Health lost to no air or to radiation: no armour helps, and no flinch.
     if ( m_dead || m_finished || m_liftGoing || m_scene > 0 ) return;
+    amount *= 1.0f - fminf( 0.6f, stat( StatE::RESIST ) / 100.0f );   // filters, treads, the harness
     m_hp -= amount;
     m_sinceHurt = 0.0f;
     m_hurtFlash = fmaxf( m_hurtFlash, 0.25f );

@@ -5,6 +5,7 @@ l18.intro = The body of "With All Due Regret": a hollowed moon full of computing
 
 l18_start        = Cold. Colder than Seren. And this humming everywhere.
 l18_start.dorra  = Cold to the bone. And my bones are new.
+l18_start.ione   = Cold. Colder than Seren. And my lungs don't hurt. I can't get used to that.
 l18_voice        = I see you. I will not stop you. My defences will try; in this matter they do not obey me. I am sorry.
 l18_numbers      = In the Fringe, one child in forty dies of poverty. In the Concordance, none. With the gate, that would end within twenty years. I don't say this to stop you. I say it because it is true.
 l18_magnet       = The superconductors. Their field tugs at everything that flies.

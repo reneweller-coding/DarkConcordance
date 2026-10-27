@@ -1,0 +1,155 @@
+# made by tools/make_dress.py: group <name> <themes...>
+# decal <name> <floor|wall> <width m> <height m> <centre height m> <roughness> <glow> <a|m: alpha or multiply> <r> <g> <b> <groups...>
+group industrial service exchanger shaft works cargo gangway deck station hold yard furnace container prison hull
+group street street bar
+group clean bridge vault pods clinic server hall cryo net
+group cold coldstore ice snow cryo
+group outdoor dusk arena moon snow
+group alien alien
+group garden park
+decal oil_1 floor 1.60 1.60 1.60 0.25 0.0 m 0.10 0.02 0.00 industrial street
+decal oil_2 floor 1.40 1.40 1.60 0.25 0.0 m 0.04 0.02 0.00 industrial
+decal oil_3 floor 1.20 1.20 1.60 0.25 0.0 m 0.28 0.10 0.00 industrial
+decal ruststain_1 floor 1.20 1.20 1.60 0.80 0.0 m 0.70 0.34 0.00 industrial
+decal ruststain_2 floor 1.60 1.60 1.60 0.80 0.0 m 0.77 0.32 0.00 industrial
+decal coolant_1 floor 1.60 1.60 1.60 0.08 0.0 a 0.01 0.32 0.34 industrial
+decal coolant_2 floor 1.30 1.30 1.60 0.05 0.0 a 0.26 0.13 0.00 industrial cold
+decal crack_1 floor 1.80 1.80 1.60 0.80 0.0 m 0.04 0.02 0.00 industrial outdoor
+decal crack_2 floor 1.40 1.40 1.60 0.80 0.0 m 0.01 0.01 0.00 industrial street clean
+decal scorch_1 floor 1.80 1.80 1.60 0.80 0.0 m 0.04 0.03 0.00 industrial outdoor
+decal scorch_2 floor 1.30 1.30 1.60 0.80 0.0 m 0.05 0.03 0.00 industrial
+decal debris_1 floor 1.40 1.40 1.60 0.80 0.0 a 0.07 0.05 0.00 industrial
+decal debris_2 floor 1.50 1.50 1.60 0.80 0.0 a 0.07 0.06 0.00 industrial
+decal debris_3 floor 1.40 1.40 1.60 0.80 0.0 a 0.06 0.05 0.00 industrial street
+decal marking_1 floor 1.80 1.80 1.60 0.80 0.0 a 0.88 0.83 0.70 industrial
+decal marking_2 floor 1.80 1.80 1.60 0.80 0.0 a 1.00 1.00 0.99 industrial clean
+decal marking_3 floor 1.60 1.60 1.60 0.80 0.0 a 1.00 0.69 0.63 industrial
+decal boots_1 floor 1.60 1.60 1.60 0.80 0.0 m 0.18 0.10 0.00 industrial street
+decal boots_2 floor 1.60 1.60 1.60 0.80 0.0 m 0.16 0.09 0.00 outdoor
+decal cables_1 floor 1.60 1.60 1.60 0.80 0.0 a 0.22 0.08 0.01 industrial
+decal cables_2 floor 1.60 1.60 1.60 0.80 0.0 a 0.01 0.03 0.05 industrial clean
+decal papers_1 floor 1.30 1.30 1.60 0.80 0.0 a 0.37 0.21 0.00 industrial street clean
+decal papers_2 floor 1.20 1.20 1.60 0.80 0.0 a 0.24 0.17 0.00 industrial
+decal blood_1 floor 1.40 1.40 1.60 0.80 0.0 m 0.29 0.04 0.00 industrial street outdoor
+decal blood_2 floor 1.20 1.20 1.60 0.80 0.0 m 0.15 0.03 0.00 industrial
+decal drain_1 floor 1.00 1.00 1.60 0.80 0.0 a 0.02 0.01 0.01 industrial street
+decal drain_2 floor 1.10 1.10 1.60 0.80 0.0 a 0.00 0.00 0.00 industrial
+decal litter_1 floor 1.40 1.40 1.60 0.80 0.0 a 0.32 0.16 0.01 street
+decal litter_2 floor 1.40 1.40 1.60 0.80 0.0 a 0.61 0.35 0.00 street
+decal litter_3 floor 1.30 1.30 1.60 0.80 0.0 a 0.39 0.24 0.00 street garden
+decal chalk_1 floor 1.60 1.60 1.60 0.80 0.0 a 0.69 0.83 0.96 street
+decal chalk_2 floor 1.60 1.60 1.60 0.80 0.0 a 1.00 1.00 1.00 street
+decal spill_1 floor 1.10 1.10 1.60 0.12 0.0 a 0.81 0.39 0.00 street clean
+decal spill_2 floor 1.00 1.00 1.60 0.80 0.0 m 0.55 0.33 0.00 street
+decal manhole_1 floor 1.20 1.20 1.60 0.80 0.0 a 0.04 0.02 0.01 street
+decal manhole_2 floor 1.10 1.10 1.60 0.80 0.0 a 0.20 0.09 0.00 street
+decal guide_1 floor 1.90 1.90 1.60 0.80 0.0 a 0.43 0.83 0.79 clean
+decal guide_2 floor 1.60 1.60 1.60 0.80 0.0 a 0.73 0.91 1.00 clean
+decal guide_3 floor 1.60 1.60 1.60 0.80 0.0 a 0.82 0.97 0.88 clean
+decal scuff_1 floor 1.60 1.60 1.60 0.80 0.0 m 0.01 0.01 0.00 clean
+decal scuff_2 floor 1.40 1.40 1.60 0.80 0.0 m 0.04 0.05 0.01 clean industrial
+decal spill_3 floor 1.00 1.00 1.60 0.05 0.0 a 0.00 0.00 0.09 clean
+decal medwaste_1 floor 1.10 1.10 1.60 0.80 0.0 a 0.05 0.29 0.48 clean
+decal emblem_1 floor 1.80 1.80 1.60 0.80 0.0 a 0.28 0.15 0.00 clean
+decal emblem_2 floor 1.80 1.80 1.60 0.80 0.0 a 0.23 0.14 0.00 clean
+decal frost_1 floor 1.80 1.80 1.60 0.80 0.0 a 0.93 0.95 1.00 cold
+decal frost_2 floor 1.50 1.50 1.60 0.80 0.0 a 0.95 0.97 1.00 cold
+decal frost_3 floor 1.20 1.20 1.60 0.10 0.0 a 0.93 0.96 1.00 cold industrial
+decal snowdrift_1 floor 1.80 1.80 1.60 0.80 0.0 a 0.95 0.97 1.00 cold
+decal snowdrift_2 floor 1.60 1.60 1.60 0.80 0.0 a 0.98 0.98 1.00 cold
+decal icecrack_1 floor 1.70 1.70 1.60 0.80 0.0 a 0.95 0.98 1.00 cold
+decal icecrack_2 floor 1.50 1.50 1.60 0.80 0.0 a 0.71 0.87 1.00 cold
+decal snowprints_1 floor 1.60 1.60 1.60 0.80 0.0 m 0.00 0.15 0.35 cold outdoor
+decal snowprints_2 floor 1.60 1.60 1.60 0.80 0.0 m 0.00 0.13 0.30 cold
+decal sanddrift_1 floor 1.80 1.80 1.60 0.80 0.0 a 1.00 0.74 0.40 outdoor
+decal sanddrift_2 floor 1.60 1.60 1.60 0.80 0.0 a 1.00 0.92 0.81 outdoor
+decal sanddrift_3 floor 1.40 1.40 1.60 0.80 0.0 a 1.00 0.96 0.90 outdoor industrial
+decal pebbles_1 floor 1.40 1.40 1.60 0.80 0.0 a 0.22 0.10 0.00 outdoor
+decal pebbles_2 floor 1.60 1.60 1.60 0.80 0.0 a 0.18 0.11 0.00 outdoor
+decal tracks_1 floor 1.80 1.80 1.60 0.80 0.0 m 0.02 0.01 0.00 outdoor
+decal tracks_2 floor 1.60 1.60 1.60 0.80 0.0 m 0.00 0.01 0.02 outdoor cold
+decal bones_1 floor 1.50 1.50 1.60 0.80 0.0 a 0.95 0.96 0.95 outdoor
+decal crater_1 floor 1.80 1.80 1.60 0.80 0.0 m 0.16 0.10 0.00 outdoor
+decal glyphfloor_1 floor 1.90 1.90 1.60 0.80 2.5 a 0.27 0.95 1.00 alien
+decal glyphfloor_2 floor 1.70 1.70 1.60 0.80 2.5 a 0.66 0.47 1.00 alien
+decal glyphfloor_3 floor 1.80 1.80 1.60 0.80 1.6 a 0.92 1.00 0.97 alien
+decal shards_1 floor 1.20 1.20 1.60 0.80 1.2 a 0.74 0.58 1.00 alien
+decal shards_2 floor 1.20 1.20 1.60 0.80 0.8 a 0.78 0.92 1.00 alien outdoor
+decal leaves_1 floor 1.50 1.50 1.60 0.80 0.0 a 0.58 0.20 0.00 garden
+decal leaves_2 floor 1.40 1.40 1.60 0.80 0.0 a 0.24 0.33 0.00 garden
+decal leaves_3 floor 1.20 1.20 1.60 0.80 0.0 a 0.62 0.00 0.10 garden street
+decal flowers_1 floor 1.40 1.40 1.60 0.80 0.0 a 0.13 0.22 0.08 garden
+decal flowers_2 floor 1.40 1.40 1.60 0.80 0.0 a 0.28 0.38 0.00 garden
+decal mud_1 floor 1.50 1.50 1.60 0.15 0.0 m 0.17 0.07 0.00 garden
+decal mud_2 floor 1.30 1.30 1.60 0.30 0.0 m 0.10 0.05 0.00 garden
+decal ruststreak_1 wall 1.04 1.40 2.40 0.80 0.0 m 0.64 0.35 0.00 industrial
+decal ruststreak_2 wall 1.19 1.60 2.20 0.80 0.0 m 0.68 0.33 0.00 industrial
+decal ruststreak_3 wall 1.20 1.20 2.00 0.80 0.0 m 0.29 0.15 0.00 industrial outdoor
+decal waterstain_1 wall 1.19 1.60 2.20 0.80 0.0 m 0.09 0.06 0.00 industrial street
+decal waterstain_2 wall 1.04 1.40 2.20 0.80 0.0 m 0.22 0.18 0.00 industrial clean
+decal soot_1 wall 1.19 1.60 1.60 0.80 0.0 m 0.07 0.04 0.00 industrial
+decal soot_2 wall 1.40 1.40 1.40 0.80 0.0 m 0.08 0.04 0.01 industrial outdoor
+decal impacts_1 wall 1.20 1.20 1.40 0.80 0.0 m 0.02 0.02 0.00 industrial
+decal impacts_2 wall 1.40 1.40 1.30 0.80 0.0 m 0.02 0.01 0.00 industrial street
+decal poster_work_1 wall 0.93 1.25 1.70 0.80 0.0 a 0.60 0.47 0.37 industrial
+decal poster_work_2 wall 0.93 1.25 1.70 0.80 0.0 a 0.66 0.61 0.51 industrial
+decal poster_work_3 wall 0.92 1.25 1.70 0.80 0.0 a 0.61 0.53 0.45 industrial
+decal poster_work_4 wall 0.96 1.25 1.70 0.80 0.0 a 0.47 0.42 0.37 industrial street
+decal safety_1 wall 0.60 0.60 1.80 0.80 0.0 a 0.69 0.59 0.22 industrial
+decal safety_2 wall 0.60 0.60 1.80 0.80 0.0 a 0.66 0.56 0.15 industrial
+decal safety_3 wall 0.60 0.60 1.80 0.80 0.0 a 0.53 0.31 0.31 industrial
+decal safety_4 wall 0.60 0.60 1.80 0.80 0.0 a 0.43 0.54 0.65 industrial cold
+decal graffiti_1 wall 2.20 1.22 1.30 0.80 0.0 a 0.50 0.26 0.73 industrial street
+decal graffiti_2 wall 2.00 1.14 1.30 0.80 0.0 a 0.24 0.09 0.00 industrial street
+decal graffiti_3 wall 2.20 1.22 1.40 0.80 0.0 a 0.04 0.23 0.32 street
+decal graffiti_4 wall 1.60 1.24 1.30 0.80 0.0 a 0.75 0.00 0.01 industrial street
+decal fusebox_1 wall 0.60 0.80 1.50 0.80 0.0 a 0.07 0.07 0.02 industrial
+decal fusebox_2 wall 0.62 0.80 1.20 0.80 0.0 a 0.66 0.00 0.03 industrial clean
+decal schematic_1 wall 1.00 0.75 1.60 0.80 0.0 a 0.56 0.52 0.44 industrial
+decal schematic_2 wall 1.00 0.78 1.60 0.80 0.0 a 0.57 0.57 0.57 industrial clean
+decal handprints_1 wall 1.00 1.00 1.20 0.80 0.0 m 0.13 0.05 0.00 industrial street
+decal neon_work_1 wall 1.00 1.00 2.20 0.80 3.0 a 1.00 0.40 0.16 industrial
+decal neon_work_2 wall 1.20 0.67 2.40 0.80 3.0 a 0.14 1.00 0.20 industrial
+decal poster_ad_1 wall 0.96 1.25 1.70 0.80 0.0 a 0.41 0.33 0.40 street
+decal poster_ad_2 wall 0.93 1.25 1.70 0.80 0.0 a 0.48 0.56 0.45 street
+decal poster_ad_3 wall 0.96 1.25 1.70 0.80 0.0 a 0.35 0.36 0.40 street
+decal poster_ad_4 wall 0.95 1.25 1.70 0.80 0.0 a 0.61 0.53 0.42 street
+decal poster_ad_5 wall 0.96 1.25 1.70 0.80 0.0 a 0.51 0.38 0.17 street
+decal poster_ad_6 wall 0.94 1.25 1.70 0.80 0.0 a 0.49 0.49 0.42 street
+decal wanted_1 wall 0.79 1.10 1.70 0.80 0.0 a 0.64 0.62 0.57 street industrial
+decal wanted_2 wall 0.82 1.10 1.70 0.80 0.0 a 0.73 0.70 0.64 street
+decal neon_bar_1 wall 1.00 1.00 2.40 0.80 3.5 a 1.00 0.19 0.64 street
+decal neon_bar_2 wall 1.00 1.00 2.40 0.80 3.5 a 1.00 0.65 0.37 street
+decal neon_bar_3 wall 1.00 1.00 2.40 0.80 3.5 a 0.27 0.56 1.00 street
+decal neon_bar_4 wall 1.00 1.00 2.40 0.80 3.5 a 0.23 1.00 0.22 street
+decal menu_1 wall 0.93 1.20 1.60 0.80 0.0 a 0.29 0.30 0.31 street
+decal medposter_1 wall 0.77 1.10 1.70 0.80 0.0 a 0.73 0.76 0.78 clean
+decal medposter_2 wall 0.86 1.10 1.70 0.80 0.0 a 0.77 0.83 0.87 clean
+decal medposter_3 wall 0.82 1.10 1.70 0.80 0.0 a 0.76 0.75 0.73 clean
+decal screen_1 wall 1.20 0.68 1.80 0.80 1.8 a 0.59 0.78 1.00 clean
+decal screen_2 wall 1.20 0.67 1.80 0.80 1.8 a 0.33 0.67 0.95 clean industrial
+decal screen_3 wall 1.00 0.57 1.80 0.80 1.8 a 0.33 1.00 0.37 clean
+decal pictogram_1 wall 0.50 0.50 1.90 0.80 0.0 a 0.61 0.61 0.61 clean
+decal pictogram_2 wall 0.50 0.44 1.90 0.80 0.0 a 0.70 0.71 0.71 clean
+decal banner_1 wall 1.04 1.80 2.00 0.80 0.0 a 0.24 0.30 0.37 clean
+decal banner_2 wall 1.03 1.80 2.00 0.80 0.0 a 0.53 0.12 0.18 clean street
+decal frostwall_1 wall 1.60 1.60 1.60 0.80 0.0 a 0.95 0.96 1.00 cold
+decal frostwall_2 wall 1.40 1.40 1.40 0.80 0.0 a 0.90 0.94 1.00 cold
+decal frostwall_3 wall 0.93 1.20 2.00 0.80 0.0 a 0.84 0.91 1.00 cold
+decal icicles_1 wall 1.60 0.91 2.80 0.80 0.0 a 0.90 0.94 1.00 cold
+decal icicles_2 wall 1.20 0.93 2.80 0.80 0.0 a 0.98 0.98 1.00 cold
+decal rockpaint_1 wall 1.60 1.24 1.50 0.80 0.0 a 0.83 0.41 0.00 outdoor
+decal rockpaint_2 wall 1.40 1.40 1.50 0.80 0.0 a 0.33 0.17 0.00 outdoor alien
+decal vein_1 wall 1.40 1.40 1.40 0.80 0.0 a 1.00 0.70 0.25 outdoor industrial
+decal vein_2 wall 1.40 1.40 1.00 0.80 0.6 a 0.81 0.94 1.00 outdoor
+decal glyphwall_1 wall 1.09 1.40 1.80 0.80 2.5 a 0.15 0.98 0.99 alien
+decal glyphwall_2 wall 1.60 1.60 1.80 0.80 2.5 a 0.78 0.27 1.00 alien
+decal glyphwall_3 wall 1.60 1.60 1.80 0.80 1.6 a 0.99 0.99 1.00 alien
+decal glyphwall_4 wall 1.20 1.20 2.00 0.80 2.2 a 0.14 1.00 0.84 alien
+decal crystal_1 wall 1.20 1.20 1.00 0.80 1.4 a 0.84 0.56 1.00 alien
+decal crystal_2 wall 1.00 1.00 1.00 0.80 1.4 a 0.74 1.00 0.97 alien
+decal ivy_1 wall 1.24 1.60 1.80 0.80 0.0 a 0.16 0.33 0.00 garden
+decal ivy_2 wall 1.09 1.40 1.80 0.80 0.0 a 0.33 0.10 0.30 garden street
+decal ivy_3 wall 1.60 0.91 2.40 0.80 0.0 a 0.31 0.35 0.00 garden
+decal moss_1 wall 1.20 1.20 0.80 0.80 0.0 a 0.23 0.29 0.00 garden outdoor
+decal moss_2 wall 1.00 1.00 2.00 0.80 0.0 a 0.73 0.38 0.00 garden

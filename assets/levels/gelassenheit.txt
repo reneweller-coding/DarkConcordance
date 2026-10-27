@@ -63,6 +63,9 @@ ysolde  | 3 9   | ysolde   | y300 | job15:y302 done.sterbegaerten:y310 job16:y31
 unzu    | 2 27  | terminal | u300 | done.sterbegaerten:u310 done.werft:u320 done.anhoerung:u330 done.rechenmond:u340
 kiri    | 9 20  | kiri     | k300
 ausgabe | 15 10 | terminal | a300
+dorra   | 2 3   | dorra    | cd3a | done.sterbegaerten:cd3c done.werft:cd3d done.tale_dorra:cd3e done.rechenmond:cd3f
+corvin  | 3 2   | corvin   | cc3a | done.sterbegaerten:cc3c done.werft:cc3d done.tale_dorra:cc3e done.anhoerung:cc3f
+ione    | 3 3   | ione     | ci3a | done.werft:ci3d done.tale_dorra:ci3e done.rechenmond:ci3f
 
 [talk]
 y300 | ysolde  | -        | y300_a>y301
@@ -89,6 +92,29 @@ k300 | kiri    | -        | k300_a>k301 k300_b>-
 k301 | kiri    | workshop |
 a300 | ausgabe | -        | a300_a>a301 a300_b>-
 a301 | ausgabe | shop     |
+cd3a    | dorra  | -             | cd3a_a>cd3b comp.bye>-
+cd3b    | dorra  | -             |
+cd3c    | dorra  | -             | comp.bye>-
+cd3d    | dorra  | -             | tale.listen>cd3tale?!done.tale_dorra comp.bye>-
+cd3e    | dorra  | -             | comp.bye>-
+cd3f    | dorra  | -             | tale.listen>cd3tale?done.werft&!done.tale_dorra comp.bye>-
+cd3tale | dorra  | -             | tale.start>cd3go
+cd3go   | dorra  | go:tale_dorra |
+cc3a    | corvin | -             | cc3a_a>cc3b comp.bye>-
+cc3b    | corvin | -             |
+cc3c    | corvin | -             | comp.bye>-
+cc3d    | corvin | -             | tale.tell.dorra>cc3td?hero.dorra&!done.tale_dorra comp.bye>-
+cc3e    | corvin | -             | comp.bye>-
+cc3f    | corvin | -             | tale.tell.dorra>cc3td?hero.dorra&done.werft&!done.tale_dorra comp.bye>-
+cc3td   | corvin | -             | tale.start>cc3gd
+cc3gd   | corvin | go:tale_dorra |
+ci3a    | ione   | -             | ci3a_a>ci3b comp.bye>-
+ci3b    | ione   | -             |
+ci3d    | ione   | -             | tale.tell.dorra>ci3td?hero.dorra&!done.tale_dorra comp.bye>-
+ci3e    | ione   | -             | comp.bye>-
+ci3f    | ione   | -             | tale.tell.dorra>ci3td?hero.dorra&done.werft&!done.tale_dorra comp.bye>-
+ci3td   | ione   | -             | tale.start>ci3gd
+ci3gd   | ione   | go:tale_dorra |
 
 [lines]
 g_start | start | hero

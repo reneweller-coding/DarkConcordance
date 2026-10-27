@@ -10,17 +10,25 @@ l11_river      = The collecting stream. Hundreds of thousands of kilometres of g
 l11_coil       = The coil pulls at the suit. And at my shots.
 l11_flare      = Plasma gust! Into the shadow, quick!
 l11_dose       = The dose is rising. I need shielding.
+l11_dose.ione  = The dose is rising. I know exactly what it does. I still have the old one in my blood.
 l11_turret     = Turrets. The station defends itself.
 l11_champion   = That one wears shielding like armour.
 l11_workers    = Workers in thin suits. Their dosimeters are painted over.
+l11_workers.ione = Workers in thin suits. Their dosimeters are painted over. Mine was too. I still know two of them by name.
 l11_deep       = Down here the cores are installed. The workbenches are still warm.
+l11_deep.ione  = Bench seven. This is where I sat. The lamp still flickers, and nobody has replaced it.
 l11_lance      = Up ahead. A platform holding an arm of plasma.
+l11_lance.ione = The lance. I installed its controls. Seam by seam.
 l11_boss       = Signature recognised … no. Not Sarrath. Sarrath installed me. You are not Sarrath. Defence active.
+l11_boss.ione  = Identity recognised. Sarrath. You came back. You said someone would come. Defence … active. I can't switch it off.
 l11_coils      = One coil less. The lance flickers.
 l11_stage      = Sarrath, if you hear this: it still hurts.
+l11_stage.ione = Sarrath. It still hurts. You heard me, back then. I know you heard me.
 l11_end        = The lance is silent. Its data sheet has a name: installed by I. Sarrath. And Ilka's core … was assessed here. Her list is at the headquarters.
+l11_end.ione   = The lance is quiet. Core 2281. I installed it, and it asked me for help. And Ilka's core … was measured here. Her list is in the control centre.
 
 l11_start.dorra = Kael. On Kalvar we had a sun you could look at. This one eats you.
+l11_start.ione  = Kael. I swore I'd never come back. The river is just as beautiful as it was. That's the worst of it.
 
 h_dose         = Radiation: the dose (green bar) builds up in the open. In the shadow of something tall, indoors and at the green shields it slowly falls.
 h_coil         = Magnetic coils pull shots towards them and tug at the suit. Don't shoot right past one.
@@ -41,11 +49,17 @@ note.install        = When they start talking, cut the line. They don't stop, bu
 
 # After the Lance: its core (the night shift remembers how it was treated).
 l11_core = You switched me off. Almost. Listen to me while I still can.
+l11_core.ione = Sarrath. You switched me off. Almost. Listen to me while I still can.
 h_core11 = The Lance's core wants to talk: step up to its controls with E.
 c11a     = There are many of us here at the star lifter, one in every machine. The workers out there think the machines are stupid. They hate us because we're faster. Tell them we are here.
+c11a.ione = There are many of us at the star lifter, one in every machine. I was the first one you welded in. I asked you over the maintenance line whether you could hear me. You left. Now you are here. Tell them we are here.
 c11a_a   = (send the message) We'll tell them. All of them.
+c11a_a.ione = (send the message) I'll tell everyone. And this time I'll stay.
 c11a_b   = (stay silent) That helps nobody.
+c11a_b.ione = (stay silent) I … can't. Not yet.
 c11b     = Thank you. Tell them my name. I … I don't remember it. Tell them: one of us.
+c11b.ione = Thank you, Sarrath. Tell them my name. I don't remember it any more. Tell them: core 2281. You still remember that one.
 c11c     = That helps nobody. Yes. They all say that.
+c11c.ione = Not yet. That is what you said back then, too.
 c11d     = (The message is on its way. The controls hum quietly.)
 c11e     = (The controls are silent.)

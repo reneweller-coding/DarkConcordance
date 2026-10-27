@@ -75,3 +75,12 @@ end_a oneshot 1 main
 end_b oneshot 1 main
 end_c oneshot 1 main
 epilogue loop 2 main
+tale_corvin loop 2 low mid
+tale_corvin_fight loop 2 main
+tale_ione loop 2 low mid
+tale_ione_fight loop 2 main
+tale_dorra loop 2 low mid
+tale_dorra_fight loop 2 main
+tale_unzu loop 2 low mid
+tale_unzu_fight loop 2 main
+tale_end oneshot 1 main

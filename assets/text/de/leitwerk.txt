@@ -5,6 +5,7 @@ l24.intro = Ein Serversaal im Kern der Mühle. Mit den Übersteuerungscodes kann
 
 l24_start        = Der Serversaal. Kalt nach der Hitze draußen. Und still.
 l24_start.dorra  = Gestelle, so weit ich sehe. In jedem tausend Menschen.
+l24_start.ione   = Der Serversaal. Für so etwas habe ich einmal die Kühlung berechnet. Für ein Rechenzentrum, hat man mir gesagt.
 l24_ruul         = Ich brauche Zeit. Haltet sie mir vom Leib.
 l24_reinforce    = Säuberer! Sie kommen von überall.
 l24_racks        = In jedem dieser Gestelle tausend Menschen. Sie arbeiten, während wir hier kämpfen.
@@ -41,6 +42,7 @@ l25_start.dorra  = Eine Grubenkantine wie auf Kalvar. Bis auf den Geruch. Hier r
 l25_flicker      = Sie flimmern. Jetzt werden sie langsamer – oder ich schneller.
 l25_known        = Den da kenne ich. Ich habe ihn verkauft. Er erkennt mich.
 l25_known.dorra  = Die Frau dort hat eine Tätowierung wie ich früher. Kalvar.
+l25_known.ione   = Die da kenne ich. Ich habe sie eingebaut, Förderband vier. Sie hat mir damals ein Lied vorgesummt, das sie nicht vergessen wollte. Sie summt es noch.
 l25_delete       = Wo die weißen Würfel waren, ist nichts mehr. Nicht einmal der Boden.
 l25_night        = Die Nachtschicht hilft euch. Diesmal.
 l25_boss         = Bitte bewahren Sie Ruhe. Es gibt keinen Grund zur Sorge.

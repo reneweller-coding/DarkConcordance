@@ -5,6 +5,7 @@ l14.intro  = White. Then a window, and beyond it land that rises into the sky on
 
 k14_start        = I'm alive. Or someone who remembers being me.
 k14_start.dorra  = My arms. They're bare. The names are gone.
+k14_start.ione   = I'm breathing. And it doesn't hurt. For two years every breath has hurt.
 k14_window       = The land rises. It doesn't stop rising. Right over my head.
 k14_window.dorra = On Kalvar the sky was heavy below and empty above. Here, above is land.
 
@@ -24,12 +25,14 @@ b14b   = Done. You may now feel a little differently sorted. That is normal.
 b14c   = Your abilities have been re-sorted. A second time only after your next death. Little joke.
 s14a        = (In the mirror, a face without scars.) I look like someone who has never done anything.
 s14a.dorra  = (In the mirror, smooth skin where forty-one names were.) I need a tattooist. Today.
+s14a.ione   = (In the mirror no spots on the neck, no grey lips.) They healed me. Nobody asked whether I wanted it.
 
 gel.name   = Ring Serenity
 gel.intro  = A ring habitat a thousand kilometres in radius and three hundred wide. Seas, forests and towns on its inside, and over everything the arch of the far side, where at night the towns glitter. | Ysolde has a flat here by the garden. Unzu lies in the dock and is quieter than usual; Kiri came with him. | The act's goal: the Mill's override codes. With them one gets into the control room – and to Ilka.
 
 g_start        = Serenity. A garden, children, a fountain. And nobody is afraid.
 g_start.dorra  = Serenity. It smells of grass here. I had forgotten how grass smells.
+g_start.ione   = Serenity. Everything here is maintained. Every lamp, every pump. I don't know why that makes me angry.
 g_back         = Back on the ring. The tram hums. Someone laughs in the garden.
 g_back.dorra   = Back. The garden acts as if nothing has happened. For the garden nothing has.
 
@@ -72,3 +75,35 @@ a300   = DISPENSER GARDEN 4. What would you like? (Raw-material balance in scrap
 a300_a = Stims.
 a300_b = Nothing.
 a301   = Order open.
+
+# The companions
+cd3a       = New arms. Empty. I looked for a tattooist today. There isn't one on the ring. Nobody here wants anything on their skin that stays.
+cd3a_a     = What do you want done?
+cd3b       = Forty-one names. I know them all. I won't recite them to you. Not yet.
+cd3c       = They die here for fun. On Kalvar we died for something. I no longer know exactly what. That's the problem.
+cd3d       = The Kalvarers at the shipyard. One of them pitied me. I want to tell you what he pitied me for. Sit down. It's a chronicle, not a story.
+cd3tale    = (Dorra lays her forearms on the table, insides up. There is nothing there. She looks anyway.)
+cd3go      = …
+cd3e       = Now you know day forty-one. Josse would have said: stop telling it to yourself over and over, Dorra. He never said what I should do instead.
+cd3f       = Unzu has his memories back. I'd like to be rid of mine. We should swap.
+cc3a       = I looked in the mirror. Not a scratch. I look like someone who never did anything. A lie that suits me.
+cc3a_a     = Are you getting used to it?
+cc3b       = No. But I've got used to worse. It's my only talent that costs nothing.
+cc3c       = A young woman told me about her two hundredth death. Proudly. In the Fringe that would be two hundred graves. I smiled. What else can you do.
+cc3d       = Dorra wants to talk. Let her start. If you interrupt her, she'll never start again.
+cc3d.dorra = The Kalvarers, Dorra. You want to talk about it, I can see it. And if not: I'm sitting here anyway.
+cc3e       = Forty-one. I never counted how many there were with me. Dorra learnt every name. I'm ashamed in a new way.
+cc3e.dorra = Forty-one, Dorra. I never counted how many there were with me. You learnt every name. I don't know which of us is doing the right thing.
+cc3f       = Regret admitted that it never asked. No excuses. I've never seen anyone so honest who gets so little out of it.
+cc3td      = (Corvin pours another without asking. Ione puts her glass down. Unzu, from the speaker on the wall: "I'm recording.")
+cc3gd      = …
+ci3a       = I breathe, and it doesn't hurt. They healed me without asking. I don't know whether to be grateful or angry. Right now I'm both, taking turns, every ten minutes.
+ci3a_a     = And now?
+ci3b       = Now I have time. I never had any. I've started a list of what I want to do with it. It's still empty.
+ci3d       = Dorra hasn't said a word since the shipyard. I know that. She'll tell it when she can stand it herself.
+ci3d.dorra = Dorra. The Kalvarers. Tell us, if you want. I told you mine.
+ci3e       = Siel told her there were still people in the station, and Dorra didn't believe her. I didn't believe Brask either. With me he was wrong. With her, Siel was right. That's the whole difference.
+ci3e.dorra = Siel told you there were still people in the station, and you didn't believe her. I didn't believe Brask either. With me he was wrong. With you she was right. That's the whole difference, and it isn't your fault.
+ci3f       = Unzu has his memories back and isn't talking any more. I was a technician. I know when a machine is thinking. He's thinking.
+ci3td      = (Ione moves her chair closer. Corvin looks out of the window, where the land climbs into the sky, so that Dorra isn't being looked at.)
+ci3gd      = …

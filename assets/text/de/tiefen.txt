@@ -8,6 +8,7 @@ d_champion     = Einer mit Ring. Die hier unten werden alt, und wer alt wird, wi
 d_guard        = Da vorn wacht etwas. Etwas, das nicht auf dem Plan steht.
 d_end          = Der Aufzug fährt wieder hoch. Beim nächsten Mal sieht hier unten alles anders aus.
 d_start.dorra  = Die Wartungsebenen. Erinnert mich an die Stollen auf Kalvar. Nur dass die Stollen dort stillhielten.
+d_start.ione   = Die Wartungsebenen. Die Gänge stimmen nie mit dem Plan überein. HAUSMEISTER sagt, das liege am Plan. Ich sage: am Wartungsbudget.
 
 h_depths       = Die Tiefen: jedes Mal neu angelegt, die Gegner so stark wie du. Am Ende wartet ein Wächter vor dem Lastenaufzug.
 

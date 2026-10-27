@@ -60,9 +60,12 @@ route    9 21  11 9  13 8  14 7  11 9  11 20  16 20  20 20
 [npcs]
 # Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...
 ruul  | 14 6  | ruul     | r400 | job20:r402 done.velm2:r410 job21:r412 done.brannt:r420 job22:r422 gamedone:r430
-unzu  | 3 20  | terminal | u400 | done.velm2:u410 done.brannt:u420 gamedone:u430
+unzu  | 3 20  | terminal | u400 | done.tale_unzu:u4after done.velm2:u410 done.brannt:u420 gamedone:u430
 kiri  | 16 32 | kiri     | k400
 funk  | 10 35 | terminal | f400
+dorra  | 13 5  | dorra    | cd4a | done.tale_unzu:cd4c done.velm2:cd4d done.brannt:cd4e
+corvin | 14 4  | corvin   | cc4a | done.tale_unzu:cc4b done.velm2:cc4c done.erzstrom:cc4d
+ione   | 14 5  | ione     | ci4a | done.tale_unzu:ci4b done.brannt:ci4c
 
 [talk]
 r400 | ruul | -        | r400_a>r401
@@ -75,14 +78,29 @@ r420 | ruul | -        | r420_a>r421
 r421 | ruul | job22    |
 r422 | ruul | -        |
 r430 | ruul | -        |
-u400 | unzu | -        |
-u410 | unzu | -        |
-u420 | unzu | -        |
+u400 | unzu | -        | u4tale.ask>u4tale?!done.tale_unzu comp.bye>-
+u410 | unzu | -        | u4tale.ask>u4tale?!done.tale_unzu comp.bye>-
+u420 | unzu | -        | u4tale.ask>u4tale?!done.tale_unzu comp.bye>-
 u430 | unzu | -        |
 k400 | kiri | -        | k400_a>k401 k400_b>-
 k401 | kiri | workshop |
 f400 | funk | -        | f400_a>f401 f400_b>-
 f401 | funk | shop     |
+cd4a | dorra  | -            | cd4a_a>cd4b comp.bye>-
+cd4b | dorra  | -            |
+cd4c | dorra  | -            | comp.bye>-
+cd4d | dorra  | -            | comp.bye>-
+cd4e | dorra  | -            | comp.bye>-
+cc4a | corvin | -            | comp.bye>-
+cc4b | corvin | -            | comp.bye>-
+cc4c | corvin | -            | comp.bye>-
+cc4d | corvin | -            | comp.bye>-
+ci4a | ione   | -            | comp.bye>-
+ci4b | ione   | -            | comp.bye>-
+ci4c | ione   | -            | comp.bye>-
+u4tale  | unzu | -           | tale.start>u4go
+u4go    | unzu | go:tale_unzu |
+u4after | unzu | -           |
 
 [lines]
 s4_start | start | hero

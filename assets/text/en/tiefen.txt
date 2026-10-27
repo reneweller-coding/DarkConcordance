@@ -8,6 +8,7 @@ d_champion     = One with a ring. Things grow old down here, and what grows old 
 d_guard        = Something keeps watch up ahead. Something that is not on the plan.
 d_end          = The lift goes back up. Next time everything down here will look different.
 d_start.dorra  = The maintenance levels. Reminds me of the galleries on Kalvar. Only those kept still.
+d_start.ione   = The maintenance levels. The corridors never match the plan. HAUSMEISTER says the plan is to blame. I say the maintenance budget is.
 
 h_depths       = The Depths: laid out anew every time, the enemies as strong as you. At the end a guardian waits by the freight lift.
 

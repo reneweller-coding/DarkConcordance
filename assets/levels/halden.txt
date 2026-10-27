@@ -46,6 +46,10 @@ genpack       %T      1.2
 genpack       ---     1.2
 genpack       ETT     2
 genpack       ''      0.8
+natives       crab
+genpack       11      2.0
+genpack       1}T     1.5
+genpack       111     1.0
 gendensity    1.15
 genelite      0.32
 gennote       note.notice8 note.camp note.okafor note.relay8 note.child8

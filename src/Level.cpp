@@ -19,10 +19,6 @@
 namespace spaceopera
 {
 
-namespace
-{
-
-/** @brief A cheap hash of a cell and a salt. */
 unsigned hashCell( int r, int c, int salt )
 {
     unsigned h = (unsigned)( r * 73856093 ) ^ (unsigned)( c * 19349663 ) ^ (unsigned)( salt * 83492791 );
@@ -31,11 +27,13 @@ unsigned hashCell( int r, int c, int salt )
     return h ^ ( h >> 15 );
 }
 
-/** @brief The hash as a number in 0..1. */
 float hash01( int r, int c, int salt )
 {
     return ( hashCell( r, c, salt ) & 0xffff ) / 65535.0f;
 }
+
+namespace
+{
 
 /** @brief Cuts the blanks off both ends. */
 std::string trim( const std::string &s )
@@ -594,7 +592,8 @@ bool Level::loadText( const std::string &text )
                   key == "crust" || key == "cuts" || key == "pulses" || key == "jetfuel" || key == "reluctant" ||
                   key == "waterfalls" || key == "swarm" || key == "clock" || key == "zaps" || key == "crowd" ||
                   key == "pressureafter" || key == "ventlook" || key == "lava" || key == "duel" || key == "squad" ||
-                  key == "shadow" )
+                  key == "shadow" || key == "teller" || key == "grade" || key == "rain" || key == "census" ||
+                  key == "bossname" )
         {
             std::string rest;
             std::getline( kv, rest );
@@ -732,12 +731,23 @@ bool Level::loadText( const std::string &text )
             int r, c;
             while ( kv >> r >> c ) m_ilkaWay.push_back( { r, c } );
         }
+        else if ( key == "native" )
+        {
+            Native n = { 0, 0, 0 };
+            kv >> n.m_row >> n.m_col >> n.m_which;
+            m_natives.push_back( n );
+        }
+        else if ( key == "natives" )
+        {
+            std::string name;
+            while ( kv >> name ) m_nativeNames.push_back( name );
+        }
         else if ( key == "elite" )
         {
             int         r = 0, c = 0;
             std::string boss;
             kv >> r >> c >> boss;
-            m_elites[r * 1000 + c] = boss == "boss" ? 2 : 1;
+            m_elites[r * 1000 + c] = boss == "boss" ? 2 : ( boss == "leader" ? 3 : 1 );
         }
         else if ( key == "lock" || key == "note" )
         {
@@ -1031,14 +1041,21 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     std::map<int, MeshBuilder> themed;
     MeshBuilder *const allRock = &rock, *const allHull = &hull, *const allFloor = &floor, *const allGround = &ground,
                        *const allPlate = &plate;
-    struct Glow
-    {
-        Vector3 m_at;
-        Vector3 m_half;
-        Vector4 m_glow;
-        bool    m_cut = false;   ///< in a wall: dissolves with it
-    };
+    using Glow = GlowBox;
     std::vector<Glow> glows;
+    m_faces.clear();
+    // A wall's or a floor's variants as a patchwork: floors in ragged patches of a few cells, walls in short runs; the
+    // plain one is laid most.
+    auto variant = [&]( int surface, int r, int c, bool wall ) -> int
+    {
+        auto v = s.m_variants.find( surface );
+        if ( v == s.m_variants.end() || v->second.empty() ) return surface;
+        unsigned h = wall ? hashCell( r / 2, ( c + ( r / 2 ) % 2 ) / 2, 141 )
+                          : hashCell( ( r + (int)( hashCell( r / 3, c, 143 ) % 2 ) ) / 3,
+                                      ( c + (int)( hashCell( r, c / 3, 144 ) % 2 ) ) / 3, 142 );
+        int      n = (int)v->second.size(), pick = (int)( h % (unsigned)( n + 2 ) );
+        return pick < n ? v->second[pick] : surface;
+    };
 
     auto isVoid = [&]( int r, int c ) { return cell( r, c ).m_kind == CellE::VOID; };
     auto open = [&]( int r, int c ) { return cell( r, c ).m_kind != CellE::ROCK; };
@@ -1096,6 +1113,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             metal.box( place( { bar.x, y, bar.z }, { 0.0f, yaw, 0.0f } ), { 0.02f, 0.38f, 0.015f } );
         }
         int kind = ( h >> 8 ) % 4;
+        if ( kind >= 2 && cell( r, c ).m_kind == CellE::FLOOR ) m_faces.push_back( { r, c, d, 0.06f, base } );
         if ( kind == 0 )
         {
             crate.m_color = { 60, 48, 40, 255 };
@@ -1212,11 +1230,16 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         {
             const Cell  &k = cell( r, c );
             int          ownWall = s.m_themeWall[(int)theme( r, c )], ownFloor = s.m_themeFloor[(int)theme( r, c )];
-            MeshBuilder &rock = ownWall ? themed[( ownWall - 1 ) * 2 + 1] : *allRock;
-            MeshBuilder &hull = ownWall ? themed[( ownWall - 1 ) * 2 + 1] : *allHull;
-            MeshBuilder &floor = ownFloor ? themed[( ownFloor - 1 ) * 2] : *allFloor;
-            MeshBuilder &ground = ownFloor ? themed[( ownFloor - 1 ) * 2] : *allGround;
-            MeshBuilder &plate = ownFloor ? themed[( ownFloor - 1 ) * 2] : *allPlate;
+            int          rockS = variant( ownWall ? ownWall - 1 : s.m_rock, r, c, true );
+            int          hullS = variant( ownWall ? ownWall - 1 : s.m_hull, r, c, true );
+            int          floorS = variant( ownFloor ? ownFloor - 1 : s.m_floor, r, c, false );
+            int          groundS = variant( ownFloor ? ownFloor - 1 : s.m_rock, r, c, false );
+            int          plateS = variant( ownFloor ? ownFloor - 1 : s.m_hull, r, c, false );
+            MeshBuilder &rock = ownWall || rockS != s.m_rock ? themed[rockS * 2 + 1] : *allRock;
+            MeshBuilder &hull = ownWall || hullS != s.m_hull ? themed[hullS * 2 + 1] : *allHull;
+            MeshBuilder &floor = ownFloor || floorS != s.m_floor ? themed[floorS * 2] : *allFloor;
+            MeshBuilder &ground = ownFloor || groundS != s.m_rock ? themed[groundS * 2] : *allGround;
+            MeshBuilder &plate = ownFloor || plateS != s.m_hull ? themed[plateS * 2] : *allPlate;
             // Its own surfaces carry their colour: the tints are for the common ones.
             Look look = Looks[(int)theme( r, c )];
             if ( ownWall ) look.m_rock = look.m_lining = WHITE, look.m_liningChance *= 0.3f;
@@ -1618,6 +1641,12 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                         hazard.box( place( { p.x + n.x * 0.02f, y0 + 0.15f, p.z + n.z * 0.02f }, { 0.0f, yaw, 0.0f } ),
                                     { 0.93f, 0.15f, 0.04f } );
                 }
+                // A face without a rib or shelves takes a decal (in front of the lining if it has one).
+                bool shelved = theme( r, c ) == ThemeE::BAR && m_peaceful && DR[d] < 0;
+                bool board = r == m_boardRow && c >= m_boardCol && c < m_boardCol + m_boardWidth;
+                if ( k.m_kind == CellE::FLOOR && ( r + c ) % 2 != 0 && !shelved && !board )
+                    m_faces.push_back(
+                        { r, c, d, hash01( r, c, 11 + d ) < look.m_liningChance ? 0.1f : 0.025f, base } );
                 if ( ( r + c ) % 2 == 0 )
                 {
                     Vector3 p = Vector3Add( face, Vector3Scale( n, 0.12f ) );
@@ -2326,6 +2355,8 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     }
 
 #pragma warning( pop )
+    DressKit kit{ metal, rust, crate, box, cloth, hazard, grate, rock, hull, glows };
+    dress( s, kit );
     auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f } )
     {
         for ( Mesh mesh : b.build() )

@@ -19,9 +19,12 @@ l5_clean       = Kein einziges Gestell zerbrochen. Wer immer da drin ist, kann n
 l5_broken      = Ich habe Gestelle zerbrochen. Ich werde nie wissen, wen.
 
 l5_start.dorra = Die Kernbank. Auf Kalvar haben wir Erz gelagert. Hier lagern sie Menschen.
+l5_start.ione  = Die Kernbank. Gestelle wie die, die ich verkabelt habe. Die gleiche Kühlung, das gleiche Summen.
 l5_rack.dorra  = Vorsicht mit dem Hammer – in den Gestellen steckt jemand!
+l5_rack.ione   = Nicht die Gestelle! Ich weiß, was drin ist. Ich habe solche verkabelt.
 l5_boss.dorra  = Mutter Siebenfach. Sieben Körper. Ich habe einen Hammer. Das wird reichen.
 l5_end.dorra   = Sie ist still. Und Ilka … verkauft. An die Mühle. Dann gehen wir eben zur Mühle.
+l5_end.ione    = Sie ist still. Alle sieben. Und Ilkas Kern ist nicht hier – verkauft an die Mühle. Ich kenne den Weg, den sie nehmen. Ich habe ihn gewartet.
 
 h_racks        = Die Gestelle sind voller Kerne – gestohlener Menschen. Ein Treffer zerstört welche. Die Zielhilfe schießt nicht hindurch; Granaten, Bolzen und Explosionen schon.
 h_shells       = Hüllen: langsam, zäh, kratzen aus der Nähe. Der Kern leuchtet hinten am Kopf.

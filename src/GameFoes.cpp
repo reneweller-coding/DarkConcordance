@@ -36,18 +36,13 @@ constexpr float StompDamage = 24.0f;
 constexpr float StompRadius = 5.0f;
 constexpr float RushDamage = 30.0f;
 
-/** @brief A champion's gift as a colour: swift green, armoured blue, volatile orange, berserk red. */
-const Color AffixColor[4] = {
-    { 120, 255, 150, 255 }, { 140, 185, 255, 255 }, { 255, 140, 50, 255 }, { 255, 55, 70, 255 }
-};
-
-/** @brief The key of a kind's name in the texts. */
-const char *foeKey( int kind )
-{
-    static const char *keys[] = { "foe.louse", "foe.welder", "foe.baton",  "foe.gunner",  "foe.shield", "foe.heavy",
-                                  "foe.drone", "foe.saw",    "foe.bomber", "foe.taxator", "foe.shell" };
-    return keys[kind];
-}
+/** @brief A champion's gift as a colour: swift green, armoured blue, volatile amber, berserk red, fiery orange,
+ *         charged cyan, flickering violet, shielded white, splitting lime, bloodthirsty crimson, icy pale blue,
+ *         summoning magenta (as GameFamilies.cpp). */
+const Color AffixColor[12] = { { 120, 255, 150, 255 }, { 140, 185, 255, 255 }, { 255, 200, 60, 255 },
+                               { 255, 55, 70, 255 },   { 255, 110, 30, 255 },  { 110, 230, 255, 255 },
+                               { 200, 120, 255, 255 }, { 230, 240, 255, 255 }, { 200, 255, 80, 255 },
+                               { 170, 20, 50, 255 },   { 190, 240, 255, 255 }, { 255, 80, 220, 255 } };
 
 }   // namespace
 
@@ -119,13 +114,22 @@ void Game::buildFoes()
 
 void Game::makeElite( Foe &f, int elite )
 {
-    // A champion: much tougher, with one gift; the guardian of a level's end tougher still.
+    // A champion: much tougher, with one of twelve gifts (two from the third act on); the guardian of a level's end
+    // tougher still (two gifts after the first act); a leader (3): a name, two gifts, an escort round it.
     f.m_elite = elite;
-    f.m_affix = (int)( rnd() * 4.0f ) % 4;
-    float more = elite == 2 ? 7.0f : 3.2f;
-    if ( f.m_affix == 1 ) more *= 0.75f;   // it halves what hits it anyway
+    const std::string &act = m_level.m_act;
+    bool               late = act == "act.3" || act == "act.4";
+    f.m_affix = (int)( rnd() * 12.0f ) % 12;
+    f.m_affix2 = -1;
+    if ( elite == 3 || late || ( elite == 2 && act != "act.1" ) ) do
+            f.m_affix2 = (int)( rnd() * 12.0f ) % 12;
+        while ( f.m_affix2 == f.m_affix );
+    float more = elite == 2 ? 7.0f : ( elite == 3 ? 5.0f : 3.2f );
+    if ( hasGift( f, 1 ) ) more *= 0.75f;   // it halves what hits it anyway
     f.m_hp *= more;
     f.m_hpMax = f.m_hp;
+    if ( hasGift( f, 7 ) ) f.m_ward = f.m_hpMax * 0.35f;   // shielded
+    if ( elite == 3 ) f.m_title = (int)( rnd() * 24.0f ) % 24;
 }
 
 float Game::foeTall( const Foe &f ) const
@@ -762,26 +766,33 @@ void Game::drawFoeHud( int w, int h, float s )
     // Champions near by: name and gift over the head, a thin bar.
     for ( const Foe &f : m_foes )
     {
-        if ( !f.m_alive || f.m_hidden || f.m_elite != 1 || Vector3Distance( f.m_pos, m_pos ) > 18.0f ) continue;
+        if ( !f.m_alive || f.m_hidden || ( f.m_elite != 1 && f.m_elite != 3 ) ||
+             Vector3Distance( f.m_pos, m_pos ) > 18.0f )
+            continue;
         float   top = f.m_kind == FoeE::DRONE ? 0.6f : ( human( f ) ? foeTall( f ) + 0.4f : foeHeight( f ) + 0.9f );
         Vector3 head = Vector3Add( f.m_pos, { 0.0f, top, 0.0f } );
         if ( Vector3DotProduct( Vector3Subtract( head, m_cam.position ),
                                 Vector3Subtract( m_cam.target, m_cam.position ) ) <= 0.0f )
             continue;
-        Vector2     q = GetWorldToScreenEx( head, m_cam, w, h );
-        Color       c = AffixColor[std::max( 0, f.m_affix )];
-        const char *noun = foeNoun( f );
-        // The gift's word agrees with the name (German: "Gepanzerte Hülle", "Gepanzerter Abschöpfer").
-        bool fem = hasText( TextFormat( "%s.g", noun ) ) && std::string( tr( TextFormat( "%s.g", noun ) ) ) == "f";
-        std::string name =
-            std::string( tr( TextFormat( fem ? "elite.%d.f" : "elite.%d", f.m_affix ) ) ) + " " + tr( noun );
-        text( name.c_str(), q.x, q.y - 30.0f * s, 18, c );
+        Vector2 q = GetWorldToScreenEx( head, m_cam, w, h );
+        Color   c = AffixColor[std::max( 0, f.m_affix )];
+        // The gifts' words agree with the name; a leader's own name over it.
+        std::string name = foeName( f );
+        if ( f.m_elite == 3 )
+        {
+            std::string own = std::string( tr( TextFormat( "leader.name.%d", f.m_title ) ) ) + " " +
+                              tr( TextFormat( "leader.title.%d", f.m_title % 16 ) );
+            text( own.c_str(), q.x, q.y - 52.0f * s, 20, { 255, 210, 110, 255 } );
+        }
+        text( name.c_str(), q.x, q.y - 30.0f * s, f.m_elite == 3 ? 16 : 18, c );
         float bw = 90.0f * s;
         DrawRectangle( (int)( q.x - bw * 0.5f ), (int)( q.y - 8.0f * s ), (int)bw, (int)( 6.0f * s ),
                        { 20, 0, 0, 200 } );
         DrawRectangle( (int)( q.x - bw * 0.5f ), (int)( q.y - 8.0f * s ),
                        (int)( bw * Clamp( f.m_hp / f.m_hpMax, 0.0f, 1.0f ) ), (int)( 6.0f * s ), c );
     }
+    drawTargetInfo( w, h, s );
+    drawCallouts( w, h, s );
     // The boss: a bar across the top once he is awake.
     int b = boss();
     if ( b < 0 || !m_foes[b].m_awake || m_foes[b].m_kind == FoeE::SHELL ) return;
@@ -796,8 +807,9 @@ void Game::drawFoeHud( int w, int h, float s )
                                               : f.m_variant == 7 ? "boss.foreman"
                                               : f.m_variant == 8 ? "boss.varn"
                                                                  : "boss.taxator" ) )
-                           : std::string( TextFormat( tr( "boss.guardian" ), tr( foeKey( (int)f.m_kind ) ) ) );
-    float       pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s;
+                           : std::string( TextFormat( tr( "boss.guardian" ), foeName( f ).c_str() ) );
+    if ( !m_level.word( "bossname" ).empty() ) name = tr( m_level.word( "bossname" ) );   // a tale's own
+    float pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s;
     text( name.c_str(), w * 0.5f, py - 4.0f * s, 24, { 255, 210, 150, 240 } );
     DrawRectangle( (int)px, (int)( py + 26 * s ), (int)pw, (int)( 12 * s ), { 30, 10, 0, 200 } );
     DrawRectangleGradientH( (int)px, (int)( py + 26 * s ), (int)( pw * Clamp( f.m_hp / f.m_hpMax, 0.0f, 1.0f ) ),
@@ -812,8 +824,19 @@ void Game::autoSkills( GameInput &in, const Target &best, float bestDist )
 {
     // Points go where they help most (the active skills first, then the hero's strengths), then the skills are used
     // as a player would: a grenade or a quake into a crowd, overcharge on a big one, a roll or a charge to get out.
-    static const int order[2][8] = { { 6, 5, 2, 1, 3, 0, 7, 4 }, { 14, 8, 9, 10, 11, 15, 12, 13 } };
-    int              hero = m_heroKind == HeroE::DORRA ? 1 : 0;
+    static const int order[3][8] = { { 6, 5, 2, 1, 3, 0, 7, 4 },
+                                     { 14, 8, 9, 10, 11, 15, 12, 13 },
+                                     { 21, 22, 16, 17, 18, 23, 19, 20 } };
+    int              hero = heroIndex();
+    if ( hero == 3 )
+    {
+        // Unzu's drone has no skills to learn: the jammer once two come close.
+        int close = 0;
+        for ( const Foe &f : m_foes )
+            if ( f.m_alive && !f.m_hidden && f.m_awake && Vector3Distance( f.m_pos, m_pos ) < 5.0f ) ++close;
+        if ( close >= 2 && m_boltTimer <= 0.0f ) in.m_special = true;
+        return;
+    }
     while ( m_progress.m_points > 0 )
     {
         int pick = -1;
@@ -827,6 +850,11 @@ void Game::autoSkills( GameInput &in, const Target &best, float bestDist )
         ++m_progress.m_ranks[pick];
         --m_progress.m_points;
         refreshStats();
+    }
+    if ( hero == 2 )
+    {
+        autoIone( in, best, bestDist );
+        return;
     }
     if ( best.m_kind != 0 ) return;
     const Foe &t = m_foes[best.m_index];

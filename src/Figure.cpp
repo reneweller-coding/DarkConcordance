@@ -55,6 +55,9 @@ Matrix along( Vector3 d, Vector3 up, Vector3 p )
 
 void Figure::build( const FigureSurfaces &s )
 {
+    // Built again when the gear changes: the old parts go first.
+    for ( Part &part : m_parts ) UnloadMesh( part.m_mesh );
+    m_parts.clear();
     m_look = s;
     // Each part is its own small mesh in its bone's frame.
     auto add = [&]( BoneE bone, int surface, Vector4 glow, const std::function<void( MeshBuilder & )> &shape,
@@ -124,6 +127,22 @@ void Figure::build( const FigureSurfaces &s )
         rbox( BoneE::SPINE, s.m_armor, { side * 0.33f, 0.47f, 0.0f }, { 0.11f, 0.075f, 0.14f }, 0.04f,
               { 0.0f, 0.0f, -side * 0.3f } );
     }
+    // The suit's weight: an exoskeleton's frame and heavy pauldrons, a plated chest, or little but padding.
+    if ( s.m_heft >= 1 ) rbox( BoneE::SPINE, s.m_armor, { 0.0f, 0.36f, 0.17f }, { 0.2f, 0.14f, 0.045f }, 0.03f );
+    if ( s.m_heft >= 2 )
+    {
+        for ( float side : { -1.0f, 1.0f } )
+        {
+            rbox( BoneE::SPINE, s.m_dark, { side * 0.36f, 0.53f, 0.0f }, { 0.13f, 0.05f, 0.16f }, 0.03f,
+                  { 0.0f, 0.0f, -side * 0.35f } );
+            add( BoneE::SPINE, s.m_metal, own,
+                 [&]( MeshBuilder &b ) { b.cylinder( place( { side * 0.2f, 0.1f, -0.2f } ), 0.025f, 0.5f, 8 ); } );
+        }
+        rbox( BoneE::SPINE, s.m_metal, { 0.0f, 0.64f, -0.18f }, { 0.16f, 0.05f, 0.06f }, 0.02f );
+    }
+    if ( s.m_trim.x >= 0.0f )
+        rbox( BoneE::SPINE, s.m_glow, { 0.0f, 0.44f, 0.215f }, { 0.14f, 0.006f, 0.006f }, 0.003f, { 0, 0, 0 },
+              s.m_trim );
     rbox( BoneE::SPINE, s.m_glow, { 0.13f, 0.47f, -0.335f }, { 0.02f, 0.012f, 0.006f }, 0.004f, { 0, 0, 0 }, Status );
     rbox( BoneE::SPINE, s.m_glow, { 0.07f, 0.47f, -0.335f }, { 0.02f, 0.012f, 0.006f }, 0.004f, { 0, 0, 0 }, Status );
     rbox( BoneE::SPINE, s.m_glow, { -0.13f, 0.47f, -0.335f }, { 0.012f, 0.012f, 0.006f }, 0.004f, { 0, 0, 0 }, Alert );
@@ -169,30 +188,145 @@ void Figure::build( const FigureSurfaces &s )
             rbox( BoneE::HEAD, s.m_dark, { side * 0.034f, 0.14f, 0.122f }, { 0.013f, 0.007f, 0.004f }, 0.003f );
     }
 
-    // The weapon, along its bone's +z from the grip.
+    // The weapon, along its bone's +z from the grip; its family decides its shape, its tier adds metal and light.
+    auto barrel = [&]( float z, float r, float len )
+    {
+        add( BoneE::WEAPON, s.m_metal, own, [&]( MeshBuilder &b )
+             { b.cylinder( place( { 0.0f, 0.015f, z }, { PI * 0.5f, 0.0f, 0.0f } ), r, len, 10 ); } );
+    };
     switch ( s.m_weapon )
     {
     case WeaponE::RIFLE:
-        rbox( BoneE::WEAPON, s.m_dark, { 0.0f, 0.0f, 0.0f }, { 0.04f, 0.065f, 0.22f }, 0.015f );
-        rbox( BoneE::WEAPON, s.m_metal, { 0.0f, 0.015f, 0.32f }, { 0.032f, 0.035f, 0.12f }, 0.012f );
-        add( BoneE::WEAPON, s.m_metal, own, [&]( MeshBuilder &b )
-             { b.cylinder( place( { 0.0f, 0.015f, 0.42f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.016f, 0.2f, 10 ); } );
-        rbox( BoneE::WEAPON, s.m_dark, { 0.0f, -0.02f, -0.3f }, { 0.03f, 0.055f, 0.1f }, 0.015f );
+    {
+        // The receiver, the grip and the stock all guns share.
+        float body = s.m_shape == 1 ? 0.16f : ( s.m_shape == 4 ? 0.2f : 0.22f );
+        rbox( BoneE::WEAPON, s.m_dark, { 0.0f, 0.0f, 0.0f }, { 0.04f, 0.065f, body }, 0.015f );
         rbox( BoneE::WEAPON, s.m_dark, { 0.0f, -0.1f, -0.08f }, { 0.022f, 0.06f, 0.03f }, 0.01f, { 0.3f, 0.0f, 0.0f } );
-        rbox( BoneE::WEAPON, s.m_metal, { 0.0f, -0.1f, 0.07f }, { 0.025f, 0.06f, 0.035f }, 0.01f );
+        if ( s.m_shape != 1 ) rbox( BoneE::WEAPON, s.m_dark, { 0.0f, -0.02f, -0.3f }, { 0.03f, 0.055f, 0.1f }, 0.015f );
+        switch ( s.m_shape )
+        {
+        case 1:   // the carbine: short, a long magazine, a folding stock
+            barrel( 0.24f, 0.014f, 0.14f );
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, -0.12f, 0.06f }, { 0.022f, 0.08f, 0.03f }, 0.01f,
+                  { 0.25f, 0.0f, 0.0f } );
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, 0.0f, -0.25f }, { 0.012f, 0.04f, 0.1f }, 0.006f );
+            break;
+        case 2:   // the scattergun: a wide barrel, a drum below
+            add( BoneE::WEAPON, s.m_metal, own, [&]( MeshBuilder &b )
+                 { b.cylinder( place( { 0.0f, 0.02f, 0.38f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.038f, 0.24f, 12 ); } );
+            add( BoneE::WEAPON, s.m_dark, own, [&]( MeshBuilder &b )
+                 { b.cylinder( place( { 0.0f, -0.09f, 0.08f }, { 0.0f, 0.0f, PI * 0.5f } ), 0.06f, 0.05f, 14 ); } );
+            break;
+        case 3:   // the rail: very long, coils along it
+            barrel( 0.5f, 0.016f, 0.42f );
+            for ( int k = 0; k < 4; ++k )
+                add( BoneE::WEAPON, s.m_metal, own,
+                     [&]( MeshBuilder &b )
+                     {
+                         b.cylinder( place( { 0.0f, 0.015f, 0.28f + k * 0.11f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.032f,
+                                     0.03f, 12 );
+                     } );
+            rbox( BoneE::WEAPON, s.m_glow, { 0.0f, 0.06f, 0.4f }, { 0.006f, 0.006f, 0.22f }, 0.003f, { 0, 0, 0 },
+                  Cell );
+            break;
+        case 4:   // the plasma thrower: a bulky glowing chamber, a short muzzle
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, 0.03f, 0.2f }, { 0.055f, 0.06f, 0.09f }, 0.03f );
+            rbox( BoneE::WEAPON, s.m_glow, { 0.0f, 0.03f, 0.2f }, { 0.058f, 0.025f, 0.05f }, 0.012f, { 0, 0, 0 },
+                  Bolt );
+            barrel( 0.34f, 0.026f, 0.1f );
+            break;
+        case 5:   // the arc projector: two prongs and the light between them
+            for ( float side : { -1.0f, 1.0f } )
+                rbox( BoneE::WEAPON, s.m_metal, { side * 0.03f, 0.015f, 0.34f }, { 0.008f, 0.012f, 0.13f }, 0.005f,
+                      { 0.0f, side * 0.12f, 0.0f } );
+            rbox( BoneE::WEAPON, s.m_glow, { 0.0f, 0.015f, 0.42f }, { 0.012f, 0.012f, 0.05f }, 0.01f, { 0, 0, 0 },
+                  Shock );
+            break;
+        default:   // the Gauss rifle
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, 0.015f, 0.32f }, { 0.032f, 0.035f, 0.12f }, 0.012f );
+            barrel( 0.42f, 0.016f, 0.2f );
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, -0.1f, 0.07f }, { 0.025f, 0.06f, 0.035f }, 0.01f );
+            break;
+        }
         rbox( BoneE::WEAPON, s.m_glow, { 0.041f, 0.02f, 0.02f }, { 0.004f, 0.012f, 0.13f }, 0.002f, { 0, 0, 0 }, Cell );
         rbox( BoneE::WEAPON, s.m_dark, { 0.0f, 0.085f, 0.0f }, { 0.018f, 0.022f, 0.06f }, 0.008f );
+        if ( s.m_tier >= 2 )   // a scope, and on the third tier a second cell
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, 0.11f, 0.02f }, { 0.014f, 0.014f, 0.07f }, 0.007f );
+        if ( s.m_tier >= 3 )
+            rbox( BoneE::WEAPON, s.m_glow, { -0.041f, 0.02f, 0.02f }, { 0.004f, 0.012f, 0.13f }, 0.002f, { 0, 0, 0 },
+                  Cell );
+        if ( s.m_trim.x >= 0.0f )
+            rbox( BoneE::WEAPON, s.m_glow, { 0.0f, -0.066f, 0.0f }, { 0.03f, 0.003f, 0.16f }, 0.002f, { 0, 0, 0 },
+                  s.m_trim );
         break;
+    }
     case WeaponE::HAMMER:
-        // The ram hammer: a long haft, a heavy head with the bolt chamber glowing in its back.
-        add( BoneE::WEAPON, s.m_metal, own, [&]( MeshBuilder &b )
-             { b.cylinder( place( { 0.0f, 0.0f, -0.18f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.026f, 1.0f, 10 ); } );
+    {
+        // A long haft; the head by the family.
+        add( BoneE::WEAPON, s.m_metal, own,
+             [&]( MeshBuilder &b )
+             {
+                 b.cylinder( place( { 0.0f, 0.0f, -0.18f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.026f,
+                             s.m_shape == 5 ? 1.15f : 1.0f, 10 );
+             } );
         rbox( BoneE::WEAPON, s.m_dark, { 0.0f, 0.0f, -0.02f }, { 0.034f, 0.034f, 0.12f }, 0.012f );
-        rbox( BoneE::WEAPON, s.m_dark, { 0.0f, 0.0f, 0.86f }, { 0.1f, 0.19f, 0.1f }, 0.025f );
-        rbox( BoneE::WEAPON, s.m_metal, { 0.0f, 0.2f, 0.86f }, { 0.115f, 0.03f, 0.115f }, 0.012f );
-        rbox( BoneE::WEAPON, s.m_metal, { 0.0f, -0.2f, 0.86f }, { 0.115f, 0.03f, 0.115f }, 0.012f );
-        rbox( BoneE::WEAPON, s.m_glow, { 0.0f, 0.0f, 0.86f }, { 0.104f, 0.05f, 0.06f }, 0.01f, { 0, 0, 0 }, Bolt );
+        switch ( s.m_shape )
+        {
+        case 1:   // the axe: a wide blade on one side, its edge glowing
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, 0.13f, 0.82f }, { 0.018f, 0.13f, 0.14f }, 0.01f );
+            rbox( BoneE::WEAPON, s.m_glow, { 0.0f, 0.255f, 0.82f }, { 0.02f, 0.008f, 0.13f }, 0.004f, { 0, 0, 0 },
+                  Bolt );
+            rbox( BoneE::WEAPON, s.m_dark, { 0.0f, 0.0f, 0.82f }, { 0.04f, 0.05f, 0.06f }, 0.015f );
+            break;
+        case 2:   // the pick: a long spike both ways
+            rbox( BoneE::WEAPON, s.m_dark, { 0.0f, 0.0f, 0.84f }, { 0.04f, 0.05f, 0.06f }, 0.015f );
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, 0.0f, 0.84f }, { 0.022f, 0.3f, 0.026f }, 0.012f );
+            break;
+        case 3:   // the shock maul: a round head in coils
+            add( BoneE::WEAPON, s.m_dark, own, [&]( MeshBuilder &b )
+                 { b.cylinder( place( { 0.0f, 0.0f, 0.86f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.11f, 0.22f, 14 ); } );
+            for ( float z : { 0.8f, 0.92f } )
+                add( BoneE::WEAPON, s.m_glow, Shock, [&]( MeshBuilder &b )
+                     { b.cylinder( place( { 0.0f, 0.0f, z }, { PI * 0.5f, 0.0f, 0.0f } ), 0.118f, 0.02f, 14 ); } );
+            break;
+        case 4:   // the bolt breaker: a block with pistons
+            rbox( BoneE::WEAPON, s.m_dark, { 0.0f, 0.0f, 0.86f }, { 0.13f, 0.16f, 0.13f }, 0.02f );
+            for ( float side : { -1.0f, 1.0f } )
+                add( BoneE::WEAPON, s.m_metal, own,
+                     [&]( MeshBuilder &b )
+                     {
+                         b.cylinder( place( { side * 0.15f, 0.0f, 0.86f }, { 0.0f, 0.0f, PI * 0.5f } ), 0.04f, 0.06f,
+                                     10 );
+                     } );
+            rbox( BoneE::WEAPON, s.m_glow, { 0.0f, 0.0f, 0.99f }, { 0.08f, 0.08f, 0.01f }, 0.006f, { 0, 0, 0 }, Bolt );
+            break;
+        case 5:   // the drill lance: a spiral cone at the end
+            add( BoneE::WEAPON, s.m_metal, own,
+                 [&]( MeshBuilder &b )
+                 {
+                     b.lathe( place( { 0.0f, 0.0f, 0.86f }, { PI * 0.5f, 0.0f, 0.0f } ),
+                              { { 0.0f, 0.0f }, { 0.08f, 0.0f }, { 0.06f, 0.1f }, { 0.04f, 0.2f }, { 0.0f, 0.32f } },
+                              10 );
+                 } );
+            rbox( BoneE::WEAPON, s.m_glow, { 0.0f, 0.0f, 0.84f }, { 0.085f, 0.012f, 0.012f }, 0.006f, { 0, 0, 0 },
+                  Bolt );
+            break;
+        default:   // the ram hammer: a heavy head with the bolt chamber glowing in its back
+            rbox( BoneE::WEAPON, s.m_dark, { 0.0f, 0.0f, 0.86f }, { 0.1f, 0.19f, 0.1f }, 0.025f );
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, 0.2f, 0.86f }, { 0.115f, 0.03f, 0.115f }, 0.012f );
+            rbox( BoneE::WEAPON, s.m_metal, { 0.0f, -0.2f, 0.86f }, { 0.115f, 0.03f, 0.115f }, 0.012f );
+            rbox( BoneE::WEAPON, s.m_glow, { 0.0f, 0.0f, 0.86f }, { 0.104f, 0.05f, 0.06f }, 0.01f, { 0, 0, 0 }, Bolt );
+            break;
+        }
+        if ( s.m_tier >= 2 )   // bands on the haft
+            for ( float z : { 0.2f, 0.45f } )
+                add( BoneE::WEAPON, s.m_metal, own, [&]( MeshBuilder &b )
+                     { b.cylinder( place( { 0.0f, 0.0f, z }, { PI * 0.5f, 0.0f, 0.0f } ), 0.032f, 0.03f, 10 ); } );
+        if ( s.m_trim.x >= 0.0f )
+            add( BoneE::WEAPON, s.m_glow, s.m_trim, [&]( MeshBuilder &b )
+                 { b.cylinder( place( { 0.0f, 0.0f, 0.62f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.03f, 0.05f, 10 ); } );
         break;
+    }
     case WeaponE::BATON:
         add( BoneE::WEAPON, s.m_dark, own, [&]( MeshBuilder &b )
              { b.cylinder( place( { 0.0f, 0.0f, -0.1f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.022f, 0.62f, 10 ); } );

@@ -10,3 +10,8 @@ h_bolt.dorra    = B / F: Sprengbolzen werfen – für alles, was der Hammer nich
 h_stim          = Q / Y: Stim injizieren (+40 Leben).
 h_heat          = Das Gewehr ist überhitzt. Kurz absetzen.
 h_heat.dorra    = -
+
+h_fire.ione   = Schwarm losschicken: rechter Trigger oder linke Maustaste. Die Drohnen nehmen das nächste Ziel vor dir und bleiben dran, solange du hältst.
+h_strafe.ione = Linker Trigger / Umschalt: die Drohnen zum Schirm koppeln. Er hält von vorn und von der Seite, aber er erschöpft den Schwarm.
+h_bolt.ione   = B / F: Übernahme. Eine Maschine kämpft eine Weile für dich und brennt dann aus; einen Menschen stört es kurz.
+h_heat.ione   = Der Schwarm ist erschöpft. Kurz warten, dann hält er wieder.

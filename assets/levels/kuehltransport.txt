@@ -43,6 +43,9 @@ genpack       %T      1.5
 genpack       `T      1.2
 genpack       ""E     1.2
 genpack       ''T     1
+natives       spider
+genpack       111     2.0
+genpack       1$T     1.2
 gendensity    1.15
 genelite      0.35
 genfeature    _  0.35

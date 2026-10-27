@@ -5,6 +5,7 @@ u4.intro = Three months and seven jumps, the old way back. Ysolde is not aboard.
 
 s4_start       = Back aboard. The mess is too quiet without Ysolde.
 s4_start.dorra = Three months to Velm. I don't count the days. I count the names.
+s4_start.ione  = Three months to Velm. I have more time now than I used to. I don't know what to do with it.
 s4_back        = Aboard again. Unzu hums. It almost sounds like a song.
 s4_back.dorra  = Aboard again. Kiri oiled my hammer without asking.
 
@@ -35,3 +36,22 @@ f400   = TRADER RADIO – channel 7. We're still transmitting. Velm holds as lon
 f400_a = What have you got?
 f400_b = Nothing.
 f401   = Order open.
+
+# The companions
+cd4a       = Three months to Velm. Kiri tattooed the names back on, with a soldering iron and a lot of patience. And Unzu wants to read us something. He pretends he doesn't care whether we listen.
+cd4a_a     = Let's see.
+cd4b       = (Forty-one names, fresh and red. There is room beneath them.) Just in case.
+cd4c       = Unzu left a field empty, and they took him apart for it. On Kalvar we'd have given him a medal. And then we'd all have died.
+cd4d       = Velm is burning. The Last Shift is still standing. Ottla slept on the counter with a rifle in her arms. That's home.
+cd4e       = A mining moon, peeled like a fruit. I watched them cut it and thought of Deep Seven. We cut too. Only smaller.
+cc4a       = Ruul sits in Ysolde's seat. He eats like someone who spent nine years counting how much he was allowed to eat. I gave him mine. I don't know why.
+cc4b       = Four hundred and twelve. He counted them, and someone made a plan out of the number. I worked to that plan. We're all in the same log, just on different pages.
+cc4c       = A trader in Velm recognised me. From before. He sold me ammunition anyway. At double the price. That's forgiveness, Velm style.
+cc4d       = The Mill. There are people in there I sold. I know it. I'm going in anyway. It's the only thing I'm doing right in all this.
+ci4a       = I saw the Mill once as a maintenance schematic. I know where its cores sit. I don't know whether I can bear to see them.
+ci4b       = Unzu left a field empty. I filled in three hundred and eleven fields. Installation log, date, signature. Neatly. I was always neat.
+ci4c       = The hesitant core on Brannt. I recognised its line. The gate shipyard's series. They build them in series now.
+u4tale.ask = Read us your log, Unzu.
+u4tale     = You want my log. I've had it back since the computing moon. Entries 3.112 to 3.115. Sit down, I'll dim the lights. Not for the mood. For the memory. It can't stand bright light.
+u4go       = …
+u4after    = I read you my log. I don't feel better. I feel counted. Is it like that for you too?

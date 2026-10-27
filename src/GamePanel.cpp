@@ -261,19 +261,49 @@ std::string Game::itemDetail( const Item &it ) const
     {
         d += TextFormat( tr( "item.dmg" ), (int)roundf( itemDamage( it ) ) );
         if ( b.m_pellets > 1 ) d += TextFormat( " x %d", b.m_pellets );
-        if ( b.m_hero == 0 ) d += std::string( " · " ) + TextFormat( tr( "item.rate" ), 1.0f / b.m_interval );
+        if ( b.m_hero != 1 ) d += std::string( " · " ) + TextFormat( tr( "item.rate" ), 1.0f / b.m_interval );
         if ( b.m_pierce > 0 ) d += std::string( " · " ) + TextFormat( tr( "item.pierce" ), b.m_pierce );
         if ( b.m_splash > 0.0f ) d += std::string( " · " ) + tr( "item.splash" );
         if ( b.m_chain > 0 ) d += std::string( " · " ) + TextFormat( tr( "item.chain" ), b.m_chain );
+        const char *kinds[4] = { "dmg.kinetic", "dmg.heat", "dmg.shock", "dmg.acid" };
+        d += std::string( " · " ) + TextFormat( tr( "item.dmgkind" ), tr( kinds[weaponDamage( it )] ) );
         d += " | ";
     }
     else if ( b.m_armor > 0.0f )
         d += std::string( TextFormat( tr( "item.armorval" ), (int)roundf( itemArmor( it ) ) ) ) + " | ";
-    if ( b.m_bonus != StatE::COUNT ) d += affixText( { b.m_bonus, b.m_bonusValue } ) + " | ";
+    if ( b.m_slot == SlotE::EMITTER )
+        d += std::string( TextFormat( tr( "item.shieldval" ), (int)roundf( itemShield( it ) ) ) ) + " | ";
+    if ( b.m_bonus != StatE::COUNT && b.m_slot != SlotE::MODULE && b.m_bonusValue != 0.0f )
+        d += affixText( { b.m_bonus, b.m_bonusValue } ) + " | ";
     for ( const Affix &a : it.m_affixes ) d += affixText( a ) + " | ";
-    d += tr( std::string( b.m_key ) + ".about" );
-    if ( b.m_hero >= 0 && b.m_hero != ( m_heroKind == HeroE::DORRA ? 1 : 0 ) )
-        d += std::string( " | " ) + tr( "loot.wrong" );
+    // The sockets and their modules.
+    if ( it.m_sockets > 0 )
+    {
+        d += std::string( TextFormat( tr( "item.sockets" ), (int)it.m_mods.size(), it.m_sockets ) ) + " | ";
+        for ( const Affix &a : it.m_mods ) d += "  · " + affixText( a ) + " | ";
+    }
+    // A unique's power, a set's bonuses (how many of its pieces are worn now), the lore.
+    PowerE power = itemPower( it );
+    if ( power != PowerE::NONE ) d += std::string( "» " ) + powerText( power ) + " | ";
+    int set = itemSet( it );
+    if ( set >= 0 )
+    {
+        const SetDef &sd = itemSets()[set];
+        d += std::string( TextFormat( tr( "item.setof" ), tr( sd.m_key ), m_setPieces[set] ) ) + " | ";
+        auto list = [&]( const std::vector<Affix> &as )
+        {
+            std::string t;
+            for ( const Affix &a : as ) t += ( t.empty() ? "" : ", " ) + affixText( a );
+            return t;
+        };
+        d += std::string( TextFormat( tr( "item.set2" ), list( sd.m_two ).c_str() ) ) + " | ";
+        d += std::string( TextFormat( tr( "item.set3" ), list( sd.m_three ).c_str() ) ) + " | ";
+        d += std::string( TextFormat( tr( "item.set4" ), powerText( sd.m_four ).c_str() ) ) + " | ";
+    }
+    std::string lore = itemLore( it );
+    if ( !lore.empty() ) d += lore + " | ";
+    d += b.m_slot == SlotE::MODULE ? tr( "module.about" ) : tr( std::string( b.m_key ) + ".about" );
+    if ( b.m_hero >= 0 && b.m_hero != heroIndex() ) d += std::string( " | " ) + tr( "loot.wrong" );
     d += std::string( " | " ) + TextFormat( tr( "item.value" ), std::max( 1, itemValue( it ) / 3 ) );
     return d;
 }
@@ -281,7 +311,7 @@ std::string Game::itemDetail( const Item &it ) const
 std::vector<Game::PanelRow> Game::skillRows() const
 {
     std::vector<PanelRow> rows;
-    int                   hero = m_heroKind == HeroE::DORRA ? 1 : 0;
+    int                   hero = heroIndex();
     const char           *keys[4] = { "", "hud.key1", "hud.key2", "hud.key3" };
     rows.push_back( { TextFormat( tr( "skills.points" ), m_progress.m_points ), "", "", true } );
     const std::vector<SkillDef> &defs = skillDefs();
@@ -408,6 +438,12 @@ void Game::drawPanel( int w, int h, int tab, int sel )
             }
             Color title =
                 row.m_bag >= 0 ? row.m_color : ( on ? Color{ 255, 220, 170, 255 } : Color{ 210, 205, 195, 230 } );
+            const Item *item = row.m_bag >= 0                                     ? &m_progress.m_bag[row.m_bag]
+                               : row.m_slot >= 0 && m_progress.m_worn[row.m_slot] ? &m_progress.m_gear[row.m_slot]
+                                                                                  : nullptr;
+            if ( const Texture2D *pic = item ? pictureOf( *item ) : nullptr )
+                DrawTexturePro( *pic, { 0, 0, (float)pic->width, (float)pic->height },
+                                { left - 44.0f * s, y - 4.0f * s, 34.0f * s, 34.0f * s }, { 0, 0 }, 0.0f, WHITE );
             label( font, row.m_title.c_str(), left, y, 24.0f * s, title );
             label( font, row.m_value.c_str(), left + listW, y, 24.0f * s,
                    row.m_bag >= 0 ? Color{ 170, 170, 165, 220 } : row.m_color, 2 );
@@ -418,6 +454,19 @@ void Game::drawPanel( int w, int h, int tab, int sel )
         {
             float       x = w * 0.54f, dy = top;
             Color       c = chosen->m_bag >= 0 || chosen->m_slot >= 0 ? chosen->m_color : Color{ 245, 236, 222, 255 };
+            const Item *item = chosen->m_bag >= 0 ? &m_progress.m_bag[chosen->m_bag]
+                               : chosen->m_slot >= 0 && m_progress.m_worn[chosen->m_slot]
+                                   ? &m_progress.m_gear[chosen->m_slot]
+                                   : nullptr;
+            if ( const Texture2D *pic = item ? pictureOf( *item ) : nullptr )
+            {
+                // The item's picture, framed in its rarity's colour.
+                float size = 210.0f * s;
+                DrawTexturePro( *pic, { 0, 0, (float)pic->width, (float)pic->height }, { x, dy, size, size }, { 0, 0 },
+                                0.0f, WHITE );
+                DrawRectangleLinesEx( { x, dy, size, size }, 2.0f * s, { c.r, c.g, c.b, 170 } );
+                dy += size + 18.0f * s;
+            }
             std::string title = chosen->m_bag >= 0    ? chosen->m_title
                                 : chosen->m_slot >= 0 ? chosen->m_value
                                                       : chosen->m_title;
@@ -432,8 +481,8 @@ void Game::drawPanel( int w, int h, int tab, int sel )
             if ( chosen->m_bag >= 0 )
             {
                 const Item &it = m_progress.m_bag[chosen->m_bag];
-                int         slot = itemSlot( it ) == SlotE::IMPLANT ? 5 : (int)itemSlot( it );
-                if ( m_progress.m_worn[slot] )
+                int         slot = gearIndex( it );
+                if ( slot >= 0 && m_progress.m_worn[slot] )
                 {
                     dy += 20.0f * s;
                     label( font, TextFormat( tr( "inv.instead" ), itemName( m_progress.m_gear[slot] ).c_str() ), x, dy,
@@ -482,6 +531,8 @@ void Game::drawPanel( int w, int h, int tab, int sel )
         float perSecond = dorra ? 1.0f / ( 0.55f * m_stats.m_interval ) : 1.0f / m_stats.m_interval;
         stat2( "stat.health", TextFormat( "%d / %d", (int)ceilf( m_hp ), (int)hpMax() ) );
         stat2( "stat.armor", TextFormat( "%d  (-%d %%)", (int)m_stats.m_armor, (int)( armorCut() * 100.0f ) ) );
+        if ( m_stats.m_shield > 0.0f )
+            stat2( "stat.shield", TextFormat( "%d / %d", (int)ceilf( m_shield ), (int)m_stats.m_shield ) );
         stat2( "stat.damage", TextFormat( m_stats.m_pellets > 1 ? "%d x %d" : "%d", (int)roundf( m_stats.m_damage ),
                                           m_stats.m_pellets ) );
         stat2( "stat.speed", TextFormat( "%.1f", perSecond ) );

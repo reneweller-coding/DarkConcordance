@@ -43,6 +43,11 @@ genpack       ---     1.3
 genpack       $TT     1.2
 genpack       ''T     0.8
 genpack       ^^E     0.8
+natives       beast vine
+genpack       1       2.0
+genpack       22      2.0
+genpack       12E     1.5
+genpack       11      1.0
 gendensity    1.0
 genelite      0.35
 gennote       note.gardens note.deaths note.lamm note.ticket note.printer

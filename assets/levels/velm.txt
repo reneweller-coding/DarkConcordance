@@ -82,6 +82,9 @@ ysolde      | 11 30 | ysolde   | ys1 | job1:ys7 done.kuehlgedaerme:ys10 l1told:y
 ottla       | 4 22  | ottla    | ot1
 kiri        | 23 33 | kiri     | ki1
 hausmeister | 15 9  | terminal | hm1
+dorra       | 12 16 | dorra    | cd1a | done.kuehlgedaerme:cd1d done.aussenhaut:cd1e done.kernbank:cd1f
+corvin      | 13 17 | corvin   | cc1a | done.knochenmarkt:cc1d done.kernbank:cc1e
+ione        | 12 17 | ione     | ci1a | done.kuehlgedaerme:ci1d done.kernbank:ci1e
 
 [talk]
 # Knoten | Sprecher | Ereignis | Antwort>Knoten ...
@@ -123,6 +126,22 @@ ki2  | kiri        | workshop     |
 hm1  | hausmeister | -            | hm1_a>hm2 hm1_c>hm3 hm1_b>-
 hm2  | hausmeister | -            |
 hm3  | hausmeister | -            |
+cd1a | dorra  | -        | cd1a_a>cd1b cd1a_b>cd1c comp.bye>-
+cd1b | dorra  | -        |
+cd1c | dorra  | -        |
+cd1d | dorra  | -        | cd1a_a>cd1b comp.bye>-
+cd1e | dorra  | -        | comp.bye>-
+cd1f | dorra  | -        |
+cc1a | corvin | -        | cc1a_a>cc1b cc1a_b>cc1c comp.bye>-
+cc1b | corvin | -        |
+cc1c | corvin | -        |
+cc1d | corvin | -        | cc1a_a>cc1b comp.bye>-
+cc1e | corvin | -        |
+ci1a | ione   | -        | ci1a_a>ci1b ci1a_b>ci1c comp.bye>-
+ci1b | ione   | -        |
+ci1c | ione   | -        |
+ci1d | ione   | -        | ci1a_b>ci1c comp.bye>-
+ci1e | ione   | -        |
 
 [lines]
 # Schlüssel | Auslöser | Sprecher

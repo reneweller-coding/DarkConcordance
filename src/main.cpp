@@ -75,8 +75,10 @@ struct Options
     int         m_panel = -1;              ///< with --shot: the inventory (0), character (1) or map (2) page
     bool        m_map = false;             ///< with --shot: the map over the game
     bool        m_lineup = false;          ///< with --shot: a row of people in their animations before the hero
+    int         m_creatures = -1;          ///< with --shot: the creatures in front of the hero (page 0 or 1)
     float       m_zoom = 0.0f;             ///< with --shot: the camera's distance factor (0: as it is)
     int         m_loot = 0;                ///< tests: items scattered round the hero at the start
+    std::string m_gear;                    ///< tests: what the hero puts on at the start (--gear item.rail3,u12,s5)
     int         m_xp = 0;                  ///< tests: experience given at the start
     unsigned    m_seed = 0;                ///< a generated level's seed (0: from the progress)
     std::string m_dumpGen;                 ///< write the generated level's file here
@@ -169,10 +171,14 @@ Options parse( int argc, char **argv )
             o.m_map = true;
         else if ( a == "--lineup" )
             o.m_lineup = true;
+        else if ( a == "--creatures" )
+            o.m_creatures = atoi( next().c_str() );
         else if ( a == "--zoom" )
             o.m_zoom = (float)atof( next().c_str() );
         else if ( a == "--loot" )
             o.m_loot = atoi( next().c_str() );
+        else if ( a == "--gear" )
+            o.m_gear = next();
         else if ( a == "--seed" )
             o.m_seed = (unsigned)strtoul( next().c_str(), nullptr, 10 );
         else if ( a == "--dumpgen" )
@@ -426,7 +432,8 @@ bool loadProgress( Progress &p )
         else if ( !strcmp( key, "deaths" ) )
             p.m_deaths = atoi( value );
         else if ( !strcmp( key, "hero" ) )
-            p.m_hero = !strcmp( value, "dorra" ) ? HeroE::DORRA : HeroE::CORVIN;
+            p.m_hero =
+                !strcmp( value, "dorra" ) ? HeroE::DORRA : ( !strcmp( value, "ione" ) ? HeroE::IONE : HeroE::CORVIN );
         else if ( !strcmp( key, "level" ) )
             p.m_level = value;
         else if ( !strcmp( key, "scrap" ) )
@@ -643,7 +650,7 @@ int runGame( const Options &o, Gfx &gfx )
     score.m_volume = settings.m_music;
     if ( !o.m_language.empty() ) settings.m_language = o.m_language;
     if ( !loadTexts( assetsDir(), settings.m_language ) ) settings.m_language = "de";
-    HeroE       hero = o.m_hero == "dorra" ? HeroE::DORRA : HeroE::CORVIN;
+    HeroE       hero = o.m_hero == "dorra" ? HeroE::DORRA : ( o.m_hero == "ione" ? HeroE::IONE : HeroE::CORVIN );
     std::string level = o.m_level;
     Progress    progress, saved;
     bool        hasSave = o.m_shot.empty() && loadProgress( saved );
@@ -684,8 +691,10 @@ int runGame( const Options &o, Gfx &gfx )
     game->m_camYaw = o.m_camYaw * DEG2RAD;
     if ( o.m_hasAt ) game->putHero( o.m_x, o.m_z, o.m_face );
     if ( o.m_lineup ) game->lineup();
+    if ( o.m_creatures >= 0 ) game->creatureLineup( o.m_creatures );
     if ( o.m_zoom > 0.0f ) game->m_zoom = o.m_zoom;
     if ( o.m_loot > 0 || o.m_xp > 0 ) game->testGifts( o.m_loot, o.m_xp );
+    if ( !o.m_gear.empty() ) game->testGear( o.m_gear );
     if ( o.m_awake ) game->wakeAll();
     auto draw = [&]( const RenderTexture2D *rt ) { game->render( gfx, rt ); };
 
@@ -839,13 +848,13 @@ int runGame( const Options &o, Gfx &gfx )
         }
         else if ( mode == CHOOSE )
         {
-            // Dorra, Corvin; Ione is not playable yet.
+            // Dorra, Corvin, Ione.
             MenuKeys k = menuKeys( dt );
             chosen = ( chosen + k.m_move + 3 ) % 3;
-            if ( k.m_confirm && chosen < 2 )
+            if ( k.m_confirm )
             {
                 // A new game: from the prologue, with nothing.
-                hero = chosen == 0 ? HeroE::DORRA : HeroE::CORVIN;
+                hero = chosen == 0 ? HeroE::DORRA : ( chosen == 1 ? HeroE::CORVIN : HeroE::IONE );
                 level = o.m_level;
                 progress = Progress();
                 progress.m_hero = hero;
@@ -913,7 +922,7 @@ int runGame( const Options &o, Gfx &gfx )
                     mode = PLAY;
                 }
                 else if ( chosen == base && mode == TITLE && o.m_hero.empty() )
-                    mode = CHOOSE, chosen = hero == HeroE::DORRA ? 0 : 1;
+                    mode = CHOOSE, chosen = hero == HeroE::DORRA ? 0 : ( hero == HeroE::IONE ? 2 : 1 );
                 else if ( chosen == base )
                     mode = PLAY;
                 else if ( chosen == diffItem )

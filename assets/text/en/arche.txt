@@ -21,6 +21,7 @@ l9_help        = Cutters! Forward!
 l9_down        = The boarding leader is down. And the ship's administration … is calling me.
 
 l9_start.dorra = The ark. On Kalvar they'd have taken it apart and sold the metal. Here someone is still sleeping.
+l9_start.ione  = The ark. Seven hundred years of maintenance without a single technician. Whoever built this knew what they were doing.
 l9_drained.dorra = Open. I didn't like doing it. Somewhere pods are getting warm now.
 
 a9a            = This is the administration of the »Forbearance«. Seven hundred years of watch. Eighty thousand sleepers. Our target world no longer exists. You are the first people I have spoken to who are not asleep. What should I tell them?

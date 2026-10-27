@@ -91,6 +91,8 @@ void Game::loadStory()
     int trust = 0;
     for ( const char *t : Trust ) trust += m_fired.count( t ) ? 1 : 0;
     if ( trust >= TrustNeeded ) m_fired.insert( "trust" );
+    // Who is played (who sits at the table and who tells): "hero.dorra" and so on.
+    m_fired.insert( std::string( "hero." ) + heroKey( m_tale ? m_realHero : m_heroKind ) );
 }
 
 std::string Game::spoken( const std::string &key ) const
@@ -117,9 +119,12 @@ void Game::startEpilogue()
             }
     if ( !m_fired.count( "cores.spared" ) && m_fired.count( "done.kernbank" ) )
         m_cards.insert( m_cards.begin() + 1, { "epi.t.cores", "epi.cores.broken" } );
-    // The figures, by the ending: the hero, Unzu (who asks for a new name), Ysolde, and the board in the bar.
+    // The figures, by the ending: the hero and the other two, Unzu (who asks for a new name), Ysolde, the board.
     std::string hero = heroKey( m_heroKind );
     m_cards.push_back( { "hero." + hero, "epi." + hero + "." + m_ending } );
+    for ( const char *other : { "dorra", "corvin", "ione" } )
+        if ( hero != other )
+            m_cards.push_back( { std::string( "hero." ) + other, std::string( "epi." ) + other + "." + m_ending } );
     m_cards.push_back( { "epi.t.unzu", "epi.unzu." + m_ending } );
     m_cards.push_back( { "epi.t.ysolde", "epi.ysolde." + m_ending } );
     m_cards.push_back( { "epi.t.board", "epi.board." + m_ending } );

@@ -19,9 +19,12 @@ l5_clean       = Not a single rack broken. Whoever is in there can still go home
 l5_broken      = I broke racks. I'll never know whom.
 
 l5_start.dorra = The Core Bank. On Kalvar we stored ore. Here they store people.
+l5_start.ione  = The Core Bank. Racks like the ones I used to wire. The same cooling, the same hum.
 l5_rack.dorra  = Careful with the hammer – there's someone in those racks!
+l5_rack.ione   = Not the racks! I know what's inside. I used to wire them.
 l5_boss.dorra  = Mother Sevenfold. Seven bodies. I have a hammer. That'll do.
 l5_end.dorra   = She's quiet. And Ilka … sold. To the Mill. Then we go to the Mill.
+l5_end.ione    = She's quiet. All seven. And Ilka's core isn't here – sold to the Mill. I know the way they go. I used to maintain it.
 
 h_racks        = The racks are full of cores – stolen people. A hit destroys some. The aim assist won't shoot through them; grenades, bolts and blasts will.
 h_shells       = Shells: slow, tough, they scratch up close. The core glows at the back of the head.

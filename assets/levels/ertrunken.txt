@@ -39,6 +39,11 @@ genpack       ****    1.2
 genpack       LLLL    1
 genpack       **?     0.8
 genpack       $$T     1
+natives       eel diver
+genpack       111     2.5
+genpack       11T     1.5
+genpack       22      1.5
+genpack       12<     1.2
 gendensity    1.15
 genelite      0.25
 gennote       note.flood1 note.flood2 note.pump note.child

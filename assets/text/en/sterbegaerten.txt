@@ -9,6 +9,7 @@ l15_fan          = My two hundredth death was last week! A spike worm. It was be
 l15_fan2         = Two hundred. In the Fringe that would be two hundred graves.
 l15_free         = If I die here, it costs nothing. That's exactly what feels wrong.
 l15_free.dorra   = Here a death costs nothing. Then it's worth nothing too. That's the mistake.
+l15_free.ione    = Here a death costs nothing. A year ago I'd have given anything for that. Now I have it, and nobody asked me.
 l15_champion     = A champion. They wear their deaths like medals.
 l15_hounds       = Predators. Bred to hunt. Printed to die.
 l15_arena        = The arena. Above us the waterfalls, and on the balconies in the wall thousands of spectators.

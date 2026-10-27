@@ -1,0 +1,86 @@
+# Eine Erzählung: Corvins Geständnis (nach Akt I, in der Messe der „Unzureichend Ausgestattet“). Vor neun Jahren auf
+# Odile, einem Mond, auf dem es regnet, seit man ihn besiedelt hat: Corvin ist noch Abschöpfer und soll mit Hakon
+# Dreiers Mannschaft die Siedlung Kessel „ernten“. Im letzten Haus ein Kind. Er legt sein Gerät hin, und seine eigene
+# Mannschaft jagt ihn durch die Gassen bis zu Dreiers Lastkran am Hafen. Erzählt im Ton eines Noir-Geständnisses; am
+# Tisch hören Dorra, Ione und Unzu zu und fallen ihm ins Wort.
+#   teller held            gespielt wird, wer erzählt (mit der Ausrüstung seiner Art, so stark wie der Held)
+#   grade f k k v r g b    das Licht der Erzählung: Farbe, Kontrast, Korn, Vignette, Tönung
+#   rain n                 Regen: n Tropfen pro Sekunde
+#   bossname schlüssel     der Name über dem Balken des Bosses
+#   whiteout ev / endcard  nach dem Ereignis (und dem Gespräch) wird alles weiß; die Worte, die Musik, was danach gilt
+
+name     tale.corvin.name
+act      tale.title
+intro    tale.corvin.intro
+teller   corvin
+grade    0.1 1.4 0.05 0.4 1.0 1.0 1.06
+rain     420
+gravity  9.0
+fog      0.005 0.014 0.5 0.9
+fogcolor 0.003 0.0035 0.005
+ambient  0.045 0.05 0.065 0.018 0.02 0.028
+walls    6.5
+sky      nebula
+bossvariant 4
+bossname boss.dreier
+area     0
+next     unzu.txt
+gate     tale.corvin.mira
+whiteout tale.corvin.mira
+endcard  tale.corvin.end tale_end tale.corvin.told
+ambience rain
+music    tale_corvin
+bossmusic tale_corvin
+walltex  street brick
+walltex  yard brick
+floortex street wetcobble
+floortex yard wetcobble
+npcafter mira bossdead
+autotalk mira
+
+genrooms      15
+genside       5
+gensize       10 15 9 13
+gentheme      street street yard street street
+genstarttheme street
+genarenatheme yard
+genarena      taxator
+genpack       ETT     2
+genpack       EET     1.5
+genpack       $TT     1.2
+genpack       ET      1
+gendensity    0.9
+genelite      0.25
+gennote       note.kessel1 note.kessel2 note.kessel3 note.kessel4
+
+[npcs]
+mira | -1 -1 | mira | m1
+
+[talk]
+m1 | mira | -                | m1_a>m2 m1_b>m3
+m2 | mira | tale.corvin.mira |
+m3 | mira | tale.corvin.mira |
+
+[lines]
+tc_a1        | a           | hero
+tc_a2        | a           | dorra
+tc_a3        | a           | hero
+tc_b1        | b           | hero
+tc_b2        | b           | ione
+tc_b3        | b           | hero
+tc_c1        | c           | hero
+tc_c2        | c           | unzu
+tc_d1        | d           | hero
+tc_d2        | d           | hero
+tc_d3        | d           | dorra
+tc_champion  | champion    | hero
+tc_hurt      | hurt        | hero
+tc_boss      | bossstart   | dreier
+tc_boss2     | bossstart   | hero
+tc_end       | bossdead    | hero
+tc_mira      | appear.mira | hero
+
+[hints]
+h_tale       | a
+h_champion   | champion
+h_stim       | hurt

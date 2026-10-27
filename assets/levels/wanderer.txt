@@ -35,7 +35,7 @@ genoutdoor    snow
 genstarttheme works
 genarenatheme service
 genarena      guardian
-genguard      %
+genguard      1
 genoxygen     0.6
 genfeature    )  1.0
 genpack       ''T     2
@@ -44,6 +44,10 @@ genpack       $TT     2
 genpack       `T      1.2
 genpack       ETT     2
 genpack       ^^      1
+natives       frost
+genpack       11      2.0
+genpack       1TT     1.5
+genpack       1%      0.8
 gendensity    1.1
 genelite      0.32
 gennote       note.list note.contract note.hale note.relay12 note.shift12

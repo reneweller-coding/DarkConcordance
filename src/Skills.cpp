@@ -33,6 +33,15 @@ const std::vector<SkillDef> Skills = {
     { "skill.bolts",      1, 1, 1, None,            0.0f,  1.6f },
     { "skill.quake",      1, 2, 2, None,            0.0f,  8.0f },
     { "skill.charge",     1, 3, 3, None,            0.0f,  7.0f },
+    // Ione: a bigger swarm, faster relays, coupled plates, first aid, short circuits; the takeover, mending, the storm.
+    { "skill.swarm",      2, 0, 1, StatE::DAMAGE,   7.0f,  0.0f },
+    { "skill.relay",      2, 0, 1, StatE::RATE,     5.0f,  0.0f },
+    { "skill.coupled",    2, 0, 2, StatE::ARMOR,    6.0f,  0.0f },
+    { "skill.medic",      2, 0, 3, StatE::REGEN,    0.6f,  0.0f },
+    { "skill.short",      2, 0, 2, StatE::SHOCK,    4.0f,  0.0f },
+    { "skill.hack",       2, 1, 1, None,            0.0f,  9.0f },
+    { "skill.repair",     2, 2, 2, None,            0.0f, 14.0f },
+    { "skill.storm",      2, 3, 3, None,            0.0f, 10.0f },
 };
 // clang-format on
 

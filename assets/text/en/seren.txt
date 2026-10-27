@@ -24,8 +24,10 @@ l6_home        = Is the shift … over? May I … go home?
 l6_end         = He thought he was working. For eighty years. And Ilka's store has moved on – to Hesper.
 
 l6_start.dorra = Seren. Colder than any shaft on Kalvar. And that's saying something.
+l6_start.ione  = Seren. The pump drones here run on cores. I can hear them counting on the maintenance frequency.
 l6_crack.dorra = The ice is breaking! Careful with the hammer – here it hits more than enemies.
 l6_end.dorra   = A miner. Eighty years in a drilling tower. That could have been me. On to Hesper.
+l6_end.ione    = He thought he was working. Eighty years. They told us those were programs. Ilka's memory has already moved on – to Hesper.
 
 h_warmth       = Cold: the suit's warmth (orange bar) fades out in the open. In the huts and at the heater posts (orange) it warms up again, heat packs add some.
 h_ice          = The ice breaks under explosions and heavy blows. Whoever falls through ends up at the last safe spot – cold and hurt.

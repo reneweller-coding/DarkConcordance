@@ -72,8 +72,8 @@ void Game::themeSurfaces( LevelSurfaces &ls )
         if ( known != m_ownSurfaces.end() ) return known->second;
         if ( !FileExists( ( dir + name + "_albedo.png" ).c_str() ) || !m_gfx ) return -1;
         Surface surf =
-            m_gfx->surface( loadTexture( dir + name + "_albedo.png" ), loadTexture( dir + name + "_orm.png" ),
-                            loadTexture( dir + name + "_normal.png" ), Texture2D{} );
+            m_gfx->surface( sharedTexture( dir + name + "_albedo.png" ), sharedTexture( dir + name + "_orm.png" ),
+                            sharedTexture( dir + name + "_normal.png" ), Texture2D{} );
         surf.m_uvScale = 0.3f;
         surf.m_params = { 1.0f, 1.0f, 1.2f, 0.0f };
         surf.m_variation = 0.4f;
@@ -81,10 +81,14 @@ void Game::themeSurfaces( LevelSurfaces &ls )
         m_surfaces.push_back( surf );
         return m_ownSurfaces[name] = (int)m_surfaces.size() - 1;
     };
+    // Only the places this level has.
+    std::vector<bool> used( 64, false );
+    for ( int r = 0; r < m_level.rows(); ++r )
+        for ( int c = 0; c < m_level.cols(); ++c ) used[(int)m_level.theme( r, c )] = true;
     auto set = [&]( const std::string &theme, const char *wall, const char *floor )
     {
         int t = (int)themeNamed( theme );
-        if ( t < 0 ) return;
+        if ( t < 0 || !used[t] ) return;
         int w = wall ? surface( wall ) : -1, f = floor ? surface( floor ) : -1;
         if ( w >= 0 ) ls.m_themeWall[t] = w + 1;
         if ( f >= 0 ) ls.m_themeFloor[t] = f + 1;
@@ -92,19 +96,174 @@ void Game::themeSurfaces( LevelSurfaces &ls )
     for ( const Own &o : own ) set( o.m_theme, o.m_wall, o.m_floor );
     for ( const auto &wt : m_level.m_wallTex ) set( wt.first, wt.second.c_str(), nullptr );
     for ( const auto &ft : m_level.m_floorTex ) set( ft.first, nullptr, ft.second.c_str() );
+    // Each wall's and floor's variants (tools/make_dress.py): the plain one's look with other maps.
+    auto variants = [&]( int base, const std::string &name )
+    {
+        for ( int n = 1; n <= 4; ++n )
+        {
+            std::string v = dir + name + "_v" + std::to_string( n );
+            if ( !FileExists( ( v + "_albedo.png" ).c_str() ) ) break;
+            Surface surf = m_surfaces[base];
+            surf.m_material = m_gfx
+                                  ->surface( sharedTexture( v + "_albedo.png" ), sharedTexture( v + "_orm.png" ),
+                                             sharedTexture( v + "_normal.png" ), Texture2D{} )
+                                  .m_material;
+            m_surfaces.push_back( surf );
+            ls.m_variants[base].push_back( (int)m_surfaces.size() - 1 );
+        }
+    };
+    variants( S_ROCK, "rock" );
+    variants( S_FLOOR, "floor" );
+    variants( S_HULL, "wall" );
+    std::map<std::string, int> owned = m_ownSurfaces;
+    for ( const auto &o : owned ) variants( o.second, o.first );
+}
+
+namespace
+{
+
+/** @brief A texture kept from level to level and the load that last asked for it. */
+struct SharedTexture
+{
+    Texture2D m_tex;
+    int       m_round;
+};
+std::map<std::string, SharedTexture> SharedTextures;   ///< by path (they outlive each Game: one per level)
+int                                  LoadRound = 0;    ///< counts the loads
+
+}   // namespace
+
+Texture2D Game::sharedTexture( const std::string &path )
+{
+    auto it = SharedTextures.find( path );
+    if ( it == SharedTextures.end() )
+        it = SharedTextures.emplace( path, SharedTexture{ loadTexture( path ), 0 } ).first;
+    it->second.m_round = LoadRound;
+    return it->second.m_tex;
+}
+
+void Game::freeUnusedTextures()
+{
+    for ( auto it = SharedTextures.begin(); it != SharedTextures.end(); )
+        if ( it->second.m_round != LoadRound )
+        {
+            UnloadTexture( it->second.m_tex );
+            it = SharedTextures.erase( it );
+        }
+        else
+            ++it;
+}
+
+void Game::loadDecalDefs()
+{
+    // group <name> <themes...> / decal <name> <floor|wall> <width> <height> <y> <roughness> <glow> <r g b> <groups...>
+    m_decalDefs.clear();
+    std::string path = m_assets + "/textures/decals/decals.txt";
+    if ( !FileExists( path.c_str() ) ) return;
+    char *text = LoadFileText( path.c_str() );
+    if ( !text ) return;
+    std::istringstream all( text );
+    UnloadFileText( text );
+    std::map<std::string, uint64_t> groups;
+    std::string                     line;
+    while ( std::getline( all, line ) )
+    {
+        std::istringstream in( line );
+        std::string        word;
+        in >> word;
+        if ( word == "group" )
+        {
+            std::string name, theme;
+            in >> name;
+            uint64_t bits = 0;
+            while ( in >> theme )
+            {
+                int t = (int)themeNamed( theme );
+                if ( t >= 0 ) bits |= 1ull << t;
+            }
+            groups[name] = bits;
+        }
+        else if ( word == "decal" )
+        {
+            DecalDef    d;
+            std::string where, group;
+            std::string blend;
+            in >> d.m_name >> where >> d.m_width >> d.m_height >> d.m_y >> d.m_rough >> d.m_glow >> blend;
+            d.m_multiply = blend == "m";
+            if ( blend == "a" || blend == "m" )
+                in >> d.m_color.x;
+            else
+                d.m_color.x = (float)atof( blend.c_str() );
+            in >> d.m_color.y >> d.m_color.z;
+            d.m_wall = where == "wall";
+            while ( in >> group ) d.m_themes |= groups[group];
+            if ( d.m_themes && FileExists( ( m_assets + "/textures/decals/" + d.m_name + ".png" ).c_str() ) )
+                m_decalDefs.push_back( d );
+        }
+    }
+}
+
+void Game::buildDecals()
+{
+    // A surface per kind laid (its roughness in a tiny ORM map, the glowing ones lit by their own picture), the quads
+    // of one kind in one mesh; blended or multiplied (the stains), no shadows.
+    std::map<int, MeshBuilder> byKind;   // kind * 2, + 1 on a wall (dissolves with it)
+    for ( const Decal &d : m_level.m_decals )
+        byKind[d.m_def * 2 + ( d.m_cut ? 1 : 0 )].quad( d.m_corner[0], d.m_corner[1], d.m_corner[2], d.m_corner[3] );
+    std::map<int, int> surfaceOf;
+    for ( auto &kb : byKind )
+    {
+        int             def = kb.first / 2;
+        const DecalDef &dd = m_decalDefs[def];
+        auto            known = surfaceOf.find( def );
+        if ( known == surfaceOf.end() )
+        {
+            std::string key = TextFormat( "#orm%d", (int)( dd.m_rough * 20.0f + 0.5f ) );
+            auto        orm = SharedTextures.find( key );
+            if ( orm == SharedTextures.end() )
+            {
+                Image i = GenImageColor( 4, 4, { 255, (unsigned char)( dd.m_rough * 255.0f ), 0, 255 } );
+                orm = SharedTextures.emplace( key, SharedTexture{ LoadTextureFromImage( i ), LoadRound } ).first;
+                UnloadImage( i );
+            }
+            orm->second.m_round = LoadRound;
+            Texture2D tex = sharedTexture( m_assets + "/textures/decals/" + dd.m_name + ".png" );
+            Surface   surf = m_gfx->surface( tex, orm->second.m_tex,
+                                             m_surfaces[S_METAL].m_material.maps[MATERIAL_MAP_NORMAL].texture,
+                                             dd.m_glow > 0.0f ? tex : Texture2D{} );
+            surf.m_uvScale = 1.0f;
+            surf.m_params = { 1.0f, 0.0f, 0.0f, dd.m_multiply ? 4.0f : 3.0f };
+            surf.m_emissive = dd.m_glow > 0.0f ? Vector4{ dd.m_glow, dd.m_glow, dd.m_glow, 2.0f } : Vector4{};
+            surf.m_variation = 0.15f;
+            surf.m_tint = WHITE;
+            m_surfaces.push_back( surf );
+            known = surfaceOf.emplace( def, (int)m_surfaces.size() - 1 ).first;
+        }
+        for ( Mesh mesh : kb.second.build() )
+        {
+            Drawable d;
+            d.m_mesh = mesh;
+            d.m_surface = known->second;
+            d.m_transform = MatrixIdentity();
+            d.m_cutaway = kb.first % 2 == 1;
+            d.m_sunShadow = d.m_spotShadow = false;
+            m_static.push_back( d );
+        }
+    }
 }
 
 void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
 {
     m_gfx = &gfx;
     m_ownSurfaces.clear();
+    ++LoadRound;
     std::string dir = assets + "/textures/";
     m_surfaces.resize( S_COUNT );
     auto tile = [&]( int s, const char *name, float uv, Vector4 params, float variation, Color tint = WHITE )
     {
-        Texture2D a = loadTexture( dir + name + "_albedo.png" );
-        Texture2D o = loadTexture( dir + name + "_orm.png" );
-        Texture2D n = loadTexture( dir + name + "_normal.png" );
+        Texture2D a = sharedTexture( dir + name + "_albedo.png" );
+        Texture2D o = sharedTexture( dir + name + "_orm.png" );
+        Texture2D n = sharedTexture( dir + name + "_normal.png" );
         Surface   surf = gfx.surface( a, o, n, Texture2D{} );
         surf.m_uvScale = uv;
         surf.m_params = params;
@@ -153,6 +312,7 @@ void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
     tile( S_FOREMAN, "armor", 1.6f, { 1.1f, 1.0f, 1.5f, 0.0f }, 0.15f, { 176, 92, 40, 255 } );
     tile( S_VARN, "armor", 1.6f, { 0.6f, 1.0f, 1.5f, 0.0f }, 0.15f, { 70, 46, 96, 255 } );
     tile( S_MENDER, "armor", 1.6f, { 0.8f, 1.0f, 1.5f, 0.0f }, 0.15f, { 214, 220, 228, 255 } );
+    tile( S_IONE, "armor", 1.6f, { 0.7f, 1.0f, 1.5f, 0.0f }, 0.15f, { 92, 118, 138, 255 } );
 }
 
 bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound )
@@ -167,6 +327,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         for ( char ch : level ) seed = ( seed ^ (unsigned char)ch ) * 16777619u;
     }
     if ( !m_level.load( assets + "/levels/" + level, seed ) ) return false;
+    loadTale();
     // "area 0": as deep as the hero is strong (the depths).
     if ( m_level.m_area <= 0 ) m_level.m_area = std::max( 2, ( m_progress.m_heroLevel + 4 ) / 2 );
     m_areaHit = 1.0f + 0.12f * ( m_level.m_area - 1 );
@@ -177,7 +338,11 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     LevelSurfaces ls = { S_ROCK, S_FLOOR, S_GRATE, S_METAL, S_HAZARD, S_RUST,
                          S_FOIL, S_GLOW,  S_CRATE, S_BOX,   S_HULL,   S_CLOTH2 };
     themeSurfaces( ls );
+    loadDecalDefs();
+    ls.m_decals = &m_decalDefs;
     m_level.build( ls, m_static );
+    buildDecals();
+    freeUnusedTextures();
 
     // Signs: each picture its own surface, lit a little from within so it reads in the dark.
     for ( const Sign &sign : m_level.m_signs )
@@ -203,28 +368,17 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         }
     }
 
-    // The hero: Corvin with the rifle and an amber visor, or Dorra, short and broad, with hammer and shield.
-    FigureSurfaces fs = { S_ARMOR, S_DARK, S_METAL, S_GLOW };
-    fs.m_visor = { 3.2f, 1.6f, 0.3f, 0.0f };
-    // Where there is air and nobody shoots, the helmet comes off.
-    fs.m_helmet = !m_level.m_peaceful;
-    fs.m_skin = S_SKIN;
-    fs.m_hair = m_heroKind == HeroE::DORRA ? S_HAIR2 : S_HAIR;
-    if ( m_heroKind == HeroE::DORRA )
-    {
-        fs.m_armor = S_DORRA;
-        fs.m_visor = { 0.6f, 3.0f, 1.4f, 0.0f };
-        fs.m_weapon = WeaponE::HAMMER;
-        fs.m_scale = { 1.14f, 0.9f, 1.1f };
-    }
-    m_hero.build( fs );
     // A new hero starts with the weapon of their kind and the suit; skills all at rank 0.
-    int hero = m_heroKind == HeroE::DORRA ? 1 : 0;
+    int hero = heroIndex();
     if ( !m_progress.m_worn[0] ) m_progress.m_gear[0] = startItem( hero, SlotE::WEAPON ), m_progress.m_worn[0] = true;
     if ( !m_progress.m_worn[1] ) m_progress.m_gear[1] = startItem( hero, SlotE::ARMOR ), m_progress.m_worn[1] = true;
     m_progress.m_ranks.resize( skillDefs().size(), 0 );
     refreshStats();
+    dressHero();
+    buildIone();
+    buildUnzu();
     m_hp = hpMax();
+    m_shield = m_stats.m_shield;
     buildCrew( assets );
     m_louse.build( S_RUST, S_METAL, S_GLOW, false );
     m_welder.build( S_RUST, S_METAL, S_GLOW, true );
@@ -453,6 +607,10 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         auto elite = m_level.m_elites.find( m.m_row * 1000 + m.m_col );
         if ( m_foes.size() > foes && elite != m_level.m_elites.end() ) makeElite( m_foes.back(), elite->second );
     }
+    // The places' own creatures (the generator's digits), the leaders' escorts.
+    buildFamilies();
+    spawnNatives();
+    assignEscorts();
     loadSkins( gfx );
     loadShip( gfx, assets );
     loadHub( gfx, assets );
@@ -526,7 +684,7 @@ Progress Game::progress() const
         p.m_flags.insert( "done." + m_levelFile.substr( 0, m_levelFile.find( '.' ) ) );
         p.m_level = next();
     }
-    return p;
+    return m_tale ? taleProgress( p ) : p;
 }
 
 std::string Game::title() const
@@ -636,12 +794,56 @@ const char *difficultyName( DifficultyE d )
     }
 }
 
+void Game::dressHero()
+{
+    // The hero: Corvin with the rifle and an amber visor, Dorra short and broad with hammer and shield, or Ione in her
+    // grey-blue maintenance suit, hands free for the drones; the gear shows (the weapon's family and tier, the suit's
+    // weight, a line of light in the colour of the rarest thing worn).
+    FigureSurfaces fs = { S_ARMOR, S_DARK, S_METAL, S_GLOW };
+    fs.m_visor = { 3.2f, 1.6f, 0.3f, 0.0f };
+    // Where there is air and nobody shoots, the helmet comes off.
+    fs.m_helmet = !m_level.m_peaceful;
+    fs.m_skin = S_SKIN;
+    fs.m_hair = m_heroKind == HeroE::DORRA ? S_HAIR2 : S_HAIR;
+    if ( m_heroKind == HeroE::DORRA )
+    {
+        fs.m_armor = S_DORRA;
+        fs.m_visor = { 0.6f, 3.0f, 1.4f, 0.0f };
+        fs.m_weapon = WeaponE::HAMMER;
+        fs.m_scale = { 1.14f, 0.9f, 1.1f };
+    }
+    if ( m_heroKind == HeroE::IONE )
+    {
+        fs.m_armor = S_IONE;
+        fs.m_visor = { 0.3f, 2.6f, 2.8f, 0.0f };
+        fs.m_weapon = WeaponE::NONE;
+        fs.m_scale = { 0.94f, 0.98f, 0.94f };
+    }
+    if ( m_progress.m_worn[0] )
+    {
+        fs.m_shape = itemLook( m_progress.m_gear[0] );
+        fs.m_tier = itemTier( m_progress.m_gear[0] );
+    }
+    if ( m_progress.m_worn[1] ) fs.m_heft = itemLook( m_progress.m_gear[1] );
+    RarityE best = RarityE::COMMON;
+    for ( int i = 0; i < EquipSlots; ++i )
+        if ( m_progress.m_worn[i] && (int)m_progress.m_gear[i].m_rarity > (int)best )
+            best = m_progress.m_gear[i].m_rarity;
+    if ( best != RarityE::COMMON )
+    {
+        Color c = rarityColor( best );
+        fs.m_trim = { c.r / 255.0f * 2.6f, c.g / 255.0f * 2.6f, c.b / 255.0f * 2.6f, 0.0f };
+    }
+    m_hero.build( fs );
+}
+
 const char *heroKey( HeroE h )
 {
     switch ( h )
     {
     case HeroE::DORRA: return "dorra";
     case HeroE::IONE: return "ione";
+    case HeroE::UNZU: return "unzu";
     default: return "corvin";
     }
 }
@@ -653,8 +855,9 @@ float Game::hpMax() const
 
 float Game::runSpeed() const
 {
-    return ( m_heroKind == HeroE::DORRA ? DorraSpeed : RunSpeed ) *
-           Clamp( 1.0f + stat( StatE::SPEED ) / 100.0f, 0.7f, 1.5f ) * ( m_inWater ? 0.55f : 1.0f );
+    return ( m_heroKind == HeroE::DORRA ? DorraSpeed : ( m_heroKind == HeroE::UNZU ? RunSpeed * 1.15f : RunSpeed ) ) *
+           ( m_haste > 0.0f ? 1.35f : 1.0f ) * Clamp( 1.0f + stat( StatE::SPEED ) / 100.0f, 0.7f, 1.5f ) *
+           ( m_inWater ? 0.55f : 1.0f ) * ( m_chill > 0.0f ? 0.6f : 1.0f );
 }
 
 float Game::foeRadius( const Foe &f ) const
@@ -668,6 +871,7 @@ float Game::foeRadius( const Foe &f ) const
     case FoeE::SAW: return 0.42f;
     case FoeE::BOMBER: return 0.55f;
     case FoeE::SHELL: return 0.42f;
+    case FoeE::CREATURE: return creatureRadius( f );
     default: return human( f ) ? 0.42f : 0.5f;
     }
 }
@@ -677,6 +881,7 @@ float Game::foeHeight( const Foe &f ) const
     if ( f.m_kind == FoeE::DRONE ) return 0.0f;   // its position is its body, in the air
     if ( human( f ) ) return foeTall( f ) * 0.62f;
     if ( f.m_kind == FoeE::SHELL ) return 1.05f;
+    if ( f.m_kind == FoeE::CREATURE ) return creatureHeight( f );
     return f.m_kind == FoeE::WELDER ? 0.75f : ( f.m_kind == FoeE::SAW ? 0.35f : 0.45f );
 }
 
@@ -696,8 +901,8 @@ void Game::spawnFoe( FoeE kind, Vector3 pos, bool awake )
     Foe f;
     f.m_kind = kind;
     f.m_pos = pos;
-    const float hp[11] = { LouseHp, WelderHp, BatonHp,  GunnerHp,  ShieldHp, HeavyHp,
-                           DroneHp, SawHp,    BomberHp, TaxatorHp, ShellHp };
+    const float hp[12] = { LouseHp, WelderHp, BatonHp,  GunnerHp,  ShieldHp, HeavyHp,
+                           DroneHp, SawHp,    BomberHp, TaxatorHp, ShellHp,  60.0f };
     f.m_hp = hp[(int)kind] * toughness( m_difficulty ) * ( 1.0f + 0.25f * ( m_level.m_area - 1 ) );
     f.m_home = f.m_safe = pos;
     f.m_hpMax = f.m_hp;
@@ -804,10 +1009,12 @@ void Game::fire( const std::string &trigger )
 
 bool Game::shielded( Vector3 from ) const
 {
-    if ( m_heroKind != HeroE::DORRA || m_block < 0.5f ) return false;
+    // Dorra's shield holds from the front, Ione's screen from the front and the sides.
+    if ( m_heroKind == HeroE::CORVIN || m_block < 0.5f ) return false;
     Vector3 d = { from.x - m_pos.x, 0.0f, from.z - m_pos.z };
     float   len = Vector3Length( d );
-    return len > 1e-3f && ( d.x * sinf( m_yaw ) + d.z * cosf( m_yaw ) ) / len > 0.35f;
+    return len > 1e-3f &&
+           ( d.x * sinf( m_yaw ) + d.z * cosf( m_yaw ) ) / len > ( m_heroKind == HeroE::IONE ? -0.1f : 0.35f );
 }
 
 void Game::hurtHero( float amount, Vector3 push, Vector3 from )
@@ -818,13 +1025,26 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
         // The shield takes it: a clang, sparks off the plates, a little of it comes through.
         Vector3 at = Vector3Add( Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } ),
                                  Vector3Scale( { sinf( m_yaw ), 0.0f, cosf( m_yaw ) }, 0.5f ) );
-        sparks( at, { sinf( m_yaw ), 0.3f, cosf( m_yaw ) }, 10, { 255, 220, 160, 255 }, 3.0f );
-        m_audio.play( SfxE::BLOCK, at, m_camTarget, 0.8f );
-        amount *= 0.15f;
+        bool    screen = m_heroKind == HeroE::IONE;
+        sparks( at, { sinf( m_yaw ), 0.3f, cosf( m_yaw ) }, 10,
+                screen ? Color{ 150, 220, 255, 255 } : Color{ 255, 220, 160, 255 }, 3.0f );
+        m_audio.play( SfxE::BLOCK, at, m_camTarget, screen ? 0.5f : 0.8f );
+        if ( screen && m_power[(int)PowerE::STORM_SHIELD] )
+            for ( Foe &f : m_foes )
+                if ( f.m_alive && !f.m_hidden && f.m_hacked <= 0.0f && Vector3Distance( f.m_pos, m_pos ) < 9.0f )
+                {
+                    Vector3 to = Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } );
+                    m_tracers.push_back( { at, to, 0.12f } );
+                    hurtFoe( f, amount * 1.5f, Vector3Normalize( Vector3Subtract( to, at ) ) );
+                    break;
+                }
+        amount *= screen ? screenCut() : 0.15f;
         push = Vector3Scale( push, 0.3f );
     }
     if ( m_level.m_vacuum && m_outside ) m_oxygen = fmaxf( 0.0f, m_oxygen - amount * 0.25f );
     amount *= harm( m_difficulty ) * ( 1.0f - armorCut() ) * m_areaHit * m_hitScale;
+    if ( !onHurt( amount, from ) ) return;   // a hit through nothing; the shield takes what it can
+    giftsOnHit( amount );
     // Thorns: whoever stands close takes some back.
     if ( stat( StatE::THORNS ) > 0.0f )
         for ( Foe &f : m_foes )
@@ -844,6 +1064,7 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
     if ( push.y > 0.5f ) m_ground = false;
     m_audio.play( SfxE::HURT, m_pos, m_camTarget, 0.8f );
     if ( m_hp < hpMax() * 0.5f ) fire( "hurt" );
+    if ( m_hp <= 0.0f && secondLife() ) return;
     if ( m_hp <= 0.0f )
     {
         m_hp = 0.0f;
@@ -856,7 +1077,7 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
             // Who stood near: what killed the autopilot.
             std::string near;
             const char *kinds[] = { "louse", "welder", "baton",  "gunner",  "shield", "heavy",
-                                    "drone", "saw",    "bomber", "taxator", "shell" };
+                                    "drone", "saw",    "bomber", "taxator", "shell",  "creature" };
             for ( const Foe &f : m_foes )
                 if ( f.m_alive && !f.m_hidden && f.m_awake && Vector3Distance( f.m_pos, m_pos ) < 14.0f )
                     near += std::string( " " ) + kinds[(int)f.m_kind] + ( f.m_elite ? "*" : "" );
@@ -921,12 +1142,28 @@ void Game::killFoe( Foe &f, bool drops )
     ++m_kills;
     // Experience for every kill; now and then an item; a champion always leaves one, a better one.
     gainXp( xpFor( f ) );
+    onKill( f );
     if ( drops && rnd() < 0.09f * ( 1.0f + stat( StatE::FIND ) / 100.0f ) )
         dropItem( Vector3Add( f.m_pos, { 0.0f, 0.8f, 0.0f } ), 1.0f );
+    // Now and then a module; a champion more often.
+    if ( drops && rnd() < ( f.m_elite ? 0.25f : 0.03f ) * ( 1.0f + stat( StatE::FIND ) / 100.0f ) )
+        dropModule( Vector3Add( f.m_pos, { 0.0f, 0.8f, 0.0f } ) );
     if ( f.m_elite == 1 ) dropItem( Vector3Add( f.m_pos, { 0.0f, 0.8f, 0.0f } ), 2.5f );
+    if ( f.m_elite == 3 )
+    {
+        // A leader: a better find, and a module.
+        dropItem( Vector3Add( f.m_pos, { 0.0f, 0.8f, 0.0f } ), 3.5f );
+        dropModule( Vector3Add( f.m_pos, { 0.0f, 0.8f, 0.0f } ) );
+    }
+    giftsOnDeath( f );
     if ( ( f.m_kind == FoeE::TAXATOR || f.m_elite == 2 ) && f.m_kind != FoeE::SHELL ) bossDown( f );
     if ( f.m_kind == FoeE::BOMBER ) detonate( f, 32.0f, 3.2f );
-    if ( f.m_affix == 2 ) detonate( f, 26.0f, 3.5f );
+    if ( hasGift( f, 2 ) ) detonate( f, 26.0f, 3.5f );   // volatile
+    if ( f.m_kind == FoeE::CREATURE )
+    {
+        creatureDown( f, drops );
+        return;
+    }
     float   r = rnd();
     Vector3 v = { ( rnd() - 0.5f ) * 2.0f, 2.5f, ( rnd() - 0.5f ) * 2.0f };
     if ( human( f ) )
@@ -963,9 +1200,10 @@ void Game::killFoe( Foe &f, bool drops )
         m_pickups.push_back( { 1, 1, Vector3Add( f.m_pos, { 0, 0.4f, 0 } ), v } );
 }
 
-void Game::hurtFoe( Foe &f, float amount, Vector3 dir )
+void Game::hurtFoe( Foe &f, float amount, Vector3 dir, DamageE kind )
 {
     if ( !f.m_alive ) return;
+    amount *= damageScale( f, kind, dir );
     Vector3 face = { sinf( f.m_yaw ), 0.0f, cosf( f.m_yaw ) };
     if ( f.m_kind == FoeE::SHIELD && f.m_swingT < 0.0f && f.m_stun <= 0.0f &&
          -( face.x * dir.x + face.z * dir.z ) > 0.4f )
@@ -977,8 +1215,18 @@ void Game::hurtFoe( Foe &f, float amount, Vector3 dir )
         if ( rnd() < 0.3f ) m_audio.play( SfxE::BLOCK, f.m_pos, m_camTarget, 0.5f );
         fire( "shieldguard" );
     }
-    if ( f.m_affix == 1 ) amount *= 0.5f;
+    if ( hasGift( f, 1 ) ) amount *= 0.5f;                                                 // armoured
     if ( f.m_kind == FoeE::SHELL && f.m_variant == 2 && motherLinked() ) amount *= 0.3f;   // the link holds them
+    // A leader's escort holds better while it stands.
+    if ( f.m_leader >= 0 && f.m_leader < (int)m_foes.size() && m_foes[f.m_leader].m_alive &&
+         m_foes[f.m_leader].m_elite == 3 )
+        amount *= 0.85f;
+    if ( wardTakes( f, amount ) )
+    {
+        f.m_flash = 0.5f;
+        f.m_awake = true;
+        return;
+    }
     f.m_hp -= amount;
     f.m_flash = 1.0f;
     if ( !f.m_awake && !human( f ) ) m_audio.play( SfxE::CHITTER, f.m_pos, m_camTarget, 0.6f );
@@ -987,6 +1235,7 @@ void Game::hurtFoe( Foe &f, float amount, Vector3 dir )
     float push = f.m_kind == FoeE::LOUSE ? 1.8f : ( human( f ) ? 0.8f : 0.5f );
     if ( f.m_kind == FoeE::TAXATOR ) push = 0.0f;
     if ( f.m_kind == FoeE::HEAVY ) push = 0.2f;
+    if ( f.m_kind == FoeE::CREATURE ) push = f.m_family == 5 || f.m_family == 8 ? 0.0f : 0.4f;   // a vine, a golem
     f.m_vel = Vector3Add( f.m_vel, { dir.x * push, push * 0.45f, dir.z * push } );
     if ( f.m_kind == FoeE::LOUSE ) f.m_ground = false;
     if ( f.m_hp <= 0.0f ) killFoe( f, true );
@@ -1020,6 +1269,7 @@ Game::Target Game::findTarget( Vector3 from, Vector3 dir, float cone ) const
         Vector3 d = Vector3Subtract( p, from );
         float   dist = sqrtf( d.x * d.x + d.z * d.z );
         if ( dist > 24.0f || dist < 0.3f ) return;
+        if ( t.m_kind == 0 && m_foes[t.m_index].m_hacked > 0.0f ) return;   // what Ione has taken over
         float a = acosf( Clamp(
             ( d.x * dir.x + d.z * dir.z ) / ( dist * sqrtf( dir.x * dir.x + dir.z * dir.z ) + 1e-6f ), -1.0f, 1.0f ) );
         if ( a > cone ) return;
@@ -1129,7 +1379,7 @@ void Game::shootPellet( bool first )
     for ( int i = 0; i < (int)m_foes.size(); ++i )
     {
         const Foe &f = m_foes[i];
-        if ( !f.m_alive || f.m_hidden ) continue;
+        if ( !f.m_alive || f.m_hidden || f.m_hacked > 0.0f ) continue;
         float t = human( f ) || f.m_kind == FoeE::SHELL
                       ? rayCylinder( from, dir, f.m_pos, foeRadius( f ), foeTall( f ) )
                       : raySphere( from, dir, Vector3Add( f.m_pos, { 0.0f, foeHeight( f ), 0.0f } ), foeRadius( f ) );
@@ -1259,6 +1509,17 @@ void Game::shootPellet( bool first )
     }
     else if ( kind < 0 )
         sparks( at, normal, 9, { 200, 225, 255, 255 }, 3.0f );
+    if ( m_heroKind == HeroE::IONE )
+    {
+        // The swarm, not a slug: it gathers where it cuts; a whirr now and then, a cold light, no kick.
+        m_cloudAt = at;
+        m_cloudT = 0.3f;
+        if ( kind >= 0 ) sparks( at, Vector3Negate( dir ), 3, { 170, 235, 255, 255 }, 2.0f );
+        if ( !first ) return;
+        if ( ++m_swarmHits % 3 == 0 ) m_audio.play( SfxE::SWARM, at, m_camTarget, 0.45f );
+        m_flashes.push_back( { at, { 3.0f, 9.0f, 12.0f }, 2.5f, 0.08f, 0.08f } );
+        return;
+    }
     m_tracers.push_back( { from, at, 0.08f } );
     if ( !first ) return;
     m_flashes.push_back( { muzzle, { 10.0f, 16.0f, 24.0f }, 5.0f, 0.06f, 0.06f } );
@@ -1299,6 +1560,7 @@ void Game::updateHero( float dt, const GameInput &in )
             // Back at the last capsule.
             m_dead = false;
             m_hp = hpMax();
+            m_shield = m_stats.m_shield;
             m_heat = 0.0f;
             m_overheat = false;
             m_pos = m_respawn;
@@ -1326,6 +1588,7 @@ void Game::updateHero( float dt, const GameInput &in )
     // Dorra slows while she swings or holds the shield up.
     float pace = 1.0f;
     if ( m_heroKind == HeroE::DORRA ) pace = ( m_swing >= 0 ? 0.4f : 1.0f ) * ( 1.0f - 0.45f * m_block );
+    if ( m_heroKind == HeroE::IONE ) pace = 1.0f - 0.35f * m_block;
     Vector2 want = Vector2Scale( move, runSpeed() * pace );
     Vector2 v = { m_vel.x, m_vel.z };
     Vector2 dv = Vector2Subtract( want, v );
@@ -1346,7 +1609,11 @@ void Game::updateHero( float dt, const GameInput &in )
     if ( m_heroKind == HeroE::DORRA )
         updateMelee( dt, in, move );
     else
+    {
         updateGunner( dt, in, move );
+        if ( m_heroKind == HeroE::IONE ) updateIone( dt, in );
+        if ( m_heroKind == HeroE::UNZU ) updateUnzu( dt, in );
+    }
 
     // A roll or a charge carries the hero (stopping short of a shaft); the charge strikes what it runs through.
     if ( m_dash > 0.0f )
@@ -1436,7 +1703,7 @@ void Game::updateGunner( float dt, const GameInput &in, Vector2 move )
         m_aimYaw = atan2f( move.x, move.y );
     Vector3 aimDir = { sinf( m_aimYaw ), 0.0f, cosf( m_aimYaw ) };
     m_target = findTarget( chest, aimDir, manual ? AssistCone : AutoCone );
-    m_firing = in.m_fire;
+    m_firing = in.m_fire && ( m_heroKind != HeroE::IONE || m_block < 0.5f );   // the screen holds the swarm
     float faceYaw = m_aimYaw;
     if ( m_firing && m_target.m_kind >= 0 )
     {
@@ -1462,6 +1729,7 @@ void Game::updateGunner( float dt, const GameInput &in, Vector2 move )
             m_heat = 100.0f;
             m_overheat = true;
             fire( "overheat" );
+            overheated();
             m_audio.play( SfxE::OVERHEAT, m_pos, m_camTarget, 0.8f );
         }
     }
@@ -1546,10 +1814,13 @@ void Game::moveHero( float dt )
         if ( !c.m_active && Vector3Distance( c.m_pos, m_pos ) < 6.0f &&
              los( Vector3Add( m_pos, { 0, 1.2f, 0 } ), Vector3Add( c.m_pos, { 0, 1.2f, 0 } ) ) )
         {
+            bool front = groundAt( c.m_front ) > -100.0f && groundAt( c.m_front ) < 100.0f;
+            if ( !front && !m_ground ) continue;
             for ( Capsule &o : m_capsules ) o.m_active = false;
             c.m_active = true;
-            // One wakes before the capsule; where that is open space (a capsule by a deck's edge), beside the hero.
-            m_respawn = groundAt( c.m_front ) > -100.0f && groundAt( c.m_front ) < 100.0f ? c.m_front : m_pos;
+            // One wakes before the capsule; where that is open space (a capsule by a deck's edge), beside the hero (who
+            // stands: a capsule woken in a leap over a shaft would put the next life over it).
+            m_respawn = front ? c.m_front : m_pos;
             fire( "capsule" );
             m_audio.play( SfxE::CAPSULE, c.m_pos, m_camTarget, 0.9f );
         }
@@ -1558,7 +1829,8 @@ void Game::moveHero( float dt )
         if ( !p.m_alive ) continue;
         Vector3 d = Vector3Subtract( Vector3Add( m_pos, { 0, 0.6f, 0 } ), p.m_pos );
         float   dist = Vector3Length( d );
-        if ( dist < 2.6f && ( p.m_kind != 1 || m_stims < 9 ) && ( p.m_kind != 2 || m_oxygen < m_oxygenMax - 5.0f ) )
+        if ( dist < 2.6f && ( p.m_kind != 1 || m_stims < maxStims() ) &&
+             ( p.m_kind != 2 || m_oxygen < m_oxygenMax - 5.0f ) )
             p.m_pos = Vector3Add( p.m_pos, Vector3Scale( d, fminf( 1.0f, dt * 6.0f ) ) );
         if ( dist < 0.8f )
         {
@@ -1672,7 +1944,7 @@ void Game::updateFoes( float dt )
         if ( f.m_burnTime > 0.0f )
         {
             f.m_burnTime -= dt;
-            f.m_hp -= f.m_burn * dt;
+            f.m_hp -= f.m_burn * dt * fmaxf( 0.0f, 1.0f - resist( f, DamageE::HEAT ) / 100.0f );
             if ( rnd() < dt * 14.0f )
                 m_particles.push_back(
                     { Vector3Add( f.m_pos, { ( rnd() - 0.5f ) * 0.5f, 0.3f + rnd(), ( rnd() - 0.5f ) * 0.5f } ),
@@ -1688,6 +1960,8 @@ void Game::updateFoes( float dt )
                 continue;
             }
         }
+        if ( resist( f, DamageE::SHOCK ) >= 100 && f.m_kind != FoeE::TAXATOR && f.m_stun > 0.0f && f.m_stun < 1.25f )
+            f.m_stun = 0.0f;   // nothing shocks it still
         bool stunned = f.m_stun > 0.0f;
         if ( stunned ) f.m_stun -= dt;
         bool    welder = f.m_kind == FoeE::WELDER;
@@ -1715,10 +1989,22 @@ void Game::updateFoes( float dt )
         float   faceYaw = f.m_yaw;
         bool    chase = f.m_awake && !m_dead && !m_finished && m_scene == 0 && !stunned;
         bool    drone = f.m_kind == FoeE::DRONE || ( f.m_kind == FoeE::GUNNER && f.m_variant == 4 && f.m_stage == 0 );
+        if ( f.m_hacked > 0.0f )
+        {
+            // Taken over by Ione's swarm: it goes for its own instead (updateHacked fires for it).
+            chase = false;
+            want = hackedWant( f, faceYaw );
+        }
         f.m_timer -= dt;
-        // A champion hits harder (berserk harder still); a swift one is quicker at everything.
-        m_hitScale = f.m_elite ? ( f.m_affix == 3 ? 1.6f : 1.25f ) : 1.0f;
-        if ( f.m_affix == 0 ) f.m_timer -= dt * 0.4f, f.m_spit -= dt * 0.4f;
+        // A champion hits harder (berserk harder still); a swift one is quicker at everything; a leader's escort
+        // hits harder while the leader stands.
+        m_hitScale = f.m_elite ? ( hasGift( f, 3 ) ? 1.6f : 1.25f ) : 1.0f;
+        if ( f.m_leader >= 0 && f.m_leader < (int)m_foes.size() && m_foes[f.m_leader].m_alive &&
+             m_foes[f.m_leader].m_elite == 3 )
+            m_hitScale *= 1.25f;
+        if ( hasGift( f, 0 ) ) f.m_timer -= dt * 0.4f, f.m_spit -= dt * 0.4f;
+        m_actor = (int)( &f - m_foes.data() );
+        if ( !f.m_hidden && f.m_hacked <= 0.0f && !m_dead && m_scene == 0 ) updateGifts( f, m_actor, dt, dist, dir );
         if ( chase && f.m_kind == FoeE::TAXATOR && !m_fired.count( "bossstart" ) ) fire( "bossstart" );
         if ( chase )
         {
@@ -1734,6 +2020,8 @@ void Game::updateFoes( float dt )
                 updateShell( f, dt, dir, dist, path, want, faceYaw );
             else if ( f.m_kind == FoeE::GUNNER && f.m_variant == 1 )
                 updateShocker( f, dt, dir, dist, path, want, faceYaw );
+            else if ( f.m_kind == FoeE::CREATURE )
+                updateCreature( f, dt, dir, dist, path, want, faceYaw );
             else if ( updateVariant( f, dt, dir, dist, path, want, faceYaw ) )
             {
             }
@@ -1850,7 +2138,7 @@ void Game::updateFoes( float dt )
             faceYaw = atan2f( back.x, back.z );
             f.m_state = FoeStateE::CHASE;
         }
-        if ( f.m_affix == 0 || f.m_affix == 3 ) want = Vector3Scale( want, f.m_affix == 0 ? 1.45f : 1.15f );
+        if ( hasGift( f, 0 ) || hasGift( f, 3 ) ) want = Vector3Scale( want, hasGift( f, 0 ) ? 1.45f : 1.15f );
         if ( !m_waters.empty() && f.m_kind != FoeE::DRONE && waterAt( Vector3Add( f.m_pos, { 0, 0.8f, 0 } ) ) >= 0 )
             want = Vector3Scale( want, 0.6f );
         if ( drone )
@@ -1960,11 +2248,27 @@ void Game::updateFoes( float dt )
         f.m_flash = fmaxf( 0.0f, f.m_flash - dt * 5.0f );
     }
     m_hitScale = 1.0f;
+    m_actor = -1;
     // Those the Taxator called come in now (the list must not grow while it is walked).
     for ( const auto &s : m_summons )
     {
-        spawnFoe( s.first, s.second, true );
+        if ( s.family >= 0 )
+            spawnNative( s.family, s.second, s.tier );
+        else
+            spawnFoe( s.first, s.second, true );
         m_foes.back().m_variant = s.variant;
+        {
+            Foe &n = m_foes.back();
+            n.m_awake = true;
+            n.m_stage = s.stage;
+            n.m_leader = s.leader;
+            if ( s.hp > 0.0f )
+                n.m_hp = n.m_hpMax = s.hp;
+            else
+                n.m_hp = n.m_hpMax = n.m_hpMax * s.share;
+            if ( Vector3Length( s.vel ) > 0.0f ) n.m_vel = s.vel, n.m_ground = false;
+            if ( n.m_kind == FoeE::DRONE ) n.m_rush.y = s.second.y - 1.75f;
+        }
         // The swarm's units are small: a few hits each.
         if ( ( s.first == FoeE::DRONE && s.variant == 5 ) || ( s.first == FoeE::SAW && s.variant == 3 ) )
             m_foes.back().m_hp *= 0.4f, m_foes.back().m_hpMax = m_foes.back().m_hp;
@@ -1992,7 +2296,10 @@ void Game::updateFoes( float dt )
     // Feet.
     for ( Foe &f : m_foes )
     {
-        if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ) continue;
+        if ( f.m_alive && f.m_kind == FoeE::CREATURE ) stepCreatureLegs( f, dt );
+        if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ||
+             f.m_kind == FoeE::CREATURE )
+            continue;
         const LouseModel &model = f.m_kind == FoeE::WELDER
                                       ? m_welder
                                       : ( f.m_kind == FoeE::SAW ? ( f.m_variant == 3 ? m_mender
@@ -2416,6 +2723,18 @@ void Game::plan()
         m_level.cellOf( { m_lift.x, 0.0f, m_liftMin.z - 1.0f }, gr, gc );
         goal = gr * cols + gc;
     }
+    // A goal someone stands on (one of a crowd, a capsule): the free cell nearest to it.
+    if ( goal >= 0 && m_blocked.count( goal ) )
+    {
+        int gr = goal / cols, gc = goal % cols, near = -1;
+        for ( int d = 1; d <= 3 && near < 0; ++d )
+            for ( int dr = -d; dr <= d && near < 0; ++dr )
+                for ( int dc = -d; dc <= d && near < 0; ++dc )
+                    if ( std::max( abs( dr ), abs( dc ) ) == d && m_level.walkable( gr + dr, gc + dc ) &&
+                         !m_blocked.count( ( gr + dr ) * cols + gc + dc ) )
+                        near = ( gr + dr ) * cols + gc + dc;
+        if ( near >= 0 ) goal = near;
+    }
     // Cells with a crate or a stall in them: round them if there is a way, through them if not.
     if ( m_propCells.empty() )
     {
@@ -2710,6 +3029,16 @@ void Game::autopilot( float dt, GameInput &in )
             return;
         }
     }
+    if ( m_seekAir && m_path.empty() )
+        for ( const Vector3 &post : m_airPosts )
+        {
+            // At the air: the last steps right up to the post (its cell's middle can be just out of its reach).
+            Vector2 to = { post.x - m_pos.x, post.z - m_pos.z };
+            float   d = Vector2Length( to );
+            if ( d > 5.0f ) continue;
+            in.m_move = d > 1.2f ? Vector2Scale( to, 1.0f / d ) : Vector2{ 0.0f, 0.0f };
+            return;
+        }
     if ( m_path.empty() )
     {
         if ( liftOpen() && ( m_doorHalf <= 0.0f || m_doorOpen > 0.9f ) && Vector3Distance( m_pos, m_lift ) < 6.0f )
@@ -2726,7 +3055,13 @@ void Game::autopilot( float dt, GameInput &in )
             Vector2 to = Vector2Normalize( { m_tugPos.x - m_pos.x, m_tugPos.z - m_pos.z } );
             float   side = fmodf( m_time, 6.0f ) < 3.0f ? 1.0f : -1.0f;
             Vector2 move = { -to.y * side, to.x * side };
-            if ( Vector3Distance( m_pos, m_tugPos ) < 12.0f ) move = Vector2Normalize( Vector2Subtract( move, to ) );
+            // Twelve metres off, or what the weapon reaches (Ione's swarm reaches less than the rifle).
+            float keep = m_heroKind == HeroE::IONE ? fminf( 12.0f, m_stats.m_range * 0.55f ) : 12.0f;
+            float dist = Vector3Distance( m_pos, m_tugPos );
+            if ( dist < keep )
+                move = Vector2Normalize( Vector2Subtract( move, to ) );
+            else if ( m_heroKind == HeroE::IONE && dist > m_stats.m_range - 2.0f )   // only when out of reach
+                move = Vector2Normalize( Vector2Add( move, Vector2Scale( to, 2.0f ) ) );
             if ( groundAt( { m_pos.x + move.x * 1.5f, 0.0f, m_pos.z + move.y * 1.5f } ) > -100.0f ) in.m_move = move;
         }
         int b = boss();
@@ -2751,6 +3086,13 @@ void Game::autopilot( float dt, GameInput &in )
     Vector2 d = { to.x - m_pos.x, to.z - m_pos.z };
     float   len = Vector2Length( d );
     if ( len > 1e-3f ) in.m_move = Vector2Scale( d, 1.0f / len );
+    if ( !m_ground && m_vel.y < 0.0f && m_level.walkable( r, c ) && groundAt( m_pos ) > m_pos.y - 3.0f )
+    {
+        // Coming down over floor: land where one is (a plan made in the air would steer off a small island).
+        Vector3 here = m_level.centre( r, c );
+        Vector2 h = { here.x - m_pos.x, here.z - m_pos.z };
+        in.m_move = Vector2Length( h ) > 0.3f ? Vector2Normalize( h ) : Vector2{ 0.0f, 0.0f };
+    }
     // A shut door on the way: open it.
     const Cell &door = m_level.cell( next / cols, next % cols );
     if ( door.m_kind == CellE::DOOR && !door.m_open ) in.m_use = true;
@@ -2842,7 +3184,11 @@ void Game::update( float dt, const GameInput &inRaw )
     updateHero( dt, in );
     updateBoreHoles();
     updateFoes( dt );
+    updateHazards( dt );
+    updateAilments( dt );
     updateSwarm( dt );
+    updateTale( dt );
+    updateGear( dt );
     updateTug( dt );
     updateVault( dt );
     updatePress( dt );
@@ -2986,7 +3332,13 @@ Lighting Game::lighting() const
         all.push_back( { Vector3Add( m_pos, { 0.0f, 4.5f, 0.0f } ), 12.0f, { 16.0f, 7.0f, 1.0f }, 0.6f } );
     if ( m_ilka >= 0 && m_fired.count( "bridgeclear" ) )
         all.push_back( { Vector3Add( m_scanner, { 0.0f, 0.4f, 0.0f } ), 3.0f, { 6.0f, 0.6f, 0.3f }, 0.5f } );
-    for ( const Shot &s : m_shotsInFlight ) all.push_back( { s.m_pos, 3.0f, { 8.0f, 2.0f, 0.6f }, 1.0f } );
+    for ( const Shot &s : m_shotsInFlight )
+        all.push_back( { s.m_pos, 3.0f,
+                         s.m_kind == 1   ? Vector3{ 4.0f, 1.6f, 8.0f }
+                         : s.m_kind == 2 ? Vector3{ 3.0f, 5.0f, 8.0f }
+                         : s.m_kind == 3 ? Vector3{ 2.0f, 7.0f, 1.2f }
+                                         : Vector3{ 8.0f, 2.0f, 0.6f },
+                         1.0f } );
     for ( const Bolt &b : m_bolts ) all.push_back( { b.m_pos, 3.0f, { 9.0f, 4.0f, 1.0f }, 1.0f } );
     // The lift: red while the gate is shut, green when it waits.
     if ( m_liftMax.x > m_liftMin.x )
@@ -3160,9 +3512,18 @@ void Game::drawParticles( Gfx &gfx )
     }
     for ( const Shot &s : m_shotsInFlight )
     {
-        Vector3 tail = Vector3Subtract( s.m_pos, Vector3Scale( s.m_vel, 0.045f ) );
-        streak( s.m_pos, tail, 0.03f, { 255, 235, 200, 255 } );
-        streak( s.m_pos, tail, 0.1f, { 255, 90, 40, 130 } );
+        // A creature's shot in its own colour: shards violet, frost white-blue, acid green, a torpedo amber, webs
+        // white, memories pale.
+        const Color core[7] = { { 255, 235, 200, 255 }, { 230, 200, 255, 255 }, { 230, 245, 255, 255 },
+                                { 210, 255, 170, 255 }, { 255, 230, 150, 255 }, { 245, 245, 250, 255 },
+                                { 220, 235, 255, 255 } };
+        const Color halo[7] = { { 255, 90, 40, 130 },  { 170, 90, 255, 140 }, { 120, 190, 255, 140 },
+                                { 90, 220, 60, 140 },  { 255, 150, 40, 150 }, { 200, 220, 255, 110 },
+                                { 120, 170, 255, 120 } };
+        int         k = std::clamp( s.m_kind, 0, 6 );
+        Vector3     tail = Vector3Subtract( s.m_pos, Vector3Scale( s.m_vel, k == 4 ? 0.12f : 0.045f ) );
+        streak( s.m_pos, tail, k == 4 ? 0.07f : 0.03f, core[k] );
+        streak( s.m_pos, tail, k == 4 ? 0.2f : 0.1f, halo[k] );
     }
     for ( const Foe &f : m_foes )
     {
@@ -3183,14 +3544,21 @@ void Game::drawParticles( Gfx &gfx )
 void Game::render( Gfx &gfx, const RenderTexture2D *out )
 {
     m_dynamic.clear();
-    m_hero.pose( m_dynamic );
+    if ( m_heroKind == HeroE::UNZU )
+        poseUnzu( m_dynamic );
+    else
+        m_hero.pose( m_dynamic );
     poseCrew( m_dynamic );
     poseShip( m_dynamic );
     poseHub( m_dynamic );
     poseUsables( m_dynamic );
     poseLoot( m_dynamic );
+    poseIone( m_dynamic );
+    poseGear( m_dynamic );
     poseFoes( m_dynamic );
     poseVariants( m_dynamic );
+    poseCreatures( m_dynamic );
+    poseHazards( m_dynamic );
     poseWorld( m_dynamic );
     poseElements( m_dynamic );
     poseAct34( m_dynamic );
@@ -3198,7 +3566,9 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     poseVault( m_dynamic );
     for ( const Foe &f : m_foes )
     {
-        if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ) continue;
+        if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ||
+             f.m_kind == FoeE::CREATURE )
+            continue;
         LousePose pose;
         pose.m_pos = f.m_pos;
         pose.m_yaw = f.m_yaw;
@@ -3326,6 +3696,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     gfx.m_cutCentre = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
     gfx.m_cutRadius = 2.6f;
     gfx.m_exposure = 1.7f * m_brightness;
+    gradeFor( gfx );
     gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );
     gfx.beginScene( m_cam, L, m_time, m_skyTex.id > 0 ? m_skyTex : ( m_skyColorTex.id > 0 ? m_skyColorTex : m_dot ) );
     drawView( gfx );
@@ -3425,6 +3796,7 @@ void Game::drawHud( int w, int h )
         DrawRectangle( (int)x, (int)( y + 32 * s ), (int)bw, (int)bh, { 40, 10, 10, 200 } );
         DrawRectangleGradientH( (int)x, (int)( y + 32 * s ), (int)( bw * m_hp / hpMax() ), (int)bh,
                                 { 150, 20, 20, 255 }, { 230, 60, 40, 255 } );
+        drawShieldHud( x, y, bw, s );
         DrawRectangle( (int)x, (int)( y + 54 * s ), (int)bw, (int)( 8 * s ), { 10, 20, 30, 200 } );
         if ( m_heroKind == HeroE::DORRA )
         {
@@ -3439,13 +3811,21 @@ void Game::drawHud( int w, int h )
                                              (unsigned char)( 200 - 80 * m_heat / 100 ),
                                              (unsigned char)( 255 - 200 * m_heat / 100 ), 255 };
             DrawRectangle( (int)x, (int)( y + 54 * s ), (int)( bw * m_heat / 100.0f ), (int)( 8 * s ), heat );
+            if ( m_heroKind == HeroE::IONE )
+            {
+                // Ione: under the swarm's load, the takeover's readiness.
+                float ready = 1.0f - Clamp( m_boltTimer / 9.0f, 0.0f, 1.0f );
+                Color c = ready >= 1.0f ? Color{ 120, 230, 255, 255 } : Color{ 50, 100, 120, 255 };
+                DrawRectangle( (int)x, (int)( y + 64 * s ), (int)( bw * ready ), (int)( 4 * s ), c );
+            }
         }
         if ( m_overheat && fmodf( m_time, 0.4f ) < 0.25f )
         {
-            const char *hot = tr( "hud.overheat" );
+            const char *hot = trAs( "hud.overheat", heroKey( m_heroKind ) );
             text( hot, x + bw - MeasureTextEx( m_font, hot, 18 * s, 1.0f ).x, y + 4 * s, 18, { 255, 120, 60, 255 } );
         }
         text( TextFormat( tr( "hud.stock" ), m_stims, m_scrap ), x, y + 72 * s, 20, { 200, 220, 210, 230 } );
+        drawAilments( x + 190 * s, y + 74 * s, s );
     }
 
     // The press: its bar in three parts (tank, core, tank), and a marker over each weak spot that can be hit now.
@@ -3493,6 +3873,7 @@ void Game::drawHud( int w, int h )
     drawWorldHud( w, h, s );
     drawElementsHud( w, h, s );
     drawAct34Hud( w, h, s );
+    drawTaleHud( w, h, s );
     drawSwarmHud( w, h, s );
     drawTugHud( w, h, s );
     drawVaultHud( w, h, s );
@@ -3523,6 +3904,23 @@ void Game::drawHud( int w, int h )
         std::string who = tr( "speaker." + speaker );
         for ( char &ch : who ) ch = (char)toupper( (unsigned char)ch );
         float ly = h - 190.0f * s;
+        // The speaker's face beside the line, where there is one.
+        const std::string face = m_assets + "/textures/portrait_" + speaker + ".png";
+        if ( !m_portraits.count( speaker ) && FileExists( face.c_str() ) )
+        {
+            m_portraits[speaker] = LoadTexture( face.c_str() );
+            SetTextureFilter( m_portraits[speaker], TEXTURE_FILTER_BILINEAR );
+        }
+        auto pt = m_portraits.find( speaker );
+        if ( pt != m_portraits.end() )
+        {
+            float size = 92.0f * s, px = w * 0.5f - w * 0.275f - size - 18.0f * s;
+            DrawTexturePro( pt->second, { 0, 0, (float)pt->second.width, (float)pt->second.height },
+                            { px, ly - 4.0f * s, size, size }, { 0, 0 }, 0.0f,
+                            { 255, 255, 255, (unsigned char)( 255 * a ) } );
+            DrawRectangleLinesEx( { px, ly - 4.0f * s, size, size }, 2.0f * s,
+                                  { 255, 180, 100, (unsigned char)( 120 * a ) } );
+        }
         text( who.c_str(), w * 0.5f, ly, 22, { 255, 190, 110, (unsigned char)( 255 * a ) }, true );
         wrapped( trAs( m_line->m_id, heroKey( m_heroKind ) ), w * 0.5f, ly + 30 * s, 28, w * 0.55f,
                  { 245, 242, 236, (unsigned char)( 255 * a ) } );
@@ -3597,6 +3995,19 @@ std::string Game::report() const
     if ( m_talkGoal >= 0 )
         parts += TextFormat( " goal=%d,%d", m_talkGoal / m_level.cols(), m_talkGoal % m_level.cols() );
     if ( m_motherOn ) parts += m_motherAwake ? "awake" : "asleep";
+    // A swarm: its carriers standing (and where), its units.
+    if ( m_swarmOn )
+    {
+        int units = 0;
+        for ( const Foe &f : m_foes )
+            units += f.m_alive && ( ( f.m_kind == FoeE::DRONE && f.m_variant == 5 ) ||
+                                    ( f.m_kind == FoeE::SAW && f.m_variant == 3 ) );
+        parts += TextFormat( "swarm%d:", units );
+        for ( int id : m_hives )
+            if ( m_foes[id].m_alive )
+                parts +=
+                    TextFormat( "hive@%.0f,%.0f,%.0f/", m_foes[id].m_pos.x, m_foes[id].m_pos.y, m_foes[id].m_pos.z );
+    }
     int alive = 0;
     for ( const Foe &f : m_foes ) alive += f.m_alive ? 1 : 0;
     snprintf(

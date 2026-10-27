@@ -47,6 +47,8 @@ enum class SfxE : int
     THROW,      ///< a blast bolt thrown
     DOOR,       ///< a door sliding open: a hiss, the servo, a clunk
     CRACKLE,    ///< a suit's power cell shorting out: sparks
+    SWARM,      ///< Ione's drones cutting: a whirr of many small rotors
+    HACK,       ///< a machine taken over: a chirp down the maintenance line
     COUNT       ///< number of effects
 };
 

@@ -5,6 +5,7 @@ l24.intro = A server hall in the core of the Mill. With the override codes one c
 
 l24_start        = The server hall. Cold after the heat outside. And quiet.
 l24_start.dorra  = Racks as far as I can see. A thousand people in each.
+l24_start.ione   = The server hall. I once calculated the cooling for something like this. For a data centre, they told me.
 l24_ruul         = I need time. Keep them off me.
 l24_reinforce    = Cleaners! They're coming from everywhere.
 l24_racks        = A thousand people in each of these racks. They're working while we fight here.
@@ -41,6 +42,7 @@ l25_start.dorra  = A pit canteen like on Kalvar. Except for the smell. Here it s
 l25_flicker      = They're flickering. Now they're slowing down – or I'm speeding up.
 l25_known        = I know that one. I sold him. He recognises me.
 l25_known.dorra  = That woman has a tattoo like mine used to be. Kalvar.
+l25_known.ione   = I know her. I installed her, conveyor four. Back then she hummed me a song she didn't want to forget. She is still humming it.
 l25_delete       = Where the white cubes were, there's nothing left. Not even the floor.
 l25_night        = The night shift is helping you. This time.
 l25_boss         = Please remain calm. There is no cause for concern.

@@ -329,6 +329,34 @@ Wave make( SfxE s )
         }
         return b.wave();
     }
+    case SfxE::SWARM:
+    {
+        // Many small rotors at once: buzzing partials beating against each other, a hiss of cut metal.
+        Buf b( 0.35f );
+        int n = (int)b.m_s.size();
+        for ( int k = 0; k < 6; ++k )
+        {
+            float f = 310.0f + 47.0f * k + 9.0f * b.noise();
+            for ( int i = 0; i < n; ++i )
+            {
+                float t = (float)i / n;
+                float saw = fmodf( f * i / (float)Rate, 1.0f ) * 2.0f - 1.0f;
+                b.m_s[i] += 0.07f * saw * sinf( PI * t ) * ( 0.6f + 0.4f * sinf( Tau * ( 23.0f + k ) * i / Rate ) );
+            }
+        }
+        b.hiss( 0.02f, 0.25f, 0.18f, 14.0f, 0.6f, true );
+        return b.wave();
+    }
+    case SfxE::HACK:
+    {
+        // A handshake down the line: two chirps, a falling tone, a click.
+        Buf b( 0.5f );
+        b.sweep( 0.0f, 900.0f, 2400.0f, 0.06f, 0.3f, 8.0f );
+        b.sweep( 0.09f, 1200.0f, 3000.0f, 0.06f, 0.3f, 8.0f );
+        b.sweep( 0.2f, 1600.0f, 400.0f, 0.22f, 0.3f, 6.0f );
+        b.hiss( 0.42f, 0.03f, 0.4f, 120.0f, 0.8f, true );
+        return b.wave();
+    }
     default: break;
     }
     Buf b( 0.1f );

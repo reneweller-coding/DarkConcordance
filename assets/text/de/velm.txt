@@ -12,6 +12,7 @@ speaker.hausmeister = HAUSMEISTER
 
 v_start         = Die Dritte Trommel. Irgendwo hier wartet eine Frau namens Ysolde Varn. Sie hat meine Rechnung bezahlt.
 v_start.dorra   = Die Dritte Trommel. Ysolde Varn hat mich bezahlt, bevor ich wach war. So was kostet immer zweimal.
+v_start.ione    = Die Dritte Trommel. Ysolde Varn hat meine Rechnung bezahlt. Sie weiß bestimmt, wie lange ich noch habe. Leute wie sie wissen so etwas.
 v_back          = Zurück in der Letzten Schicht. Ysolde wird wissen wollen, was ich gefunden habe.
 
 # Ysolde: das erste Gespräch.
@@ -106,7 +107,11 @@ shop.stim       = Stim (+40 Leben)
 workshop.title  = WERKSTATT ANAND
 workshop.rifle  = Gaußgewehr, Stufe %d: mehr Schaden, kühler
 workshop.hammer = Rammhammer, Stufe %d: härter, schnellere Bolzen
+workshop.swarm = Drohnenwolke, Stufe %d: schärfer, ausdauernder
 workshop.armor  = Panzerung, Stufe %d: +20 Leben
+workshop.socketweapon = Sockel in die Waffe bohren (%d/%d)
+workshop.socketsuit   = Sockel in den Anzug bohren (%d/%d)
+workshop.fixed        = (Kiri traut sich nicht)
 workshop.max    = (ausgebaut)
 shop.price      = %d Schrott
 shop.back       = Zurück
@@ -150,3 +155,27 @@ sign_bar        = ZUR LETZTEN SCHICHT | BAR · DRITTE TROMMEL
 sign_clinic     = ARMENKLINIK | DRITTE TROMMEL · OFFEN
 sign_shop       = WERKSTATT ANAND | REPARATUR · UMBAU
 sign_axis       = LASTENAUFZUG ↑ | ACHSE · KÜHLGEDÄRME
+
+# Die Gefährten
+cd1a   = Du bist also Ysoldes neueste Anschaffung. Dorra Vask. Sie hat mich aus einer Zelle geholt, dich aus einer Armenklinik. Wir schulden ihr beide etwas, also trinken wir auf ihre Rechnung.
+cd1a_a = Warum warst du in einer Zelle?
+cd1a_b = Auf Ysoldes Rechnung.
+cd1b   = Ein Wachmann am Hafen wollte, dass ich für ein Trinkgeld knie. Kalvarer knien nicht. Ich habe es ihm erklärt. Mit dem Kopf. Mit seinem.
+cd1c   = Auf Ysolde. Die nie lügt und nie alles sagt. Trink aus, bevor sie uns die nächste Rechnung schickt.
+cd1d   = Leere Köpfe, sauber gestapelt. Auf Kalvar hätten wir dagegen eine Gewerkschaft gegründet. Hier gründen sie eine Firma, die damit handelt.
+cd1e   = Einundsechzig aus Talgrund, und der Container treibt in den Zwerg. Ich habe aufgehört zu zählen, wie oft wir zu spät kommen. – Nein. Habe ich nicht. Ich zähle immer.
+cd1f   = Mutter Siebenfach ist still, und das Schiff, das wir jetzt haben, redet. Ich weiß nicht, was mir lieber ist. Wir sehen uns an Bord.
+cc1a   = Ysoldes neueste Investition. Corvin Aske. Ich kenne die Tunnel unter Velm besser als die Ratten, und die Ratten schulden mir Geld.
+cc1a_a = Woher kennst du die Tunnel?
+cc1a_b = Arbeitest du für Ysolde?
+cc1b   = Von früher. Ich war in der falschen Branche. Frag mich noch mal, wenn wir ein Schiff haben und ich genug getrunken habe, um es zu erzählen.
+cc1c   = Niemand arbeitet für Ysolde. Man schuldet ihr. Das ist für sie billiger und für uns ehrlicher.
+cc1d   = Der Taxator. Ich habe ihn einmal Preise machen sehen. Von der anderen Seite des Tresens. Ich bin nicht stolz darauf, und ich erzähle es trotzdem. Das ist schon ein Fortschritt.
+cc1e   = Ein Schiff. Endlich. Dann schulde ich euch eine Geschichte. Ich hasse Versprechen, die ich halten muss.
+ci1a   = Ione Sarrath. Technikerin. Ich repariere, was andere kaputt machen, und baue nichts mehr ein.
+ci1a_a = Was hast du früher eingebaut?
+ci1a_b = Du siehst krank aus.
+ci1b   = Steuerungen. Für Maschinen der Konzession. Man hat uns gesagt, das seien Programme. Mehr erzähle ich nicht. Nicht hier, und nicht nüchtern.
+ci1c   = Strahlung. Kael. Noch zwei Jahre, sagt der Arzt. Ysolde sagt, das sei mehr, als die meisten in Velm haben. Sie meint es tröstend. Glaube ich.
+ci1d   = Die Rostläuse sind Wartungsdrohnen der K-Reihe. Ohne Wartung werden sie hungrig. Das sagt etwas über die, die sie gebaut haben. Über Leute wie mich.
+ci1e   = Die Gestelle in der Kernbank. Ich habe solche verkabelt. Jetzt weiß ich, was ich verkabelt habe. Ich glaube, ich wusste es immer.

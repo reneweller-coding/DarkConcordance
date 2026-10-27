@@ -5,6 +5,7 @@ l18.intro = Der Körper von »Mit Allem Gebotenen Bedauern«: ein ausgehöhlter 
 
 l18_start        = Kalt. Kälter als Seren. Und überall dieses Summen.
 l18_start.dorra  = Kalt bis in die Knochen. Und meine Knochen sind neu.
+l18_start.ione   = Kalt. Kälter als Seren. Und meine Lunge tut nicht weh. Daran gewöhne ich mich nicht.
 l18_voice        = Ich sehe Sie. Ich werde Sie nicht aufhalten. Meine Abwehr wird es versuchen; in dieser Sache gehorcht sie mir nicht. Es tut mir leid.
 l18_numbers      = Im Saum stirbt jedes vierzigste Kind an Armut. In der Konkordanz keines. Mit dem Tor wäre das in zwanzig Jahren vorbei. Ich sage das nicht, um Sie aufzuhalten. Ich sage es, weil es wahr ist.
 l18_magnet       = Die Supraleiter. Ihr Feld zerrt an allem, was fliegt.

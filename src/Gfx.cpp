@@ -394,7 +394,15 @@ void Gfx::draw( const std::vector<Drawable> &list, const std::vector<Surface> &s
         s.m_material.maps[MATERIAL_MAP_ALBEDO].color = s.m_tint;
         if ( !skin )
         {
+            // A stain multiplies what is drawn under it.
+            bool multiply = s.m_params.w > 3.5f;
+            if ( multiply )
+            {
+                rlSetBlendFactors( RL_DST_COLOR, RL_ZERO, RL_FUNC_ADD );
+                rlSetBlendMode( RL_BLEND_CUSTOM );
+            }
             DrawMesh( d.m_mesh, s.m_material, d.m_transform );
+            if ( multiply ) rlSetBlendMode( RL_BLEND_ALPHA );
             continue;
         }
         // A skinned figure: its own bones on the shared mesh, the skinning shader with the surface's maps.
@@ -508,6 +516,8 @@ void Gfx::post( const RenderTexture2D *out )
     if ( out ) BeginTextureMode( *out );
     Vector2 res = { (float)w, (float)h };
     SetShaderValue( m_final, GetShaderLocation( m_final, "exposure" ), &m_exposure, SHADER_UNIFORM_FLOAT );
+    SetShaderValue( m_final, GetShaderLocation( m_final, "grade" ), &m_grade, SHADER_UNIFORM_VEC4 );
+    SetShaderValue( m_final, GetShaderLocation( m_final, "gradeTint" ), &m_gradeTint, SHADER_UNIFORM_VEC3 );
     SetShaderValue( m_final, GetShaderLocation( m_final, "bloom" ), &m_bloom, SHADER_UNIFORM_FLOAT );
     SetShaderValue( m_final, GetShaderLocation( m_final, "time" ), &m_time, SHADER_UNIFORM_FLOAT );
     SetShaderValue( m_final, GetShaderLocation( m_final, "resolution" ), &res, SHADER_UNIFORM_VEC2 );

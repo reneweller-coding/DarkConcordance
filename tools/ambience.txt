@@ -30,3 +30,7 @@ drifting in a chain of cargo containers in space, slow breathing in a helmet, cr
 inside a giant industrial furnace world, roaring fire, bubbling molten metal, colossal machinery rumble | name=furnace
 server hall, dense humming fans, electrical buzz, soft clicks, cold air | name=servers
 dreamlike digital space, soft glitching hum, faint distant voices, warm electrical drone | name=net
+steady rain on tin roofs and cobblestones in a narrow alley at night, gutters running, distant neon hum, a far dog | name=rain
+a maintenance deck at night during an incident, deep station hum, distant alarm klaxon, ventilation, electrical crackle, ticking | name=nightshift
+deep mine tunnels on a heavy world, low rumbling wind, distant blasting, dust trickling, creaking timber supports | name=kalvar
+wind over a small farming settlement, distant cows, a creaking pump, faint digital glitch crackle fading in and out | name=memory

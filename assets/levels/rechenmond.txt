@@ -31,7 +31,7 @@ gentheme      cryo server cryo station
 genstarttheme station
 genarenatheme cryo
 genarena      guardian
-genguard      %
+genguard      2
 genoxygen     0.5
 genfeature    [  0.45
 genpack       ***     2
@@ -39,6 +39,11 @@ genpack       **?     1.5
 genpack       ^^^     1.5
 genpack       `^      1.2
 genpack       %*      1
+natives       frost spider
+genpack       11      2.0
+genpack       222     2.0
+genpack       12*     1.5
+genpack       122     1.0
 gendensity    1.05
 genelite      0.3
 gennote       note.cooling18 note.defence18 note.unzu18 note.codes18 note.children18

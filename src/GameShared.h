@@ -105,6 +105,7 @@ enum SurfE
     S_FOREMAN,      ///< the foreman's crane walker: rust orange
     S_VARN,         ///< Ysolde's frame: violet
     S_MENDER,       ///< the computing moon's maintenance robots: white
+    S_IONE,         ///< Ione's maintenance suit: grey-blue
     S_COUNT
 };
 

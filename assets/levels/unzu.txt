@@ -71,6 +71,9 @@ ysolde | 14 6  | ysolde   | y100 | job6:y102 done.seren:y110 job7:y112 done.hesp
 unzu   | 3 20  | terminal | u1   | talked.unzu:u4 job6:u5 done.seren:u10 done.hesper:u20 done.halden:u30 done.arche:u40 job10:u42 done.kael:u50 done.wanderer:u60
 kiri   | 16 32 | kiri     | k1
 funk   | 10 35 | terminal | f1
+dorra  | 13 5  | dorra    | cd2a | done.tale_corvin:cd2e done.seren:cd2c done.kael:cd2d done.tale_ione:cd2f
+corvin | 14 4  | corvin   | cc2a | done.tale_corvin:cc2b done.halden:cc2c done.kael:cc2d done.tale_ione:cc2e
+ione   | 14 5  | ione     | ci2a | done.tale_corvin:ci2c done.kael:ci2d done.tale_ione:ci2e
 
 [talk]
 # Knoten | Sprecher | Ereignis | Antwort>Knoten ...
@@ -113,6 +116,33 @@ k1   | kiri   | -      | k1_a>k2 k1_b>-
 k2   | kiri   | workshop |
 f1   | funk   | -      | f1_a>f2 f1_b>-
 f2   | funk   | shop   |
+cd2a  | dorra  | -              | tale.tell.corvin>cd2tc?hero.corvin&!done.tale_corvin cd2a_a>cd2b comp.bye>-
+cd2b  | dorra  | -              |
+cd2c  | dorra  | -              | tale.tell.corvin>cd2tc?hero.corvin&!done.tale_corvin comp.bye>-
+cd2d  | dorra  | -              | tale.tell.ione>cd2ti?hero.ione&!done.tale_ione tale.tell.corvin>cd2tc?hero.corvin&!done.tale_corvin comp.bye>-
+cd2e  | dorra  | -              | comp.bye>-
+cd2f  | dorra  | -              | tale.tell.corvin>cd2tc?hero.corvin&!done.tale_corvin comp.bye>-
+cd2tc | dorra  | -              | tale.start>cd2gc
+cd2gc | dorra  | go:tale_corvin |
+cd2ti | dorra  | -              | tale.start>cd2gi
+cd2gi | dorra  | go:tale_ione   |
+cc2a  | corvin | -              | tale.listen>cc2tale?!done.tale_corvin cc2a_a>cc2f comp.bye>-
+cc2b  | corvin | -              | comp.bye>-
+cc2c  | corvin | -              | comp.bye>-
+cc2d  | corvin | -              | tale.tell.ione>cc2ti?hero.ione&!done.tale_ione comp.bye>-
+cc2e  | corvin | -              | comp.bye>-
+cc2f  | corvin | -              |
+cc2tale | corvin | -            | tale.start>cc2go
+cc2go | corvin | go:tale_corvin |
+cc2ti | corvin | -              | tale.start>cc2gi
+cc2gi | corvin | go:tale_ione   |
+ci2a  | ione   | -              | ci2a_a>ci2b comp.bye>-
+ci2b  | ione   | -              |
+ci2c  | ione   | -              | comp.bye>-
+ci2d  | ione   | -              | tale.listen.ione>ci2tale?!done.tale_ione comp.bye>-
+ci2e  | ione   | -              | comp.bye>-
+ci2tale | ione | -              | tale.start>ci2go
+ci2go | ione   | go:tale_ione   |
 
 [lines]
 # Schlüssel | Auslöser | Sprecher

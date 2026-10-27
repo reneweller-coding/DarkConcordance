@@ -5,6 +5,7 @@ l21.intro = Brannt, a mining moon that once had twenty thousand inhabitants, is 
 
 l21_start        = Brannt. Under my boots only crust over embers.
 l21_start.dorra  = A mining moon. On Kalvar we would have honoured it. Here they cut it to pieces.
+l21_start.ione   = Brannt. Cutting columns with cores. I know their maintenance lines. Maybe one of them will listen to me.
 l21_cut          = A line is glowing! Get off it!
 l21_fall         = The glow! The moon's insides are boiling!
 l21_blocks       = Rock blocks rising into the sky. Very slowly. Each as big as a house.

@@ -24,12 +24,12 @@ using namespace play;
 namespace
 {
 
-constexpr float TalkReach = 2.4f;   ///< how near one has to be to talk
-constexpr int   StimPrice = 15;     ///< Ottla's price
-constexpr int   MaxStims = 9;
+constexpr float TalkReach = 2.4f;                   ///< how near one has to be to talk
+constexpr int   StimPrice = 15;                     ///< Ottla's price
 const int       WeaponPrice[3] = { 40, 80, 120 };   ///< Kiri's prices, by level
 const int       ArmorPrice[3] = { 30, 60, 90 };
-constexpr float DrumRadius = 280.0f;   ///< our drum: its axis this high above the floor
+const int       SocketPrice[3] = { 120, 260, 480 };   ///< Kiri drills a socket: the first, the second, the third
+constexpr float DrumRadius = 280.0f;                  ///< our drum: its axis this high above the floor
 
 /** @brief What the Harvest has swallowed (proper names, the same in every language); the newest last. */
 const char *const Harvested[] = {
@@ -53,12 +53,14 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
     m_barkNext = m_barks ? (int)( rnd() * m_barks ) % m_barks : 0;
     // Guests on most of the stools, at the tables and the counter (in a hub's bar, in a ship's mess; not at a
     // market's stalls while it is fought over).
+    std::set<size_t> taken;
+    seatCompanions( taken );
     if ( m_level.m_generated.empty() )
     {
         const int adults[5] = { 0, 1, 2, 6, 7 };
         for ( size_t i = 0; i < m_level.m_seats.size(); ++i )
         {
-            if ( rnd() > 0.65f ) continue;
+            if ( rnd() > 0.65f || taken.count( i ) ) continue;
             const Seat &s = m_level.m_seats[i];
             Person      q;
             q.m_pos = s.m_pos;
@@ -77,6 +79,7 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
         const Npc  &n = m_level.m_npcs[i];
         NpcState    s;
         std::string look = n.m_look;
+        // A companion who is the one played is not there (a terminal stands in so the indices hold, hidden).
         s.m_def = (int)i;
         s.m_pos = m_level.centre( n.m_row, n.m_col );
         if ( n.m_row == -2 )
@@ -111,12 +114,17 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
                 const char *m_look;
                 int         m_body, m_hair, m_colour, m_tone;
                 Vector3     m_cloth;
+                float       m_scale = 1.0f;
             };
             static const Who who[] = {
-                { "okafor", 1, 2, 4, 0, { 0.33f, 0.36f, 0.24f } }, { "hale", 1, 1, 4, 1, { 0.1f, 0.1f, 0.12f } },
-                { "pell", 0, 0, 4, 1, { 0.42f, 0.34f, 0.24f } },   { "ruul", 0, -1, 0, 1, { 0.55f, 0.44f, 0.28f } },
-                { "ilka", 1, 2, 0, 1, { 0.4f, 0.42f, 0.46f } },    { "lamm", 0, 0, 2, 1, { 0.5f, 0.1f, 0.12f } },
+                { "okafor", 1, 2, 4, 0, { 0.33f, 0.36f, 0.24f } },
+                { "hale", 1, 1, 4, 1, { 0.1f, 0.1f, 0.12f } },
+                { "pell", 0, 0, 4, 1, { 0.42f, 0.34f, 0.24f } },
+                { "ruul", 0, -1, 0, 1, { 0.55f, 0.44f, 0.28f } },
+                { "ilka", 1, 2, 0, 1, { 0.4f, 0.42f, 0.46f } },
+                { "lamm", 0, 0, 2, 1, { 0.5f, 0.1f, 0.12f } },
                 { "crew", 0, 1, 1, 0, { 0.3f, 0.32f, 0.36f } },
+                { "mira", 1, 2, 2, 1, { 0.72f, 0.55f, 0.18f }, 0.62f },
             };
             for ( const Who &w : who )
                 if ( look == w.m_look )
@@ -126,8 +134,11 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
                     s.m_figure.m_hairColour = w.m_colour;
                     s.m_figure.m_tone = w.m_tone;
                     s.m_figure.m_cloth = w.m_cloth;
+                    s.m_figure.m_scale = w.m_scale;
                 }
+            if ( companion( look ) ) dressCompanion( s, look );
         }
+        if ( companion( look ) && look == heroKey( m_tale ? m_realHero : m_heroKind ) ) s.m_hidden = true;
         m_npcs.push_back( s );
         m_blocked.insert( n.m_row * m_level.cols() + n.m_col );
         std::string portrait = assets + "/textures/portrait_" + n.m_id + ".png";
@@ -400,11 +411,17 @@ void Game::enterNode( const TalkNode *node )
             m_shown.m_answers.push_back( a );
             continue;
         }
-        std::string flag = a.second.substr( q + 1 );
-        bool        not_ = !flag.empty() && flag[0] == '!';
-        if ( not_ ) flag = flag.substr( 1 );
-        if ( ( m_fired.count( flag ) > 0 ) != not_ )
-            m_shown.m_answers.push_back( { a.first, a.second.substr( 0, q ) } );
+        // Several conditions joined by '&' must all hold ("?hero.dorra&!done.tale_dorra").
+        std::stringstream all( a.second.substr( q + 1 ) );
+        std::string       flag;
+        bool              ok = true;
+        while ( std::getline( all, flag, '&' ) )
+        {
+            bool not_ = !flag.empty() && flag[0] == '!';
+            if ( not_ ) flag = flag.substr( 1 );
+            if ( ( m_fired.count( flag ) > 0 ) == not_ ) ok = false;
+        }
+        if ( ok ) m_shown.m_answers.push_back( { a.first, a.second.substr( 0, q ) } );
     }
     m_talk = &m_shown;
     if ( node->m_event.empty() ) return;
@@ -417,6 +434,14 @@ void Game::enterNode( const TalkNode *node )
 
 void Game::runEvent( const std::string &event )
 {
+    // "go:<level>": the conversation takes everyone there (a tale), at once.
+    if ( event.compare( 0, 3, "go:" ) == 0 )
+    {
+        m_exitTo = event.substr( 3 ) + ".txt";
+        m_finished = true;
+        m_talk = nullptr;
+        return;
+    }
     if ( event.compare( 0, 5, "scrap" ) == 0 )
     {
         m_scrap += atoi( event.c_str() + 5 );
@@ -446,13 +471,22 @@ void Game::buy( int item )
         m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.8f );
         return true;
     };
-    if ( m_menu == 1 && item == 0 && m_stims < MaxStims && pay( StimPrice ) ) ++m_stims;
+    if ( m_menu == 1 && item == 0 && m_stims < maxStims() && pay( StimPrice ) ) ++m_stims;
     if ( m_menu == 2 && item == 0 && m_progress.m_weapon < 3 && pay( WeaponPrice[m_progress.m_weapon] ) )
         ++m_progress.m_weapon;
     if ( m_menu == 2 && item == 1 && m_progress.m_armor < 3 && pay( ArmorPrice[m_progress.m_armor] ) )
     {
         ++m_progress.m_armor;
         m_hp = fminf( hpMax(), m_hp + 20.0f );
+    }
+    // A socket drilled into the weapon or the suit (as many as the kind can take).
+    if ( m_menu == 2 && ( item == 2 || item == 3 ) )
+    {
+        int   slot = item == 2 ? 0 : 1;
+        Item &it = m_progress.m_gear[slot];
+        if ( m_progress.m_worn[slot] && it.m_sockets < maxSockets( itemSlot( it ) ) && it.m_rarity != RarityE::UNIQUE &&
+             it.m_rarity != RarityE::SET && pay( SocketPrice[it.m_sockets] ) )
+            ++it.m_sockets;
     }
 }
 
@@ -569,7 +603,7 @@ bool Game::updateHub( float dt, GameInput &in )
     // People turn to the hero when near.
     for ( NpcState &n : m_npcs )
     {
-        if ( n.m_look < 0 ) continue;
+        if ( n.m_look < 0 || n.m_seated ) continue;
         Vector3 d = Vector3Subtract( m_pos, n.m_pos );
         float   want = Vector2Length( { d.x, d.z } ) < 6.0f ? atan2f( d.x, d.z ) : 0.0f;
         n.m_yaw += Clamp( angleTo( n.m_yaw, want ), -3.0f * dt, 3.0f * dt );
@@ -581,7 +615,7 @@ bool Game::updateHub( float dt, GameInput &in )
     bool ok = in.m_jump || in.m_confirm || in.m_use;
     if ( m_menu )
     {
-        int count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 3 );
+        int count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 5 );
         m_menuChoice = ( m_menuChoice + step + count ) % count;
         if ( ok && m_menuChoice == count - 1 )
             m_menu = 0;
@@ -846,7 +880,7 @@ void Game::drawHubHud( int w, int h, float s )
     {
         // Ottla's stims or Kiri's workshop: a panel in the middle, the scrap in hand, the items with their prices.
         float pw = 1000.0f * s, x0 = w * 0.5f - pw * 0.5f, y0 = h * 0.25f;
-        int   count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 3 );
+        int   count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 5 );
         float ph = ( 130.0f + 52.0f * count ) * s;
         DrawRectangle( (int)x0, (int)y0, (int)pw, (int)ph, { 8, 10, 12, 230 } );
         DrawRectangleLinesEx( { x0, y0, pw, ph }, 2.0f * s, { 255, 190, 120, 140 } );
@@ -866,14 +900,30 @@ void Game::drawHubHud( int w, int h, float s )
                 label = tr( ( "dest." + m_liftChoices[i].substr( 0, m_liftChoices[i].find( '.' ) ) ).c_str() );
             else if ( m_menu == 1 )
             {
-                label = TextFormat( "%s  (%d/%d)", tr( "shop.stim" ), m_stims, MaxStims );
+                label = TextFormat( "%s  (%d/%d)", tr( "shop.stim" ), m_stims, maxStims() );
                 price = TextFormat( tr( "shop.price" ), StimPrice );
+            }
+            else if ( i >= 2 )
+            {
+                // A socket for the weapon or the suit; not in uniques and set pieces (Kiri would not dare).
+                int         slot = i == 2 ? 0 : 1;
+                const Item &it = m_progress.m_gear[slot];
+                bool        fixed = it.m_rarity == RarityE::UNIQUE || it.m_rarity == RarityE::SET;
+                label = TextFormat( tr( i == 2 ? "workshop.socketweapon" : "workshop.socketsuit" ), it.m_sockets,
+                                    maxSockets( itemSlot( it ) ) );
+                price = fixed ? tr( "workshop.fixed" )
+                        : it.m_sockets < maxSockets( itemSlot( it ) )
+                            ? TextFormat( tr( "shop.price" ), SocketPrice[std::min( it.m_sockets, 2 )] )
+                            : tr( "workshop.max" );
             }
             else
             {
                 int         level = i == 0 ? m_progress.m_weapon : m_progress.m_armor;
-                const char *key =
-                    i == 1 ? "workshop.armor" : ( m_heroKind == HeroE::DORRA ? "workshop.hammer" : "workshop.rifle" );
+                const char *key = i == 1
+                                      ? "workshop.armor"
+                                      : ( m_heroKind == HeroE::DORRA
+                                              ? "workshop.hammer"
+                                              : ( m_heroKind == HeroE::IONE ? "workshop.swarm" : "workshop.rifle" ) );
                 label = TextFormat( tr( key ), level < 3 ? level + 1 : 3 );
                 price = level < 3 ? TextFormat( tr( "shop.price" ), ( i == 0 ? WeaponPrice : ArmorPrice )[level] )
                                   : tr( "workshop.max" );

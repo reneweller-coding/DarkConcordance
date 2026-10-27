@@ -19,17 +19,21 @@ l2_end         = Geschätzt und für zu leicht befunden. Ysolde wird wissen woll
 # So sagt es Dorra.
 l2_start.dorra = Der Knochenmarkt. Auf Kalvar haben wir Erz verkauft. Hier verkaufen sie, was von Leuten übrig ist.
 l2_market.dorra = Marktwächter mit Schilden. Gegen den Rammhammer hält so ein Schild nicht ewig.
+l2_market.ione  = Marktwächter mit Schilden. Durch den Schild kommt der Schwarm nicht – aber um ihn herum.
 l2_champion.dorra = Der da ist größer als die anderen. Gut. Dann fällt er lauter.
 l2_cold.dorra  = Kühlräume. So haben wir auf Kalvar das Fleisch gelagert. Damals war es Fleisch.
+l2_cold.ione   = Kühlräume. Die Aggregate laufen auf Anschlag. Wer hier lagert, rechnet in Stunden, nicht in Tagen.
 l2_taxator.dorra = Der Taxator. Hat sich eine Rüstung gebaut, damit er auf uns runterschauen kann.
 l2_end.dorra   = Das war der Taxator. Seine Waage kann jemand anders haben. Ich will wissen, wer bezahlt hat.
 
 h_market       = Der Markt: viele Räume, Nebenräume hinter Türen (A / E). Rettungskapseln merken sich, wo du weitermachst.
 h_shield       = Schildwachen blocken von vorn. Von der Seite oder von hinten angreifen.
 h_shield.dorra = Schildwachen blocken von vorn. Der Rammhammer kommt trotzdem durch – von der Seite geht es schneller.
+h_shield.ione  = Schildwachen blocken von vorn. Von der Seite schneiden – oder kurz stören (B / F), dann sinkt der Schild.
 h_champion     = Champions (farbiger Ring): mehr Leben und eine Gabe – grün flink, blau gepanzert, orange explodiert, rot rasend. Sie lassen immer etwas fallen.
 h_bomber       = Zünder auf Abstand erschießen. Ihre Explosion trifft auch die anderen Gegner.
 h_bomber.dorra = Zünder: einen Sprengbolzen werfen (B / F) und Abstand halten. Ihre Explosion trifft auch die anderen.
+h_bomber.ione  = Zünder: übernehmen (B / F) und zu den anderen schicken – dort geht er hoch. Sonst auf Abstand zerschneiden.
 h_taxator      = Der Taxator: Abstand halten, wenn er stampft. Seine Salven kommen im Fächer – seitlich ausweichen.
 h_rush         = Er nimmt Anlauf! Zur Seite – rennt er gegen die Wand, steht er still.
 

@@ -42,6 +42,10 @@ genpack       $"      1.5
 genpack       %T      1.2
 genpack       ^^      1.2
 genpack       ""      1
+natives       shade
+genpack       11      2.0
+genpack       1"T     1.5
+genpack       111     1.0
 gendensity    1.1
 genelite      0.3
 gennote       note.watch note.manifest9 note.offer note.pod note.relay9

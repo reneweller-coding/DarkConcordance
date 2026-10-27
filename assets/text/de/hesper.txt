@@ -20,6 +20,7 @@ l7_end         = Die Glocke fällt in die Wolken. Und irgendwo hier ist die Steu
 l7_core        = Ihr seid gekommen. Meine Steuerung ist hier. Zwölf Arbeiter auf meiner Plattform. Wenn ich abschalte, fallen sie mit. Ich weiß. Ich weiß es. Bitte.
 
 l7_start.dorra = Hesper. Auf Kalvar hatten wir wenigstens Boden unter den Füßen. Hier ist da nur Sturm.
+l7_start.ione  = Hesper. Der Wind reißt am Schwarm. Ich muss ihn enger führen.
 l7_balloon.dorra = Ein Bolzen in den Ballon, und weg ist er. Das wird nicht schöner, wenn man es öfter macht.
 
 k7a            = Ich bin der Kern von Ballon siebzehn. Ich war ein Mensch, glaube ich. Ich weiß nicht mehr, wie ich hieß. Ich weiß nur, dass ich seit elf Jahren nicht schlafe. Schalt mich ab.

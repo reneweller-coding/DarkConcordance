@@ -9,6 +9,7 @@ l15_fan          = Mein zweihundertster Tod war letzte Woche! Ein Stachelwurm. E
 l15_fan2         = Zweihundert. Im Saum wären das zweihundert Gräber.
 l15_free         = Wenn ich hier sterbe, kostet es nichts. Genau das fühlt sich falsch an.
 l15_free.dorra   = Hier kostet ein Tod nichts. Dann ist er auch nichts wert. Das ist der Fehler.
+l15_free.ione    = Hier kostet ein Tod nichts. Vor einem Jahr hätte ich alles dafür gegeben. Jetzt habe ich es, und gefragt hat mich keiner.
 l15_champion     = Ein Champion. Sie tragen ihre Tode wie Orden.
 l15_hounds       = Raubtiere. Gezüchtet, um zu jagen. Gedruckt, um zu sterben.
 l15_arena        = Die Arena. Über uns die Wasserfälle, und auf den Balkonen in der Wand Tausende Zuschauer.

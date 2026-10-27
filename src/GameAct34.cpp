@@ -298,8 +298,16 @@ void Game::loadAct34()
         if ( m_level.theme( r, c ) != where || !m_level.walkable( r, c ) ||
              m_level.cell( r, c ).m_kind != CellE::FLOOR || m_blocked.count( r * m_level.cols() + c ) )
             continue;
+        // Only in the open, never in a doorway or a corridor: nobody's standing may close the way.
+        bool open = true;
+        for ( int dr = -1; dr <= 1 && open; ++dr )
+            for ( int dc = -1; dc <= 1 && open; ++dc )
+                open = m_level.walkable( r + dr, c + dc ) && !m_blocked.count( ( r + dr ) * m_level.cols() + c + dc );
         Vector3 p = m_level.centre( r, c );
-        Person  q = {};
+        for ( const Prop &pr : m_level.m_props )
+            if ( Vector2Distance( { p.x, p.z }, { pr.m_pos.x, pr.m_pos.z } ) < pr.m_radius + 2.2f ) open = false;
+        if ( !open ) continue;
+        Person q = {};
         q.m_pos = Vector3Add( p, { ( rnd() - 0.5f ) * 0.8f, 0.0f, ( rnd() - 0.5f ) * 0.8f } );
         q.m_yaw = atan2f( m_level.cols() * CellSize * 0.5f - p.x, m_level.rows() * CellSize * 0.5f - p.z );
         q.m_look = (int)( rnd() * 3.0f ) == 0 ? 6 : ( rnd() < 0.5f ? 7 : 0 );

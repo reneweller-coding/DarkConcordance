@@ -1,0 +1,84 @@
+# Eine Erzählung: Iones Störfallbericht (Akt II, nach Kael, in der Messe). Vor drei Jahren am Sternheber Kael,
+# Wartungsdeck drei, Nachtschicht: Die frisch eingebauten Steuerkerne der Charge 2281 wachen alle zugleich auf, die
+# Wartungsmaschinen geraten in Panik, Einheit 2281 ruft über die Wartungsleitung um Hilfe. Ione schlägt sich durch die
+# Werkdecks zur Relaiszentrale, Schichtleiter Brask will alle Kerne zurücksetzen lassen. Erzählt als Störfallbericht
+# mit Uhrzeiten, der Zeile für Zeile persönlicher wird; am Tisch hören Dorra, Corvin und Unzu zu.
+#   teller held            gespielt wird, wer erzählt
+#   grade ...              das Licht der Erzählung: kalt, wenig Farbe, das Rot der Notbeleuchtung bleibt
+
+name     tale.ione.name
+act      tale.title
+intro    tale.ione.intro
+teller   ione
+grade    0.35 1.2 0.035 0.35 0.88 1.0 1.08
+gravity  9.0
+fog      0.003 0.01 0.45 0.85
+fogcolor 0.004 0.0015 0.0015
+ambient  0.085 0.03 0.03 0.04 0.012 0.014
+walls    4.6
+sky      nebula
+faction  security
+bossvariant 2
+bossname boss.brask
+area     0
+next     unzu.txt
+gate     tale.ione.promise
+whiteout tale.ione.promise
+endcard  tale.ione.end tale_end tale.ione.told
+ambience nightshift
+music    tale_ione
+bossmusic tale_ione
+walltex  works toolwall
+walltex  station toolwall
+npcafter k2281 bossdead
+autotalk k2281
+
+genrooms      15
+genside       5
+gensize       10 15 9 13
+gentheme      works station server works hall
+genstarttheme works
+genarenatheme hall
+genarena      taxator
+genpack       LLW     2
+genpack       ***     1.5
+genpack       ^^*     1.3
+genpack       W?L     1.2
+genpack       ET$     1
+gendensity    0.95
+genelite      0.25
+gennote       note.shift1 note.shift2 note.shift3 note.shift4
+
+[npcs]
+k2281 | -1 -1 | terminal | k1
+
+[talk]
+k1 | k2281 | -                 | k1_a>k2 k1_b>k3
+k2 | k2281 | tale.ione.promise |
+k3 | k2281 | tale.ione.promise |
+
+[lines]
+ti_a1        | a             | hero
+ti_a2        | a             | hero
+ti_b1        | b             | hero
+ti_b2        | b             | corvin
+ti_b3        | b             | hero
+ti_c1        | c             | hero
+ti_c2        | c             | k2281
+ti_c3        | c             | hero
+ti_d1        | d             | hero
+ti_d2        | d             | dorra
+ti_d3        | d             | hero
+ti_hack      | hack          | hero
+ti_champion  | champion      | hero
+ti_boss      | bossstart     | brask
+ti_boss2     | bossstart     | hero
+ti_end       | bossdead      | hero
+ti_end2      | bossdead      | unzu
+ti_core      | appear.k2281  | k2281
+
+[hints]
+h_tale       | a
+h_bolt       | b
+h_champion   | champion
+h_stim       | hurt

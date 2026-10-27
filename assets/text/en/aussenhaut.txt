@@ -17,6 +17,7 @@ l3_cast        = It's casting off! Not with those bodies!
 l3_end         = The container's torn loose … it's drifting towards the dwarf. Sixty-one people from Talgrund. There's nothing I can do.
 
 l3_start.dorra = The airlock. On Kalvar we went into the galleries without helmets. Not out here.
+l3_start.ione  = The airlock. Pressure equalised in ninety seconds. I once rebuilt one of these to do it in forty, without a permit.
 l3_out.dorra   = Outside. No ground under the ground. Only the dwarf.
 l3_flare.dorra = The dwarf's flaring! Behind something big, quick!
 l3_tug.dorra   = There lies the tug. And under it, in the container, the people from Talgrund.

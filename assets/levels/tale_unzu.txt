@@ -1,0 +1,76 @@
+# Eine Erzählung: Unzus Vermessungslogbuch (Akt IV, auf dem Weg nach Velm, in der Messe). Vor dreizehn Jahren vermisst
+# Unzu den Saum: die Siedlung Talgrund, vierhundertzwölf Einwohner, ihre „Eignung zur Umsiedlung“. Gespielt wird seine
+# Vermessungsdrohne. Die Erinnerung hat er erst seit dem Rechenmond zurück, und sie wird gerade wieder gelöscht: weiße
+# Löschprozesse dringen in die Siedlung, am Ende das Datennetz des Bearbeiters, „Gründliche Prüfung“. Wer nah an den
+# Leuten vorbeifliegt, zählt sie (census). Erzählt als Logbuch; am Tisch hören Dorra, Corvin und Ione zu.
+#   census n               n Leute zählen (nah vorbeifliegen); danach das Ereignis "census"
+
+name     tale.unzu.name
+act      tale.title
+intro    tale.unzu.intro
+teller   unzu
+grade    0.45 1.1 0.03 0.3 0.9 1.08 0.92
+gravity  7.0
+fog      0.0025 0.008 0.5 0.9
+fogcolor 0.004 0.005 0.0035
+ambient  0.075 0.085 0.07 0.035 0.04 0.03
+walls    4.2
+sky      nebula
+faction  collegium
+crowd    40 yard
+census   30
+swarm    delete 16 3
+bossname boss.editor
+area     0
+next     unzu4.txt
+gate     never
+whiteout bossdead
+endcard  tale.unzu.end tale_end tale.unzu.told
+ambience memory
+music    tale_unzu
+bossmusic tale_unzu
+walltex  yard plaster
+walltex  park plaster
+floortex yard farmsoil
+floortex park farmsoil
+
+genrooms      15
+genside       5
+gensize       10 15 9 13
+gentheme      yard yard park street net
+genstarttheme yard
+genarenatheme net
+genarena      guardian
+genguard      ^
+genpack       ^^      2
+genpack       ^*      1.4
+genpack       ^^*     1.2
+genpack       **      1
+gendensity    0.8
+genelite      0.2
+gennote       note.talgrund1 note.talgrund2 note.talgrund3 note.talgrund4
+
+[lines]
+tu_a1        | a           | hero
+tu_a2        | a           | dorra
+tu_a3        | a           | hero
+tu_count     | counted     | hero
+tu_b1        | b           | hero
+tu_b2        | b           | kind
+tu_b3        | b           | hero
+tu_c1        | c           | hero
+tu_c2        | c           | ione
+tu_c3        | c           | hero
+tu_d1        | d           | hero
+tu_d2        | d           | corvin
+tu_d3        | d           | hero
+tu_census    | census      | hero
+tu_boss      | swarm       | editor
+tu_end       | bossdead    | hero
+
+[hints]
+h_tale       | a
+h_census     | a
+h_jam        | b
+h_swarm25    | swarm
+h_stim       | hurt

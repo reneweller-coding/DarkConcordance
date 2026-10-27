@@ -24,8 +24,10 @@ l6_home        = Ist die Schicht … vorbei? Darf ich … nach Hause?
 l6_end         = Er hat gedacht, er arbeitet. Achtzig Jahre lang. Und Ilkas Speicher ist schon weiter – nach Hesper.
 
 l6_start.dorra = Seren. Kälter als jeder Stollen auf Kalvar. Und das will was heißen.
+l6_start.ione  = Seren. Die Pumpendrohnen hier laufen mit Kernen. Ich höre sie zählen, auf der Wartungsfrequenz.
 l6_crack.dorra = Das Eis bricht! Vorsicht mit dem Hammer – er trifft hier mehr als nur Gegner.
 l6_end.dorra   = Ein Bergmann. Achtzig Jahre in einem Bohrturm. Das hätte ich sein können. Weiter nach Hesper.
+l6_end.ione    = Er hat gedacht, er arbeitet. Achtzig Jahre. Uns hat man gesagt, das seien Programme. Ilkas Speicher ist schon weiter – nach Hesper.
 
 h_warmth       = Kälte: die Wärme des Anzugs (oranger Balken) schwindet im Freien. In den Hütten und an den Heizpfosten (orange) wärmt sie wieder auf, Wärmepacks geben welche dazu.
 h_ice          = Das Eis bricht unter Explosionen und schweren Schlägen. Wer einbricht, landet an der letzten sicheren Stelle – kalt und verletzt.

@@ -59,6 +59,11 @@ struct FigureSurfaces
     int     m_skin = -1;                             ///< the face (bare-headed)
     int     m_hair = -1;                             ///< the hair (bare-headed)
     Vector3 m_scale = { 1.0f, 1.0f, 1.0f };          ///< width, height, depth (Dorra is short and broad)
+    int     m_shape = 0;                             ///< the weapon's family (rifle: gauss, carbine, scatter, rail,
+                                                     ///< plasma, arc; hammer: ram, axe, pick, maul, breaker, drill)
+    int     m_tier = 1;                              ///< the weapon's tier: more metal, more light
+    int     m_heft = 1;                              ///< the suit: 0 light, 1 plated, 2 an exoskeleton
+    Vector4 m_trim = { -1.0f, 0.0f, 0.0f, 0.0f };    ///< a glowing line on chest and weapon (the gear's rarity)
 };
 
 /** @brief Everything a pose depends on, so one built figure can draw many people. */

@@ -5,6 +5,7 @@ u4.intro = Drei Monate und sieben Sprünge, den alten Weg zurück. Ysolde ist ni
 
 s4_start       = Zurück an Bord. Die Messe ist zu leise ohne Ysolde.
 s4_start.dorra = Drei Monate bis Velm. Ich zähle die Tage nicht. Ich zähle die Namen.
+s4_start.ione  = Drei Monate bis Velm. Ich habe jetzt mehr Zeit als vorher. Ich weiß nicht, was ich damit soll.
 s4_back        = Wieder an Bord. Unzu brummt. Es klingt fast wie ein Lied.
 s4_back.dorra  = Wieder an Bord. Kiri hat meinen Hammer geölt, ohne zu fragen.
 
@@ -35,3 +36,22 @@ f400   = HÄNDLERFUNK – Kanal 7. Wir senden noch. Velm hält, solange wir send
 f400_a = Was hast du?
 f400_b = Nichts.
 f401   = Bestellung offen.
+
+# Die Gefährten
+cd4a       = Drei Monate bis Velm. Kiri hat mir die Namen wieder gestochen, mit einem Lötkolben und viel Geduld. Und Unzu will uns etwas vorlesen. Er tut so, als wäre es ihm egal, ob wir zuhören.
+cd4a_a     = Zeig mal.
+cd4b       = (Einundvierzig Namen, frisch und gerötet. Darunter ist Platz.) Für den Fall, dass.
+cd4c       = Unzu hat ein Feld leer gelassen, und sie haben ihn dafür auseinandergenommen. Auf Kalvar hätten wir ihm eine Medaille gegeben. Und dann wären wir alle gestorben.
+cd4d       = Velm brennt. Die Letzte Schicht steht noch. Ottla hat auf dem Tresen geschlafen, mit einem Gewehr im Arm. Das ist Heimat.
+cd4e       = Ein Bergbaumond, geschält wie eine Frucht. Ich habe zugesehen, wie sie ihn schneiden, und an Tiefe Sieben gedacht. Wir haben auch geschnitten. Nur kleiner.
+cc4a       = Ruul sitzt auf Ysoldes Platz. Er isst wie jemand, der neun Jahre lang gezählt hat, wie viel er essen darf. Ich habe ihm meins gegeben. Ich weiß nicht, warum.
+cc4b       = Vierhundertzwölf. Er hat sie gezählt, und jemand hat aus der Zahl einen Plan gemacht. Ich habe nach dem Plan gearbeitet. Wir stehen alle im selben Logbuch, nur auf verschiedenen Seiten.
+cc4c       = In Velm hat mich ein Händler erkannt. Von früher. Er hat mir trotzdem Munition verkauft. Zum doppelten Preis. Das ist Vergebung auf Velmer Art.
+cc4d       = Die Mühle. Da drin sitzen Leute, die ich verkauft habe. Ich weiß es. Ich gehe trotzdem rein. Das ist das Einzige, was ich in dieser Sache richtig mache.
+ci4a       = Ich habe die Mühle einmal als Wartungsschema gesehen. Ich weiß, wo ihre Kerne sitzen. Ich weiß nicht, ob ich es ertrage, sie zu sehen.
+ci4b       = Unzu hat ein Feld leer gelassen. Ich habe dreihundertelf Felder ausgefüllt. Einbauprotokoll, Datum, Unterschrift. Ordentlich. Ich war immer ordentlich.
+ci4c       = Der zögernde Kern auf Brannt. Ich habe seine Leitung erkannt. Baureihe der Werft am Tor. Sie bauen sie jetzt in Serie.
+u4tale.ask = Lies uns dein Logbuch vor, Unzu.
+u4tale     = Ihr wollt mein Logbuch. Ich habe es zurück, seit dem Rechenmond. Eintrag 3.112 bis 3.115. Setzt euch, ich dimme das Licht. Nicht wegen der Stimmung. Wegen der Erinnerung. Sie verträgt kein helles Licht.
+u4go       = …
+u4after    = Ich habe euch mein Logbuch vorgelesen. Ich fühle mich nicht besser. Ich fühle mich gezählt. Ist das bei euch auch so?

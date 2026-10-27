@@ -12,6 +12,7 @@ speaker.hausmeister = CARETAKER
 
 v_start         = The Third Drum. Somewhere around here a woman called Ysolde Varn is waiting. She paid my bill.
 v_start.dorra   = The Third Drum. Ysolde Varn paid for me before I was even awake. That kind of thing always costs twice.
+v_start.ione    = The Third Drum. Ysolde Varn paid my bill. She surely knows how long I have left. People like her know such things.
 v_back          = Back at the Last Shift. Ysolde will want to know what I found.
 
 # Ysolde: the first conversation.
@@ -106,7 +107,11 @@ shop.stim       = Stim (+40 health)
 workshop.title  = ANAND'S WORKSHOP
 workshop.rifle  = Gauss rifle, level %d: more damage, cooler
 workshop.hammer = Ram hammer, level %d: harder, faster bolts
+workshop.swarm = Drone cloud, level %d: sharper, more stamina
 workshop.armor  = Armour, level %d: +20 health
+workshop.socketweapon = Drill a socket into the weapon (%d/%d)
+workshop.socketsuit   = Drill a socket into the suit (%d/%d)
+workshop.fixed        = (Kiri won't dare)
 workshop.max    = (maxed out)
 shop.price      = %d scrap
 shop.back       = Back
@@ -150,3 +155,27 @@ sign_bar        = THE LAST SHIFT | BAR · THIRD DRUM
 sign_clinic     = CHARITY CLINIC | THIRD DRUM · OPEN
 sign_shop       = ANAND'S WORKSHOP | REPAIRS · REFITS
 sign_axis       = FREIGHT LIFT ↑ | AXIS · COOLING GUTS
+
+# The companions
+cd1a   = So you're Ysolde's latest acquisition. Dorra Vask. She got me out of a cell, you out of a charity clinic. We both owe her, so we drink on her tab.
+cd1a_a = Why were you in a cell?
+cd1a_b = On Ysolde's tab.
+cd1b   = A guard at the harbour wanted me to kneel for a tip. Kalvarers don't kneel. I explained it to him. With a head. His.
+cd1c   = To Ysolde. Who never lies and never tells you everything. Drink up before she sends the next bill.
+cd1d   = Empty heads, neatly stacked. On Kalvar we'd have founded a union against it. Here they found a company that trades in it.
+cd1e   = Sixty-one from Talgrund, and the container drifts into the dwarf. I've stopped counting how often we come too late. – No. I haven't. I always count.
+cd1f   = Mother Sevenfold is quiet, and the ship we have now talks. I don't know which I prefer. See you on board.
+cc1a   = Ysolde's newest investment. Corvin Aske. I know the tunnels under Velm better than the rats do, and the rats owe me money.
+cc1a_a = How do you know the tunnels?
+cc1a_b = Do you work for Ysolde?
+cc1b   = From before. I was in the wrong line of work. Ask me again when we have a ship and I've had enough to drink to tell it.
+cc1c   = Nobody works for Ysolde. You owe her. It's cheaper for her and more honest for us.
+cc1d   = The Appraiser. I saw him setting prices once. From the other side of the counter. I'm not proud of it, and I'm telling you anyway. That's progress.
+cc1e   = A ship. Finally. Then I owe you a story. I hate promises I have to keep.
+ci1a   = Ione Sarrath. Technician. I repair what others break, and I don't install anything any more.
+ci1a_a = What did you install before?
+ci1a_b = You look ill.
+ci1b   = Controls. For Concession machines. They told us those were programs. That's all I'll say. Not here, and not sober.
+ci1c   = Radiation. Kael. Two more years, the doctor says. Ysolde says that's more than most people in Velm have. She means it as comfort. I think.
+ci1d   = The rust lice are K-series maintenance drones. Without maintenance they get hungry. That says something about the people who built them. About people like me.
+ci1e   = The racks in the Core Bank. I used to wire those. Now I know what I was wiring. I think I always knew.

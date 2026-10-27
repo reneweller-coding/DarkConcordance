@@ -239,7 +239,18 @@ public:
         carve();
         for ( size_t i = 0; i < m_rooms.size(); ++i ) dress( (int)i );
         populate();
+        crownLeader();
         return true;
+    }
+
+    /** @brief One champion of the level leads its pack: its line gets " leader" (a name, two gifts, an escort). */
+    void crownLeader()
+    {
+        std::vector<size_t> elites;
+        for ( size_t i = 0; i < m_extra.size(); ++i )
+            if ( m_extra[i].rfind( "elite ", 0 ) == 0 && m_extra[i].find( " boss" ) == std::string::npos )
+                elites.push_back( i );
+        if ( !elites.empty() ) m_extra[elites[elites.size() * 2 / 3]] += " leader";
     }
 
     /** @return the level file */
@@ -854,7 +865,16 @@ private:
             int r = cur / 1000, c = cur % 1000;
             if ( free( r, c ) && apart( r, c ) )
             {
-                m_g[r][c] = letters[placed];
+                // A digit is one of the place's own creatures ("natives" in the level file names them): a line, not
+                // a letter in the map.
+                if ( letters[placed] >= '1' && letters[placed] <= '9' )
+                {
+                    m_reserved.insert( cur );
+                    m_extra.push_back( "native " + std::to_string( r ) + " " + std::to_string( c ) + " " +
+                                       std::string( 1, letters[placed] ) );
+                }
+                else
+                    m_g[r][c] = letters[placed];
                 m_foes.insert( cur );
                 if ( placed == 0 && ( elite || boss ) )
                     m_extra.push_back( "elite " + std::to_string( r ) + " " + std::to_string( c ) +

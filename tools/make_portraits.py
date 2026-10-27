@@ -68,6 +68,25 @@ PORTRAITS = {
     "ilka": "Ilka, a woman who looks about forty though she was a nine-year-old girl once, short dark hair, tired "
             "fierce eyes, simple grey work clothes, a faint digital shimmer at her edges as if she were not quite "
             "real. " + STYLE,
+    # The tales.
+    "mira": "A seven-year-old girl in a bright yellow raincoat with the hood down, wet dark blond hair, a scraped "
+            "cheek, fierce frightened eyes, holding on to a bicycle frame, rain behind her. " + STYLE,
+    "k2281": "A freshly installed control core on a maintenance workbench: a fist-sized crystal of pale blue light "
+             "in a new clean housing with cables still loose, a single small speaker grille, harsh red emergency "
+             "light, no people, no hands, only the machine, flat front view. " + STYLE,
+    "dreier": "Hakon Dreier, the chief of a crew of mind harvesters, a big man in his fifties with a shaved head and "
+              "a grey beard, a scarred grin, a heavy black and red armoured vest, rain on his face, cold amused "
+              "eyes. " + STYLE,
+    "brask": "Shift supervisor Brask of a mining concession, a soft-faced man of about forty-five in a clean company "
+             "jacket with an orange collar, a headset, tired impatient eyes, red emergency light. " + STYLE,
+    "siel": "Major Siel, an officer of a clearance force, a lean woman in her forties with close-cropped dark hair, "
+            "an olive armoured collar, dust on her face, calm resolute grey eyes. " + STYLE,
+    "josse": "Josse Rhee, a young miner and insurgent in his twenties from a high-gravity world, broad shoulders, "
+             "a soot-blackened face, a kind crooked smile, an ochre helmet pushed back, singing. " + STYLE,
+    "editor": "The avatar of a secret service's machine mind called Thorough Review: a smooth white face made of "
+              "neat thin lines like a technical drawing, half of it erased, pale cold light. " + STYLE,
+    "kind": "A small child of a frontier farming settlement, about six, freckles, a patched wool jumper, holding up "
+            "fingers to count, curious bright eyes, wind in the hair, soft daylight. " + STYLE,
     # The heroes, for the character page.
     "corvin": "A lean man in his late thirties, short dark hair going grey at the temples, stubble, a small scar "
               "through one eyebrow, watchful tired eyes, the neck ring of a worn grey armoured hardsuit with an amber "
@@ -75,6 +94,11 @@ PORTRAITS = {
     "dorra": "A short, very broad woman in her forties from a high-gravity world, thick neck and heavy shoulders, "
              "copper-red hair tied back tight, freckles, a once-broken nose, calm stubborn eyes, dented and welded "
              "ochre plates of an old mining suit. " + STYLE,
+    "ione": "A woman in her early thirties, thin and a little pale from radiation sickness, dark hair cut short and "
+            "practical, shadows under careful intelligent eyes, a faint burn mark along the jaw, the grey-blue collar "
+            "of a maintenance suit, three small flat disc-shaped metal drones with tiny rotors and cyan status lights "
+            "hovering near her shoulder, clearly machines and not insects, a technician who installed things she "
+            "should not have. " + STYLE,
 }
 
 

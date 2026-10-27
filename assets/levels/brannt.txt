@@ -47,6 +47,10 @@ genpack       ""E     1.5
 genpack       ^^T     1.2
 genpack       ETT     1.2
 genpack       %T      1
+natives       crab magma
+genpack       11      2.0
+genpack       222     1.5
+genpack       12T     1.5
 gendensity    1.0
 genelite      0.3
 gennote       note.plan21 note.child21 note.core21 note.pop21 note.offer21

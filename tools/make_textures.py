@@ -26,6 +26,7 @@ TEXT = os.path.join(ROOT, "assets", "text")
 PROJECT = "plenary-office-432719-u6"
 LOCATIONS = ["global", "us-central1"]
 MODELS = ["gemini-3-pro-image", "gemini-3.1-flash-image"]
+IMAGE_SIZE = "2K"   # make_items.py and make_dress.py ask for 1K (their pictures end up small)
 
 FLAT = ("flat uniform lighting, no shadows, no perspective, no text, no logos, "
         "photorealistic PBR material scan, highly detailed")
@@ -235,6 +236,32 @@ TEXTURES = {
                 "Seamless tileable texture, a pale dreamlike wall of softly glowing translucent panels, faded "
                 "photographs of kitchens and classrooms dissolving into light, abstract, no text, no faces, " + FLAT,
                 0.0, 0.5, 1.0),
+    "brick": ("tile", "1:1",
+              "Seamless tileable texture, orthographic front view of a rain-soaked brick tenement wall on a poor "
+              "mining moon: dark wet red-brown bricks, streaks of water and soot, a few patched bricks, drainpipe "
+              "rust stains, " + FLAT,
+              0.0, 0.7, 2.5),
+    "wetcobble": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of wet dark cobblestones in a narrow alley at "
+                  "night, shallow puddles reflecting faint cold light, grime in the gaps, " + FLAT,
+                  0.1, 0.35, 2.5),
+    "toolwall": ("tile", "1:1",
+                 "Seamless tileable texture, orthographic front view of an industrial maintenance workshop wall: grey "
+                 "perforated pegboard panels with hanging tools, cable reels, small labelled drawers without legible "
+                 "text, scuffed paint, " + FLAT,
+                 0.5, 0.6, 2.5),
+    "ochrerock": ("tile", "1:1",
+                  "Seamless tileable texture, orthographic front view of a mine tunnel wall on a heavy mining world: "
+                  "ochre and rust coloured rock, heavy dark timber and steel supports, drill marks, ore dust, " + FLAT,
+                  0.0, 0.9, 2.5),
+    "minefloor": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of a mine floor: packed ochre ore dust, rusty "
+                  "narrow rail tracks, boot prints, scattered rock chips, " + FLAT,
+                  0.1, 0.85, 2.5),
+    "farmsoil": ("tile", "1:1",
+                 "Seamless tileable texture, top-down orthographic view of a small frontier farm yard: trampled dark "
+                 "soil, tufts of pale grass, wooden planks laid as a path, a few puddles, " + FLAT,
+                 0.0, 0.85, 2.5),
     "gasgiant": ("picture", "16:9",
                  "Equirectangular texture map of a gas giant's cloud tops filling the whole frame as a flat projection, "
                  "horizontal turbulent cloud bands in ochre, rust, cream and deep teal, swirling vortex storms, highly "
@@ -272,6 +299,39 @@ def signs( languages ):
     return out
 
 
+# Local painting (FLUX.2-dev on the GPU in WSL2, tools/flux_wsl.py in Text2Video's conda env "flux"): no quota,
+# no cost.
+WSL_PYTHON = "~/miniconda3/envs/flux/bin/python"
+FLUX_SIZES = { "1:1": ( 1024, 1024 ), "3:4": ( 896, 1152 ), "4:3": ( 1152, 896 ), "16:9": ( 1344, 768 ),
+               "9:16": ( 768, 1344 ), "21:9": ( 1536, 640 ) }
+
+
+def paint_local( jobs, tag ):
+    """Paints [(raw path, aspect, prompt), ...] locally in one batch (the model loads once); returns how many exist."""
+    import json
+    import subprocess
+    jobs = [j for j in jobs if not os.path.exists( j[0] )]
+    if not jobs:
+        return 0
+    tasks = []
+    for path, aspect, prompt in jobs:
+        w, h = FLUX_SIZES.get( aspect, ( 1024, 1024 ) )
+        tasks.append( { "prompt": prompt, "out": path.replace( "\\", "/" ), "width": w, "height": h, "seed": 1,
+                        "steps": 24 } )
+    work = os.path.join( ROOT, "work", "flux" )
+    os.makedirs( work, exist_ok=True )
+    spec = os.path.join( work, tag + ".json" )
+    with open( spec, "w", encoding="utf-8" ) as f:
+        json.dump( tasks, f, indent=1 )
+    def linux( p ):
+        p = os.path.abspath( p ).replace( "\\", "/" )
+        return "/mnt/%s%s" % ( p[0].lower(), p[2:] )
+    subprocess.run( ["wsl.exe", "-d", "Ubuntu-22.04", "--", "bash", "-lc",
+                     "cd /tmp && nice -n 10 %s %s %s" % ( WSL_PYTHON, linux( os.path.join( ROOT, "tools", "flux_wsl.py" ) ),
+                                                          linux( spec ) )], check=False )
+    return sum( 1 for path, _, _ in jobs if os.path.exists( path ) )
+
+
 def generate( name, aspect, prompt ):
     """Asks the Gemini image model for one picture and keeps it in assets/raw/<name>.png; returns its path."""
     import base64
@@ -282,7 +342,7 @@ def generate( name, aspect, prompt ):
     body = json.dumps( {
         "contents": [{ "role": "user", "parts": [{ "text": prompt }] }],
         "generationConfig": { "responseModalities": ["IMAGE"],
-                              "imageConfig": { "aspectRatio": aspect, "imageSize": "2K" } },
+                              "imageConfig": { "aspectRatio": aspect, "imageSize": IMAGE_SIZE } },
     } ).encode()
     import time
     last = None

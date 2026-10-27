@@ -56,6 +56,9 @@ genpack       ^^T     1.5
 genpack       ''T     1.1
 genpack       ""E     1.2
 genpack       $$E     1
+natives       spider
+genpack       111     2.0
+genpack       1TT     1.5
 gendensity    1.15
 genelite      0.3
 gennote       note.pump6 note.colony note.settler note.miner note.relay6

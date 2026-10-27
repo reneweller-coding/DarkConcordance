@@ -43,6 +43,11 @@ genpack       ^^^     2
 genpack       ^^E     1.5
 genpack       ""^     1
 genpack       ETT     1
+natives       phantom glitch
+genpack       11      2.2
+genpack       222     2.2
+genpack       12      1.5
+genpack       1^^     1.0
 gendensity    0.9
 genelite      0.3
 gennote       note.canteen25 note.class25 note.kitchen25 note.clock25 note.names25

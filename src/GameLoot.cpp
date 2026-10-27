@@ -28,25 +28,12 @@ constexpr float PickupReach = 1.3f;   ///< walking this near picks an item up
 constexpr int   MaxLevel = 40;
 constexpr float BaseCrit = 5.0f;   ///< % without anything
 
-/** @brief Where an item goes on the hero: weapon, armour, helmet, gloves, boots, an implant (a free one first). */
-int gearSlot( const Item &it, const bool *worn )
-{
-    switch ( itemSlot( it ) )
-    {
-    case SlotE::WEAPON: return 0;
-    case SlotE::ARMOR: return 1;
-    case SlotE::HELMET: return 2;
-    case SlotE::GLOVES: return 3;
-    case SlotE::BOOTS: return 4;
-    default: return !worn[5] ? 5 : ( !worn[6] ? 6 : 5 );
-    }
-}
-
 }   // namespace
 
 void Game::testGifts( int items, int xp )
 {
-    // Half of them straight into the bag, the others on the floor round the hero.
+    // Half of them straight into the bag, the others on the floor round the hero (none in a tale: it is a memory).
+    if ( m_tale ) return;
     for ( int i = 0; i < items; ++i )
     {
         float a = i * 2.39996f, r = 1.8f + 0.2f * i;
@@ -64,13 +51,15 @@ void Game::testGifts( int items, int xp )
 
 int Game::rank( int skill ) const
 {
-    return skill >= 0 && skill < (int)m_progress.m_ranks.size() ? m_progress.m_ranks[skill] : 0;
+    // A skill learnt gains the ranks the gear adds to all.
+    int r = skill >= 0 && skill < (int)m_progress.m_ranks.size() ? m_progress.m_ranks[skill] : 0;
+    return r > 0 ? r + (int)stat( StatE::SKILLS ) : 0;
 }
 
 void Game::refreshStats()
 {
     HeroStats s;
-    int       hero = m_heroKind == HeroE::DORRA ? 1 : 0;
+    int       hero = heroIndex();
     // What is worn: the kinds' own bonuses, the affixes, the armour.
     for ( int i = 0; i < EquipSlots; ++i )
     {
@@ -81,11 +70,17 @@ void Game::refreshStats()
         for ( const Affix &a : it.m_affixes ) s.m_add[(int)a.m_stat] += a.m_value;
         s.m_armor += itemArmor( it );
     }
-    // The passive skills.
+    // The sockets, the sets, the powers, the shield.
+    int skillBonus = 0;
+    gearStats( s, skillBonus );
+    // The passive skills (with the ranks the gear adds to all that are learnt).
     const std::vector<SkillDef> &defs = skillDefs();
     for ( size_t k = 0; k < defs.size(); ++k )
-        if ( defs[k].m_hero == hero && defs[k].m_slot == 0 && defs[k].m_stat != StatE::COUNT )
-            s.m_add[(int)defs[k].m_stat] += defs[k].m_perRank * rank( (int)k );
+    {
+        int r = k < m_progress.m_ranks.size() ? m_progress.m_ranks[k] : 0;
+        if ( defs[k].m_hero == hero && defs[k].m_slot == 0 && defs[k].m_stat != StatE::COUNT && r > 0 )
+            s.m_add[(int)defs[k].m_stat] += defs[k].m_perRank * ( r + skillBonus );
+    }
     // The weapon, as its kind fights, made stronger by the workshop, the affixes and the hero's level.
     Item            weapon = m_progress.m_worn[0] ? m_progress.m_gear[0] : startItem( hero, SlotE::WEAPON );
     const ItemBase &b = itemBases()[weapon.m_base];
@@ -100,39 +95,47 @@ void Game::refreshStats()
     s.m_splash = b.m_splash;
     s.m_range = b.m_range;
     s.m_chain = b.m_chain;
+    if ( m_power[(int)PowerE::PIERCE] ) s.m_pierce += 2;
+    s.m_splash *= 1.0f + s.m_add[(int)StatE::AREA] / 100.0f;
     s.m_armor += s.m_add[(int)StatE::ARMOR] + 5.0f * m_progress.m_armor;
-    s.m_health = ( hero == 1 ? DorraHp : 100.0f ) + 20.0f * m_progress.m_armor +
-                 ( m_progress.m_heroLevel - 1 ) * ( hero == 1 ? 10.0f : 8.0f ) + s.m_add[(int)StatE::HEALTH];
+    s.m_health = ( hero == 1 ? DorraHp : ( hero == 2 ? 95.0f : ( hero == 3 ? 120.0f : 100.0f ) ) ) +
+                 20.0f * m_progress.m_armor + ( m_progress.m_heroLevel - 1 ) * ( hero == 1 ? 10.0f : 8.0f ) +
+                 s.m_add[(int)StatE::HEALTH];
     m_stats = s;
 }
 
 float Game::armorCut() const
 {
     float a = m_stats.m_armor;
-    return fminf( 0.75f, a / ( a + 50.0f + 6.0f * areaLevel() ) );
+    if ( m_power[(int)PowerE::LAST_STAND] && m_hp < hpMax() * 0.3f ) a += 25.0f;   // badly hurt: braced
+    float cut = fminf( 0.75f, a / ( a + 50.0f + 6.0f * areaLevel() ) );
+    return m_corrode > 0.0f ? cut * 0.6f : cut;   // acid eats at the plates
 }
 
 void Game::dealHit( Foe &f, float damage, Vector3 dir, Vector3 at )
 {
     if ( !f.m_alive ) return;
     // A critical hit: more, and a bright burst; then burning, a stun, and some of it back as health.
-    if ( rnd() * 100.0f < BaseCrit + stat( StatE::CRIT ) )
+    damage *= hitScale( f );
+    bool crit = rnd() * 100.0f < BaseCrit + stat( StatE::CRIT );
+    if ( crit )
     {
         damage *= 1.5f + stat( StatE::CRIT_DAMAGE ) / 100.0f;
         sparks( at, Vector3Negate( dir ), 16, { 255, 250, 200, 255 }, 5.0f );
     }
-    if ( rnd() * 100.0f < stat( StatE::BURN ) )
+    if ( rnd() * 100.0f < stat( StatE::BURN ) && resist( f, DamageE::HEAT ) < 100 )
     {
         f.m_burn = fmaxf( f.m_burn, damage * 0.3f );
         f.m_burnTime = 3.0f;
     }
-    if ( rnd() * 100.0f < stat( StatE::SHOCK ) )
+    if ( rnd() * 100.0f < stat( StatE::SHOCK ) && resist( f, DamageE::SHOCK ) < 100 )
     {
         f.m_stun = fmaxf( f.m_stun, 0.9f );
         sparks( at, { 0.0f, 1.0f, 0.0f }, 12, { 150, 200, 255, 255 }, 3.0f );
     }
     if ( stat( StatE::LEECH ) > 0.0f ) m_hp = fminf( hpMax(), m_hp + damage * stat( StatE::LEECH ) / 100.0f );
-    hurtFoe( f, damage, dir );
+    hurtFoe( f, damage, dir, heroDamage() );
+    onHit( f, damage, dir, at, crit );
 }
 
 int Game::xpNeed( int level )
@@ -156,16 +159,18 @@ int Game::xpFor( const Foe &f ) const
     case FoeE::BOMBER: base = 8; break;
     case FoeE::TAXATOR: base = f.m_variant ? 900 : 700; break;
     case FoeE::SHELL: base = 9; break;
+    case FoeE::CREATURE: base = creatureXp( f ); break;
     default: break;
     }
     // A champion is worth four, the guardian of a level's end ten.
-    if ( f.m_elite ) base *= f.m_elite == 2 ? 10 : 4;
+    if ( f.m_elite ) base *= f.m_elite == 2 ? 10 : ( f.m_elite == 3 ? 7 : 4 );
     return (int)( base * ( 1.0f + 0.15f * ( areaLevel() - 1 ) ) );
 }
 
 void Game::gainXp( int xp )
 {
     if ( m_progress.m_heroLevel >= MaxLevel ) return;
+    if ( m_tale ) m_taleXp += xp;
     m_progress.m_xp += (int)( xp * ( 1.0f + stat( StatE::XP ) / 100.0f ) );
     while ( m_progress.m_heroLevel < MaxLevel && m_progress.m_xp >= xpNeed( m_progress.m_heroLevel ) )
     {
@@ -193,10 +198,10 @@ void Game::gainXp( int xp )
 
 void Game::dropItem( Vector3 at, float luck, int slot )
 {
+    if ( m_tale ) return;   // a memory leaves nothing to carry
     unsigned seed = (unsigned)m_progress.m_seed;
     int      level = std::max( 1, areaLevel() + (int)( rnd() * 3.0f ) - 1 );
-    Item it = makeItem( level, m_heroKind == HeroE::DORRA ? 1 : 0, seed, luck * ( 1.0f + stat( StatE::FIND ) / 100.0f ),
-                        slot );
+    Item     it = makeItem( level, heroIndex(), seed, luck * ( 1.0f + stat( StatE::FIND ) / 100.0f ), slot );
     m_progress.m_seed = (int)( seed & 0x7fffffff );
     Loot l;
     l.m_item = it;
@@ -248,9 +253,9 @@ void Game::updateLoot( float dt )
         m_toastTimer = 2.5f;
         m_audio.play( SfxE::PICKUP, l.m_pos, m_camTarget, 0.8f );
         const ItemBase &b = itemBases()[l.m_item.m_base];
-        bool            fits = b.m_hero < 0 || b.m_hero == ( m_heroKind == HeroE::DORRA ? 1 : 0 );
-        if ( fits && !m_progress.m_worn[gearSlot( l.m_item, m_progress.m_worn )] )
-            equip( (int)m_progress.m_bag.size() - 1 );
+        bool            fits = b.m_hero < 0 || b.m_hero == heroIndex();
+        int             slot = gearIndex( l.m_item );
+        if ( fits && slot >= 0 && !m_progress.m_worn[slot] ) equip( (int)m_progress.m_bag.size() - 1 );
     }
     m_loot.erase( std::remove_if( m_loot.begin(), m_loot.end(), []( const Loot &l ) { return !l.m_alive; } ),
                   m_loot.end() );
@@ -264,7 +269,9 @@ void Game::poseLoot( std::vector<Drawable> &out )
         // light over the better ones.
         const Vector3 half[(int)SlotE::COUNT] = { { 0.08f, 0.07f, 0.42f }, { 0.28f, 0.16f, 0.22f },
                                                   { 0.16f, 0.14f, 0.16f }, { 0.14f, 0.06f, 0.12f },
-                                                  { 0.13f, 0.1f, 0.18f },  { 0.08f, 0.08f, 0.08f } };
+                                                  { 0.13f, 0.1f, 0.18f },  { 0.08f, 0.08f, 0.08f },
+                                                  { 0.26f, 0.05f, 0.1f },  { 0.14f, 0.14f, 0.06f },
+                                                  { 0.09f, 0.14f, 0.09f }, { 0.06f, 0.03f, 0.06f } };
         for ( int i = 0; i < (int)SlotE::COUNT; ++i )
         {
             MeshBuilder b;
@@ -302,14 +309,19 @@ void Game::equip( int i )
     if ( i < 0 || i >= (int)m_progress.m_bag.size() ) return;
     Item            it = m_progress.m_bag[i];
     const ItemBase &b = itemBases()[it.m_base];
-    if ( b.m_hero >= 0 && b.m_hero != ( m_heroKind == HeroE::DORRA ? 1 : 0 ) )
+    if ( b.m_hero >= 0 && b.m_hero != heroIndex() )
     {
         m_toast = tr( "loot.wrong" );
         m_toastColor = { 255, 140, 110, 255 };
         m_toastTimer = 2.0f;
         return;
     }
-    int slot = gearSlot( it, m_progress.m_worn );
+    int slot = gearIndex( it );
+    if ( slot < 0 )
+    {
+        insertModule( i );   // a module goes into a socket
+        return;
+    }
     m_progress.m_bag.erase( m_progress.m_bag.begin() + i );
     if ( m_progress.m_worn[slot] ) m_progress.m_bag.push_back( m_progress.m_gear[slot] );
     m_progress.m_gear[slot] = it;
@@ -317,6 +329,8 @@ void Game::equip( int i )
     float part = m_hp / fmaxf( 1.0f, hpMax() );
     refreshStats();
     m_hp = fminf( hpMax(), part * hpMax() );
+    m_shield = fminf( m_shield, m_stats.m_shield );
+    dressHero();
 }
 
 void Game::unequip( int slot )
@@ -328,6 +342,8 @@ void Game::unequip( int slot )
     m_progress.m_worn[slot] = false;
     refreshStats();
     m_hp = fminf( m_hp, hpMax() );
+    m_shield = fminf( m_shield, m_stats.m_shield );
+    dressHero();
 }
 
 void Game::salvage( int i )
@@ -348,10 +364,10 @@ void Game::useSkills( float dt, const GameInput &in )
     m_overcharge = fmaxf( 0.0f, m_overcharge - dt );
     m_levelUp = fmaxf( 0.0f, m_levelUp - dt );
     if ( m_dead || m_finished || m_scene > 0 || m_level.m_peaceful ) return;
-    int   hero = m_heroKind == HeroE::DORRA ? 1 : 0;
+    int   hero = heroIndex();
     float cooldown = 1.0f - fminf( 0.6f, stat( StatE::COOLDOWN ) / 100.0f );
-    float power = 1.0f + stat( StatE::DAMAGE ) / 100.0f;
-    // B / F is Corvin's first skill; Dorra's is her blast bolt (thrown in updateMelee).
+    float power = skillPower();
+    // B / F is Corvin's first skill; Dorra's is her blast bolt (thrown in updateMelee), Ione's the takeover (updateIone).
     bool pressed[4] = { false, hero == 0 && in.m_special, in.m_skill2, in.m_skill3 };
     for ( int slot = 1; slot <= 3; ++slot )
     {
@@ -396,13 +412,15 @@ void Game::useSkills( float dt, const GameInput &in )
         }
         else if ( key == "skill.quake" )
             quake( r );
+        else if ( key == "skill.repair" || key == "skill.storm" )
+            ioneSkill( key, r );
     }
 }
 
 void Game::quake( int r )
 {
     // Dorra drives the hammer into the deck: a ring that throws and stuns everything near.
-    float   damage = ( 40.0f + 20.0f * r ) * ( 1.0f + stat( StatE::DAMAGE ) / 100.0f ), radius = 4.0f + 0.25f * r;
+    float   damage = ( 40.0f + 20.0f * r ) * skillPower(), radius = ( 4.0f + 0.25f * r ) * areaScale();
     Vector3 at = { m_pos.x, m_pos.y + 0.05f, m_pos.z };
     for ( int i = 0; i < 48; ++i )
     {
@@ -454,6 +472,12 @@ void Game::drawLootHud( int w, int h, float s )
         Vector2     m = MeasureTextEx( m_font, name.c_str(), 18.0f * s, 1.0f );
         DrawRectangle( (int)( p.x - m.x * 0.5f - 6 * s ), (int)( p.y - 3 * s ), (int)( m.x + 12 * s ),
                        (int)( m.y + 6 * s ), { 0, 0, 0, 150 } );
+        if ( const Texture2D *pic = pictureOf( l.m_item ) )
+        {
+            float size = m.y + 6 * s;
+            DrawTexturePro( *pic, { 0, 0, (float)pic->width, (float)pic->height },
+                            { p.x - m.x * 0.5f - 6 * s - size, p.y - 3 * s, size, size }, { 0, 0 }, 0.0f, WHITE );
+        }
         text( name.c_str(), p.x, p.y, 18.0f, rarityColor( l.m_item.m_rarity ), true );
     }
     if ( m_level.m_peaceful && m_progress.m_heroLevel <= 1 && m_progress.m_xp == 0 ) return;
@@ -472,16 +496,16 @@ void Game::drawLootHud( int w, int h, float s )
     // The active skills: a box per button, dark while it cools down.
     if ( !m_level.m_peaceful )
     {
-        int         hero = m_heroKind == HeroE::DORRA ? 1 : 0;
+        int         hero = heroIndex();
         const char *keys[4] = { "", "hud.key1", "hud.key2", "hud.key3" };
         for ( int slot = 1; slot <= 3; ++slot )
         {
             int k = activeSkill( hero, slot );
             if ( k < 0 ) continue;
-            bool  known = rank( k ) > 0 || ( hero == 1 && slot == 1 );
+            bool  known = rank( k ) > 0 || ( hero >= 1 && slot == 1 );   // the bolts, the takeover: always
             float size = 64.0f * s, x = w - ( 4 - slot ) * ( size + 10 * s ) - 20 * s, y = h - size - 40 * s;
             DrawRectangle( (int)x, (int)y, (int)size, (int)size, { 10, 12, 14, 200 } );
-            float cool = slot == 1 && hero == 1 ? m_boltTimer / BoltCooldown
+            float cool = slot == 1 && hero >= 1 ? m_boltTimer / ( hero == 1 ? BoltCooldown : skillDefs()[k].m_cooldown )
                                                 : m_cool[slot] / fmaxf( 0.1f, skillDefs()[k].m_cooldown );
             if ( cool > 0.0f )
                 DrawRectangle( (int)x, (int)( y + size * ( 1.0f - Clamp( cool, 0.0f, 1.0f ) ) ), (int)size,

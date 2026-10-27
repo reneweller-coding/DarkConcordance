@@ -93,7 +93,12 @@ guardian champion before the lift. For experience and gear.
 **Enemies:** besides lice and boarders, market guards with riot shields (attack from the side), heavies with rotary
 guns (a spin-up, then a long burst), hovering drones, saw bots in swarms, crawlers with charges (they go off near you
 and take their friends with them). **Champions** wear a coloured ring and a name: swift (green), armoured (blue),
-volatile (orange, explodes when killed), berserk (red); they always drop an item.
+volatile (amber, explodes when killed), berserk (red), fiery (burning steps), charged (zaps across), flickering (steps
+through nothing to beside you), shielded (a shield that comes back), splitting (two smaller ones when it dies),
+bloodthirsty (drinks what it hits), icy (its cold slows you), summoning (calls helpers); from the third act on they
+carry two gifts. They always drop an item. Every generated level has one **leader**: a name of its own
+(»Eisenzahn«, »Schwarzglut« …), two gifts, an escort that hits harder and holds better while the leader stands and
+falters when it falls; it drops a better item and a module.
 
 ![A shield guard in the market](docs/screenshots/l2_guard.jpg)
 ![The Taxator's volley](docs/screenshots/l2_volley.jpg)
@@ -261,15 +266,79 @@ where`). The factions' men are called by their own names (the Concession's guard
 ![The net: the night shift's world](docs/screenshots/l25_net.jpg)
 ![An ending's card](docs/screenshots/epilogue.jpg)
 
+## The companions and their tales
+
+The two heroes one does not play are along: in Velm's bar, in the ship's mess and in Ysolde's flat on the ring they
+sit at a table (the nearest free stools; GameTales.cpp) and talk – about themselves, about what has just happened,
+about each other – a few times in every act (`dorra`, `corvin`, `ione` in a hub's `[npcs]`; the one played is not
+there). What they say to the hero depends on who the hero is (`key.dorra`, `key.ione` …); an answer can depend on
+several things at once (`answer>node?hero.corvin&!done.tale_corvin`).
+
+After each act one of them tells a story at the table, and it is played: a short level as the one who tells it, in
+its own light (`teller`, `grade`, `rain` in the level file), with the gear of their kind at the real hero's strength
+and their points already spent; the others cut in. What the real hero carries waits outside (half the tale's
+experience comes back), and nothing found in a tale can be taken along. When the hero is the one whose tale it is,
+the others ask for it.
+
+| Tale | Told | Played as | What it is |
+|---|---|---|---|
+| A confession (`tale_corvin`) | aboard, after Act I | Corvin | Odile, a moon where it always rains, nine years ago: Corvin in Hakon Dreier's crew of harvesters, house by house through the settlement of Kessel, until the last door with a yellow boat on it. Noir, black and white, rain. |
+| Incident report 7-114 (`tale_ione`) | aboard, after Kael | Ione | The star lifter Kael three years ago, a night shift: the new control cores wake all at once, the maintenance machines panic, unit 2281 asks for help over the maintenance line, shift supervisor Brask wants them all reset. Read out with the times, getting more personal line by line; cold, the red of the emergency lights. |
+| Day forty-one (`tale_dorra`) | on the ring, after the yard | Dorra | Kalvar twenty years ago, near twice Earth's gravity, the uprising's last days: the union's barricade guns fire along, Major Siel in her walker, the conveyor station Deep Seven and the detonator. A chronicle with dates; sepia. |
+| Survey log 3.112 (`tale_unzu`) | aboard, after Act III | Unzu's survey drone | Talgrund thirteen years ago, 412 inhabitants: fly close to the people to count them (`census`), while white deletions eat into the memory; Thorough Review, the archon who revised him, at the end. Unzu's drone hovers, cuts with two blade arms and jams what is close (B/F). Survey green. |
+
+![Corvin's confession: Odile in the rain](docs/screenshots/tale_corvin.jpg)
+![Ione's incident report: unit 2281 on the maintenance line](docs/screenshots/tale_ione.jpg)
+![Dorra's chronicle: the tunnels of Kalvar](docs/screenshots/tale_dorra.jpg)
+![Unzu's survey log: counting Talgrund](docs/screenshots/tale_unzu.jpg)
+![Dorra and Ione at a table in Ysolde's flat](docs/screenshots/companions_table.jpg)
+![Aboard: Dorra asks Corvin for his story](docs/screenshots/companions_talk.jpg)
+
+## The places' creatures
+
+Thirteen families of their own, each in three tiers (another name, more health and harm, more of what it does):
+crystal wardens (shards in fans) and phase shades (step out of nothing beside you) in the object of Tesh and the
+ark; cable eels (lunge and shock) and diving drones (torpedoes that burst) in the drowned quarter; arena beasts
+(charge in a line, dazed when they hit a wall) and strangler vines (whip close, spit acid far) in the dying gardens;
+frost cores (bolts that chill) and ice spiders (leap, spin webs) on the computing moon, Seren, the cold transport and
+the dark world; slag golems (slam the ground) and magma crawlers (a burning trail, they burst) in the Mill and on
+Brannt; memory phantoms (flicker, volleys from beside you) and glitches (split in two when they die) in the net and
+the control room; crust crabs (an armoured front: from the side) on Brannt and the twilight belt. Three of the
+guardians are creatures now (a glacier spider, a nightmare, a zero-point core).
+
+Hits are of four kinds – kinetic (slugs, blows, blades), heat (plasma, embers, fire, blasts), shock (arcs, mauls,
+sparks), acid – and every enemy shrugs some off and fears others: machines are weak to shock, suits to acid, the
+golems and crawlers are immune to heat, the eels to shock, the vines burn, the crystals and phantoms laugh at slugs.
+The weapon's kind is in its description; the enemy one aims at shows its name and what it is weak to, tough
+against or immune to; a hit on a weakness calls it out. Burning ground, acid and frost hurt, eat at the armour or
+slow the hero (shown under the stock line). `--creatures 0|1` with `--shot` lines them all up
+(`--level ../../tools/creatures.txt`, a plain hall for that).
+
 ## Items, levels, skills
 
-Kills, champions, lockers and bosses drop gear with a beam and a label: common, magic, rare and unique, for seven
-slots (weapon, armour, helmet, gloves, boots, two implants), 50 kinds in two tiers, 17 affixes (damage, rate, crits,
-burning, shock, leech, health, armour, regeneration, speed, cooling, cooldowns, finding, experience, thorns, stims) that
-grow with the item's level, 18 uniques. Walking over an item picks it up (and puts it on if the slot is empty); the
-inventory compares, puts on, takes off and salvages for scrap. Experience gives hero levels (to 40) and a skill point
-each: per hero five passives and three active skills (Corvin: overcharge B/F, grenade R/LB, roll G/RB; Dorra: blast
-bolts B/F, quake R/LB, charge G/RB).
+Kills, champions, lockers and bosses drop gear with a beam, a label and its painted picture: common, magic, rare, set
+and unique. **Ten slots:** weapon, suit, helmet, gloves, boots, two implants, and three of the setting's own instead of
+amulets and rings – a **utility harness** (more stims carried, air, what one finds), a **shield emitter** (an energy
+shield that takes hits before the health and fills again after three quiet seconds: quick small ones, strong slow ones)
+and a **power cell** (shorter cooldowns, harder skills, larger blasts, on the best a rank on every skill).
+**145 kinds:** six weapon families per hero in three tiers (Corvin's rifles, carbines, scatterguns, rails, plasma and
+arc throwers; Dorra's hammers, axes, picks, mauls, breakers and drill lances; Ione's cutting, needle, spark, ember, acid
+and guardian swarms), the suits in three weights and three tiers, the rest likewise, and eight kinds of module.
+**28 affixes** that grow with the item's level (besides the old ones: shield, recharge, skill ranks, skill damage,
+health per kill, stims carried, air, resistance to the place, area, damage against machines or against people).
+**70 uniques**, each with a line of its story and a **power** of its own (a crit that arcs on, kills that explode or
+heal, a companion drone, a shock ring when hit, a second life once per place, rage, loot drawn from afar, a ring of
+fire when the gun runs hot …); **8 sets** of four pieces (two per hero, two for anyone) with bonuses for two, three and
+all four pieces worn. **Sockets:** plainer items come with up to three; modules drop on their own and go into a free
+socket from the inventory; Kiri drills sockets into the weapon and the suit for scrap. The gear shows on the hero: each
+weapon family has its own model, the tiers add metal and light, the suit's weight its plates, and a line of light
+glows in the colour of the rarest thing worn; Ione's drones take the colour of her swarm.
+
+Walking over an item picks it up (and puts it on if the slot is empty); the inventory shows each item's picture,
+compares, puts on, takes off and salvages for scrap. Experience gives hero levels (to 40) and a skill point each: per
+hero five passives and three active skills (Corvin: overcharge B/F, grenade R/LB, roll G/RB; Dorra: blast bolts B/F,
+quake R/LB, charge G/RB; Ione: takeover B/F, first aid R/LB, cutting storm G/RB). The pictures are painted by
+`tools/make_items.py` (Gemini's image model; `--reverse` runs a second pass from the end of the list).
 
 ## Map, inventory, character
 
@@ -284,6 +353,21 @@ forehand, backhand and the overhead slam, whose blast bolt goes off in a ring. T
 shield: shots and blows from the front are stopped, a boarder's baton is thrown back. B (F) throws a blast bolt in an
 arc at what the auto-aim picks: for gunners far off, and for the drone press's core, which hangs too high for the
 hammer; its tanks she smashes at the base. 140 health, a little slower than Corvin.
+
+## Ione
+
+Ione Sarrath, a Concession maintenance technician until a core asked her for help, with forty micro-drones round her
+(GameIone.cpp). The trigger sends the swarm at what the aim picks; it swarms round it and cuts as long as the trigger
+is held (no recoil, shorter reach than the rifle). The left trigger (Shift) couples the drones into a curved screen
+that stops most of a hit from the front and the sides – but it tires the swarm (the bar under her health), and a
+spent swarm neither screens nor cuts until it has recovered. B (F) takes over a machine (lice, welders, drones, saws,
+fuses): for a while it turns on its own and then burns out among them; a person or a boss is only jammed for a
+moment. Her skills: a bigger cloud, faster relays, coupled plates, a field medic, short circuits; first aid (her
+drones close the suit and the wounds under it) and the cutting storm (the whole cloud spins round her). Swarms of
+her own drop: needles that go through, sparks that jump, embers that burst, and their second tier. 95 health. Where
+her past is, she has lines of her own – on Kael above all, where the lance's core is the one she installed.
+
+![Ione and her cloud in Velm](docs/screenshots/ione.jpg)
 
 ## Level 1 „Die Kühlgedärme“
 
@@ -394,10 +478,13 @@ decoded when it loads, so a fight's music is there when the fight begins. „Mus
 | boss2, boss3, swarm, final | the machines, the men in frames, the swarms, the last fight | fight, rage |
 | hale, ysolde, ilka | while they talk | – |
 | act2end, act3end, end_a, end_b, end_c, epilogue | the acts' ends, the endings, the epilogue | – |
+| tale_corvin, tale_ione, tale_dorra, tale_unzu (each with `_fight`) | the companions' tales | calm, tense; fight |
+| tale_end | a tale's last card | – |
 
 **Backgrounds:** a recorded loop per place (`ambience` in the level file: ship, street, coolant, market, depths, suit,
 water, vault; Act II's shiphub, ice, clouds, dusk, ark, plasma, snow, transport, alien; Act III's and IV's ring,
-clinic, arena, yard, hearing, cryo, heat, siege, cutting, stream, furnace, servers, net) in `assets/sound`; without one the synthesised hum plays as before.
+clinic, arena, yard, hearing, cryo, heat, siege, cutting, stream, furnace, servers, net; the tales' rain,
+nightshift, kalvar and memory) in `assets/sound`; without one the synthesised hum plays as before.
 
 **How it is made** (`tools/make_audio.py`): the pieces are written in [tools/music.json](tools/music.json) and made by
 the AudioGenerator's soundtrack mode (ACE-Step 1.5 XL, local; loops cut to the measured beat grid, the tense layer a
@@ -422,10 +509,36 @@ Gemini's image model on Vertex AI (the PC's gcloud ADC, project `plenary-office-
 (404). The pictures are made seamless, the baked light removed, normal, roughness, metal and occlusion maps derived.
 Sign plates are painted once per language from the `sign_...` lines of the text files.
 
+`--local` (make_dress.py, make_items.py) paints locally instead, with no quota and no cost: FLUX.2-dev on the GPU in
+WSL2 (`tools/flux_wsl.py`, Text2Video's conda env `flux` and model cache, FLUX.2's own text encoder in 4 bits; about
+45 s per picture on an RTX 5090). Under Windows the same pipeline only paints noise. The decals and variants painted
+after 27.10.2026 come from there.
+
 The later places have walls and floors of their own (Game::themeSurfaces): plaster and alley paving in the drums,
 hull plates, the Core Bank's ceramic and polished stone, glacial ice and snow, dust and sandstone, the refinery's
 rust-red deck, the ark's padded walls, lawn and hedges on the ring, clinic tiles, arena sand and sandstone, yellow
 construction plating, veined stone, hoarfrost, scorched plates, regolith, slag, server racks and floors, the net's
-grid and its walls of memories. A level may choose others for a theme (`walltex theme texture`, `floortex theme
+grid and its walls of memories; for the tales rain-dark brick and wet cobbles, a workshop's tool walls, ochre rock
+and mine floors with rails, a farm yard's soil. A level may choose others for a theme (`walltex theme texture`, `floortex theme
 texture`; the drowned quarter has algae and wet floors). The speakers have portrait paintings
 (`tools/make_portraits.py`).
+
+    G:\Tools\ImageGenerationenv\Scripts\python.exe tools\make_dress.py [--local] [--part k/n] [--force NAME ...] [--list]
+
+The dressing (`tools/make_dress.py`, `src/LevelDress.cpp`): every wall and floor texture has two variants
+(`<name>_v1`, `_v2`, their colours pulled towards the plain one's), which the levels lay as a patchwork – floors in
+ragged patches of a few cells, walls in short runs. About 150 decals are painted and keyed out
+(`assets/textures/decals`, listed with their size, roughness, glow and the places that use them in `decals.txt`):
+oil, rust and coolant on the works' floors, cracks, scorch marks, boot prints, painted markings, litter and chalk in
+the streets, guidance lines and emblems in the clean halls, frost and snow drifts, sand and tracks outside, glowing
+glyphs in the object of Tesh, leaves and flowers in the gardens; on the walls rust streaks, soot, impacts,
+propaganda and advertising posters, wanted posters, safety plates, graffiti, neon signs, screens, banners, frost,
+ivy. Stains multiply what is under them (its grain shows through), the rest is blended; neon, screens and glyphs
+glow and light their surroundings. Each place adds clutter by the walls of its wider rooms (gas bottles, cable
+drums, pallets of sacks, workbenches, vending machines, noodle stands, scooters, fruit stalls, terminals, cleaning
+robots, care trolleys, cryo canisters, a heater glowing in the cold, racks of frozen samples, boulders, sensor masts,
+supply crates, crystals, stones hanging around a light, bushes, bird baths, lamp posts …; about sixty kinds) and a show piece in the middle of its larger
+rooms: a reactor column, a heap of ore under a crane, a worn drill head, a fountain, a founder's statue, a column
+of advertising light, a model of the station, a planter with a tree, cryo tanks, a crashed shuttle's nose, a dish,
+a monolith. Corridors stay clear; the autopilot walks around them. Textures are kept from level to level and freed
+when a level does not use them.

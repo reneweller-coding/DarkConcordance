@@ -5,6 +5,7 @@ l21.intro = Brannt, ein Bergbaumond mit einst zwanzigtausend Bewohnern, wird ges
 
 l21_start        = Brannt. Unter meinen Stiefeln nur Kruste über Glut.
 l21_start.dorra  = Ein Bergbaumond. Auf Kalvar hätten wir ihn geehrt. Hier schneiden sie ihn in Stücke.
+l21_start.ione   = Brannt. Schnittkolonnen mit Kernen. Ich kenne ihre Wartungsleitungen. Vielleicht hört mir einer zu.
 l21_cut          = Eine Linie glüht! Runter da!
 l21_fall         = Die Glut! Das Innere des Mondes kocht!
 l21_blocks       = Felsblöcke steigen in den Himmel. Ganz langsam. Jeder so groß wie ein Haus.

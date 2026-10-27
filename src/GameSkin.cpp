@@ -186,6 +186,8 @@ void Game::updateSkins( float dt )
         if ( q.m_body < 0 ) continue;
         bool        talking = m_talk && m_talkNpc == (int)i;
         const char *clip = talking ? "Idle_Talking_Loop" : q.m_look == 1 ? "Idle_FoldArms_Loop" : "Idle_Loop";
+        if ( q.m_chair > 0.5f )
+            clip = talking ? "Sitting_Talking_Loop" : "Sitting_Idle_Loop";   // a companion at the table
         m_body[q.m_body].play( q.m_skin, m_clip[clip], 0.4f );
         m_body[q.m_body].advance( q.m_skin, dt );
     }

@@ -20,6 +20,8 @@
 namespace spaceopera
 {
 
+class MeshBuilder;
+
 constexpr float CellSize = 2.0f;    ///< metres per map cell
 constexpr float FinHeight = 2.5f;   ///< height of a heat exchanger block
 constexpr float PitDepth = 30.0f;   ///< how deep the shafts go
@@ -113,6 +115,29 @@ struct LevelLight
     float   m_flicker;   ///< 0 steady .. 1 failing
 };
 
+/** @brief A kind of decal (assets/textures/decals/decals.txt): where it goes, how large, which themes lay it. */
+struct DecalDef
+{
+    std::string m_name;               ///< its picture (assets/textures/decals/<name>.png)
+    bool        m_wall = false;       ///< on a wall (else on the floor)
+    float       m_width = 1.0f;       ///< metres
+    float       m_height = 1.0f;      ///< metres
+    float       m_y = 1.6f;           ///< on a wall: the height of its middle
+    float       m_rough = 0.8f;       ///< roughness (puddles and oil shine)
+    float       m_glow = 0.0f;        ///< how bright it glows by itself (neon, screens, glyphs)
+    bool        m_multiply = false;   ///< laid by multiplying (a stain: what is under it shows through)
+    Vector3     m_color;              ///< its mean colour (the colour of its light)
+    uint64_t    m_themes = 0;         ///< one bit per ThemeE that lays it
+};
+
+/** @brief A decal laid in the level: a quad a little in front of a floor or a wall. */
+struct Decal
+{
+    int     m_def;         ///< which kind (index into the defs)
+    Vector3 m_corner[4];   ///< top left, top right, bottom right, bottom left
+    bool    m_cut;         ///< on a wall: dissolves with it
+};
+
 /** @brief Surfaces the level geometry uses. */
 struct LevelSurfaces
 {
@@ -130,6 +155,8 @@ struct LevelSurfaces
     int m_cloth;                 ///< fabric (bundles, bags)
     int m_themeWall[64] = {};    ///< per theme (ThemeE): its walls' own surface + 1 (0: the common ones)
     int m_themeFloor[64] = {};   ///< ... its floors' own surface + 1
+    std::map<int, std::vector<int>> m_variants;           ///< a wall's or floor's variants, laid as a patchwork
+    const std::vector<DecalDef>    *m_decals = nullptr;   ///< the decals there are (nullptr: none)
 };
 
 /** @brief The character of an area: colours, lining, pipes, props. */
@@ -206,6 +233,24 @@ struct Seat
     float   m_yaw;      ///< which way one sits (towards the table)
     float   m_height;   ///< the seat's top
 };
+
+/**
+ * @brief A cheap hash of a cell and a salt.
+ * @param[in] r     row
+ * @param[in] c     column
+ * @param[in] salt  what it is for
+ * @return the hash
+ */
+unsigned hashCell( int r, int c, int salt );
+
+/**
+ * @brief The hash as a number in 0..1.
+ * @param[in] r     row
+ * @param[in] c     column
+ * @param[in] salt  what it is for
+ * @return the number
+ */
+float hash01( int r, int c, int salt );
 
 /** @brief A level. */
 class Level
@@ -350,6 +395,7 @@ public:
     std::vector<Sign>       m_signs;                                             ///< signs (after build)
     std::vector<Prop>       m_props;                                             ///< solid props (after build)
     std::vector<Seat>       m_seats;                                             ///< stools (after build)
+    std::vector<Decal>      m_decals;                                            ///< decals (after build)
     std::vector<std::pair<std::string, std::pair<int, int>>> m_signRequests;     ///< "sign" lines: texture, cell
     std::string                                              m_sky;              ///< the sky's picture ("" none)
     bool                                                     m_thrust = false;   ///< the ship dodges: gravity tilts
@@ -379,11 +425,18 @@ public:
     std::vector<std::pair<int, int>> m_mothers;   ///< her bodies (cells)
     int                              m_birds = 0;                      ///< birds that fly over it and never land
     int                              m_ilkaRow = -1, m_ilkaCol = -1;   ///< where Ilka stands at the start
-    std::vector<std::pair<int, int>> m_ilkaWay;     ///< where she runs after the alarm (then she is gone)
-    std::map<int, std::string>       m_locks;       ///< door cell (row * 1000 + col) -> the event that unlocks it
-    std::map<int, std::string>       m_notes;       ///< terminal cell (row * 1000 + col) -> the key of its text
-    std::map<int, int>               m_elites;      ///< enemy cell (row * 1000 + col) -> 1 a champion, 2 the guardian
-    std::string                      m_generated;   ///< a generated level's file (empty for a written one)
+    std::vector<std::pair<int, int>> m_ilkaWay;   ///< where she runs after the alarm (then she is gone)
+    std::map<int, std::string>       m_locks;     ///< door cell (row * 1000 + col) -> the event that unlocks it
+    std::map<int, std::string>       m_notes;     ///< terminal cell (row * 1000 + col) -> the key of its text
+    std::map<int, int> m_elites;   ///< enemy cell (row * 1000 + col) -> 1 a champion, 2 the guardian, 3 a leader
+    /** @brief One of the places' own creatures where the generator put it. */
+    struct Native
+    {
+        int m_row, m_col, m_which;   ///< its cell; which of the level's natives (1 ..)
+    };
+    std::vector<Native>      m_natives;       ///< creatures placed ("native r c n")
+    std::vector<std::string> m_nativeNames;   ///< the families the digits stand for ("natives crystal shade")
+    std::string              m_generated;     ///< a generated level's file (empty for a written one)
     std::vector<std::pair<std::string, std::string>>
                                        m_exits;           ///< (level, flag): where the lift goes once the flag is set
     std::set<std::string>              m_repeat;          ///< exits that stay open once done (the depths)
@@ -453,9 +506,57 @@ public:
     const TalkNode *talk( const std::string &id ) const;
 
 private:
-    int               m_rows = 0;
-    int               m_cols = 0;
-    std::vector<Cell> m_cells;
+    /** @brief A glowing box (lamps, panes, bulbs); boxes of one colour become one mesh. */
+    struct GlowBox
+    {
+        Vector3 m_at;
+        Vector3 m_half;
+        Vector4 m_glow;
+        bool    m_cut = false;   ///< in a wall: dissolves with it
+    };
+    /** @brief A wall face free for a decal (no rib, shelf or door in front of it). */
+    struct FaceSlot
+    {
+        int   m_r, m_c, m_d;   ///< the open cell and the direction of the wall
+        float m_front;         ///< how far in front of the wall a decal goes (over the lining)
+        float m_base;          ///< the floor's height
+    };
+    /** @brief The builders the dressing adds to (Level::build's). */
+    struct DressKit
+    {
+        MeshBuilder          &m_metal, &m_rust, &m_crate, &m_box, &m_cloth, &m_hazard, &m_grate, &m_rock, &m_hull;
+        std::vector<GlowBox> &m_glows;
+    };
+
+    /**
+     * @brief Dresses the level after its walls and floors (LevelDress.cpp): decals on floors and walls, clutter by the
+     *        walls, a show piece in the larger rooms, their lights.
+     * @param[in]     s    the surfaces (the decals there are)
+     * @param[in,out] kit  the builders
+     */
+    void dress( const LevelSurfaces &s, DressKit &kit );
+    /**
+     * @brief Something standing by a wall (LevelDress.cpp).
+     * @param[in]     group  the place's kind (DressE)
+     * @param[in]     h      a hash: which one, how turned
+     * @param[in]     at     where (on the floor)
+     * @param[in]     yaw    which way it faces (away from the wall)
+     * @param[in,out] kit    the builders
+     */
+    void clutter( int group, unsigned h, Vector3 at, float yaw, DressKit &kit );
+    /**
+     * @brief A show piece in the middle of a room (LevelDress.cpp).
+     * @param[in]     group  the place's kind (DressE)
+     * @param[in]     h      a hash: which one
+     * @param[in]     at     where (on the floor)
+     * @param[in,out] kit    the builders
+     */
+    void showPiece( int group, unsigned h, Vector3 at, DressKit &kit );
+
+    int                   m_rows = 0;
+    int                   m_cols = 0;
+    std::vector<Cell>     m_cells;
+    std::vector<FaceSlot> m_faces;   ///< wall faces free for decals (during build)
 };
 
 }   // namespace spaceopera

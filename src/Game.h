@@ -68,7 +68,8 @@ enum class HeroE : int
 {
     CORVIN,   ///< ranged: the Gauss rifle
     DORRA,    ///< melee: ram hammer, shield, blast bolts
-    IONE,     ///< drones (not playable yet)
+    IONE,     ///< drones: a cutting swarm, a screen, the takeover of machines
+    UNZU,     ///< the ship's survey drone (only in his log)
     COUNT     ///< number of heroes
 };
 
@@ -229,6 +230,11 @@ public:
 
     /** @brief Pictures: a row of people in front of the hero, each in another animation. */
     void lineup();
+    /**
+     * @brief Pictures: the places' creatures in front of the hero, a column per family, a row per tier (held still).
+     * @param[in] page  0 the first seven families, 1 the others
+     */
+    void creatureLineup( int page );
 
     /**
      * @brief Tests and pictures: items scattered round the hero, experience given.
@@ -236,6 +242,8 @@ public:
      * @param[in] xp     how much experience
      */
     void testGifts( int items, int xp );
+    /** @brief Tests and pictures: puts on these ("item.rail3", "u12" a unique, "s5" a set's piece), rare kinds. */
+    void testGear( const std::string &list );
 
     bool        m_autoplay = false;                   ///< the autopilot plays
     float       m_zoom = 1.0f;                        ///< camera distance factor
@@ -260,7 +268,17 @@ private:
         SAW,       ///< a small saw bot: fast, in swarms, cuts on contact
         BOMBER,    ///< a crawler with a charge on its back: runs at the hero and goes off
         TAXATOR,   ///< the Taxator in his exoskeleton (the Knochenmarkt's boss)
-        SHELL      ///< an emptied body a stolen core drives (a skinned figure that shambles and scratches)
+        SHELL,     ///< an emptied body a stolen core drives (a skinned figure that shambles and scratches)
+        CREATURE   ///< one of the places' own creatures (its family in m_family, GameFamilies.cpp)
+    };
+    /** @brief What a hit is made of: the creatures shrug some off and fear others. */
+    enum class DamageE : uint8_t
+    {
+        KINETIC,   ///< slugs, blows, blades
+        HEAT,      ///< plasma, embers, fire, blasts
+        SHOCK,     ///< arcs, sparks, shock mauls
+        ACID,      ///< corrosive swarms and spit
+        COUNT
     };
     enum class FoeStateE : uint8_t
     {
@@ -303,14 +321,26 @@ private:
         float m_burnTime = 0.0f;   ///< seconds it still burns
         float m_stun = 0.0f;       ///< seconds it still stands stunned
         // Champions and the later kinds.
-        int   m_elite = 0;      ///< 0 an ordinary one, 1 a champion, 2 a guardian (the level's end)
-        int   m_affix = -1;     ///< a champion's gift: 0 swift, 1 armoured, 2 volatile, 3 berserk
-        float m_hpMax = 1.0f;   ///< full health (its bar)
-        float m_fuse = -1.0f;   ///< a bomber's fuse burning down (-1 not lit)
-        float m_spin = 0.0f;    ///< a saw's blade, a drone's rotors
-        int   m_stage = 0;      ///< the Taxator: 0 .. 2 as he weakens
-        int   m_body = -1;      ///< a shell's figure (m_shellBodies)
+        int   m_elite = 0;       ///< 0 an ordinary one, 1 a champion, 2 a guardian (the level's end)
+        int   m_affix = -1;      ///< a champion's gift: 0 swift, 1 armoured, 2 volatile, 3 berserk
+        float m_hpMax = 1.0f;    ///< full health (its bar)
+        float m_fuse = -1.0f;    ///< a bomber's fuse burning down (-1 not lit)
+        float m_spin = 0.0f;     ///< a saw's blade, a drone's rotors
+        int   m_stage = 0;       ///< the Taxator: 0 .. 2 as he weakens
+        int   m_body = -1;       ///< a shell's figure (m_shellBodies)
+        float m_hacked = 0.0f;   ///< seconds it still fights for Ione (taken over)
+        float m_zapT = 0.0f;     ///< until a taken machine fires at its own again
         int m_variant = 0;   ///< a kind's other shape: the Taxator's kind as the Hydrauliker, a gunner with a shock gun
+        // The places' own creatures, the later gifts, the leaders (GameFamilies.cpp).
+        int     m_family = -1;          ///< a creature's family (FamilyE in GameFamilies.cpp)
+        int     m_tier = 0;             ///< its tier 0 .. 2 (another name, more of everything)
+        int     m_affix2 = -1;          ///< a second gift (the later acts' champions, the leaders)
+        int     m_leader = -1;          ///< the leader it follows or the champion that called it (index into m_foes)
+        int     m_title = -1;           ///< a leader's name (leader.name.<n>, leader.title.<n % titles>)
+        float   m_ward = 0.0f;          ///< a shielded champion's shield
+        float   m_wardT = 9.0f;         ///< seconds since its shield was hit
+        float   m_giftT = 2.0f;         ///< until a gift acts again (a blink, a zap, a call, a burning step)
+        float   m_callT = 0.0f;         ///< until its weakness or toughness is called out again
         Vector3 m_rush = { 0, 0, 0 };   ///< the Taxator's charge (its direction)
         Vector3 m_home = { 0, 0, 0 };   ///< where it was put (a boss keeps to its hall)
         Vector3 m_safe = { 0, 0, 0 };   ///< where it last stood in the open (never left in rock)
@@ -396,6 +426,22 @@ private:
         Vector3 m_pos, m_vel;
         float   m_life;
         float   m_hurt = 0.0f;   ///< what it does (0: a carbine's)
+        int     m_kind = 0;      ///< 0 a bolt, 1 crystal shard, 2 frost, 3 acid, 4 torpedo (bursts), 5 web, 6 memory
+    };
+    /** @brief Burning, corroding or freezing ground (a magma crawler's trail, a fiery champion's steps). */
+    struct Hazard
+    {
+        Vector3 m_pos;
+        float   m_radius, m_life, m_max, m_dps;
+        int     m_kind;   ///< 0 fire, 1 acid, 2 frost
+    };
+    /** @brief A word over an enemy for a moment: its weakness hit, its toughness, a leader fallen. */
+    struct Callout
+    {
+        Vector3     m_pos;
+        std::string m_text;
+        Color       m_color;
+        float       m_life;
     };
     /** @brief A crate that slides when the ship dodges. */
     struct Cargo
@@ -439,8 +485,22 @@ private:
 
     void loadSurfaces( Gfx &gfx, const std::string &assets );
     void themeSurfaces( LevelSurfaces &ls );
+    /** @brief Reads assets/textures/decals/decals.txt (the decals there are, the themes that lay them). */
+    void loadDecalDefs();
+    /** @brief The level's decals: a surface per kind laid, one mesh each (after Level::build). */
+    void buildDecals();
+    /**
+     * @brief A texture kept from level to level, also from one Game to the next (freed at the next load that does
+     *        not ask for it).
+     * @param[in] path  the file
+     * @return the texture (a grey checker if it is missing)
+     */
+    Texture2D sharedTexture( const std::string &path );
+    /** @brief Frees the shared textures this load has not asked for. */
+    void freeUnusedTextures();
     Gfx                       *m_gfx = nullptr;   ///< the renderer (surfaces made after loading)
     std::map<std::string, int> m_ownSurfaces;     ///< the places' own surfaces by texture
+    std::vector<DecalDef>      m_decalDefs;       ///< the decals there are
     void loadFont();
     void spawnFoe( FoeE kind, Vector3 pos, bool awake );
     void updateHero( float dt, const GameInput &in );
@@ -456,7 +516,7 @@ private:
     bool gapBetween( Vector3 a, Vector3 b ) const;
     void hurtHero( float amount, Vector3 push, Vector3 from );
     void killFoe( Foe &f, bool drops );
-    void hurtFoe( Foe &f, float amount, Vector3 dir );
+    void hurtFoe( Foe &f, float amount, Vector3 dir, DamageE kind = DamageE::KINETIC );
     void hitTank( int side, float amount, Vector3 at, Vector3 n );
     void hitCore( float amount, Vector3 at, Vector3 n );
     void sparks( Vector3 p, Vector3 n, int count, Color c, float speed );
@@ -479,6 +539,55 @@ private:
         return f.m_kind == FoeE::BATON || f.m_kind == FoeE::GUNNER || f.m_kind == FoeE::SHIELD ||
                ( f.m_kind == FoeE::HEAVY && f.m_variant == 0 ) || f.m_kind == FoeE::TAXATOR;
     }
+    // The places' own creatures, kinds of damage and resistances, the champions' gifts, the leaders
+    // (GameFamilies.cpp).
+    void buildFamilies();
+    void spawnNative( int family, Vector3 p, int tier );
+    void spawnNatives();
+    /** @return what a weapon's hits are made of (DamageE) */
+    static int weaponDamage( const Item &it );
+    float creatureRadius( const Foe &f ) const;
+    float creatureHeight( const Foe &f ) const;
+    int creatureXp( const Foe &f ) const;
+    void giftsOnHit( float amount );
+    int nativeTier();
+    void updateCreature( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    void stepCreatureLegs( Foe &f, float dt );
+    void poseCreatures( std::vector<Drawable> &out );
+    void creatureDown( Foe &f, bool drops );
+    int resist( const Foe &f, DamageE kind ) const;
+    DamageE heroDamage() const;
+    float damageScale( Foe &f, DamageE kind, Vector3 at );
+    bool hasGift( const Foe &f, int gift ) const { return f.m_affix == gift || f.m_affix2 == gift; }
+    void updateGifts( Foe &f, int index, float dt, float dist, Vector3 dir );
+    bool wardTakes( Foe &f, float &amount );
+    void giftsOnDeath( Foe &f );
+    void assignEscorts();
+    void updateHazards( float dt );
+    void updateAilments( float dt );
+    void enemyShot( Vector3 muzzle, Vector3 at, float speed, float hurt, int kind, float spread );
+    void shotEffect( const Shot &s );
+    void callout( const Foe &f, const char *key, Color c );
+    void drawCallouts( int w, int h, float s );
+    void drawTargetInfo( int w, int h, float s );
+    void drawAilments( float x, float y, float s );
+    void poseHazards( std::vector<Drawable> &out );
+    std::string foeName( const Foe &f ) const;
+    /** @brief A family's look: per tier a body, its moving parts, its glowing parts. */
+    struct FamilyLook
+    {
+        Mesh m_body = {}, m_part = {}, m_glow = {};
+    };
+    FamilyLook           m_familyLook[16][3];   ///< by family and tier
+    LouseModel           m_spider, m_crab;      ///< the ice spiders' and crust crabs' legs
+    std::vector<Hazard>  m_hazards;             ///< burning, corroding, freezing ground
+    std::vector<Callout> m_callouts;            ///< words over enemies
+    int                  m_actor = -1;          ///< the enemy acting now (its melee hits feed its gifts)
+    float                m_chill = 0.0f;        ///< seconds the hero is still chilled (slower)
+    float                m_scorch = 0.0f;       ///< seconds the hero still burns
+    float                m_scorchDps = 0.0f;    ///< how hard
+    float                m_corrode = 0.0f;      ///< seconds the hero's armour is still eaten away
+    Mesh                 m_hazardDisc = {};     ///< a patch of burning or corroding ground
     // Act II's enemies (GameFoes2.cpp).
     void buildFoes2();
     bool spawnMarker( char kind, Vector3 p );
@@ -500,6 +609,10 @@ private:
     float foeRadius( const Foe &f ) const;
     float foeHeight( const Foe &f ) const;
     bool shielded( Vector3 from ) const;
+    /** @return 0 Corvin, 1 Dorra, 2 Ione (how items and skills name the heroes) */
+    int heroIndex() const;
+    /** @brief Builds the hero's figure as the gear shows (again when it changes). */
+    void dressHero();
 
     // GameCrew.cpp: Dorra, the boarders, their bolts and shots.
     void buildCrew( const std::string &assets );
@@ -568,6 +681,13 @@ private:
         FoeE    first;
         Vector3 second;
         int     variant = 0;
+        int     family = -1;                  ///< a creature's family (GameFamilies.cpp)
+        int     tier = 0;                     ///< its tier
+        int     stage = 0;                    ///< a glitch's generation
+        int     leader = -1;                  ///< who called it
+        float   share = 1.0f;                 ///< of its kind's health
+        float   hp = 0.0f;                    ///< or this much (when > 0)
+        Vector3 vel = { 0.0f, 0.0f, 0.0f };   ///< thrown out
     };
     std::vector<Summon> m_summons;   ///< enemies called this frame (they come in after the update)
 
@@ -729,6 +849,7 @@ private:
         float m_heat = 7.5f;                   ///< heat per shot
         float m_spread = 0.012f, m_splash = 0.0f, m_range = 30.0f;
         int   m_pellets = 1, m_pierce = 0, m_chain = 0;
+        float m_shield = 0.0f;   ///< the energy shield (emitter, affixes, modules)
     };
     /** @brief An item on the floor. */
     struct Loot
@@ -758,19 +879,53 @@ private:
     int rank( int skill ) const;
     HeroStats         m_stats;
     std::vector<Loot> m_loot;
-    Mesh              m_lootMesh[(int)SlotE::COUNT] = {};
-    Mesh              m_beamMesh = {};
-    float             m_cool[4] = {};        ///< the active skills' cooldowns, by button
-    float             m_overcharge = 0.0f;   ///< Corvin's overcharge still running
-    float             m_dash = 0.0f;         ///< a roll or a charge still running
-    Vector3           m_dashDir = { 0, 0, 1 };
-    std::set<int>     m_dashHit;        ///< who the charge has struck already
-    int               m_dashKind = 0;   ///< 0 a roll, 1 a charge
-    float             m_dashDamage = 0.0f;
-    float             m_levelUp = 0.0f;   ///< the level-up banner still showing
-    Color             m_toastColor = { 240, 235, 225, 255 };
-    float             m_bagFull = 0.0f;
-    float             m_regenStore = 0.0f;
+    // GameGear.cpp: the shield, sockets, sets and the powers of what is worn.
+    int gearIndex( const Item &it ) const;
+    void gearStats( HeroStats &s, int &skillBonus );
+    float areaScale() const;
+    float skillPower() const;
+    int maxStims() const;
+    float hitScale( const Foe &f ) const;
+    void onHit( Foe &f, float damage, Vector3 dir, Vector3 at, bool crit );
+    void onKill( const Foe &f );
+    bool onHurt( float &amount, Vector3 from );
+    void nova( float radius, float damage, bool fireRing );
+    void overheated();
+    bool secondLife();
+    void updateGear( float dt );
+    void poseGear( std::vector<Drawable> &out );
+    bool insertModule( int bagIndex );
+    void dropModule( Vector3 at );
+    void drawShieldHud( float x, float y, float bw, float s );
+    /** @return the item's painted picture (loaded when first wanted), or nullptr if there is none */
+    const Texture2D *pictureOf( const Item &it );
+    std::map<std::string, Texture2D> m_itemPics;   ///< the items' pictures by name (missing ones as id 0)
+    bool                             m_power[(int)PowerE::COUNT] = {};   ///< what the worn uniques and full sets can do
+    int                              m_setPieces[16] = {};               ///< pieces worn of each set
+    float                            m_shield = 0.0f;                    ///< the energy shield now
+    float                            m_shieldWait = 0.0f;                ///< until it fills again
+    float                            m_shieldFlash = 0.0f;               ///< it has just taken a hit
+    float                            m_haste = 0.0f;                     ///< seconds faster after a kill
+    float                            m_rageT = 0.0f;                     ///< until the rage is gone
+    float                            m_compT = 0.0f;                     ///< until the drone shoots again
+    int                              m_rage = 0;                         ///< rage stacks
+    int                              m_blastCount = 0;                   ///< hits counted for the blast
+    bool                             m_secondUsed = false;               ///< the second life is spent (this level)
+    bool                             m_inPower = false;         ///< a power is running (no powers from its own hits)
+    Vector3                          m_compPos = { 0, 0, 0 };   ///< the companion drone
+    Mesh                             m_lootMesh[(int)SlotE::COUNT] = {};
+    Mesh                             m_beamMesh = {};
+    float                            m_cool[4] = {};        ///< the active skills' cooldowns, by button
+    float                            m_overcharge = 0.0f;   ///< Corvin's overcharge still running
+    float                            m_dash = 0.0f;         ///< a roll or a charge still running
+    Vector3                          m_dashDir = { 0, 0, 1 };
+    std::set<int>                    m_dashHit;        ///< who the charge has struck already
+    int                              m_dashKind = 0;   ///< 0 a roll, 1 a charge
+    float                            m_dashDamage = 0.0f;
+    float                            m_levelUp = 0.0f;   ///< the level-up banner still showing
+    Color                            m_toastColor = { 240, 235, 225, 255 };
+    float                            m_bagFull = 0.0f;
+    float                            m_regenStore = 0.0f;
 
     // GamePanel.cpp: the map (what the hero has seen), the inventory, the character page.
     struct PanelRow
@@ -964,6 +1119,34 @@ private:
     float m_block = 0.0f;        ///< the shield raised
     float m_boltTimer = 0.0f;    ///< until the next blast bolt
     bool  m_fireWas = false;     ///< the trigger was held last frame
+    // GameIone.cpp: Ione's cloud of drones.
+    struct Mote
+    {
+        Vector3 m_pos = { 0, 0, 0 };   ///< where the drone is
+        float   m_phase = 0.0f;        ///< its place in the cloud
+        float   m_speed = 1.0f;        ///< how quickly it follows (drones differ)
+    };
+    void buildIone();
+    void updateIone( float dt, const GameInput &in );
+    bool hackable( int i ) const;
+    void hack();
+    Vector3 hackedWant( const Foe &f, float &faceYaw ) const;
+    void updateHacked( float dt );
+    void ioneSkill( const std::string &key, int r );
+    void poseIone( std::vector<Drawable> &out );
+    void autoIone( GameInput &in, const Target &best, float bestDist );
+    float screenCut() const;
+    std::vector<Mote> m_motes;                   ///< the cloud
+    Mesh              m_moteMesh = {};           ///< one drone
+    Mesh              m_moteLight = {};          ///< its light
+    Vector3           m_cloudAt = { 0, 0, 0 };   ///< where the cutting swarm works
+    float             m_cloudT = 0.0f;           ///< seconds it still stays out there
+    int               m_swarmHits = 0;           ///< hits (every third whirrs)
+    float             m_storm = 0.0f;            ///< seconds of the storm left
+    float             m_stormTick = 0.0f;        ///< until the storm's next cut
+    int               m_stormRank = 0;           ///< the storm's rank
+    float             m_repair = 0.0f;           ///< seconds of mending left
+    float             m_repairRate = 0.0f;       ///< health per second while mending
 
     // The world.
     std::vector<Foe>      m_foes;
@@ -1018,8 +1201,30 @@ private:
         int     m_look;             ///< which figure (-1: the terminal)
         Person  m_figure;           ///< drawn as a skinned figure when its m_body >= 0
         bool    m_hidden = false;   ///< not there yet (see Level::m_npcAfter)
+        bool    m_seated = false;   ///< on a stool at a table (does not turn to the hero)
     };
-    std::vector<NpcState>            m_npcs;
+    std::vector<NpcState> m_npcs;
+    // GameTales.cpp: the companions at the tables, the tales played as their tellers, Unzu's drone.
+    void loadTale();
+    Progress taleProgress( const Progress &tale ) const;
+    void spendPoints();
+    static bool companion( const std::string &look );
+    void seatCompanions( std::set<size_t> &taken );
+    void dressCompanion( NpcState &s, const std::string &look );
+    void buildUnzu();
+    void updateUnzu( float dt, const GameInput &in );
+    void poseUnzu( std::vector<Drawable> &out );
+    void updateTale( float dt );
+    void gradeFor( Gfx &gfx ) const;
+    void drawTaleHud( int w, int h, float s );
+    std::set<size_t>                 m_counted;                    ///< people Unzu has counted
+    bool                             m_tale = false;               ///< this level is a companion's tale
+    HeroE                            m_realHero = HeroE::CORVIN;   ///< who is really played (outside the tale)
+    Progress                         m_realProgress;               ///< what they carry, waiting
+    int                              m_taleXp = 0;                 ///< experience gained in the tale
+    float                            m_rainT = 0.0f;               ///< rain drops owed
+    std::map<std::string, int>       m_companionSeat;              ///< a companion's stool (m_level.m_seats)
+    Mesh                             m_unzuBody = {}, m_unzuEye = {}, m_unzuBlades = {};
     const TalkNode                  *m_talk = nullptr;   ///< the conversation's step on screen
     int                              m_talkNpc = -1, m_choice = 0;
     int                              m_menu = 0, m_menuChoice = 0;   ///< 1 Ottla's stims, 2 Kiri's workshop, 3 the lift

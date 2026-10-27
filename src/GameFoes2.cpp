@@ -410,6 +410,16 @@ const char *Game::foeNoun( const Foe &f ) const
     if ( f.m_kind == FoeE::DRONE && f.m_variant == 5 ) return "foe.swarmling";
     if ( f.m_kind == FoeE::DRONE && f.m_variant == 6 ) return "foe.hive";
     if ( f.m_kind == FoeE::DRONE && f.m_variant ) return "foe.pumpdrone";
+    if ( f.m_kind == FoeE::CREATURE )
+    {
+        // A creature by its family and tier (foe.crystal.0 .. 2).
+        static const char *const     fams[] = { "crystal", "shade", "eel",   "diver",   "beast",  "vine", "frost",
+                                                "spider",  "golem", "magma", "phantom", "glitch", "crab" };
+        static std::set<std::string> named;
+        std::string                  key =
+            std::string( "foe." ) + fams[std::clamp( f.m_family, 0, 12 )] + "." + std::to_string( f.m_tier );
+        return named.insert( key ).first->c_str();
+    }
     // A faction's men by its own name (the Concession's guards and the Collegium's cleaners are no Skimmers).
     if ( !m_level.m_faction.empty() && ( f.m_kind == FoeE::BATON || f.m_kind == FoeE::GUNNER ||
                                          f.m_kind == FoeE::SHIELD || f.m_kind == FoeE::HEAVY ) )

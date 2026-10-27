@@ -18,6 +18,7 @@ l4_end         = The pumps have stopped. Behind his hall lies the lock to the Co
 
 l4_start.dorra = The Drowned Quarter. On Kalvar we got water out of the rock. Here it got the people.
 l4_water.dorra = Cold. No breath. In this armour I'd sink like a stone – except nothing sinks here.
+l4_water.ione  = Cold. No air. And the swarm turns sluggish in water.
 l4_boss.dorra  = The Pumpwright. He keeps the quarter under water for money. For that I'll smash his pumps.
 l4_end.dorra   = The pumps have stopped. And the balls … will they fall now? No. Nothing falls here.
 

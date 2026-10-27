@@ -52,7 +52,8 @@ void Game::loadElements()
         UnloadImage( img );
     }
     // The suit's other need: as long as the level says where it drains.
-    if ( !m_level.m_meter.empty() ) m_oxygenMax = m_oxygen = m_level.m_meterSecs;
+    if ( !m_level.m_meter.empty() )
+        m_oxygenMax = m_oxygen = m_level.m_meterSecs * ( 1.0f + stat( StatE::RESIST ) / 100.0f );
     m_gustTimer = m_level.m_gusts * 0.7f;
     m_safeSpot = m_pos;
     m_pressureT = m_level.m_pressure * 0.5f;

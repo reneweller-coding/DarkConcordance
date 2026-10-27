@@ -323,7 +323,7 @@ uniform sampler2D emissionMap;
 uniform vec4 colDiffuse;
 uniform mat4 matNormal;
 uniform float uvScale;
-uniform vec4 matParams;    // roughness scale, metallic scale, normal strength, mapping (0 triplanar, 1 UV, 2 clothed)
+uniform vec4 matParams;    // roughness scale, metallic scale, normal strength, mapping (0 triplanar, 1 UV, 2 clothed, 3 decal, 4 stain)
 uniform vec4 drawTint;     // clothed: the clothes' colour, the height (rest pose) the skin shows above
 uniform vec4 emissive;     // rgb, mode (0 plain, 1 grooves glow, 2 emission map)
 uniform vec2 emissiveMask; // the grooves' smoothstep
@@ -383,16 +383,30 @@ void main()
     vec3 albedo;
     vec3 orm;
     vec3 nObj;
+    float alpha = 1.0;
     if( matParams.w < 0.5 )
         triplanar( objPos * uvScale, n0, albedo, orm, nObj );
     else
     {
         vec2 uv = fragTexCoord * uvScale;
-        albedo = toLinear( texture( texture0, uv ).rgb );
+        vec4 tex = texture( texture0, uv );
+        albedo = toLinear( tex.rgb );
         orm = texture( texture1, uv ).rgb;
         nObj = n0;
+        // A decal: blended by its alpha over what is under it (nothing written where it is empty); a stain multiplies
+        // what is under it (the blending does it: destination times this).
+        if( matParams.w > 2.5 )
+        {
+            alpha = tex.a;
+            if( alpha < 0.03 ) discard;
+            if( matParams.w > 3.5 )
+            {
+                finalColor = vec4( mix( vec3( 1.0 ), albedo, alpha * 0.65 ), 1.0 );
+                return;
+            }
+        }
     }
-    if( matParams.w > 1.5 && objPos.y < drawTint.w )
+    if( matParams.w > 1.5 && matParams.w < 2.5 && objPos.y < drawTint.w )
     {
         // Clothes over the body (below the neck in the rest pose): the colour with a weave in it; boots, a belt and
         // gloves darker.
@@ -453,7 +467,7 @@ void main()
     col += em;
 
     vec4 fog = volumetric( viewPos, fragPos );
-    finalColor = vec4( col * fog.a + fog.rgb, 1.0 );
+    finalColor = vec4( col * fog.a + fog.rgb, alpha );
 }
 )";
 
@@ -827,6 +841,8 @@ uniform float exposure;
 uniform float bloom;
 uniform float time;
 uniform vec2 resolution;
+uniform vec4 grade;      // a tale's light: colour, contrast, extra grain, extra vignette
+uniform vec3 gradeTint;
 out vec4 finalColor;
 float hash( vec2 p ) { return fract( sin( dot( p, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ); }
 void main()
@@ -845,7 +861,10 @@ void main()
     c = mix( c, c * vec3( 1.07, 1.0, 0.92 ), smoothstep( 0.3, 1.0, l ) * 0.45 );
     c *= 1.0 - 0.45 * pow( length( d ) * 1.25, 2.4 );
     c = pow( clamp( c, 0.0, 1.0 ), vec3( 1.0 / 2.2 ) );
-    c += ( hash( uv * resolution + fract( time ) * 91.7 ) - 0.5 ) * 0.035;
+    float g = dot( c, vec3( 0.299, 0.587, 0.114 ) );
+    c = clamp( ( mix( vec3( g ), c, grade.x ) * gradeTint - 0.5 ) * grade.y + 0.5, 0.0, 1.0 );
+    c *= 1.0 - grade.w * pow( length( d ) * 1.3, 2.0 );
+    c += ( hash( uv * resolution + fract( time ) * 91.7 ) - 0.5 ) * ( 0.035 + grade.z );
     finalColor = vec4( c, 1.0 );
 }
 )";

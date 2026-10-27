@@ -20,6 +20,7 @@ l7_end         = The Bell falls into the clouds. And somewhere here are the cont
 l7_core        = You came. My controls are here. Twelve workers on my platform. If I switch off, they fall with me. I know. I know. Please.
 
 l7_start.dorra = Hesper. On Kalvar at least we had ground under our feet. Here there's only storm.
+l7_start.ione  = Hesper. The wind tears at the swarm. I have to keep it tighter.
 l7_balloon.dorra = One bolt into the balloon, and it's gone. It doesn't get prettier with practice.
 
 k7a            = I am the core of balloon seventeen. I was a person, I think. I don't remember my name. I only know that I haven't slept for eleven years. Switch me off.

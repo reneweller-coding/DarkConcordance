@@ -1,0 +1,85 @@
+# Eine Erzählung: Dorras Kriegschronik (Akt III, nach der Werft, in Ysoldes Wohnung auf dem Ring). Vor zwanzig Jahren
+# auf Kalvar, Tag einundvierzig des Aufstands gegen die Eingliederung: schwere Schwerkraft, Ocker und Staub, die Stollen
+# gehören den Bergleuten, der Talkessel den Räumtrupps der Konkordanz. Die Barrikadengeschütze der Gewerkschaft schießen
+# mit ("thing ally"). Am Ende Major Siel im Schreitpanzer vor der Förderstation Tiefe Sieben, dann der Zünder.
+# Nüchtern erzählt, mit Daten, ohne Heldentum; am Tisch hören Corvin, Ione und Unzu zu.
+
+name     tale.dorra.name
+act      tale.title
+intro    tale.dorra.intro
+teller   dorra
+grade    0.3 1.25 0.07 0.45 1.12 1.0 0.8
+gravity  14.0
+fog      0.004 0.012 0.5 0.9
+fogcolor 0.007 0.005 0.0025
+ambient  0.085 0.065 0.04 0.035 0.025 0.015
+walls    5.4
+sky      nebula
+faction  clearance
+bossvariant 2
+bossname boss.siel
+area     0
+next     gelassenheit.txt
+gate     tale.dorra.fired
+whiteout tale.dorra.fired
+endcard  tale.dorra.end tale_end tale.dorra.told
+ambience kalvar
+music    tale_dorra
+bossmusic tale_dorra
+walltex  works ochrerock
+walltex  yard ochrerock
+walltex  moon ochrerock
+floortex works minefloor
+floortex yard minefloor
+floortex moon minefloor
+npcafter zuender bossdead
+autotalk zuender
+
+genrooms      15
+genside       5
+gensize       10 15 9 13
+gentheme      works works yard moon works
+genstarttheme works
+genarenatheme yard
+genarena      taxator
+genthing      ally 0.35 main
+genpack       ETT     2
+genpack       ""E     1.5
+genpack       $T      1.2
+genpack       %T      1
+gendensity    1.0
+genelite      0.25
+gennote       note.kalvar1 note.kalvar2 note.kalvar3 note.kalvar4
+
+[npcs]
+zuender | -1 -1 | terminal | z1
+
+[talk]
+z1 | zuender | -               | z1_a>z2 z1_b>z3
+z2 | zuender | tale.dorra.fired |
+z3 | zuender | -               | z3_a>z2
+
+[lines]
+td_a1        | a              | hero
+td_a2        | a              | ione
+td_a3        | a              | hero
+td_b1        | b              | hero
+td_b2        | b              | josse
+td_c1        | c              | hero
+td_c2        | c              | corvin
+td_c3        | c              | hero
+td_d1        | d              | hero
+td_d2        | d              | unzu
+td_champion  | champion       | hero
+td_ally      | a              | hero
+td_boss      | bossstart      | siel
+td_boss2     | bossstart      | hero
+td_end       | bossdead       | siel
+td_end2      | bossdead       | hero
+td_fuse      | appear.zuender | hero
+
+[hints]
+h_tale       | a
+h_ally       | a
+h_champion   | champion
+h_stim       | hurt

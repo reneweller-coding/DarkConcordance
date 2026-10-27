@@ -5,6 +5,7 @@ l23.intro = A hollowed moon three hundred kilometres across, turning slowly for 
 
 l23_start        = The Mill. Hot. And it smells of nothing.
 l23_start.dorra  = So this is what the inside of a world looks like. On Kalvar they would have dreamed of it.
+l23_start.ione   = The Mill. I saw plans of it once, as a maintenance schematic. On paper it looked smaller.
 l23_lava         = Molten metal! Get out!
 l23_spin         = The centrifuge – it flings everything outward!
 l23_miss         = That one shot wide. On purpose, I think.

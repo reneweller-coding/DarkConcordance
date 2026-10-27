@@ -42,6 +42,11 @@ genpack       $TT     1.5
 genpack       ^^^     1.5
 genpack       %T      1
 genpack       ''T     0.8
+natives       crystal shade
+genpack       111     3.0
+genpack       22      2.5
+genpack       112     2.0
+genpack       1222    1.0
 gendensity    0.95
 genelite      0.3
 gennote       note.pell note.salvage note.isotope note.motion note.weight

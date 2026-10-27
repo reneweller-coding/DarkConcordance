@@ -126,7 +126,7 @@ void Game::updateMelee( float dt, const GameInput &in, Vector2 move )
     {
         // Bolzenmeisterin: harder bolts, sooner again.
         int r = rank( activeSkill( 1, 1 ) );
-        throwBolt( BoltDamage * weaponBoost() * ( 1.0f + 0.15f * r ) * ( 1.0f + stat( StatE::DAMAGE ) / 100.0f ) );
+        throwBolt( BoltDamage * weaponBoost() * ( 1.0f + 0.15f * r ) * skillPower() );
         m_boltTimer = BoltCooldown * ( 1.0f - 0.1f * m_progress.m_weapon ) * ( 1.0f - 0.08f * r ) *
                       ( 1.0f - fminf( 0.6f, stat( StatE::COOLDOWN ) / 100.0f ) );
     }
@@ -265,6 +265,7 @@ void Game::blast( Vector3 p, float damage, float radius )
 {
     if ( damage <= 0.0f ) damage = BoltDamage * weaponBoost();
     if ( radius <= 0.0f ) radius = BlastRadius;
+    radius *= areaScale();
     explode( p, 1.1f );
     m_shake = fmaxf( m_shake, 0.4f );
     for ( Foe &f : m_foes )
@@ -453,13 +454,20 @@ void Game::updateShots( float dt )
         if ( !done && !m_dead && flat < 0.45f && s.m_pos.y > m_pos.y + 0.2f && s.m_pos.y < m_pos.y + 1.9f )
         {
             m_hurtBy = "bolt";
-            hurtHero( s.m_hurt > 0.0f ? s.m_hurt : ShotHurt, Vector3Scale( Vector3Normalize( s.m_vel ), 0.6f ),
-                      Vector3Subtract( s.m_pos, s.m_vel ) );
+            if ( s.m_kind != 4 )
+                hurtHero( s.m_hurt > 0.0f ? s.m_hurt : ShotHurt, Vector3Scale( Vector3Normalize( s.m_vel ), 0.6f ),
+                          Vector3Subtract( s.m_pos, s.m_vel ) );
+            shotEffect( s );
             done = true;
         }
         if ( !done && m_level.raycast( prev, s.m_pos, hit, n ) )
         {
             sparks( hit, n, 6, { 255, 140, 80, 255 }, 2.0f );
+            if ( s.m_kind == 4 )
+            {
+                s.m_pos = hit;
+                shotEffect( s );
+            }
             done = true;
         }
         if ( done )

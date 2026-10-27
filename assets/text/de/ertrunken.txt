@@ -18,6 +18,7 @@ l4_end         = Die Pumpen stehen. Hinter seiner Halle liegt die Schleuse zur K
 
 l4_start.dorra = Das Ertrunkene Viertel. Auf Kalvar haben wir Wasser aus dem Fels geholt. Hier hat es die Leute geholt.
 l4_water.dorra = Kalt. Kein Atem. Mit der Rüstung sinke ich wie ein Stein – nur dass hier nichts sinkt.
+l4_water.ione  = Kalt. Kein Atem. Und der Schwarm wird träge im Wasser.
 l4_boss.dorra  = Der Hydrauliker. Er hält das Viertel unter Wasser für Geld. Dafür schlage ich ihm die Pumpen kaputt.
 l4_end.dorra   = Die Pumpen stehen. Und die Kugeln … werden die jetzt fallen? Nein. Hier fällt nichts.
 

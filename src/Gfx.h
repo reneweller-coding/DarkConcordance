@@ -172,6 +172,8 @@ public:
     void post( const RenderTexture2D *out );
 
     float   m_exposure = 1.0f;                        ///< exposure before tone mapping
+    Vector4 m_grade = { 1.0f, 1.0f, 0.0f, 0.0f };     ///< colour, contrast, extra grain, extra vignette
+    Vector3 m_gradeTint = { 1.0f, 1.0f, 1.0f };       ///< the picture's tint after the grade
     float   m_bloom = 0.08f;                          ///< how much bloom is mixed in
     bool    m_sunShadows = true;                      ///< render the sun's shadow map (off where there is no sun)
     Vector3 m_cutCentre = { 0.0f, -1000.0f, 0.0f };   ///< the hero, whom walls in front of dissolve around

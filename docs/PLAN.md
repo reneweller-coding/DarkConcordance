@@ -57,7 +57,7 @@ openings); everything else plays in the engine (cheaper, the same look as the ga
 4. In the game: MPEG-1 decoded with pl_mpeg (one header, MIT; raylib has an example), the language's voice track mixed
    in, subtitles drawn by the game.
 
-Open: the films' look next to the game's (photographic, or painted and graded to match).
+The films' look: photographic (the user, 27.10.2026), graded to sit next to the game.
 
 ## Systems
 
@@ -160,8 +160,29 @@ the catcher's clock), the Mill's inside (molten metal, centrifuges, the foreman)
 epilogue's cards. New surfaces for the later places of every act and portraits for every speaker; music and
 backgrounds for both acts. Seren's and Kael's control cores now speak after their fights (the night shift remembers).
 
-Open: skinned heroes and enemies with the animation packs' combat clips; Ione; voices; the companions' flashback
-levels; the user's play (balance, the music's choices and levels).
+Ione (27.10.2026): the third hero with her drone cloud – a cutting swarm, a screen that tires it, the takeover of
+machines, first aid and the cutting storm; her own swarms, skills and lines (Kael above all). The companions sit in
+every hub and talk through each act; four tales are played as their tellers (Corvin's confession on Odile, Ione's
+incident report on Kael, Dorra's day forty-one on Kalvar, Unzu's survey log of Talgrund with his drone), each in its
+own light, music and surfaces; the epilogue has a card for all three heroes.
+
+Loot (27.10.2026, the user: loot is what keeps one going in Diablo and Dark Alliance): ten slots with a harness, a
+shield emitter and a power cell instead of amulets and rings, 145 kinds in three tiers, 28 affixes, 70 uniques with
+powers and lore, 8 sets, sockets and modules (Kiri drills sockets), a painted picture for every item, and the gear
+visible on the hero.
+
+Dressing (27.10.2026, the user: Dark Alliance lives from its loving detail): every wall and floor texture has two
+variants laid as a patchwork, about 150 decals (stains multiplied, posters, graffiti, neon and glyphs that glow),
+clutter by the walls in seven kinds of place and show pieces in the larger rooms, with their lights; textures are
+kept from level to level.
+
+Enemies (27.10.2026, the user: "eigene Familien je Ort, Stufen, mehr Champion-Gaben, Resistenzen"): thirteen
+families of the places' own creatures in three tiers each (13 levels, three guardians), four kinds of damage with
+resistances and weaknesses for every enemy, twelve champion gifts (two from Act III on), a leader with an escort in
+every generated level, burning, corroding and freezing ground, the hero chilled, burning or corroded.
+
+Open: skinned heroes and enemies with the animation packs' combat clips; voices (German and English); the user's play
+(balance, the music's choices and levels). Co-op is set aside for now (the user, 27.10.2026).
 
 Still to come, by first use:
 
@@ -171,7 +192,7 @@ Still to come, by first use:
 | Vacuum: oxygen, helmet hits, radiation spikes, only radio and breath | 3 Außenhaut — done (26.10.2026) |
 | Floating water spheres: caustics, diving, drowning, current through water | 4 Ertrunkenes Viertel — done (26.10.2026) |
 | Fragile targets (core storage), multi-body boss with radio link | 5 Kernbank — done (26.10.2026) |
-| Drone swarm control (Ione), hacking machines | class choice |
+| Drone swarm control (Ione), hacking machines | class choice — done (27.10.2026) |
 | Breaking ice, enemies from below | 6 Seren — done (27.10.2026) |
 | Wind, swaying platforms, cutting balloons | 7 Hesper — done (27.10.2026: wind, gusts, balloon guards; the platforms do not sway) |
 | Drift of shots in wind, heat and cold zones | 8 Halden — done (27.10.2026) |
@@ -190,7 +211,7 @@ Still to come, by first use:
 | Molten metal, centrifuges | 23 — done (27.10.2026) |
 | Split finale (one in the net, one guarding the bodies), three endings | 24 — done as two levels and three endings (27.10.2026; co-op still to come) |
 | Co-op for two (shared screen) | early, then everywhere |
-| Companion flashback levels | after each act |
+| Companion flashback levels | after each act — done (27.10.2026: four tales, the companions in the hubs) |
 
 ## Locations
 
@@ -228,18 +249,20 @@ Still to come, by first use:
 ## Order
 
 1. **Level 1 „Die Kühlgedärme“** as the playable prototype with Corvin: does the combat feel right? — done
-2. **Prologue** with Dorra and Corvin to choose — done (25.10.2026; Ione's drones still to come).
+2. **Prologue** with Dorra and Corvin to choose — done (25.10.2026); Ione — done (27.10.2026).
 3. Velm as hub (bar, trader, workshop, Ysolde) — done (25.10.2026); level 2 generated, with the Depths for replay —
    done (26.10.2026); the drum's Coriolis and levels 3–5 with the job chain to the act's end — done (26.10.2026);
-   still Ione and voices for **Act I complete**.
+   still voices for **Act I complete**.
 4. Act II with the ship as hub and the first choices — done (27.10.2026: the ship, levels 6–13 with Tesh as a detour,
    the wreck field; the epilogue cards still to come); co-op for two.
-5. Acts III and IV, endings, epilogue cards — done (27.10.2026); flashback levels still to come.
+5. Acts III and IV, endings, epilogue cards — done (27.10.2026); the companions' tales — done (27.10.2026).
 6. Steam Deck: half-resolution fog, no supersampling, gamepad everywhere.
 
 ## Open decisions (the user's)
 
 - Title: *DARK CONCORDANCE* or *KATABASIS* (collision check before it is final).
-- Where the reference voices come from; voice language (German, as the story).
+- Where the reference voices come from (proposed: Qwen3-TTS, a voice designed per figure from a description, then
+  cloned for every line; Apache 2.0, so a sale stays possible; download not yet done).
 - Where human character models come from, if the suits are not enough.
-- The cutscene films' look (photographic or painted next to the game).
+
+Decided (27.10.2026, the user): voices in German and English; the cutscene films photographic; co-op not for now.
