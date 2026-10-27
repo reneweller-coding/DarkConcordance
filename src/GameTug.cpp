@@ -169,6 +169,68 @@ void Game::loadMachine( const std::string &kind, float out, float tough )
         nozzle.cylinder( place( { 0.0f, 0.0f, -1.25f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.6f, 0.06f, 16 );
         m_tugNozzle = nozzle.build().front();
     }
+    else if ( kind == "platform" || kind == "column" )
+    {
+        // Velm's cutting platform: a broad deck clamped to the hull, the cutting head on its arm, two clamps that hold
+        // it on. Brannt's column: three cutters on one carriage under one control core.
+        bool column = kind == "column";
+        m_tugHome = { edge.x + out * 7.0f, 0.2f, edge.z };
+        m_tugSlide = column ? 6.0f : 2.0f, m_tugBob = 0.1f;
+        m_tugGunAt = { 0.0f, 4.0f, 1.5f };
+        m_tugBridge = { 0.0f, 5.0f, -1.5f };
+        const char *side = column ? "column.cutter" : "platform.clamp";
+        const char *head = column ? "column.core" : "platform.head";
+        m_parts = { { side, { -4.0f, 2.2f, -1.0f }, 1.4f, 1150.0f * tough, 1150.0f * tough, {} },
+                    { head, { 0.0f, 4.0f, 1.5f }, 1.6f, 1500.0f * tough, 1500.0f * tough, {} },
+                    { side, { 4.0f, 2.2f, -1.0f }, 1.4f, 1150.0f * tough, 1150.0f * tough, {} } };
+        frameB.box( place( { 0.0f, 1.2f, 0.0f } ), { 6.0f, 0.5f, 4.0f } );
+        for ( float x : { -5.0f, 5.0f } )
+            for ( float z : { -3.0f, 3.0f } ) frameB.box( place( { x, 0.0f, z } ), { 0.4f, 1.2f, 0.4f } );
+        add( frameB, S_RUST );
+        dark.roundedBox( place( { 0.0f, 2.6f, -1.5f } ), { 2.0f, 1.0f, 1.8f }, 0.3f, 2 );
+        add( dark, column ? S_FOREMAN : S_CONCESSION );
+        bands.box( place( { 0.0f, 1.72f, 4.0f } ), { 6.0f, 0.04f, 0.12f } );
+        add( bands, S_HAZARD );
+        lights.box( place( { 0.0f, 3.62f, -1.5f } ), { 1.6f, 0.04f, 1.2f } );
+        add( lights, -1 );
+        // The cutting head: a long arm, the emitter at its end.
+        gun.box( place( { 0.0f, 0.0f, 1.2f } ), { 0.35f, 0.35f, 2.0f } );
+        gun.cylinder( place( { 0.0f, 0.0f, 3.4f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.6f, 0.8f, 16 );
+        m_tugGunMesh = gun.build().front();
+        // The clamps (or the column's other cutters): heavy jaws.
+        engine.roundedBox( place( { 0.0f, -0.6f, 0.0f } ), { 1.0f, 1.2f, 1.0f }, 0.25f, 2 );
+        engine.box( place( { 0.0f, -2.0f, 0.6f } ), { 0.3f, 0.6f, 0.8f } );
+        m_tugEngineMesh = engine.build().front();
+        nozzle.cylinder( place( { 0.0f, 0.6f, 0.0f } ), 0.45f, 0.1f, 14 );
+        m_tugNozzle = nozzle.build().front();
+    }
+    else if ( kind == "catcher" )
+    {
+        // The catcher at the stream's end: a huge funnel, arms on both sides that pluck containers out of the stream.
+        m_tugHome = { edge.x + out * 10.0f, 2.0f, edge.z };
+        m_tugSlide = 4.0f, m_tugBob = 0.4f;
+        m_tugGunAt = { 0.0f, 2.0f, 0.0f };
+        m_tugBridge = { 0.0f, 6.0f, -2.0f };
+        m_parts = { { "catcher.arm", { -6.5f, 3.0f, 0.0f }, 1.6f, 1150.0f * tough, 1150.0f * tough, {} },
+                    { "catcher.maw", { 0.0f, 2.0f, 0.0f }, 2.0f, 1600.0f * tough, 1600.0f * tough, {} },
+                    { "catcher.arm", { 6.5f, 3.0f, 0.0f }, 1.6f, 1150.0f * tough, 1150.0f * tough, {} } };
+        frameB.lathe(
+            place( { 0.0f, -3.0f, 0.0f } ),
+            { { 1.5f, 0.0f }, { 2.5f, 3.0f }, { 5.5f, 7.0f }, { 5.8f, 7.4f }, { 5.4f, 7.4f }, { 2.2f, 3.2f } }, 28 );
+        add( frameB, S_DARK );
+        dark.lathe( place( { 0.0f, 4.35f, 0.0f } ), { { 5.5f, 0.0f }, { 5.9f, 0.0f }, { 5.9f, 0.2f }, { 5.5f, 0.2f } },
+                    28 );
+        add( dark, S_HAZARD );
+        lights.lathe( place( { 0.0f, -1.0f, 0.0f } ), { { 1.6f, 0.0f }, { 2.0f, 0.0f } }, 24 );
+        add( lights, -1 );
+        gun.cylinder( place( { 0.0f, -0.6f, 0.0f } ), 1.4f, 1.2f, 20 );
+        m_tugGunMesh = gun.build().front();
+        engine.box( place( { 0.0f, 0.0f, 0.0f } ), { 0.5f, 0.5f, 3.0f } );
+        engine.box( place( { 0.0f, -1.2f, 2.8f } ), { 0.35f, 1.4f, 0.35f } );
+        m_tugEngineMesh = engine.build().front();
+        nozzle.cylinder( place( { 0.0f, 0.5f, 0.0f } ), 0.5f, 0.1f, 14 );
+        m_tugNozzle = nozzle.build().front();
+    }
     else
     {
         // The Plasma Lance: a platform off the deck, two coils that feed it, the lance on its turret.
@@ -295,7 +357,22 @@ void Game::updateTug( float dt )
     if ( m_dead || m_scene > 0 ) return;
     // The deck gun: volleys of three shells at where the hero will be.
     m_tugGun -= dt;
-    if ( m_parts[1].m_hp > 0.0f && m_tugGun <= 0.0f && d < 40.0f )
+    bool laser = m_level.m_machine == "platform" || m_level.m_machine == "column";
+    if ( laser && m_parts[1].m_hp > 0.0f && m_tugGun <= 0.0f && d < 40.0f )
+    {
+        // The cutting head: a line through where the hero stands glows, then it cuts (step off it).
+        int r, c;
+        m_level.cellOf( m_pos, r, c );
+        Cut  cut;
+        bool alongX = rnd() < 0.5f;
+        cut.m_dr = alongX ? 0 : 1, cut.m_dc = alongX ? 1 : 0;
+        cut.m_r0 = alongX ? r : r - 7, cut.m_c0 = alongX ? c - 7 : c;
+        m_cuts.push_back( cut );
+        m_flashes.push_back( { m_parts[1].m_pos, { 30.0f, 10.0f, 4.0f }, 8.0f, 0.3f, 0.3f } );
+        fire( "cutwarn" );
+        m_tugGun = m_tugStage ? 3.0f : 4.4f;
+    }
+    if ( !laser && m_parts[1].m_hp > 0.0f && m_tugGun <= 0.0f && d < 40.0f )
     {
         Vector3 at = Vector3Add(
             m_pos, { m_vel.x * 1.0f + ( rnd() - 0.5f ) * 3.0f, 0.0f, m_vel.z * 1.0f + ( rnd() - 0.5f ) * 3.0f } );

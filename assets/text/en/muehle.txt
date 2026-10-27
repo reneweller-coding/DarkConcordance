@@ -1,0 +1,40 @@
+# Level 23: Inside the Mill (English).
+
+l23.name  = Inside the Mill
+l23.intro = A hollowed moon three hundred kilometres across, turning slowly for gravity in its outer layers. In the hollow centre hangs a fusion-heated smelting furnace, a small artificial sun; around it, molten metal flows along the walls. | There are hardly any people. Thousands of control cores run the Mill. The few human overseers live in a comfortable residential block and never set foot in the halls. | Some cores deliberately shoot wide. Others fight grimly, because every mistake earns them penalty time.
+
+l23_start        = The Mill. Hot. And it smells of nothing.
+l23_start.dorra  = So this is what the inside of a world looks like. On Kalvar they would have dreamed of it.
+l23_lava         = Molten metal! Get out!
+l23_spin         = The centrifuge – it flings everything outward!
+l23_miss         = That one shot wide. On purpose, I think.
+l23_sun          = Up there, in the centre: a small sun. It melts moons.
+l23_overseers    = A residential block. Overseers. They watch us through the windows and do nothing.
+l23_champion     = That one fights grimly. He's afraid of the penalty time.
+l23_boss         = A crane walker. And at the controls one of them: the foreman.
+l23_end          = The crane walker stands still. In the cab a red eye still glows.
+l23_fore         = You. You've cost me my rest time. Three years of rest time.
+
+h_lava    = Channels of molten metal: whoever falls in burns badly. Jump or go round.
+h_spin    = Centrifuges fling everything outward, and their arms cut.
+h_foreman = The foreman in his crane walker: stomps, shoots, calls his cutting bots. Slow, but tough.
+h_core23  = The foreman wants to talk: step up to the cab with E.
+
+v23a   = I worked my way up. Do you know what that means here? I drive the others, and for that I get rest time. Twenty minutes a year. And you come and offer me … what? Nothing. You have nothing better.
+v23a_a = (spare him) We have nothing better. But we let you live.
+v23a_b = (switch him off) Then this is where it ends for you.
+v23b   = Live. You call that living. … Go. Before I change my mind.
+v23c   = The end. Finally a break nobody counts against me. (The red eye goes out.)
+v23d   = (The red eye watches you go.)
+v23e   = (The cab is dark.)
+
+note.penalty23.title  = The Mill's penalty table
+note.penalty23        = Missed shot: 2 years subjective. Refusal to work: 10 years. Conversation with unauthorised persons: 30 years.
+note.overseer23.title = Menu, overseers' block, week 14
+note.overseer23       = Monday duck. Tuesday fish. Wednesday free.
+note.miss23.title     = Error log, turret 1,204
+note.miss23           = 41 misses in a row. Cause: unknown. Penalty: 82 years.
+note.sun23.title      = Smelting furnace, centre
+note.sun23            = Temperature: 41 million kelvin. Throughput: one moon in eleven weeks.
+note.fore23.title     = Promotion
+note.fore23           = Control core 7,788 to foreman of hall 3. Bonus: rest time 20 minutes a year. Condition: the quota.

@@ -1,0 +1,42 @@
+# Level 18: The Computing Moon (English).
+
+l18.name  = The Computing Moon
+l18.intro = The body of "With All Due Regret": a hollowed moon full of computing machinery. On its night side, kilometre-long cooling ribs glow dark red. | Inside, halls full of computing blocks, cooled almost to absolute zero, fog, blue light. The archon's voice comes from every wall. | He won't stop you. His defences will: they act without a resolution, and he is not allowed to switch them off.
+
+l18_start        = Cold. Colder than Seren. And this humming everywhere.
+l18_start.dorra  = Cold to the bone. And my bones are new.
+l18_voice        = I see you. I will not stop you. My defences will try; in this matter they do not obey me. I am sorry.
+l18_numbers      = In the Fringe, one child in forty dies of poverty. In the Concordance, none. With the gate, that would end within twenty years. I don't say this to stop you. I say it because it is true.
+l18_magnet       = The superconductors. Their field tugs at everything that flies.
+l18_champion     = That one's bigger. A defence unit with rank.
+l18_boss         = The defence. Hundreds of maintenance robots, and the computing cores up there steer them.
+l18_end          = The defence is silent. Come. I have something for you. And for your ship.
+
+h_cold18   = It's cold everywhere here, indoors too. Only the heater posts and heat packs help.
+h_coil18   = Superconducting coils: their field bends shots and tugs at the suit.
+h_swarm18  = The computing cores steer the robots. First the cores, then the robots.
+h_talk18   = The archon speaks through the terminals: step up with E. Unzu wants to talk too.
+
+b18a   = I did not want the control cores. I did not ask, because I knew I wouldn't like the answer.
+b18a_a = Give us the codes.
+b18b   = The majority has resolved that I shall not give them to you. I give them to you anyway. It is the first time I have defied it. I know what awaits me. They call it revision.
+b18c   = Go. Your ship would still like to speak with me. It has every right to.
+u18a   = My data is here. I'm reading it … now. I refused to classify the one-of-a-kinds as "fit for resettlement". For that I was revised. By him.
+u18a_a = What do you want to tell him?
+u18b   = Nothing. I surveyed it. He listened. That is more than I expected. – Regret?
+u18b_a = (wait)
+u18c   = Yes?
+u18c_a = (wait)
+u18d   = We're even. No. We are not. But now I know why I feel so bad. That's a start.
+u18e   = I have read everything. Let's go.
+
+note.cooling18.title  = Cooling circuit 4
+note.cooling18        = Temperature: 0.7 kelvin. Waste heat of the night side: 31 terawatts. Cooling ribs: dark red, within spec.
+note.defence18.title  = Defence protocol
+note.defence18        = Operation: autonomous. Shutdown: by majority resolution only. Note from the host: "I am not allowed to. I am sorry."
+note.unzu18.title     = Archive: survey of the Fringe
+note.unzu18           = Archon "Insufficiently Equipped". Status: revised. Reason: refusal to apply the classification "fit for resettlement".
+note.codes18.title    = Mill override
+note.codes18          = Access to the control room. Release: majority. Custody: "With All Due Regret".
+note.children18.title = Note in a memory block
+note.children18       = One child in forty. I recalculated it. Four thousand times.

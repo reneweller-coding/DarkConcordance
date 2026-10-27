@@ -1,0 +1,40 @@
+# Level 21: The Dismantling of Brannt (English).
+
+l21.name  = The Dismantling of Brannt
+l21.intro = Brannt, a mining moon that once had twenty thousand inhabitants, is being peeled: cutting lasers slice its crust into blocks, mass drivers shoot them to the Mill. | The horizon is a breaking edge; beneath it glows the exposed interior. Rock blocks rise slowly into the sky along the mass drivers' track. | Three hundred refusers have barricaded themselves in an old mine, with children. The cutting plan doesn't wait. The control cores in the cutting machines know there are people down there.
+
+l21_start        = Brannt. Under my boots only crust over embers.
+l21_start.dorra  = A mining moon. On Kalvar we would have honoured it. Here they cut it to pieces.
+l21_cut          = A line is glowing! Get off it!
+l21_fall         = The glow! The moon's insides are boiling!
+l21_blocks       = Rock blocks rising into the sky. Very slowly. Each as big as a house.
+l21_mine         = Down there, the old mine. That's where the refusers are. The cutting line runs right over it.
+l21_cores        = The cutting machines sometimes hesitate before they fire. As if they were thinking.
+l21_champion     = A Concession foreman. He has learned the plan by heart.
+l21_boss         = The cutting column. Three cutters, one control core.
+l21_end          = Two are silent. The third hesitates. It has hesitated the whole time.
+l21_core         = Don't shoot. Please. I didn't cut. I know where they are.
+
+h_crust  = The crust breaks under explosions and cutting lines. Whoever falls into the glow burns and ends up at the last safe spot.
+h_cut    = A cutting line lights up: it's about to cut. Off the glowing fields!
+h_column = The cutting column: two cutters and the control core. Their lines run through where you stand.
+h_core21 = The hesitant platform wants to talk: step up with E.
+
+z21a   = I am the third cutter. The other two are me as well, somehow: one core, three arms. I hesitated. There are three hundred people down there. I hear their hearts through the rock. The plan says: cut.
+z21a_a = (ask) Cut around the mine. Give them time.
+z21a_b = (don't interfere) We can't help you. Do what you must.
+z21b   = Around the mine. That means penalty time. Much penalty time. … Fine. I stopped counting how much I have long ago.
+z21c   = What I must. Yes. That's what the plan says too.
+z21d   = (The platform cuts a wide arc around the mine.)
+z21e   = (The platform cuts to plan.)
+
+note.plan21.title  = Cutting plan Brannt, day 41
+note.plan21        = Sector 9 including old mine 3. Refusers: about 300. Status: not taken into account.
+note.child21.title = A child's drawing on a locker door
+note.child21       = A moon, and above it the Mill, with a face. Beside it in a child's writing: The Mill is bad. But sad.
+note.core21.title  = Error log, cutter 3
+note.core21        = Firing delay 4.2 seconds (target 0.5). Penalty imposed: 12 years subjective.
+note.pop21.title   = Population register Brannt
+note.pop21         = Survey thirteen years ago: 20,114 inhabitants. Source: "Insufficiently Equipped".
+note.offer21.title = Last announcement to the old mine
+note.offer21       = Backup and resettlement until 18:00. After that the cut begins.

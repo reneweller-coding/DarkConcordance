@@ -1,0 +1,83 @@
+# Level 21: Die Zerlegung von Brannt (Akt IV). Ein Bergbaumond wird geschält: grauer Staub über Kruste, darunter glüht
+# das freigelegte Innere; Schnittlinien glühen auf und schneiden die Kruste weg (wer drauf steht, fällt in die Glut und
+# kommt an der letzten sicheren Stelle wieder heraus, verbrannt). Wenig Schwerkraft, keine Luft, die Mühle am Himmel.
+# Am Ende die Schnittkolonne: drei Schneider unter einem Steuerkern; einer zögert und will danach reden.
+#   crust 1                die offenen Böden des Mondes sind Kruste über Glut (sie bricht wie Eis)
+#   cuts s                 alle s Sekunden eine Schnittlinie nahe beim Helden
+
+name     l21.name
+act      act.4
+intro    l21.intro
+gravity  1.9
+fog      0.0015 0.005 0.4 0.7
+fogcolor 0.0016 0.001 0.0006
+ambient  0.06 0.055 0.05 0.03 0.02 0.016
+walls    4.0
+sky      nebula
+space    1
+vacuum   1
+crust    1
+cuts     17
+view     planet
+planet   mill 0.9
+star     -900 3000 -7000 2600
+sundir   0.4 -0.7 0.4
+suncolor 2.2 1.9 1.6
+faction  concession
+area     23
+next     unzu4.txt
+gate     bossdead
+ambience cutting
+music    brannt
+bossmusic boss2
+npcafter zoegernd bossdead
+autotalk zoegernd
+
+genrooms      18
+genside       7
+gensize       12 18 10 14
+gentheme      moon moon moon works
+genoutdoor    moon
+genstarttheme works
+genarenatheme works
+genarena      column
+genoxygen     0.6
+genpack       ***     2
+genpack       ""E     1.5
+genpack       ^^T     1.2
+genpack       ETT     1.2
+genpack       %T      1
+gendensity    1.0
+genelite      0.3
+gennote       note.plan21 note.child21 note.core21 note.pop21 note.offer21
+
+[npcs]
+zoegernd | -1 -1 | terminal | z21a | brannt.spared:z21d brannt.cut:z21e
+
+[talk]
+z21a | zoegernd | -             | z21a_a>z21b z21a_b>z21c
+z21b | zoegernd | brannt.spared |
+z21c | zoegernd | brannt.cut    |
+z21d | zoegernd | -             |
+z21e | zoegernd | -             |
+
+[lines]
+l21_start    | a               | hero
+l21_cut      | cutwarn         | hero
+l21_fall     | dunk            | hero
+l21_blocks   | b               | hero
+l21_mine     | c               | hero
+l21_cores    | d               | hero
+l21_champion | champion        | hero
+l21_boss     | bossstart       | hero
+l21_end      | bossdead        | hero
+l21_core     | appear.zoegernd | zoegernd
+
+[hints]
+h_crust      | a
+h_cut        | cutwarn
+h_column     | bossstart
+h_core21     | appear.zoegernd
+h_cutter     | cutter
+h_champion   | champion
+h_stim       | hurt

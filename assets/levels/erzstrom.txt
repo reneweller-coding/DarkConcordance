@@ -1,0 +1,73 @@
+# Level 22: Der Erzstrom (Akt IV). Eine Kette von Erzcontainern im freien Raum, alle gleich schnell, relativ
+# zueinander fast still: Containerdächer über den Sternen, dazwischen Gitterstege. Steuerdüsen (in der Luft noch einmal
+# springen, drei Stöße), Laserpulse der Mühle, die den Kurs korrigieren (eine Linie glüht, dann brennt sie), Wachdrohnen.
+# Am Ende der Fänger, ein Trichter mit Greifarmen: er muss still sein, bevor die Uhr abläuft.
+#   jetfuel n              n Stöße der Düsen in der Luft
+#   pulses s               alle s Sekunden ein Laserpuls nahe beim Helden (bricht nichts)
+#   clock s                während der Maschine: s Sekunden, bis sie den Container packt
+
+name     l22.name
+act      act.4
+intro    l22.intro
+gravity  2.0
+fog      0.0012 0.004 0.4 0.7
+fogcolor 0.0008 0.0008 0.0011
+ambient  0.06 0.06 0.07 0.03 0.03 0.035
+walls    4.0
+sky      nebula
+space    1
+vacuum   1
+jetfuel  3
+pulses   24
+clock    240
+view     planet
+planet   mill 1.1
+star     -900 3000 -7000 2600
+sundir   0.4 -0.7 0.4
+suncolor 2.2 1.9 1.6
+faction  concession
+area     24
+next     muehle.txt
+gate     bossdead
+ambience stream
+music    erzstrom
+bossmusic boss2
+
+genrooms      18
+genside       6
+gensize       10 15 8 12
+gentheme      container container container hull
+genoutdoor    container hull
+genstarttheme container
+genarenatheme container
+genarena      catcher
+genvoid       1
+genoxygen     0.7
+genpack       ^^^     2.5
+genpack       ^^T     1.5
+genpack       `^      1.2
+genpack       ETT     1
+genpack       $T      0.8
+gendensity    1.0
+genelite      0.28
+gennote       note.manifest22 note.mass22 note.catcher22 note.letter22 note.route22
+
+[lines]
+l22_start    | a         | hero
+l22_jet      | jet       | hero
+l22_bike     | b         | hero
+l22_pulse    | cutwarn   | hero
+l22_furniture | c        | hero
+l22_mill     | d         | hero
+l22_champion | champion  | hero
+l22_boss     | bossstart | hero
+l22_grab     | grabbed   | hero
+l22_end      | bossdead  | hero
+
+[hints]
+h_jets       | a
+h_pulse      | cutwarn
+h_catcher    | bossstart
+h_turret     | turret
+h_champion   | champion
+h_stim       | hurt

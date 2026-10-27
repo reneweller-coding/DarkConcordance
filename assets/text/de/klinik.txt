@@ -1,0 +1,74 @@
+# Level 14: Die Wiederverkörperung, und der Hub von Akt III: der Ring Gelassenheit (Deutsch, die Quelle).
+
+l14.name   = Die Wiederverkörperung
+l14.intro  = Weiß. Dann ein Fenster, und dahinter Land, das zu beiden Seiten in den Himmel steigt und sich über dem Kopf zu einem dünnen Bogen schließt. | Ihr seid in der Konkordanz, auf dem Ring Gelassenheit, in einer Klinik, in der Tote in neuen Körpern erwachen. | Eure alten Körper treiben irgendwo zwischen den Trümmern des Transports.
+
+k14_start        = Ich lebe. Oder jemand, der sich daran erinnert, ich zu sein.
+k14_start.dorra  = Meine Arme. Sie sind leer. Die Namen sind weg.
+k14_window       = Das Land steigt. Es hört nicht auf zu steigen. Bis über meinen Kopf.
+k14_window.dorra = Auf Kalvar war der Himmel unten schwer und oben leer. Hier ist oben Land.
+
+h_klinik = Auf der Terrasse wartet Ysolde. Im Saal: die Körperberatung (Fertigkeiten neu verteilen) und ein Spiegel.
+h_respec = Alle Fertigkeitspunkte sind wieder frei: im Charakterbildschirm (C) neu verteilen.
+
+c14a   = Willkommen zurück. Nein – willkommen. Zurück wäre gelogen. Der Transport ist explodiert, als die Schiffe des Kollegiums kamen. Ihr wart dabei.
+c14a_a = Wie sind wir hierhergekommen?
+c14b   = Ich habe euch in Velm gescannt. Zur Sicherheit. Das ist wahr. … Es ist nicht alles. Aber es ist wahr.
+c14b_a = Und jetzt?
+c14c   = Jetzt seid ihr Bürger. Registriert, gesichert, unsterblich, wenn ihr wollt. Ruht euch aus. Meine Wohnung liegt am Garten, die Bahn bringt euch hin. Dann reden wir über die Mühle.
+c14d   = Die Bahn wartet. Nehmt euch Zeit. Ihr habt jetzt welche.
+b14a   = Guten Tag! Ihr neuer Körper ist frisch gedruckt. Viele Rückkehrer möchten ihre Fähigkeiten neu sortieren. Möchten Sie?
+b14a_a = Ja. Alles neu.
+b14a_b = Nein, danke.
+b14b   = Erledigt. Sie dürfen sich jetzt ein wenig anders sortiert fühlen. Das ist normal.
+b14c   = Ihre Fähigkeiten sind neu sortiert. Ein zweites Mal geht erst nach dem nächsten Tod. Kleiner Scherz.
+s14a        = (Im Spiegel ein Gesicht ohne Narben.) Ich sehe aus wie jemand, der nie etwas getan hat.
+s14a.dorra  = (Im Spiegel glatte Haut, wo einundvierzig Namen waren.) Ich brauche einen Tätowierer. Heute noch.
+
+gel.name   = Ring Gelassenheit
+gel.intro  = Ein Ringhabitat, tausend Kilometer im Radius, dreihundert breit. Meere, Wälder und Städte auf der Innenseite, und über allem der Bogen der Gegenseite, an dem nachts die Städte glitzern. | Ysolde hat hier eine Wohnung am Garten. Unzu liegt im Dock und schweigt mehr als sonst; Kiri ist mit ihm gekommen. | Ziel des Akts: die Übersteuerungscodes der Mühle. Mit ihnen kommt man ins Leitwerk – und zu Ilka.
+
+g_start        = Gelassenheit. Ein Garten, Kinder, ein Brunnen. Und niemand hat Angst.
+g_start.dorra  = Gelassenheit. Hier riecht es nach Gras. Ich habe vergessen, wie Gras riecht.
+g_back         = Zurück auf dem Ring. Die Bahn summt. Jemand lacht im Garten.
+g_back.dorra   = Zurück. Der Garten tut so, als wäre nichts geschehen. Für ihn ist auch nichts geschehen.
+
+h_ring        = Auf dem Ring: Ysolde in ihrer Wohnung nennt die Ziele, Kiri flickt im Garten, die Ausgabe an der Promenade gibt Stims, Unzu spricht über das Terminal. Die Bahn am Ende des Gartens fährt zu den Zielen.
+h_exitlocked3 = Die Bahn fährt erst, wenn Ysolde ein Ziel genannt hat – sie ist in ihrer Wohnung.
+h_exitlater3  = Kein neues Ziel. Ysolde hat noch nichts gesagt.
+
+y300   = Gelassenheit. Achtzig Millionen Menschen, keiner hungrig, keiner arm, keiner für immer tot. Und keiner weiß, was die Ernte ist.
+y300_a = Was brauchen wir?
+y301   = Die Übersteuerungscodes der Mühle. Damit kommt man ins Leitwerk – zu Ilka. Die Codes verwahrt der Archont, der die Eingliederung leitet. An ihn kommt man nicht ohne Schlüssel, und den Schlüssel trägt ein Mann, der in den Sterbegärten für sein Publikum stirbt: Teodor Lamm.
+y302   = Die Sterbegärten. Ihr werdet sie hassen. Das sei der Sinn der Sache, sagen die Leute dort.
+y310   = Ihr habt den Schlüssel. Und Lamm einen Tod mehr in seiner Sammlung.
+y310_a = Was öffnet er?
+y311   = Die Archive der Werft am Tor. Dort kommen die Erzcontainer an, mit Frachtpapieren. Wenn ihr beweisen könnt, dass Steuerkerne die Frachter lenken, könnt ihr eine Anhörung verlangen. Das Kollegium weiß das auch. Seine Säuberer sind schon unterwegs.
+y312   = Die Werft. Seid schnell. Die Säuberer löschen nicht schnell, aber gründlich.
+y320   = Ihr habt Papiere.
+y320_a = Reichen sie für eine Anhörung?
+y321   = Jeder Bürger darf eine öffentliche Anhörung verlangen. Ihr seid jetzt Bürger. Das war … nicht ganz zufällig. Sie findet in einem ausgehöhlten Asteroiden statt. Die Archonten kommen über Avatare.
+y322   = Die Anhörung. Sagt die Wahrheit. Sie werden sie bedauern.
+y330   = Eine Untersuchung über drei Jahre. Velm in fünf Monaten zerlegt.
+y330_a = Dann holen wir uns die Codes selbst.
+y331   = Der Rechenmond: der Körper von »Mit Allem Gebotenen Bedauern«. Dort liegen die Codes. Er wird euch nicht aufhalten. Seine Abwehr schon – sie handelt ohne ihn.
+y332   = Der Rechenmond. Kalt. Sehr kalt. Und er redet aus jeder Wand.
+y340   = Ihr habt die Codes.
+y340_a = Was fehlt noch?
+y341   = Jemand, der weiß, was das Verfahren mit euren Köpfen macht. Ansgar Ruul. Er hat die Steuerkerne erfunden und wollte auspacken. Das Kollegium hält ihn im Verlies Null, im Schatten eines Sterns.
+y342   = Verlies Null. Der Schild dreht sich. Bleibt im Schatten.
+
+u300 = Ich liege im Dock. Die Konkordanz hat mir eine Wartung angeboten. Kostenlos. Ich habe abgelehnt. Man weiß nie, was sie dabei kürzen.
+u310 = Teodor Lamm ist viertausendmal gestorben. Ich habe nachgezählt. Die Zahl stimmt und bedeutet nichts.
+u320 = Die Erzcontainer: Seren, Halden, Kael. Ich kenne die Namen. Ich habe sie vermessen. Ich habe sie … eingestuft.
+u330 = Kein Grund Zur Sorge hat die Mehrheit geführt. Ich kenne die Stimme. Ich weiß nicht, woher.
+u340 = Ich habe meine Erinnerungen zurück. Ich möchte nicht darüber reden. Noch nicht.
+
+k300   = Hier im Garten ist alles kostenlos, nur gutes Werkzeug nicht. Das habe ich mitgebracht.
+k300_a = Zeig mal, was du machen kannst.
+k300_b = Später.
+k301   = Leg's auf die Bank.
+a300   = AUSGABE GARTEN 4. Was darf es sein? (Rohstoffausgleich in Schrott, für Nichtregistrierte.)
+a300_a = Stims.
+a300_b = Nichts.
+a301   = Bestellung offen.

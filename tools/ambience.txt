@@ -17,3 +17,16 @@ roaring plasma stream, electrical crackle, heavy coil hum, metal ticking in heat
 dead silence of a frozen dark world, faint thin wind, hiss of nitrogen vents | name=snow
 cargo spaceship under full thrust, deep engine rumble, refrigeration hum, metallic creaks | name=transport
 vast cold alien hall, deep slow resonant hum, faint crystalline ticking, distant metallic groans, no music | name=alien
+gentle wind over fields and gardens, distant birdsong, far off town murmur, soft rustling leaves, peaceful open air | name=ring
+quiet clean clinic room, soft medical monitor beeps, gentle air conditioning hum, distant calm voices | name=clinic
+distant cheering arena crowd, roar of huge waterfalls far away, wind, festive murmur | name=arena
+inside a space suit at a huge construction site in space, radio chatter, crackling welding, slow breathing, metallic groans | name=yard
+vast hall inside a hollow asteroid, murmur of a seated crowd, soft ventilation, echoing coughs, quiet | name=hearing
+frozen computer halls near absolute zero, deep cryogenic hum, ticking relays, hissing coolant, eerie electronic whine | name=cryo
+scorching station beside a burning star, roaring heat, creaking hot metal, deep rumble, crackling plasma | name=heat
+besieged space station, distant explosions, wailing alarms far away, falling debris, low rumble | name=siege
+moon being cut apart, deep grinding rumble, humming lasers, falling rocks, dust hiss | name=cutting
+drifting in a chain of cargo containers in space, slow breathing in a helmet, creaking containers, soft radio static | name=stream
+inside a giant industrial furnace world, roaring fire, bubbling molten metal, colossal machinery rumble | name=furnace
+server hall, dense humming fans, electrical buzz, soft clicks, cold air | name=servers
+dreamlike digital space, soft glitching hum, faint distant voices, warm electrical drone | name=net

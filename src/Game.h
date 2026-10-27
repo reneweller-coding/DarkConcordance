@@ -90,6 +90,7 @@ struct Progress
     Item                  m_gear[EquipSlots];        ///< what is worn: weapon, armour, helmet, gloves, boots, implants
     bool                  m_worn[EquipSlots] = {};   ///< whether a slot holds something
     int                   m_seed = 1;                ///< the random generator's state for items (and generated levels)
+    int                   m_deaths = 0;              ///< deaths since the prologue (Ysolde knows the number)
 };
 
 /**
@@ -437,6 +438,9 @@ private:
     };
 
     void loadSurfaces( Gfx &gfx, const std::string &assets );
+    void themeSurfaces( LevelSurfaces &ls );
+    Gfx                       *m_gfx = nullptr;   ///< the renderer (surfaces made after loading)
+    std::map<std::string, int> m_ownSurfaces;     ///< the places' own surfaces by texture
     void loadFont();
     void spawnFoe( FoeE kind, Vector3 pos, bool awake );
     void updateHero( float dt, const GameInput &in );
@@ -490,6 +494,9 @@ private:
     int                  m_cells = 0;          ///< power cells carried (the ark's consoles take them)
     int                  m_sleepersLost = 0;   ///< the ark: sleepers whose pods lost their power for a door
     Vector3              m_bossAt = {};        ///< where the boss fell (someone may step out there)
+    int                  m_appeared = 0;       ///< people who have stepped out there
+    int                  m_autoTalkTo = -1;    ///< the autopilot speaks to this one (not whoever is nearest)
+    int                  m_talkGoal = -1;      ///< ... and walks to this cell to do so
     float foeRadius( const Foe &f ) const;
     float foeHeight( const Foe &f ) const;
     bool shielded( Vector3 from ) const;
@@ -545,9 +552,11 @@ private:
     float danger() const;
     /** @brief The fight's music on at three (or a champion, or badly hurt), off after five quiet seconds. */
     void updateMusic( float dt );
-    bool   m_fightMusic = false;                            ///< the place's fight piece plays
-    float  m_quiet = 0.0f;                                  ///< seconds without danger
-    Figure m_guardFigure, m_heavyFigure, m_taxatorFigure;   ///< market guards, heavies, the Taxator
+    bool   m_fightMusic = false;                                         ///< the place's fight piece plays
+    float  m_quiet = 0.0f;                                               ///< seconds without danger
+    Figure m_guardFigure, m_heavyFigure, m_taxatorFigure;                ///< market guards, heavies, the Taxator
+    Figure m_lammFigure, m_chiefFigure, m_foremanFigure, m_varnFigure;   ///< Act III and IV's men in frames
+    bool   m_lammAgain = false;   ///< Teodor Lamm has died once (he comes back: the arena prints him anew)
     Figure m_okaforFigure, m_leaderFigure,
         m_salvagerFigure;         ///< Okafor's walker, the boarding leader's cutting exoskeleton
     LouseModel m_saw, m_bomber;   ///< the saw bots, the bombers
@@ -810,6 +819,81 @@ private:
     /** @return where the hub's lift may go now (the flag set, not done yet unless it may be done again) */
     std::vector<std::string> openExits( bool &promised ) const;
     float weaponBoost() const { return 1.0f + 0.2f * m_progress.m_weapon; }
+
+    // GameSwarm.cpp: a boss of many fed by hives (see there).
+    void loadSwarm();
+    void updateSwarm( float dt );
+    bool updateSwarmUnit( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
+    void drawSwarmHud( int w, int h, float s );
+    bool             m_swarmOn = false, m_swarmAwake = false, m_swarmDone = false;
+    std::string      m_swarmKind;       ///< drones, menders, archon, delete
+    int              m_swarmCap = 14;   ///< units at once
+    Vector3          m_swarmAt = {};    ///< the hives' middle
+    std::vector<int> m_hives;           ///< their foes' ids
+    float            m_swarmT = 0.0f, m_formationT = 0.0f, m_zapT = 4.0f;
+    LouseModel       m_mender;   ///< the computing moon's maintenance robots
+
+    // GameAct34.cpp: Act III's and IV's elements (see there).
+    void buildRing();
+    void loadAct34();
+    void startWave();
+    void updateAct34( float dt, GameInput &in );
+    void applyVista( float dt );
+    void poseAct34( std::vector<Drawable> &out );
+    void drawAct34( Gfx &gfx );
+    void drawAct34Hud( int w, int h, float s );
+    struct Evidence
+    {
+        int   m_usable;     ///< its terminal (m_usables)
+        float m_deadline;   ///< when the cleaners get there (m_time)
+        bool  m_read, m_wiped;
+    };
+    struct Cut
+    {
+        int   m_r0 = 0, m_c0 = 0, m_dr = 0, m_dc = 1, m_len = 14;   ///< its cells
+        float m_t = 0.0f;                                           ///< since it began to glow
+        bool  m_fired = false;
+    };
+    struct Ally
+    {
+        Vector3 m_pos;
+        float   m_yaw, m_timer;
+    };
+    Mesh                  m_ringMesh = {}, m_cutMesh = {}, m_spinMesh = {}, m_lavaMesh = {};
+    Texture2D             m_ringTex = {};
+    float                 m_vistaT = 0.0f, m_vistaMax = 0.0f;   ///< the look up at the sky when one arrives
+    float                 m_fuel = 0.0f, m_fuelMax = 0.0f;      ///< the jets' bursts
+    float                 m_cutTimer = 0.0f;                    ///< until the next line glows
+    float                 m_grabClock = 0.0f, m_grabT = 0.0f;   ///< the catcher's grip: its time, what is left
+    float                 m_waveT = 0.0f, m_baseGravity = 9.81f;
+    bool                  m_crust = false, m_wavesOn = false;
+    int                   m_waves = 0, m_wave = 0, m_waveRule = -1;
+    std::vector<int>      m_waveFoes;   ///< this round's (their ids)
+    Vector3               m_arenaAt = {}, m_lavaSafe = {};
+    std::vector<Evidence> m_evidence;
+    std::vector<Cut>      m_cuts;
+    std::vector<Ally>     m_allies;
+    std::vector<Vector3>  m_spinners, m_falls;
+    struct Regrow
+    {
+        int   m_r, m_c;
+        float m_t;   ///< until the crust is there again
+    };
+    std::vector<Regrow> m_regrow;   ///< cut crust, cooling
+
+    // GameStory.cpp: what runs through the whole story: answers that need something to have happened, the deaths
+    // counted since the prologue, the night shift's trust, the act's end card, the endings and the epilogue.
+    void loadStory();
+    std::string spoken( const std::string &key ) const;
+    bool updateEpilogue( float dt, GameInput &in );
+    void startEpilogue();
+    void drawEndCard( int w, int h, float s );
+    TalkNode                                         m_shown;       ///< the step on screen, its answers as they apply
+    std::vector<std::pair<std::string, std::string>> m_cards;       ///< the epilogue's cards: title, text
+    int                                              m_card = -1;   ///< the card on screen (-1 none yet)
+    float                                            m_cardT = 0.0f;
+    std::string                                      m_ending;         ///< a, b or c once chosen
+    float                                            m_markT = 0.0f;   ///< the Collegium's mark after a respawn
 
     // GameShip.cpp: the dodges, the cargo, the people, the view, the last scene.
     void loadShip( Gfx &gfx, const std::string &assets );

@@ -1,0 +1,42 @@
+# Level 18: Der Rechenmond (Deutsch, die Quelle).
+
+l18.name  = Der Rechenmond
+l18.intro = Der Körper von »Mit Allem Gebotenen Bedauern«: ein ausgehöhlter Mond voller Rechentechnik. Auf der Nachtseite glühen kilometerlange Kühlrippen dunkelrot. | Innen Hallen voller Rechenblöcke, gekühlt bis fast zum absoluten Nullpunkt, Nebel, blaues Licht. Die Stimme des Archonten kommt aus jeder Wand. | Er wird euch nicht aufhalten. Seine Abwehr schon: Sie handelt ohne Beschluss, und abschalten darf er sie nicht.
+
+l18_start        = Kalt. Kälter als Seren. Und überall dieses Summen.
+l18_start.dorra  = Kalt bis in die Knochen. Und meine Knochen sind neu.
+l18_voice        = Ich sehe Sie. Ich werde Sie nicht aufhalten. Meine Abwehr wird es versuchen; in dieser Sache gehorcht sie mir nicht. Es tut mir leid.
+l18_numbers      = Im Saum stirbt jedes vierzigste Kind an Armut. In der Konkordanz keines. Mit dem Tor wäre das in zwanzig Jahren vorbei. Ich sage das nicht, um Sie aufzuhalten. Ich sage es, weil es wahr ist.
+l18_magnet       = Die Supraleiter. Ihr Feld zerrt an allem, was fliegt.
+l18_champion     = Der da ist größer. Eine Abwehreinheit mit Rang.
+l18_boss         = Die Abwehr. Hunderte Wartungsroboter, und die Rechenkerne dort oben steuern sie.
+l18_end          = Die Abwehr schweigt. Kommen Sie. Ich habe etwas für Sie. Und für Ihr Schiff.
+
+h_cold18   = Hier ist es überall kalt, auch drinnen. Nur die Heizpfosten und Wärmepacks helfen.
+h_coil18   = Supraleiter-Spulen: ihr Feld lenkt Schüsse ab und zerrt am Anzug.
+h_swarm18  = Die Rechenkerne steuern die Roboter. Erst die Kerne, dann die Roboter.
+h_talk18   = Der Archont spricht über die Terminals: mit E heran. Unzu will auch reden.
+
+b18a   = Ich habe die Steuerkerne nicht gewollt. Ich habe nicht gefragt, weil ich wusste, dass mir die Antwort nicht gefallen würde.
+b18a_a = Gib uns die Codes.
+b18b   = Die Mehrheit hat beschlossen, dass ich sie Ihnen nicht gebe. Ich gebe sie Ihnen trotzdem. Es ist das erste Mal, dass ich mich widersetze. Ich weiß, was mir dafür blüht. Man nennt es Überarbeitung.
+b18c   = Gehen Sie. Ihr Schiff möchte noch mit mir sprechen. Es hat jedes Recht dazu.
+u18a   = Hier liegen meine Daten. Ich lese sie … gerade. Ich habe mich geweigert, die Einmaligen als »umsiedlungsfähig« einzustufen. Dafür wurde ich überarbeitet. Von ihm.
+u18a_a = Was willst du ihm sagen?
+u18b   = Nichts. Ich habe es vermessen. Er hat zugehört. Das ist mehr, als ich erwartet habe. – Bedauern?
+u18b_a = (warten)
+u18c   = Ja?
+u18c_a = (warten)
+u18d   = Wir sind quitt. Nein. Wir sind es nicht. Aber jetzt weiß ich, warum ich mich so schlecht fühle. Das ist ein Anfang.
+u18e   = Ich habe alles gelesen. Lasst uns gehen.
+
+note.cooling18.title  = Kühlkreislauf 4
+note.cooling18        = Temperatur: 0,7 Kelvin. Abwärme der Nachtseite: 31 Terawatt. Kühlrippen: dunkelrot, im Soll.
+note.defence18.title  = Abwehrprotokoll
+note.defence18        = Betrieb: autonom. Abschaltung: nur durch Mehrheitsbeschluss. Hinweis des Wirts: »Ich darf nicht. Es tut mir leid.«
+note.unzu18.title     = Archiv: Vermessung Saum
+note.unzu18           = Archont »Unzureichend Ausgestattet«. Status: überarbeitet. Grund: Weigerung, die Einstufung »umsiedlungsfähig« vorzunehmen.
+note.codes18.title    = Übersteuerung Mühle
+note.codes18          = Zugang Leitwerk. Freigabe: Mehrheit. Verwahrung: »Mit Allem Gebotenen Bedauern«.
+note.children18.title = Notiz in einem Speicherblock
+note.children18       = Jedes vierzigste Kind. Ich habe es nachgerechnet. Viertausendmal.

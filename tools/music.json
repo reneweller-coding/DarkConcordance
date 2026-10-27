@@ -521,6 +521,404 @@
       "bpm": 122,
       "key": "C# minor",
       "style": "combat inside an alien structure, heavy metallic drums, dissonant brass, eerie choir, very intense"
+    },
+    {
+      "id": "ring",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 72,
+      "key": "D major",
+      "style": "vast ring world habitat, land rising into the sky on both sides, serene utopia with something hollow underneath, shimmering harp, celesta, warm string pads, distant wordless choir, gentle and luminous"
+    },
+    {
+      "id": "klinik",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 60,
+      "key": "A major",
+      "style": "waking up in a new body in a clean white clinic, uncanny calm, soft glassy piano, airy synth pads, slow heartbeat pulse, faint music box, weightless"
+    },
+    {
+      "id": "sterbegaerten",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 96,
+      "key": "G major",
+      "style": "pleasure park where citizens die for fun, arena at the foot of a colossal wall with drifting waterfalls, festive yet hollow, bright brass fanfares, marching snare, glockenspiel, crowd-like choir",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, gladiator arena combat, thundering timpani, triumphant brass, fast strings, roaring choir",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "sterbegaerten_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 132,
+      "key": "G major",
+      "style": "gladiator arena combat, thundering timpani, triumphant brass, fast strings, roaring choir, intense"
+    },
+    {
+      "id": "boss3",
+      "type": "loop",
+      "bars": 32,
+      "bpm": 134,
+      "key": "G minor",
+      "style": "duel against a celebrated arena champion who cannot die, heroic yet mocking, fast flamenco guitars, brass fanfares, pounding drums, cinematic",
+      "levels": [
+        {
+          "id": "fight"
+        },
+        {
+          "id": "rage",
+          "style": "final round of the duel, furious, full orchestra, choir, double time drums, epic",
+          "strength": 0.5
+        }
+      ]
+    },
+    {
+      "id": "werft",
+      "type": "loop",
+      "bars": 20,
+      "bpm": 100,
+      "key": "E minor",
+      "style": "gigantic zero gravity shipyard building a jump gate, thousands of welding drones, showers of sparks, epic minimalism, pulsing synth arpeggios, metallic percussion, distant brass, awe",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, combat on a construction site in space, driving industrial drums, sawtooth bass, staccato strings, welding crackle",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "werft_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 126,
+      "key": "E minor",
+      "style": "combat on a construction site in space, driving industrial drums, sawtooth bass, staccato strings, welding crackle, intense"
+    },
+    {
+      "id": "anhoerung",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 64,
+      "key": "C minor",
+      "style": "public hearing inside a hollowed asteroid, solemn and cold, synthetic choir, low pipe organ, ticking clockwork, bureaucratic calm, faint unease"
+    },
+    {
+      "id": "anhoerung_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 138,
+      "key": "C minor",
+      "style": "drone attack in a crowded hall, frantic glitch electronics, stuttering drums, urgent strings, organ stabs, intense"
+    },
+    {
+      "id": "rechenmond",
+      "type": "loop",
+      "bars": 20,
+      "bpm": 76,
+      "key": "F# minor",
+      "style": "hollow moon full of computers cooled to near absolute zero, blue fog, ethereal digital drones, granular textures, slow bell tones, the voice of a vast mind",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, combat among frozen computer halls, cold glitch drums, deep sub bass, icy synth stabs",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "rechenmond_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 128,
+      "key": "F# minor",
+      "style": "combat among frozen computer halls, cold glitch drums, deep sub bass, icy synth stabs, intense"
+    },
+    {
+      "id": "verlies",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 70,
+      "key": "B minor",
+      "style": "secret prison station in the shadow of a heat shield beside a burning star, coronal arcs, oppressive heat, slow heavy drones, distorted brass swells, metallic creaks",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, combat in a scorching prison station, heavy war drums, distorted brass, roaring synths",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "verlies_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 124,
+      "key": "B minor",
+      "style": "combat in a scorching prison station, heavy war drums, distorted brass, roaring synths, intense"
+    },
+    {
+      "id": "swarm",
+      "type": "loop",
+      "bars": 32,
+      "bpm": 140,
+      "key": "D minor",
+      "style": "boss battle against an artificial intelligence embodied in a swarm of thousands of drones, glitch percussion, buzzing synth swarms, dark choir, cinematic hybrid",
+      "levels": [
+        {
+          "id": "fight"
+        },
+        {
+          "id": "rage",
+          "style": "the swarm in fury, overwhelming, distorted choir, relentless drums, alarms, epic",
+          "strength": 0.5
+        }
+      ]
+    },
+    {
+      "id": "ysolde",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 66,
+      "key": "E minor",
+      "style": "conversation with a six hundred year old spy who has lied to you, elegant and sad, solo violin, harpsichord, low strings, quiet tension"
+    },
+    {
+      "id": "act3end",
+      "type": "oneshot",
+      "bpm": 62,
+      "key": "E minor",
+      "style": "revelation and betrayal, end of the third act, slow tolling bell, solo violin, rising strings, dark choir, cinematic and heavy"
+    },
+    {
+      "id": "velm2",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 84,
+      "key": "A minor",
+      "style": "the home station under siege, a giant mining moon fills half the sky, noir jazz turned to war, mournful clarinet over low war drums, distant sirens",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, battle in the streets of a space station, driving drums, brass, distorted upright bass, sirens",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "velm2_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 130,
+      "key": "A minor",
+      "style": "battle in the streets of a space station, driving drums, brass, distorted upright bass, sirens, intense"
+    },
+    {
+      "id": "brannt",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 78,
+      "key": "D minor",
+      "style": "a moon being peeled by cutting lasers, glowing chasms, rock blocks rising into the sky, grinding industrial drones, deep brass, slow heavy pulse, tragic",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, combat on a moon being cut apart, crushing industrial drums, laser synths, roaring brass",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "brannt_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 128,
+      "key": "D minor",
+      "style": "combat on a moon being cut apart, crushing industrial drums, laser synths, roaring brass, intense"
+    },
+    {
+      "id": "erzstrom",
+      "type": "loop",
+      "bars": 20,
+      "bpm": 92,
+      "key": "C# minor",
+      "style": "drifting in a silent chain of ore containers through space towards a giant machine, weightless, spacious synth arpeggios, breathing pads, distant metallic hits, suspense",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, combat while jumping between containers in vacuum, propulsive synth bass, tight drums, racing strings",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "erzstrom_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 128,
+      "key": "C# minor",
+      "style": "combat while jumping between containers in vacuum, propulsive synth bass, tight drums, racing strings, intense"
+    },
+    {
+      "id": "muehle",
+      "type": "loop",
+      "bars": 20,
+      "bpm": 88,
+      "key": "F minor",
+      "style": "inside a hollow moon with an artificial sun at its centre, rivers of molten metal, colossal machinery, furnace roar, deep choir, massive slow drums, awe and dread",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, combat inside a giant industrial moon, forge hammers, distorted bass, brass, furious drums",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "muehle_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 134,
+      "key": "F minor",
+      "style": "combat inside a giant industrial moon, forge hammers, distorted bass, brass, furious drums, intense"
+    },
+    {
+      "id": "leitwerk",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 82,
+      "key": "G minor",
+      "style": "server hall in the heart of a giant machine, humming racks, cold pulsing synths, ticking hi hats, suspense before the end",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, battle in a server hall, hard electronic drums, distorted synth bass, urgent strings, very intense",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "leitwerk_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 138,
+      "key": "G minor",
+      "style": "battle in a server hall, hard electronic drums, distorted synth bass, urgent strings, very intense, intense"
+    },
+    {
+      "id": "netz",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 74,
+      "key": "A minor",
+      "style": "a virtual endless shift hall built from forty thousand memories, flickering, a canteen, a classroom, a kitchen, dreamlike detuned piano, tape warble, soft choir, hauntingly human",
+      "levels": [
+        {
+          "id": "low"
+        },
+        {
+          "id": "mid",
+          "style": "intense full battle version, loud pounding drums, fast and aggressive, combat inside a virtual world, glitching drums, bit crushed synths, choir and strings, intense",
+          "strength": 0.45
+        }
+      ]
+    },
+    {
+      "id": "netz_fight",
+      "type": "loop",
+      "bars": 24,
+      "bpm": 136,
+      "key": "A minor",
+      "style": "combat inside a virtual world, glitching drums, bit crushed synths, choir and strings, intense, intense"
+    },
+    {
+      "id": "final",
+      "type": "loop",
+      "bars": 32,
+      "bpm": 132,
+      "key": "D minor",
+      "style": "final battle against the secret service's artificial intelligence inside a virtual world, epic hybrid orchestra, huge choir, pounding drums, glitch synths",
+      "levels": [
+        {
+          "id": "fight"
+        },
+        {
+          "id": "rage",
+          "style": "climax of the final battle, everything at once, full choir, double time drums, overwhelming",
+          "strength": 0.5
+        }
+      ]
+    },
+    {
+      "id": "ilka",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 60,
+      "key": "D major",
+      "style": "a girl who became a woman inside a machine, thirty years of waiting, gentle solo piano, warm cello, quiet hope and grief"
+    },
+    {
+      "id": "end_a",
+      "type": "oneshot",
+      "bpm": 60,
+      "key": "D minor",
+      "style": "lullaby ending, forty thousand minds fall silent, gentle music box lullaby slowly fading, soft strings, grief and peace"
+    },
+    {
+      "id": "end_b",
+      "type": "oneshot",
+      "bpm": 70,
+      "key": "C major",
+      "style": "ending of disclosure, the truth goes out to every station, rising strings, piano, choir, bittersweet and open"
+    },
+    {
+      "id": "end_c",
+      "type": "oneshot",
+      "bpm": 76,
+      "key": "D minor",
+      "style": "ending of the night shift, a moon with its own voice ignites its engines, slow powerful build, choir, organ, brass, awe and uncertainty"
+    },
+    {
+      "id": "epilogue",
+      "type": "loop",
+      "bars": 16,
+      "bpm": 64,
+      "key": "D minor",
+      "style": "epilogue, what became of everyone, solo piano and cello, the main theme slow and sorrowful, hopeful at the end"
     }
   ]
 }

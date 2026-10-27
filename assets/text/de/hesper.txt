@@ -32,9 +32,8 @@ k7e            = … ich halte sie oben. Geht. Geht einfach.
 
 h_wind         = Wind: er treibt alles ab, was fliegt – Schüsse, Bolzen, Granaten. Gegen den Wind vorhalten.
 h_gust         = Eine Böe kommt: die Gegner, die nah an der Kante stehen, fegt sie hinunter. Die eigenen Stiefel halten.
-h_balloon      = Ballonwachen hängen über dem Abgrund: den Ballon treffen, und sie fallen.
 h_bell         = Die Glocke: zwei Triebwerke und das Glockengeschütz. Rote Ringe zeigen, wo ihre Bomben fallen.
-h_core         = Ein Steuerkern will sprechen: mit E an seine Steuerung herantreten. Was ihr entscheidet, bleibt.
+h_core7         = Ein Steuerkern will sprechen: mit E an seine Steuerung herantreten. Was ihr entscheidet, bleibt.
 
 note.balloon17.title = Wartungsbericht Ballon 17
 note.balloon17       = Steuerkern zeigt erhöhte Fehlerrate. Häufige Funkstörungen auf Kanal 9 (Inhalt: Bitten um Abschaltung). | Maßnahme: Kanal 9 gesperrt. Leistung im Normbereich.

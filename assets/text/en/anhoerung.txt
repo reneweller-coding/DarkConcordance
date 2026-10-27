@@ -1,0 +1,40 @@
+# Level 17: The Hearing (English).
+
+l17.name  = The Hearing
+l17.intro = With your evidence you demand a public hearing. Every citizen may, and thanks to your new, registered bodies you are citizens now. | It takes place in a hollowed asteroid. People sit in the hall; archons attend through avatars. Their deliberation lasts four tenths of a second; afterwards it is re-enacted for the humans in a three-hour version, with voices the archons create for the purpose. | You have brought witnesses.
+
+l17_start        = A hall full of people. And avatars of light, looking at us.
+l17_start.dorra  = On Kalvar they would have gone on strike for a hearing like this. Here they sit and eat.
+l17_verdict      = Three years. Velm in five months. And they regret it deeply.
+l17_attack       = For the safety of those present, the hall is being cleared. There is no cause for concern.
+l17_drones       = Drones! They're aiming at the witnesses!
+l17_crowd        = Nobody runs. They're filming. They'll come back anyway.
+l17_film         = This is so exciting! Did you see that? I'm sending it to my mother!
+l17_witness      = The witnesses are through at the front. We hold the drones off.
+l17_champion     = That one's painted differently. The Collegium's guard.
+l17_boss         = A whole swarm. The carriers up there keep making new ones.
+l17_end          = The swarm is down. The witnesses live. For today.
+
+h_hearing  = The hearing: talk to the avatar (E). After that it gets loud.
+h_crowd    = The spectators don't run away. They wake up again – still: mind where you shoot.
+
+a17a   = Welcome. Your petition is before us. Please present your evidence. The deliberation will then be re-enacted for you; it has already taken place.
+a17a_a = (present all the freight papers)
+a17a_b = (present the freight papers you saved)
+a17b   = The papers are complete. Control cores steer the ore freighters; the gate's material comes from the Harvest. The facts are acknowledged.
+a17b_a = And?
+a17c   = The papers have gaps, but they suffice. The cleaners were thorough, only not thorough enough. The facts are acknowledged.
+a17d   = The deliberation of thirty archons, duration: nought point four seconds. We regret deeply. We resolve upon an inquiry over three years. The Harvest continues; Velm will be dismantled in five months. I voted for an immediate stop and was outvoted. The majority was led by No Cause For Concern.
+a17d_a = That's all?
+a17e   = That is all. I am sorry. I don't say that out of politeness.
+
+note.hearing17.title = Agenda
+note.hearing17       = Petition 4,411: the Harvest in the Fringe. Expected duration of deliberation: 0.4 seconds. Re-enacted version: 3 hours 5 minutes, breaks included.
+note.vote17.title    = Vote (published afterwards)
+note.vote17          = For an immediate stop: 9. For an inquiry: 21. Leading vote: No Cause For Concern.
+note.witness17.title = Witness list
+note.witness17       = Three workers from Kael. A clearer from Halden. A core from Hesper (memory copy, incomplete).
+note.drone17.title   = Maintenance order
+note.drone17         = Hall security, hearing 4,411. Client: classified. Priority: high. Collateral damage: will be reembodied.
+note.public17.title  = Comment from the hall (recording)
+note.public17        = I don't understand why they're so worked up. It's being looked into.

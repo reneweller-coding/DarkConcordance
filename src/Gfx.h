@@ -138,6 +138,14 @@ public:
     void glass( const Mesh &mesh, const Matrix &transform, float ice = 0.0f );
 
     /**
+     * @brief Draws a ring habitat's band from inside (the planet shader in its ring mode).
+     * @param[in] mesh    the band
+     * @param[in] map     its land (alpha: towns)
+     * @param[in] radius  the ring's radius (m)
+     */
+    void ring( const Mesh &mesh, Texture2D map, float radius );
+
+    /**
      * @brief Draws a ball of water (after the opaque scene; it does not write depth).
      * @param[in] mesh       the ball
      * @param[in] transform  where it is

@@ -1,0 +1,74 @@
+# Level 15: Die Sterbegärten (Akt III). Ein Vergnügungspark am Fuß der Ringwand, in dem Bürger zum Spaß sterben:
+# Gärten mit Hecken und Bäumen, Duellanten, gezüchtete Raubtiere (Räumhunde "-"), am Ende die Arena. Dort vier Runden mit
+# wechselnden Regeln (wenig Schwerkraft, Dunkelheit, Sturm, nur schnelle Champions), dann Teodor Lamm, der einmal stirbt
+# und wiederkommt. Wasserfälle jenseits der Nordwand, die mit der Drehung zur Seite driften.
+#   waves n                n Runden, bevor der Boss sich zeigt
+#   waterfalls n           n Wasserfälle jenseits der Nordwand
+#   bossvariant 5          Teodor Lamm in seinem Arenarahmen
+
+name     l15.name
+act      act.3
+intro    l15.intro
+gravity  9.0
+fog      0.0008 0.003 0.4 0.75
+fogcolor 0.004 0.005 0.007
+ambient  0.12 0.13 0.15 0.06 0.065 0.07
+walls    4.5
+skycolor 0.42 0.58 0.85
+view     ring
+sundir   0.3 -1.0 0.1
+suncolor 2.1 2.0 1.85
+faction  citizen
+bossvariant 5
+waves    4
+waterfalls 6
+area     17
+next     gelassenheit.txt
+gate     bossdead
+ambience arena
+music    sterbegaerten
+bossmusic boss3
+
+genrooms      19
+genside       7
+gensize       12 18 10 15
+gentheme      park park arena park
+genoutdoor    park arena
+genstarttheme park
+genarenatheme arena
+genarena      taxator
+genpack       ETT     2
+genpack       EE-     1.5
+genpack       ---     1.3
+genpack       $TT     1.2
+genpack       ''T     0.8
+genpack       ^^E     0.8
+gendensity    1.0
+genelite      0.35
+gennote       note.gardens note.deaths note.lamm note.ticket note.printer
+
+[lines]
+l15_start    | a         | hero
+l15_fan      | b         | fan
+l15_fan2     | c         | hero
+l15_free     | d         | hero
+l15_champion | champion  | hero
+l15_hounds   | hound     | hero
+l15_arena    | g         | hero
+l15_wave1    | wave1     | arena
+l15_wave2    | wave2     | arena
+l15_wave3    | wave3     | arena
+l15_wave4    | wave4     | arena
+l15_lamm     | wavesdone | lamm
+l15_again    | lamm.again | lamm
+l15_end      | bossdead  | lamm
+
+[hints]
+h_arena      | g
+h_rules      | wave1
+h_lamm       | wavesdone
+h_hound      | hound
+h_sniper     | sniper
+h_shield     | shieldguard
+h_champion   | champion
+h_stim       | hurt

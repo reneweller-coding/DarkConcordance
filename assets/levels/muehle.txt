@@ -1,0 +1,75 @@
+# Level 23: Das Innere der Mühle (Akt IV). Ein ausgehöhlter Mond mit einer künstlichen Sonne im Zentrum: Hallen aus
+# Schlacke und verbrannten Platten, Rinnen aus flüssigem Metall "~" (wer hineinfällt, verbrennt und wird herausgezogen),
+# Zentrifugen ("thing spin"), die nach außen schleudern; Steuerkerne in Maschinen, manche schießen absichtlich daneben.
+# Am Ende der Vorarbeiter im Kranläufer; danach redet er.
+#   lava 1                 die Schächte sind Rinnen aus flüssigem Metall
+#   genthing spin r wo     je Raum r Zentrifugen
+#   bossvariant 7          der Vorarbeiter im Kranläufer
+
+name     l23.name
+act      act.4
+intro    l23.intro
+gravity  6.0
+fog      0.003 0.01 0.5 0.9
+fogcolor 0.006 0.0025 0.0008
+ambient  0.07 0.045 0.03 0.04 0.02 0.01
+walls    5.0
+sky      nebula
+lava     1
+bossvariant 7
+area     25
+next     leitwerk.txt
+gate     bossdead
+ambience furnace
+music    muehle
+bossmusic boss2
+npcafter vorarbeiter bossdead
+autotalk vorarbeiter
+
+genrooms      19
+genside       7
+gensize       12 18 10 15
+gentheme      furnace furnace works server furnace
+genstarttheme works
+genarenatheme furnace
+genarena      taxator
+genthing      spin 0.35 main
+genpack       ***     2
+genpack       **?     1.5
+genpack       ^^^     1.3
+genpack       `*      1.2
+genpack       %*      1
+gendensity    1.1
+genelite      0.33
+gennote       note.penalty23 note.overseer23 note.miss23 note.sun23 note.fore23
+
+[npcs]
+vorarbeiter | -1 -1 | terminal | v23a | foreman.spared:v23d foreman.off:v23e
+
+[talk]
+v23a | vorarbeiter | -              | v23a_a>v23b v23a_b>v23c
+v23b | vorarbeiter | foreman.spared |
+v23c | vorarbeiter | foreman.off    |
+v23d | vorarbeiter | -              |
+v23e | vorarbeiter | -              |
+
+[lines]
+l23_start    | a                  | hero
+l23_lava     | burnt              | hero
+l23_spin     | spun               | hero
+l23_miss     | b                  | hero
+l23_sun      | c                  | hero
+l23_overseers | d                 | hero
+l23_champion | champion           | hero
+l23_boss     | bossstart          | hero
+l23_end      | bossdead           | hero
+l23_fore     | appear.vorarbeiter | vorarbeiter
+
+[hints]
+h_lava       | a
+h_spin       | spun
+h_foreman    | bossstart
+h_core23     | appear.vorarbeiter
+h_turret     | turret
+h_champion   | champion
+h_stim       | hurt

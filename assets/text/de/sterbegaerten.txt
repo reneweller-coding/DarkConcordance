@@ -1,0 +1,37 @@
+# Level 15: Die Sterbegärten (Deutsch, die Quelle).
+
+l15.name  = Die Sterbegärten
+l15.intro = Ein Vergnügungspark am Fuß der Ringwand, zweihundert Kilometer hoch. Von oben stürzen Wasserfälle, die wegen der Drehung in weiten Bögen zur Seite driften; die Zuschauer sitzen auf Balkonen in der Wand. | Bürger sterben hier zum Spaß: Klippensprünge, Duelle, Kämpfe gegen gezüchtete Raubtiere. Eine Stunde später wachen sie auf und erzählen beim Abendessen davon. | Teodor Lamm, viertausend Tode, trägt den Schlüssel, den ihr braucht. Er gibt ihn nur dem, der ihn schlägt.
+
+l15_start        = Ein Park. Kinder, Picknickdecken, und dort hinten bringt sich gerade jemand um. Lachend.
+l15_start.dorra  = Auf Kalvar haben wir Gräber ausgehoben. Hier heben sie die Gläser.
+l15_fan          = Mein zweihundertster Tod war letzte Woche! Ein Stachelwurm. Er war wunderschön.
+l15_fan2         = Zweihundert. Im Saum wären das zweihundert Gräber.
+l15_free         = Wenn ich hier sterbe, kostet es nichts. Genau das fühlt sich falsch an.
+l15_free.dorra   = Hier kostet ein Tod nichts. Dann ist er auch nichts wert. Das ist der Fehler.
+l15_champion     = Ein Champion. Sie tragen ihre Tode wie Orden.
+l15_hounds       = Raubtiere. Gezüchtet, um zu jagen. Gedruckt, um zu sterben.
+l15_arena        = Die Arena. Über uns die Wasserfälle, und auf den Balkonen in der Wand Tausende Zuschauer.
+l15_wave1        = Runde eins! Wenig Schwerkraft – fliegt, meine Lieben, fliegt!
+l15_wave2        = Runde zwei! Wir machen das Licht aus!
+l15_wave3        = Runde drei! Sturm von der Ringwand!
+l15_wave4        = Runde vier! Nur Champions – und alle in Eile!
+l15_lamm         = Bravo! Ihr kämpft, als ginge es um etwas. Wie altmodisch. Dann kämpft mit mir.
+l15_again        = Autsch. – Und da bin ich wieder. Viertausendundeins. Noch einmal?
+l15_end          = Gut gemacht. Hier, der Schlüssel. Warum seid ihr nur so ernst? Es ist doch nur ein Tod.
+
+h_arena    = Die Arena: vier Runden mit wechselnden Regeln, dann Teodor Lamm selbst.
+h_rules    = Jede Runde hat ihre Regel – oben steht, welche. Erst wenn alle liegen, beginnt die nächste.
+h_lamm     = Teodor Lamm: schnell, zäh, und er stirbt nicht beim ersten Mal.
+h_lamm.dorra = Teodor Lamm: schnell, mit Hammer wie du. Schild hoch, wenn er anläuft. Er steht einmal wieder auf.
+
+note.gardens.title = Tagesprogramm Sterbegärten
+note.gardens       = 10 Uhr Klippensprung (Wartezeit 40 Minuten). 12 Uhr Duell nach Wahl. 15 Uhr Stachelwürmer (nur mit Voranmeldung). 20 Uhr Teodor Lamm.
+note.deaths.title  = Wiederverkörperungsprotokoll
+note.deaths        = Tode heute: 1.204. Beschwerden: drei (Wartezeit, Wartezeit, Geschmack des Begrüßungsgetränks).
+note.lamm.title    = Fanpost an Teodor Lamm
+note.lamm          = Lieber Teodor, ich bin deinetwegen gestorben. Danke! Darf ich nächste Woche wieder?
+note.ticket.title  = Eintrittskarte, abgerissen
+note.ticket        = Gültig für einen Tod. Weitere Tode an der Kasse.
+note.printer.title = Wartung Körperdrucker 7
+note.printer       = Druckzeit pro Bürger: 52 Minuten. Auslastung: 98 Prozent. Bitte keine Doppelbuchungen.

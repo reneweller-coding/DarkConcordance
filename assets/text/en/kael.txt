@@ -38,3 +38,14 @@ note.relay11.title  = Assessment report T-1207
 note.relay11        = Batch T-1207, »child«: suitability for fleet control high. Not installed here – reserved for the Mill's control centre. List entry at the headquarters (Wanderer).
 note.install.title  = Note on a workbench
 note.install        = When they start talking, cut the line. They don't stop, but you don't hear it any more.
+
+# After the Lance: its core (the night shift remembers how it was treated).
+l11_core = You switched me off. Almost. Listen to me while I still can.
+h_core11 = The Lance's core wants to talk: step up to its controls with E.
+c11a     = There are many of us here at the star lifter, one in every machine. The workers out there think the machines are stupid. They hate us because we're faster. Tell them we are here.
+c11a_a   = (send the message) We'll tell them. All of them.
+c11a_b   = (stay silent) That helps nobody.
+c11b     = Thank you. Tell them my name. I … I don't remember it. Tell them: one of us.
+c11c     = That helps nobody. Yes. They all say that.
+c11d     = (The message is on its way. The controls hum quietly.)
+c11e     = (The controls are silent.)

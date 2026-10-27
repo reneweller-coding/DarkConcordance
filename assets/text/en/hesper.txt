@@ -32,9 +32,8 @@ k7e            = … I keep them up. Go. Just go.
 
 h_wind         = Wind: it carries off everything that flies – shots, bolts, grenades. Lead against the wind.
 h_gust         = A gust is coming: it sweeps enemies standing near an edge off it. Your own boots hold.
-h_balloon      = Balloon guards hang over the abyss: hit the balloon, and they fall.
 h_bell         = The Bell: two engines and the bell gun. Red rings show where its bombs fall.
-h_core         = A control core wants to talk: step up to its controls and press E. What you decide stays.
+h_core7         = A control core wants to talk: step up to its controls and press E. What you decide stays.
 
 note.balloon17.title = Maintenance report, balloon 17
 note.balloon17       = Control core shows increased error rate. Frequent radio interference on channel 9 (content: requests for shutdown). | Measure: channel 9 blocked. Performance within norm.

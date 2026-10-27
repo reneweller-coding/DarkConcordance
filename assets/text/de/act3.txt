@@ -1,0 +1,102 @@
+# Akt III und IV (Deutsch, die Quelle): was alle späteren Orte teilen – Akte, Anzeigen, Gegner, Bosse, Sprecher,
+# Ziele der Bahn und der Navigation.
+
+act.3          = Akt III · Die Konkordanz
+act.3hub       = Akt III · Ring Gelassenheit
+act.3end       = Ende des dritten Akts
+act.4          = Akt IV · Die Mühle
+act.4hub       = Akt IV · Der Weg zurück
+
+hud.round      = Runde %d von %d
+rule.0         = Wenig Schwerkraft
+rule.1         = Dunkelheit
+rule.2         = Sturm von der Ringwand
+rule.3         = Nur Champions – und alle in Eile
+hud.evidence   = Frachtpapiere gesichert: %d von %d
+hud.evnext     =   ·  nächste Löschung in %d:%02d
+hud.evwiped    = Gelöscht. Die Säuberer waren schneller.
+hud.jets       = STEUERDÜSEN
+hud.grab       = Der Fänger packt zu in %d:%02d
+hud.cutwarn    = SCHNITTLINIE – RUNTER VON DER GLUT
+hud.pulsewarn  = LASERPULS – AUS DER LINIE
+hud.shadow     = Der Schatten des Schilds
+
+foe.swarmling   = Schwarmdrohne
+foe.swarmling.g = f
+foe.hive        = Schwarmträger
+foe.mender      = Wartungsroboter
+
+boss.lamm          = TEODOR LAMM
+boss.chief         = DER SÄUBERUNGSFÜHRER
+boss.foreman       = DER VORARBEITER
+boss.varn          = YSOLDE VARN
+boss.swarm.drones  = DIE DROHNEN DES KOLLEGIUMS
+boss.swarm.menders = DIE ABWEHR DES RECHENMONDS
+boss.swarm.archon  = KEIN GRUND ZUR SORGE
+boss.swarm.delete  = DIE LÖSCHPROZESSE
+boss.platform      = DIE SCHNEIDPLATTFORM
+boss.column        = DIE SCHNITTKOLONNE
+boss.catcher       = DER FÄNGER
+platform.clamp     = Klammer
+platform.head      = Schneidkopf
+column.cutter      = Schneider
+column.core        = Steuerkern
+catcher.arm        = Greifarm
+catcher.maw        = Schlund
+
+speaker.bedauern   = Mit Allem Gebotenen Bedauern
+speaker.sorge      = Kein Grund Zur Sorge
+speaker.ruul       = Ansgar Ruul
+speaker.lamm       = Teodor Lamm
+speaker.chief      = Der Säuberungsführer
+speaker.worker     = Ein Arbeiter aus Kalvar
+speaker.fan        = Eine Zuschauerin
+speaker.arena      = Die Arena
+speaker.berater    = Körperberatung
+speaker.spiegel    = Spiegel
+speaker.ausgabe    = Ausgabe Garten 4
+speaker.zoegernd   = Die zögernde Plattform
+speaker.vorarbeiter = Der Vorarbeiter
+speaker.rigcore    = Der Kern des Eisbrechers
+speaker.lancecore  = Der Kern der Lanze
+
+h_swarm        = Ein Schwarm: die Träger machen neue Drohnen, solange sie stehen. Erst die Träger, dann der Rest.
+h_swarm.dorra  = Ein Schwarm: die Träger machen neue Drohnen, solange sie stehen. Sprengbolzen auf die Träger.
+h_swarmling    = Schwarmdrohnen kreisen und stoßen zu. Wird ihr Auge weiß, kommt sie gleich.
+h_mender       = Wartungsroboter: schnell, viele, schwach. Nicht umzingeln lassen.
+h_formation    = Der Schwarm sammelt sich – gleich stoßen alle auf einmal zu. Bewegen!
+
+tram.title         = DIE BAHN
+dest.klinik        = Die Wiederverkörperung
+dest.gelassenheit  = Ring Gelassenheit · Ysoldes Wohnung
+dest.sterbegaerten = Die Sterbegärten
+dest.werft         = Die Werft am Tor
+dest.anhoerung     = Die Anhörung
+dest.rechenmond    = Der Rechenmond
+dest.verlies       = Verlies Null
+dest.unzu4         = An Bord
+dest.velm2         = Velm, letzte Woche
+dest.brannt        = Die Zerlegung von Brannt
+dest.erzstrom      = Der Erzstrom
+
+foe.baton.concession  = Wachmann der Konzession
+foe.gunner.concession = Schütze der Konzession
+foe.shield.concession = Schildwache der Konzession
+foe.shield.concession.g = f
+foe.heavy.concession  = Schwerer Wachmann
+foe.baton.clearance   = Räumer
+foe.gunner.clearance  = Räumschütze
+foe.shield.clearance  = Räumschild
+foe.heavy.clearance   = Schwerer Räumer
+foe.baton.security    = Werkschützer
+foe.gunner.security   = Werkschutz-Schütze
+foe.shield.security   = Werkschutz-Schild
+foe.heavy.security    = Schwerer Werkschützer
+foe.baton.collegium   = Säuberer
+foe.gunner.collegium  = Säuberer mit Gewehr
+foe.shield.collegium  = Säuberer mit Schild
+foe.heavy.collegium   = Schwerer Säuberer
+foe.baton.citizen     = Duellant
+foe.gunner.citizen    = Arenaschütze
+foe.shield.citizen    = Arenawächter
+foe.heavy.citizen     = Schwerer Duellant

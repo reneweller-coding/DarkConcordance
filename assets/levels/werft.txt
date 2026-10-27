@@ -1,0 +1,75 @@
+# Level 16: Die Werft am Tor (Akt III). Das Gegenende des Sprungtors, halb fertig, im freien Raum: gelbe Gerüste über
+# den Sternen, Containerstapel, wandernde Träger "]", die zerquetschen, wer dazwischen steht; kaum Schwerkraft, keine Luft.
+# Frachtpapiere auf Terminals ("thing evidence"), die die Säuberer des Kollegiums eines nach dem anderen löschen. Am Ende
+# der Säuberungsführer in seinem Rahmen und sein Trupp.
+#   evidence n erst letzt  n Terminals, gelöscht zwischen erst und letzt Sekunden nach dem Beginn
+#   genthing evidence r wo je Raum r Terminals mit Papieren (wo: main, side, arena, all)
+
+name     l16.name
+act      act.3
+intro    l16.intro
+gravity  2.4
+fog      0.0015 0.005 0.4 0.7
+fogcolor 0.0007 0.0007 0.001
+ambient  0.07 0.07 0.08 0.03 0.03 0.035
+walls    4.0
+sky      nebula
+space    1
+vacuum   1
+star     3200 -5200 -9000 2600
+sundir   -0.3 -0.8 0.5
+suncolor 2.6 2.4 2.1
+faction  collegium
+bossvariant 6
+evidence 5 300 1000
+area     18
+next     gelassenheit.txt
+gate     bossdead
+ambience yard
+music    werft
+bossmusic boss3
+
+genrooms      19
+genside       7
+gensize       11 17 9 14
+gentheme      yard yard container hull gangway
+genoutdoor    yard hull container
+genstarttheme gangway
+genarenatheme yard
+genarena      taxator
+genvoid       1
+genoxygen     0.6
+genthing      evidence 0.55 main
+genfeature    ]  0.35
+genpack       ETT     2
+genpack       $TT     1.5
+genpack       ''T     1.2
+genpack       %T      1
+genpack       ^^^     1.2
+genpack       ""E     1
+gendensity    1.05
+genelite      0.3
+gennote       note.yard16 note.freight16 note.song16 note.cleaner16 note.payroll16
+
+[lines]
+l16_start    | a          | hero
+l16_crates   | b          | hero
+l16_worker   | c          | worker
+l16_pity     | d          | hero
+l16_read     | evread     | hero
+l16_wiped    | evwiped    | hero
+l16_girder   | crushed    | hero
+l16_champion | champion   | hero
+l16_boss     | bossstart  | chief
+l16_end      | bossdead   | hero
+
+[hints]
+h_evidence   | a
+h_air16      | b
+h_girder     | crushed
+h_chief      | bossstart
+h_sniper     | sniper
+h_cutter     | cutter
+h_shield     | shieldguard
+h_champion   | champion
+h_stim       | hurt

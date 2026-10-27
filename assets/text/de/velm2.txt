@@ -1,0 +1,31 @@
+# Level 20: Velm, letzte Woche (Deutsch, die Quelle).
+
+l20.name  = Velm, letzte Woche
+l20.intro = Die Mühle füllt den halben Himmel: ein Mond mit Triebwerken, aus dem Erzströme wie Fontänen schießen. Durch die Fenster der Wohntrommeln sieht man ihre Schneidlaser an Brannt arbeiten. | Die Konzession bietet allen Velmern Abschrift und Umsiedlung an. Viele nehmen jetzt an, aus Angst; Familien zerbrechen daran, wer geht und wer bleibt. In der »Letzten Schicht« hat der Wirt Velm schon auf die Abbautafel geschrieben, ohne Datum. | Landetrupps in den Gassen, eine Schneidplattform an der Hülle. Und HAUSMEISTER, der noch die Geschütze steuert.
+
+l20_start        = Velm. Die Gassen, in denen ich Stims gekauft habe. Jetzt brennen sie.
+l20_start.dorra  = Velm. Ich habe hier nur kurz gewohnt. Das reicht, um wütend zu sein.
+l20_window       = Durchs Fenster: die Mühle. Sie ist so groß, dass sie keinen Rand mehr hat.
+l20_ally         = HAUSMEISTER: GESCHÜTZ GASSE 4 BEREIT. ZIEL: EINDRINGLINGE. DEFINITION EINDRINGLINGE: NICHT GEMELDET.
+l20_posters      = Plakate: »Abschrift kostenlos. Umsiedlung garantiert.« Jemand hat mit Kreide darübergeschrieben: Geh nicht.
+l20_reinforce    = Noch ein Landetrupp! Die hören nicht auf.
+l20_champion     = Ein Truppführer. Der hat schon andere Stationen geräumt.
+l20_hull         = Die Hülle bebt. Die Plattform schneidet eine Trommel auf.
+l20_boss         = Die Schneidplattform. Sie klammert sich an Velm wie eine Zecke.
+l20_end          = Die Plattform lässt los. Velm steht. Noch eine Woche, vielleicht zwei.
+l20_hm           = HAUSMEISTER: SCHADENSMELDUNG TROMMEL 2: SCHWER. BEWOHNER: GEMELDET. DANKE.
+
+h_pressure20 = Die Landetrupps kommen immer neu. Nicht stehen bleiben.
+h_ally       = HAUSMEISTERs Geschütze (grünes Licht) schießen auf die Eindringlinge. In ihrer Nähe kämpft es sich leichter.
+h_platform   = Die Schneidplattform: zwei Klammern und der Schneidkopf. Glüht unter dir eine Linie: runter da.
+
+note.offer20.title  = Angebot der Konzession
+note.offer20        = Abschrift und Umsiedlung für alle Bewohner von Velm. Familien werden gemeinsam umgesiedelt, sofern alle Mitglieder zustimmen.
+note.board20.title  = Die Abbautafel der »Letzten Schicht«
+note.board20        = Unterste Zeile, Kreide: VELM. Kein Datum.
+note.hm20.title     = HAUSMEISTER, Wartungsprotokoll
+note.hm20           = Geschütze Gasse 1 bis 9: bereit. Schotten: 14 von 31 funktionsfähig. Bewohner gemeldet: 9.312. Abgemeldet: 14.977.
+note.family20.title = Zettel an einer Tür
+note.family20       = Mama ist mit Ivo auf das Schiff. Ich bleibe bei Opa. Wir sehen uns.
+note.cut20.title    = Schnittplan Velm
+note.cut20          = Trommel 2, Sektor C. Freigabe: sofort. Bewohnerstatus: wird nicht berücksichtigt.

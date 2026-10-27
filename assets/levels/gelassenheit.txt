@@ -1,0 +1,100 @@
+# Hub in Akt III: der Ring Gelassenheit. Ysoldes Wohnung (warm, ein Tisch), der Garten (Hecken, Bäume, ein Rasen,
+# Leute, die spazieren gehen), die Promenade mit ihren Hausfronten. Kein Kampf. Ysolde nennt die Ziele, Kiri flickt im
+# Garten, die Ausgabe an der Promenade gibt Stims, Unzu spricht über das Terminal aus dem Dock. Die Bahnhaltestelle am
+# Ende des Gartens fährt zu den Zielen.
+
+name     gel.name
+act      act.3hub
+intro    gel.intro
+gravity  9.0
+fog      0.0008 0.003 0.4 0.75
+fogcolor 0.004 0.005 0.007
+ambient  0.15 0.16 0.18 0.075 0.08 0.085
+walls    3.8
+peaceful 1
+skycolor 0.42 0.58 0.85
+view     ring
+vista    10
+sundir   0.3 -1.0 0.2
+suncolor 2.1 2.0 1.85
+ambience ring
+music    ring
+menutitle tram.title
+back     done.sterbegaerten
+autotalk ysolde
+exit     sterbegaerten.txt job15
+exit     werft.txt job16
+exit     anhoerung.txt job17
+exit     rechenmond.txt job18
+exit     verlies.txt job19
+zone     0 0 9 13 bar
+zone     0 14 13 43 park
+zone     10 0 13 13 park
+zone     14 0 21 43 street
+route    6 8  5 13  7 25  10 40
+
+[map]
+############################################
+############################################
+##A.........A#A..........................A##
+##...........#....................1111....##
+##...........#....................1111....##
+##.................#####..................##
+##......P.................................##
+##...........#.............Z..............##
+##A.........A#................####........##
+##############....Z.......................##
+##############..........................O.##
+##############A..........................A##
+##########################...###############
+##########################...###############
+##A......................................A##
+##.....M.......................J..........##
+##.............................J.......Z..##
+##..........Z.........................J...##
+##..................M.....................##
+##A......................................A##
+############################################
+############################################
+
+[npcs]
+# Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...
+ysolde  | 3 9   | ysolde   | y300 | job15:y302 done.sterbegaerten:y310 job16:y312 done.werft:y320 job17:y322 done.anhoerung:y330 job18:y332 done.rechenmond:y340 job19:y342
+unzu    | 2 27  | terminal | u300 | done.sterbegaerten:u310 done.werft:u320 done.anhoerung:u330 done.rechenmond:u340
+kiri    | 9 20  | kiri     | k300
+ausgabe | 15 10 | terminal | a300
+
+[talk]
+y300 | ysolde  | -        | y300_a>y301
+y301 | ysolde  | job15    |
+y302 | ysolde  | -        |
+y310 | ysolde  | -        | y310_a>y311
+y311 | ysolde  | job16    |
+y312 | ysolde  | -        |
+y320 | ysolde  | -        | y320_a>y321
+y321 | ysolde  | job17    |
+y322 | ysolde  | -        |
+y330 | ysolde  | -        | y330_a>y331
+y331 | ysolde  | job18    |
+y332 | ysolde  | -        |
+y340 | ysolde  | -        | y340_a>y341
+y341 | ysolde  | job19    |
+y342 | ysolde  | -        |
+u300 | unzu    | -        |
+u310 | unzu    | -        |
+u320 | unzu    | -        |
+u330 | unzu    | -        |
+u340 | unzu    | -        |
+k300 | kiri    | -        | k300_a>k301 k300_b>-
+k301 | kiri    | workshop |
+a300 | ausgabe | -        | a300_a>a301 a300_b>-
+a301 | ausgabe | shop     |
+
+[lines]
+g_start | start | hero
+g_back  | back  | hero
+
+[hints]
+h_ring        | a
+h_exitlocked3 | exitlocked
+h_exitlater3  | exitlater

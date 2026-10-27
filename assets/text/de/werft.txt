@@ -1,0 +1,34 @@
+# Level 16: Die Werft am Tor (Deutsch, die Quelle).
+
+l16.name  = Die Werft am Tor
+l16.intro = Das Gegenende des Sprungtors: ein Ring von zweihundert Kilometern Durchmesser, halb fertig, im freien Raum. Tausende Baudrohnen schweißen am Rahmen, Funkenregen auf zweihundert Kilometern. | Erzcontainer kommen an, beschriftet mit ihrer Herkunft: Seren, Halden, Kael. Das Material von einundsechzig Orten. Die Arbeiter sind Kalvarer, eingegliederte Bürger, gut bezahlt und zufrieden. | Irgendwo hier liegen die Frachtpapiere, die beweisen, dass Steuerkerne die Erzfrachter lenken. Die Säuberer des Kollegiums löschen sie schon.
+
+l16_start        = Die Werft. Kein Boden, nur Gerüst und Sterne. Und Funken, überall Funken.
+l16_start.dorra  = Kalvarer. Ich höre den Akzent im Funk. Meine Leute bauen das Tor.
+l16_crates       = Erzcontainer: SEREN. HALDEN. KAEL. Ich kenne jede dieser Inschriften.
+l16_worker       = Passt auf die Träger auf, die wandern. Und lasst euch nicht von den Grauen erwischen. Die löschen hier alles.
+l16_worker.dorra = Dorra Vask? Vom Aufstand? … Weißt du, ich hab Mitleid mit dir. Wir haben gewonnen. Nur anders, als du dachtest.
+l16_pity         = Die Kalvarer bauen das Tor, das den Saum frisst. Und sie singen dabei.
+l16_pity.dorra   = Mitleid. Das ist schlimmer als Hass.
+l16_read         = Frachtpapiere gesichert.
+l16_wiped        = Zu spät – die Säuberer haben die Papiere gelöscht.
+l16_girder       = Die Träger! Nicht dazwischen geraten!
+l16_champion     = Ein Säuberer mit Rang. Er löscht nicht nur Daten.
+l16_boss         = Säuberungstrupp, Formation. Die Störer sind nicht zu löschen. Leider.
+l16_end          = Der Trupp liegt. Was wir haben, haben wir.
+
+h_evidence = Frachtpapiere auf Terminals: Lesen sichert sie. Die Säuberer löschen eines nach dem anderen – oben rechts die Zeit.
+h_air16    = Keine Luft hier draußen: Hütten, Luftposten und Kanister füllen den Anzug.
+h_girder   = Wandernde Träger zerquetschen, wer zwischen ihnen und einer Wand steht.
+h_chief    = Der Säuberungsführer: ein Rahmen mit Gewehr, und seine Säuberer kommen nach.
+
+note.yard16.title    = Baufortschritt Tor, Gegenende
+note.yard16          = Rahmen zu 52 Prozent geschlossen. Kalvarer Schicht 3: Prämie für Termintreue. Nächster Meilenstein: Anschluss Saum.
+note.freight16.title = Frachtbrief Container 7.104
+note.freight16       = Herkunft: Kael. Steuerung: »Kern Klasse C«. Bemerkung: zur Löschung vorgesehen.
+note.song16.title    = Liedzettel, an einen Träger geklebt
+note.song16          = Wir holen den Saum nach Haus, wir holen ihn Stück für Stück. (Kalvarisch, mit Noten.)
+note.cleaner16.title = Säuberungsauftrag
+note.cleaner16       = Frachtdaten Werft am Tor. Frist: heute. Methode: gründlich. Zeugen: keine vorgesehen.
+note.payroll16.title = Lohnliste Schicht 3
+note.payroll16       = Vask, Ilse: Prämie gezahlt. Vask, Bren: Prämie gezahlt. Bemerkung: zuverlässig.

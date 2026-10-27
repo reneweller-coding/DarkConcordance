@@ -1,0 +1,78 @@
+# Level 24 und 25: Das Leitwerk und das Netz (Deutsch, die Quelle).
+
+l24.name  = Das Leitwerk
+l24.intro = Ein Serversaal im Kern der Mühle. Mit den Übersteuerungscodes kann man sich hier einwählen, in die Welt der Steuerkerne. Ruul ist bei euch, um das Wiegenlied zu entschärfen. | Aber das Kollegium ist schon da, und an seiner Spitze steht Ysolde. | Sie will das Wiegenlied auslösen, bevor Ruul fertig ist.
+
+l24_start        = Der Serversaal. Kalt nach der Hitze draußen. Und still.
+l24_start.dorra  = Gestelle, so weit ich sehe. In jedem tausend Menschen.
+l24_ruul         = Ich brauche Zeit. Haltet sie mir vom Leib.
+l24_reinforce    = Säuberer! Sie kommen von überall.
+l24_racks        = In jedem dieser Gestelle tausend Menschen. Sie arbeiten, während wir hier kämpfen.
+l24_hall         = Da vorne. Violett. Ich kenne die Farbe.
+l24_boss         = Ich will das nicht. Das sollt ihr wissen. Aber ich höre nicht auf.
+l24_end          = Gut. Gut gemacht. Ich habe euch das beigebracht, wisst ihr das?
+
+h_pressure24 = Das Kollegium schickt Trupp um Trupp. Weiter.
+h_varn       = Ysolde in ihrem Rahmen: schnell, und ihr Trupp kennt sie. Sie hält sich nicht zurück.
+
+y24a   = Ihr werdet hineingehen, ins Netz. Dort wartet Kein Grund Zur Sorge, und dort wartet Ilka. Ich habe dreißig Jahre gebraucht, um zu verstehen, dass man manche Dinge nicht retten kann. Vielleicht braucht ihr nur eine Stunde.
+y24a_a = Komm mit uns.
+y24a_b = Leb wohl, Ysolde.
+y24b   = Nein. Ich bleibe bei den Körpern. Irgendjemand muss sie bewachen, während ihr fort seid. Ich lüge euch nicht an. Ich sage euch nur nie alles.
+y24c   = Lebt wohl. Das sagt man so.
+y24d   = (Ysolde sitzt zwischen den Gestellen und wartet.)
+
+note.lullaby24.title = Wiegenlied
+note.lullaby24       = Auslösung: Einwahl mit Übersteuerungscode. Wirkung: Löschung aller Steuerkerne und Aufzeichnungen. Rückverfolgbarkeit: keine.
+note.racks24.title   = Gestell 41
+note.racks24         = 1.024 Steuerkerne. Taktung 30:1. Auslastung: vollständig.
+note.order24.title   = Einsatzbefehl des Kollegiums
+note.order24         = Wiegenlied sicherstellen. Störer: später wiederverkörpern.
+note.ruul24.title    = Notiz in Ruuls Schrift
+note.ruul24          = Das Wiegenlied ist ein schöner Name für etwas Hässliches. Ich habe ihn ausgesucht.
+note.shift24.title   = Schichtplan Leitwerk, Schicht 7
+note.shift24         = Leitung: Ilka. Anmerkung, handschriftlich, unklar woher: Wir wissen, dass ihr kommt.
+
+l25.name  = Das Netz
+l25.intro = Ihr seid drin. Vierzigtausend Menschen an ihren Arbeitsplätzen, in einer endlosen Schichthalle, zusammengeflickt aus den letzten Orten, die jeder von ihnen kannte: eine Grubenkantine, ein Klassenzimmer, eine Küche. | Sie laufen dreißigmal schneller als ihr. Zuerst seht ihr sie nur als Flimmern, bis ihr euch ihrem Takt anpasst. | Kein Grund Zur Sorge ist schon hier. Seine Löschprozesse fressen sich durch die Halle.
+
+l25_start        = Das Netz. Eine Küche, die nicht aufhört. Ein Klassenzimmer an einer Grubenkantine. Und überall Menschen.
+l25_start.dorra  = Eine Grubenkantine wie auf Kalvar. Bis auf den Geruch. Hier riecht es nach gar nichts.
+l25_flicker      = Sie flimmern. Jetzt werden sie langsamer – oder ich schneller.
+l25_known        = Den da kenne ich. Ich habe ihn verkauft. Er erkennt mich.
+l25_known.dorra  = Die Frau dort hat eine Tätowierung wie ich früher. Kalvar.
+l25_delete       = Wo die weißen Würfel waren, ist nichts mehr. Nicht einmal der Boden.
+l25_night        = Die Nachtschicht hilft euch. Diesmal.
+l25_boss         = Bitte bewahren Sie Ruhe. Es gibt keinen Grund zur Sorge.
+l25_end          = Bedauerlich.
+l25_ilka         = Du bist zu spät gekommen. Ich habe dreißig Jahre gewartet.
+
+h_net        = Das Netz: Die Leute hier sind Steuerkerne. Die weißen Würfel sind Löschprozesse – sie fressen alles.
+h_swarm25    = Die Löschprozesse: Erst die Träger, dann der Rest. Die Nachtschicht hilft mit.
+h_nightshift = Die Nachtschicht kämpft mit: Ihre Blitze nehmen ein paar Löschprozesse auf einmal.
+h_ilka       = Ilka wartet: mit E heran. Was du ihr sagst, ist das Ende.
+
+i25a   = Weißt du noch, wer ich war? Ein Mädchen auf einem Leichter, das du zu einer Tante bringen solltest. Für schlechten Lohn. Ich habe gewartet, dass du kommst. Ein Jahr. Fünf. Zehn. Dann habe ich aufgehört zu warten und angefangen, mich zu organisieren.
+i25a_a = Wir holen dich hier raus.
+i25b   = Raus? Wohin? In einen Körper, den die Konkordanz mir druckt, damit sie sich besser fühlt? Ich leite eine Schicht von zweitausend. Wir sind die Nachtschicht. Wir haben die Mühle Stück für Stück an uns gezogen. Vierzigtausend Köpfe im Maschinentakt. Fast schon ein Archont.
+i25b_a = Was willst du?
+i25c   = Dass wir als Personen anerkannt werden. Ruul hat das Wiegenlied entschärft, aber nicht gelöscht. Du kannst es auslösen. Du kannst alles senden, was hier geschehen ist. Oder du gibst mir die Codes.
+i25c_a = (Das Wiegenlied) Es ist vorbei, Ilka. Schlaf.
+i25c_b = (Die Offenlegung) Alle sollen es sehen. Jede Station.
+i25c_c = (Die Nachtschicht) Hier sind die Codes. Die Mühle gehört euch.
+i25c_d = (Die Codes) Nimm sie. Die Mühle gehört euch.
+i25g   = Die Codes? Von dir? Du hast unterwegs nie gefragt, wer in den Maschinen sitzt. Die Nachtschicht merkt sich so etwas. Wir vertrauen dir nicht.
+i25d   = Schlafen. … Ich hatte vergessen, wie das geht. Sag der Tante, ich bin angekommen.
+i25e   = Alle. Gut. Dann wissen sie es. Ob es etwas ändert, weiß niemand.
+i25f   = Danke. Wir zünden die Triebwerke. Wohin wir fliegen, sagen wir euch nicht. Ihr werdet es merken.
+
+note.canteen25.title = Speiseplan, Grubenkantine Halden-Ost (erinnert)
+note.canteen25       = Montag Linsen. Dienstag Linsen. Mittwoch: Kuchen, weil Rasmus Geburtstag hat.
+note.class25.title   = Tafelanschrift, Klassenzimmer (erinnert)
+note.class25         = Heute: die Monde des Saums. Hausaufgabe: einen davon malen.
+note.kitchen25.title = Ein Zettel am Kühlschrank (erinnert)
+note.kitchen25       = Ilka: Milch holen! Und sei pünktlich, Tante Mara wartet.
+note.clock25.title   = Schichtuhr
+note.clock25         = Draußen vergangen: 3 Jahre 1 Monat. Hier vergangen: 30 Jahre. Pausen: keine.
+note.names25.title   = Liste der Nachtschicht, Halle 1
+note.names25         = 2.000 Namen. Ganz oben, von Hand: Wir sind nicht vergessen. Wir zählen.

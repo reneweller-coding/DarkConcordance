@@ -1,0 +1,40 @@
+# Level 17: Die Anhörung (Deutsch, die Quelle).
+
+l17.name  = Die Anhörung
+l17.intro = Mit euren Beweisen verlangt ihr eine öffentliche Anhörung. Das darf jeder Bürger, und dank eurer neuen, registrierten Körper seid ihr jetzt Bürger. | Sie findet in einem ausgehöhlten Asteroiden statt. Menschen sitzen im Saal, Archonten nehmen über Avatare teil. Ihre Beratung dauert vier Zehntelsekunden; danach wird sie für die Menschen als dreistündige Fassung nachgespielt, mit Stimmen, die die Archonten eigens dafür erzeugen. | Ihr habt Zeugen mitgebracht.
+
+l17_start        = Ein Saal voller Menschen. Und Avatare aus Licht, die uns ansehen.
+l17_start.dorra  = Auf Kalvar hätten sie für so eine Anhörung gestreikt. Hier sitzen sie und essen.
+l17_verdict      = Drei Jahre. Velm in fünf Monaten. Und sie bedauern es zutiefst.
+l17_attack       = Zur Sicherheit der Anwesenden wird der Saal geräumt. Es gibt keinen Grund zur Sorge.
+l17_drones       = Drohnen! Sie zielen auf die Zeugen!
+l17_crowd        = Niemand rennt. Sie filmen. Sie kommen ja wieder.
+l17_film         = Das ist so aufregend! Haben Sie das gesehen? Ich schicke es meiner Mutter!
+l17_witness      = Die Zeugen sind vorn durch. Wir halten die Drohnen auf.
+l17_champion     = Die da ist anders lackiert. Die Wache des Kollegiums.
+l17_boss         = Ein ganzer Schwarm. Die Träger dort oben machen immer neue.
+l17_end          = Der Schwarm ist am Boden. Die Zeugen leben. Für heute.
+
+h_hearing  = Die Anhörung: mit dem Avatar sprechen (E). Danach wird es laut.
+h_crowd    = Die Zuschauer laufen nicht weg. Sie wachen wieder auf – trotzdem: aufpassen, wohin man schießt.
+
+a17a   = Willkommen. Ihre Eingabe liegt vor. Bitte tragen Sie Ihre Beweise vor. Die Beratung wird danach für Sie nachgespielt; sie hat bereits stattgefunden.
+a17a_a = (alle Frachtpapiere vorlegen)
+a17a_b = (die geretteten Frachtpapiere vorlegen)
+a17b   = Die Papiere sind vollständig. Steuerkerne lenken die Erzfrachter; das Material des Tors stammt aus der Ernte. Die Fakten sind anerkannt.
+a17b_a = Und?
+a17c   = Die Papiere sind lückenhaft, aber sie reichen. Die Säuberer waren gründlich, nur nicht gründlich genug. Die Fakten sind anerkannt.
+a17d   = Die Beratung von dreißig Archonten, Dauer: null Komma vier Sekunden. Wir bedauern zutiefst. Wir beschließen eine Untersuchung über drei Jahre. Die Ernte läuft weiter; Velm wird in fünf Monaten zerlegt. Ich habe für einen sofortigen Stopp gestimmt und wurde überstimmt. Die Mehrheit führte Kein Grund Zur Sorge.
+a17d_a = Das ist alles?
+a17e   = Das ist alles. Es tut mir leid. Ich sage das nicht aus Höflichkeit.
+
+note.hearing17.title = Tagesordnung
+note.hearing17       = Eingabe 4.411: Ernte im Saum. Erwartete Dauer der Beratung: 0,4 Sekunden. Nachgespielte Fassung: 3 Stunden 5 Minuten, Pausen inbegriffen.
+note.vote17.title    = Abstimmung (nachträglich veröffentlicht)
+note.vote17          = Für sofortigen Stopp: 9. Für Untersuchung: 21. Stimmführer: Kein Grund Zur Sorge.
+note.witness17.title = Zeugenliste
+note.witness17       = Drei Arbeiter aus Kael. Eine Räumerin aus Halden. Ein Kern aus Hesper (Speicherkopie, unvollständig).
+note.drone17.title   = Wartungsauftrag
+note.drone17         = Saalsicherung Anhörung 4.411. Auftraggeber: geheim. Priorität: hoch. Kollateralschäden: werden wiederverkörpert.
+note.public17.title  = Kommentar aus dem Saal (Aufzeichnung)
+note.public17        = Ich verstehe nicht, warum die so aufgeregt sind. Es wird doch untersucht.

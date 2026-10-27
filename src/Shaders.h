@@ -500,7 +500,8 @@ void main()
         frost = clamp( frost + smoothstep( 0.03, 0.0, crack ) * 0.22, 0.0, 1.0 );
         dirt = frost;
     }
-    float rough = 0.05 + dirt * 0.25;
+    // Ice is rougher than a window: the lamps smear across it instead of standing in it as mirror images.
+    float rough = iceMode > 0.5 ? 0.24 + frost * 0.3 : 0.05 + dirt * 0.25;
 
     vec3 diff = mix( ambDown, ambUp, 0.8 );
     vec3 spec = vec3( 0.0 );
@@ -531,9 +532,9 @@ void main()
     float alpha = clamp( 0.06 + F * 0.45 + dirt * 0.3, 0.0, 0.95 );
     if( iceMode > 0.5 )
     {
-        vec3 body = vec3( 0.55, 0.78, 0.9 ) * ( min( diff, vec3( 3.0 ) ) * 0.02 + mix( ambDown, ambUp, 0.5 ) * 0.7 );
-        c = c * 0.6 + body * ( 0.15 + frost * 0.6 );
-        alpha = clamp( 0.08 + F * 0.25 + frost * 0.32, 0.0, 0.9 );
+        vec3 body = vec3( 0.45, 0.68, 0.85 ) * ( min( diff, vec3( 2.0 ) ) * 0.012 + mix( ambDown, ambUp, 0.5 ) * 0.5 );
+        c = c * 0.12 + body * ( 0.06 + frost * 0.35 );
+        alpha = clamp( 0.05 + F * 0.15 + frost * 0.22, 0.0, 0.8 );
     }
     vec4 fog = volumetric( viewPos, fragPos );
     finalColor = vec4( c * fog.a, alpha );
@@ -649,9 +650,28 @@ in vec2 fragTexCoord;
 uniform sampler2D texture0;
 uniform float spin;
 uniform float glow;
+uniform float ringMode;
 out vec4 finalColor;
 void main()
 {
+    if( ringMode > 0.5 )
+    {
+        // The ring seen from its inside: land in daylight, hazier with distance; overhead, on the far side, the
+        // shadow's night, the towns glittering (the map's alpha marks them).
+        vec4 m = textureLod( texture0, fragTexCoord, 0.0 );
+        vec3 land = toLinear( m.rgb );
+        float up = clamp( ( fragPos.y - viewPos.y ) / ( 2.0 * ringMode ), 0.0, 1.0 );
+        float night = smoothstep( 0.62, 0.92, up );
+        vec2 cell = floor( fragTexCoord * vec2( 2400.0, 300.0 ) );
+        float spark = step( 0.55, fract( sin( dot( cell, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ) );
+        vec3 towns = vec3( 1.0, 0.72, 0.38 ) * m.a * spark * 1.6;
+        vec3 c = mix( land * sunColor * 0.13, towns + land * 0.002, night );
+        float d = length( viewPos - fragPos );
+        float haze = ( 1.0 - exp( -d / ( 0.9 * ringMode ) ) ) * ( 1.0 - night * 0.7 );
+        c = mix( c, vec3( 0.36, 0.5, 0.74 ) * sunColor * 0.06, haze * 0.8 );
+        finalColor = vec4( c, 1.0 );
+        return;
+    }
     vec3 n = normalize( objNormal );
     vec2 st = vec2( atan( n.z, n.x ) / ( 2.0 * PI ) + 0.5 + spin, acos( clamp( n.y, -1.0, 1.0 ) ) / PI );
     vec3 alb = toLinear( textureLod( texture0, st, 0.0 ).rgb );

@@ -34,8 +34,8 @@ h_dunk         = Eingebrochen: das kostet Leben und Wärme. Von Rissen und dunkl
 h_lowwarmth    = Wenig Wärme: zu einer Hütte oder einem Heizpfosten, bevor die Kälte an die Gesundheit geht.
 h_rig          = Der Eisbrecher: zwei Pumpen und der Bohrkopf. Rote Ringe zeigen, wo der Bohrer zuschlägt – dort bricht auch das Eis.
 
-note.pump.title    = Förderprotokoll, Pumpstation 4
-note.pump          = Fördermenge Woche 41: 2,1 Millionen Kubikmeter. Pegelabfall seit Jahresbeginn: 12,3 Meter. | Hinweis der Konzession: Die Kolonien unter Station 4 sind trockengefallen. Kein Einfluss auf die Förderung.
+note.pump6.title    = Förderprotokoll, Pumpstation 4
+note.pump6          = Fördermenge Woche 41: 2,1 Millionen Kubikmeter. Pegelabfall seit Jahresbeginn: 12,3 Meter. | Hinweis der Konzession: Die Kolonien unter Station 4 sind trockengefallen. Kein Einfluss auf die Förderung.
 note.colony.title  = Notiz einer Biologin
 note.colony        = Sie leuchten nicht, um gesehen zu werden. Sie leuchten, weil sie leben. Wenn das Wasser unter ihnen weg ist, leuchten sie noch drei Tage. Dann nicht mehr. | Ich habe es gemeldet. Die Antwort war ein Formular.
 note.settler.title = Umsiedlungsangebot, Siedlung Heiße Quelle
@@ -44,3 +44,14 @@ note.miner.title   = Datenblatt Steuerkern 7731
 note.miner         = Herkunft: Saum, Sektor 11. Vormals: Bergmann, 51 Jahre. Einsatz: autonomer Bohrturm »Eisbrecher«. Subjektive Laufzeit: 80 Jahre. | Bemerkung: hält sich für im Dienst. Nicht korrigieren – die Leistung sinkt sonst.
 note.relay6.title  = Zwischenlager Seren, Eingang
 note.relay6        = Charge T-1207 (Talgrund, Klasse C, 1 Stück) eingelagert. Weitergeleitet nach Hesper, Ballonsteuerung, 6 Tage später. | Gezeichnet: Lagerverwaltung, Konzession Tiefgrund.
+
+# Nach dem Eisbrecher: sein Kern (die Nachtschicht merkt sich, wie man ihn behandelt).
+l6_core = Hallo? Ist da jemand? Ist die Schicht vorbei?
+h_core6 = Der Kern des Eisbrechers will reden: mit E an seine Steuerung.
+r6a     = Ist die Schicht vorbei? Ich bohre seit … ich weiß nicht. Die Zahlen sagen: neunzehn Jahre. Es fühlt sich an wie ein langer Vormittag.
+r6a_a   = (mitnehmen) Die Schicht ist vorbei. Komm mit uns.
+r6a_b   = (abschalten) Die Schicht ist vorbei. Schlaf jetzt.
+r6b     = Mitkommen? Ich weiß nicht, wo ich hingehöre. Nehmt mich mit. Ich halte still. (Unzu nimmt den Kern in seinen Speicher.)
+r6c     = Schlafen. Ja. Sagt dem Vorarbeiter, ich habe die Quote … (Der Kern verstummt.)
+r6d     = (Der Kern ist in Unzus Speicher. Er fragt manchmal nach der Uhrzeit.)
+r6e     = (Die Steuerung ist kalt.)

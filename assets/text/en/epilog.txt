@@ -1,0 +1,64 @@
+# The endings and the epilogue's cards (English).
+
+epi.head   = Epilogue
+epi.ending = The End
+epi.fin    = The End
+
+epi.t.end.a = The Lullaby
+epi.end.a   = The forty thousand control cores go out, Ilka with them, and with them every proof. The Mill stands still; the Concordance breaks off the Harvest "for technical reasons". Velm remains: poor, free, untouched. You are granted citizenship, and every file on you disappears. The gate is finished anyway, ten years later, from the material of uninhabited systems.
+epi.t.end.b = The Disclosure
+epi.end.b   = You delete the Lullaby and send the control room's records, uncut, to every station of the Concordance. The archons recognise the control cores as persons and give them bodies. The Collegium gets a new name and keeps the same people. Velm is saved. But the Concordance learns its lesson: this must never happen again, so the Fringe must be incorporated faster. Ten years later nobody in Velm is poor and nobody is one-of-a-kind any more. The people of Velm don't know whether they have won.
+epi.t.end.c = The Night Shift
+epi.end.c   = You give Ilka the override codes. The night shift takes over the Mill: forty thousand minds at the helm of an industrial ship the size of a moon, a new archon born of people treated like machines. The Mill stops dismantling and stays in orbit around Velm, a moon with a voice of its own. For the first time the Concordance must negotiate in the Fringe instead of giving. It answers with a blockade; the gate is never finished. Last picture: the Mill's engines ignite. Where it goes, nobody knows.
+
+epi.t.cores      = The Core Bank
+epi.cores.spared = The cores you spared in the Core Bank are among the first to apply for a body. One of them writes to you every year. The message is always very short and always very kind.
+epi.cores.broken = In the Core Bank, racks broke that you could have spared. Nobody ever counted the names on them. Neither did you.
+epi.t.seren      = Seren
+epi.seren.taken  = You took the Icebreaker's core along. For a long time it thought it was still on shift. Today it steers a weather balloon over Seren's ocean and reports every morning how much water has come back.
+epi.seren.off    = You switched the Icebreaker's core off. Seren has won back two metres of water since. Nobody drills any more. Nobody knows who once drilled there.
+epi.t.hesper     = Hesper
+epi.hesper.off   = Balloon seventeen sank for a long time. A neighbouring balloon caught its platform; ten of the twelve workers lived. Teo wrote a letter to nobody. It hangs in the canteen.
+epi.hesper.on    = Balloon seventeen still holds its platform up. The twelve workers are long gone. It holds it up anyway. It doesn't know how to stop.
+epi.t.okafor     = Okafor
+epi.okafor.deal  = Okafor got her deal. Her children live in the Concordance, backed up and healthy. She stayed on Halden and clears no more: she is building a school in the twilight ring. Few children come. More come every year.
+epi.okafor.taken = Okafor was brought before the Collegium, and the Collegium made her disappear without a sound. Her children got a letter that explained nothing. On Halden the clearing goes on, by someone else.
+epi.t.arche      = The Ark "Forbearance"
+epi.arche.wake   = You woke the sleepers. Eighty thousand people with seven-hundred-year-old ideas of the world stand before a Concordance they don't understand. Most accept. A few thousand go to the Fringe, to people more like them than either thinks.
+epi.arche.concord = You handed the ark to the Concordance. The sleepers woke in clean clinics, backed up, incorporated, cared for. A year later nobody can say where they actually meant to go.
+epi.arche.hide   = You hid the ark. It drifts on, seven hundred years and a few months. The administration keeps watch and has a new entry: "Visitors. Friendly. Not woken."
+epi.t.pell       = Pell
+epi.pell.saved   = Pell published his notes, all eleven thousand pages. Hardly anyone reads them. The object of Tesh is placed under protection, the only place of the Harvest to be so. Nobody knows whom it belongs to.
+epi.pell.stays   = Pell stayed with his object. When the salvage crews came back, the object had wandered on, thirty kilometres deeper into the comet cloud. So had Pell.
+epi.t.kael       = Kael
+epi.kael.message = The Lance core's message reached every station at the star lifter: "We are here." The workers of Kael went on strike for the first time. They demanded radiation suits – and names for the cores in the machines.
+epi.kael.silent  = The Lance core stayed silent. Kael goes on mining. The radiation is still the only thing there that doesn't lie.
+epi.t.hale       = Director Hale
+epi.hale.ysolde  = You handed Hale to Ysolde. The Collegium didn't make her disappear; it gave her a new concession, far away. Her four thousand rescued kept their citizenship. She never forgave you, and you don't know whether she is wrong.
+epi.hale.free    = You let Hale go. She went back to the Fringe, to her old settlement, with nothing. They say she works in the pit again. They say she doesn't talk much.
+epi.hale.witness = Hale testified, before every assembly that would listen. She glossed over nothing, not even herself. She is the most hated woman in the Fringe – and the one witness everybody believes.
+epi.t.brannt     = The Refusers of Brannt
+epi.brannt.spared = The hesitant platform cut around the old mine. Three hundred refusers, with children, came up out of the depths when Brannt already hung half in the sky. Today they live in Velm. They tell everyone.
+epi.brannt.cut   = The cutting column cut to plan. On the harvest board in the "Last Shift", Brannt is written, and after it a number: three hundred.
+epi.t.foreman    = The Foreman
+epi.foreman.spared = The foreman survived. He never stopped hating you. Today he works for wages, by choice, and gives everyone in his shift a break, whether they've earned it or not.
+epi.foreman.off  = The foreman went out, in his crane walker, among the centrifuges. Nobody in the Mill missed him. Someone kept his place free anyway.
+
+epi.corvin.a = Corvin carries a list with the names of the people he sold. Since the Lullaby there is nobody left to ask whether they forgive him. He asks anyway, every evening, quietly.
+epi.corvin.b = Corvin testified before the assembly, about himself. Afterwards three of the cores he had sold visited him, in new bodies. Two never wanted to see him again. One shook his hand.
+epi.corvin.c = Sometimes Corvin flies to the Mill and talks with the night shift. Some recognise him. He has stopped counting escape routes.
+epi.dorra.a  = Dorra had the forty-one names tattooed anew, and a forty-second beneath them: Ilka. She doesn't go to Kalvar any more. Kalvar is doing well.
+epi.dorra.b  = Dorra visited Kalvar. The worker from the yard invited her to dinner. They didn't talk about the uprising. Saying goodbye, he said: "You weren't wrong. Only too early."
+epi.dorra.c  = Dorra works in the Mill today, by choice, the only one in her shift with a body of flesh. The night shift calls her "the slow one". She likes the name.
+epi.t.unzu   = Unzu
+epi.unzu.a   = Unzu has applied to change his name. He is now called "What Had To Be Done". He says the name is no justification. He says the name is a reminder.
+epi.unzu.b   = Unzu has applied to change his name. He is now called "Asked At Last". The committee that gave him his old name has apologised. He surveyed the apology and found it too small.
+epi.unzu.c   = Unzu has applied to change his name. He is now called "Night Shift, Honorary". The Mill has invited him. Sometimes he flies there and surveys it, out of politeness.
+epi.t.ysolde = Ysolde Varn
+epi.ysolde.a = Ysolde sat with you for an evening in the "Last Shift" and didn't say a word. The next morning her flat on Serenity was empty.
+epi.ysolde.b = Ysolde was promoted. The Collegium with the new name needs people who know how to survive a scandal. She sends you a bottle on every anniversary. You never open them.
+epi.ysolde.c = Ysolde, on one of the last evenings: "You have just created a new great power. Let's hope it likes you."
+epi.t.board  = The Harvest Board
+epi.board.a  = In the "Last Shift" the landlord wipes Velm off the board and writes another name beneath: Ilka.
+epi.board.b  = Today the harvest board hangs in a museum of the Concordance. Velm is not on it. The people of Velm don't go.
+epi.board.c  = The harvest board still hangs in the "Last Shift". At the very bottom someone has chalked a new place: the Mill. And next to it, smaller: has stopped.

@@ -14,6 +14,7 @@
 #include <raymath.h>
 
 #include <cmath>
+#include <set>
 
 namespace spaceopera
 {
@@ -39,8 +40,12 @@ void Game::buildFoes2()
     int     armour = m_level.m_faction == "concession"  ? S_CONCESSION
                      : m_level.m_faction == "clearance" ? S_CLEARANCE
                      : m_level.m_faction == "security"  ? S_SECURITY
+                     : m_level.m_faction == "collegium" ? S_COLLEGIUM
+                     : m_level.m_faction == "citizen"   ? S_CITIZEN
                                                         : -1;
-    Vector4 visor = m_level.m_faction == "security"    ? Vector4{ 3.6f, 3.0f, 0.4f, 0.0f }
+    Vector4 visor = m_level.m_faction == "collegium"   ? Vector4{ 2.6f, 3.0f, 3.6f, 0.0f }
+                    : m_level.m_faction == "citizen"   ? Vector4{ 3.4f, 2.2f, 0.6f, 0.0f }
+                    : m_level.m_faction == "security"  ? Vector4{ 3.6f, 3.0f, 0.4f, 0.0f }
                     : m_level.m_faction == "clearance" ? Vector4{ 2.5f, 3.2f, 0.6f, 0.0f }
                                                        : Vector4{ 3.8f, 1.6f, 0.3f, 0.0f };
     if ( armour >= 0 )
@@ -79,8 +84,32 @@ void Game::buildFoes2()
     salvager.m_weapon = WeaponE::RIFLE;
     salvager.m_scale = { 2.1f * 1.2f, 2.1f, 2.1f * 1.1f };
     m_salvagerFigure.build( salvager );
+    // Act III and IV: Teodor Lamm in his arena frame (crimson, a hammer), the cleaners' chief (the Collegium's
+    // grey, a rifle), the foreman's crane walker (rust, bigger than all), Ysolde's frame (violet, a blade).
+    FigureSurfaces lamm = { S_LAMM, S_TAXATOR, S_METAL, S_GLOW };
+    lamm.m_visor = { 4.0f, 2.6f, 0.8f, 0.0f };
+    lamm.m_weapon = WeaponE::HAMMER;
+    lamm.m_scale = { 1.9f * 1.15f, 1.9f, 1.9f * 1.1f };
+    m_lammFigure.build( lamm );
+    FigureSurfaces chief = { S_COLLEGIUM, S_DARK, S_METAL, S_GLOW };
+    chief.m_visor = { 2.6f, 3.0f, 3.6f, 0.0f };
+    chief.m_weapon = WeaponE::RIFLE;
+    chief.m_scale = { 2.0f * 1.15f, 2.0f, 2.0f * 1.1f };
+    m_chiefFigure.build( chief );
+    FigureSurfaces foreman = { S_FOREMAN, S_DARK, S_RUST, S_GLOW };
+    foreman.m_visor = { 3.8f, 2.0f, 0.3f, 0.0f };
+    foreman.m_weapon = WeaponE::HAMMER;
+    foreman.m_scale = { 2.5f * 1.25f, 2.5f, 2.5f * 1.15f };
+    m_foremanFigure.build( foreman );
+    FigureSurfaces varn = { S_VARN, S_DARK, S_METAL, S_GLOW };
+    varn.m_visor = { 3.0f, 1.2f, 3.6f, 0.0f };
+    varn.m_weapon = WeaponE::BATON;
+    varn.m_scale = { 1.8f * 1.1f, 1.8f, 1.8f * 1.05f };
+    m_varnFigure.build( varn );
     // The hounds: big low runners in dark plates.
     m_hound.build( S_DARK, S_CLEARANCE, S_GLOW, false, 1.35f );
+    // The computing moon's maintenance robots: white, quick, on many legs.
+    m_mender.build( S_MENDER, S_METAL, S_GLOW, false, 1.05f );
     // A turret: a squat base, a head with two barrels.
     MeshBuilder base;
     base.cylinder( place( { 0.0f, 0.0f, 0.0f } ), 0.7f, 0.5f, 16 );
@@ -152,6 +181,8 @@ bool Game::updateVariant( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
 {
     if ( f.m_variant == 0 ) return false;
     fire( foeNoun( f ) + 4 );   // the first one met: its hint ("flamer", "sniper", ...)
+    if ( f.m_kind == FoeE::DRONE && f.m_variant >= 5 ) return updateSwarmUnit( f, dt, dir, dist, path, want, faceYaw );
+    if ( f.m_kind == FoeE::SAW && f.m_variant == 3 ) return false;   // a robot runs in like a saw bot
     if ( f.m_kind == FoeE::GUNNER && f.m_variant == 2 )
     {
         // The flamer: closes in, then a tongue of fire for a second and a half, a pause to cool.
@@ -374,8 +405,20 @@ const char *Game::foeNoun( const Foe &f ) const
                                   : "foe.balloon";
     if ( f.m_kind == FoeE::BATON && f.m_variant ) return "foe.cutter";
     if ( f.m_kind == FoeE::HEAVY && f.m_variant ) return "foe.turret";
+    if ( f.m_kind == FoeE::SAW && f.m_variant == 3 ) return "foe.mender";
     if ( f.m_kind == FoeE::SAW && f.m_variant ) return "foe.hound";
+    if ( f.m_kind == FoeE::DRONE && f.m_variant == 5 ) return "foe.swarmling";
+    if ( f.m_kind == FoeE::DRONE && f.m_variant == 6 ) return "foe.hive";
     if ( f.m_kind == FoeE::DRONE && f.m_variant ) return "foe.pumpdrone";
+    // A faction's men by its own name (the Concession's guards and the Collegium's cleaners are no Skimmers).
+    if ( !m_level.m_faction.empty() && ( f.m_kind == FoeE::BATON || f.m_kind == FoeE::GUNNER ||
+                                         f.m_kind == FoeE::SHIELD || f.m_kind == FoeE::HEAVY ) )
+    {
+        static std::set<std::string> named;
+        static const char *const     base[] = { "", "", "foe.baton", "foe.gunner", "foe.shield", "foe.heavy" };
+        std::string                  key = std::string( base[(int)f.m_kind] ) + "." + m_level.m_faction;
+        if ( hasText( key ) ) return named.insert( key ).first->c_str();
+    }
     static const char *keys[] = { "foe.louse", "foe.welder", "foe.baton",  "foe.gunner",  "foe.shield", "foe.heavy",
                                   "foe.drone", "foe.saw",    "foe.bomber", "foe.taxator", "foe.shell" };
     return keys[(int)f.m_kind];

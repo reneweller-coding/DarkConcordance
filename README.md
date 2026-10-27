@@ -196,6 +196,71 @@ fight's level (`npcafter id event` in the level file) shows where the boss fell 
 ![The Wanderer: the hero's lamp in the dark](docs/screenshots/l12_wanderer.jpg)
 ![The cold-chain transport: crates of cores, awake](docs/screenshots/l13_transport.jpg)
 
+## Act III: the Concordance
+
+The transport goes white, and the heroes wake in new bodies: **14 The Reembodiment**
+([assets/levels/klinik.txt](assets/levels/klinik.txt)) is a quiet clinic on Ring Serenity – a mirror, Ysolde on the
+terrace, and the body counselling that frees every skill point once to be given anew. Arriving there (and on the
+ring), the camera first looks up: the land rises on both sides into the sky and closes overhead into a thin arch, its
+far side in the night, its towns glittering (`view ring`, `vista s`; the ring is a band drawn by the planet shader in
+its ring mode, its land painted at load). **Hub: Ring Serenity** ([assets/levels/gelassenheit.txt](assets/levels/gelassenheit.txt)):
+Ysolde's flat, the garden with Kiri, a dispenser on the promenade, Unzu on a terminal from the dock, a tram to the
+destinations.
+
+| Level | Mechanic | Enemies | Boss |
+|---|---|---|---|
+| 15 The Dying Gardens | gardens where citizens die for fun; in the arena four rounds with changing rules (low gravity, darkness, a storm off the ring wall, quick champions only); waterfalls drifting with the spin | duellists and arena gunners in teal, bred predators | Teodor Lamm in his arena frame – he dies once and is printed again |
+| 16 The Yard at the Gate | scaffolding over the stars, hardly any gravity, no air, girders that wander and crush; freight papers on terminals that the cleaners wipe one after another (`evidence`) | the Silent Collegium's cleaners in grey, snipers, torch cutters | the cleaners' chief in his frame and his squad |
+| 17 The Hearing | first a conversation with an archon's avatar (the papers saved decide its words), then the attack in halls full of people who don't run (`crowd`, `pressureafter`) | the Collegium's drones | a swarm of drones fed by three carriers |
+| 18 The Computing Moon | cold everywhere, superconducting coils that bend shots; the archon's voice from every wall | saw bots, maintenance robots, turrets | the moon's defence: maintenance robots steered by computing cores; then the archon gives the codes, and Unzu reads his memories |
+| 19 Vault Zero | the heat shield turns: outside, whoever leaves its shadow burns (`meter shadow`, `shadow`) | cleaners, snipers | No Cause For Concern, a swarm of thousands that dives all at once; then Ruul, then Ysolde – the deaths counted since the prologue, the Lullaby, and everything goes white |
+
+## Act IV: the Mill
+
+**Hub: the ship on the way back** ([assets/levels/unzu4.txt](assets/levels/unzu4.txt)): Ruul in the mess instead of
+Ysolde, Unzu with his memories, Kiri, the trader radio; the wreck field and the depths stay open.
+
+| Level | Mechanic | Enemies | Boss |
+|---|---|---|---|
+| 20 Velm, the Last Week | the hub of Act I as a battlefield, the Mill filling the windows; landing squads keep coming; HAUSMEISTER's turrets fight on the hero's side (`thing ally`) | Concession guards, torch cutters, saw bots | the cutting platform at the hull: lines that glow, then cut |
+| 21 The Dismantling of Brannt | a moon being peeled: crust over glowing rock, cutting lines that slice it away (it closes again after a while; `crust`, `cuts`), low gravity, no air | cutters, drones, Concession guards | the cutting column – one of its cutters hesitated, and talks afterwards (a choice: the 300 refusers in the old mine) |
+| 22 The Ore Stream | container roofs over the stars; thrusters for jumps in mid-air (`jetfuel`), the Mill's laser pulses (`pulses`) | guard drones, turrets | the catcher – before its clock runs out (`clock`) |
+| 23 Inside the Mill | channels of molten metal (`lava`), centrifuges that fling one outward (`thing spin`) | machines with control cores | the foreman in his crane walker; then he talks (a choice) |
+| 24 The Control Room | server halls, the Collegium's squads | cleaners | Ysolde in her frame |
+| 25 The Net | the night shift's world, patched from canteens, classrooms and kitchens; people who stay at their places; the night shift's flashes take part of the swarm (`zaps`) | deletions | No Cause For Concern's deletions; then Ilka, and the ending |
+
+**The endings.** Ilka offers three: the Lullaby (the forty thousand go out, Velm stays), the Disclosure (everything
+sent to every station), the Night Shift (the codes to Ilka) – the last only if the night shift trusts the hero: three
+of six ways a control core was treated as someone (the Core Bank's racks spared, the Icebreaker's core taken along,
+balloon 17 switched off as it asked, the Lance's message sent, the hesitant platform asked to cut around the mine, the
+foreman spared). An answer may need a flag (`answer>node?flag`, `?!flag` its opposite). Then the **epilogue**: a card
+for the ending, one for each great choice made on the way (the Core Bank, Seren, Hesper, Okafor, the ark, Pell, Kael,
+Hale, Brannt, the foreman), the hero, Unzu (who asks for a new name), Ysolde and the harvest board (`epilogue event`
+in the level file; GameStory.cpp). The deaths are counted across the game; Ysolde names the number at the end of Act
+III (`{deaths}` in a text), and from then on every respawn shows the Collegium's mark.
+
+**New in the code:** GameAct34.cpp (the ring, the vista, rounds, evidence, the shadow, crust and cutting lines, pulses,
+jets, centrifuges, molten metal, allied turrets, the catcher's clock, waterfalls, crowds), GameSwarm.cpp (a boss of
+many: carriers that make units, units that circle and dive, the archon's dive all at once, the night shift's flashes),
+GameStory.cpp (deaths, trust, the act's end card, the endings, the epilogue). The exoskeleton has four more men
+(Lamm, the cleaners' chief, the foreman, Ysolde), the berth three more machines (the cutting platform, the column, the
+catcher). Things without a map character are placed by name (`thing r c name`, generated by `genthing name rate
+where`). The factions' men are called by their own names (the Concession's guards, the Collegium's cleaners).
+
+![Arriving on Ring Serenity: the land rises into the sky](docs/screenshots/hub_ring.jpg)
+![The Dying Gardens: sandstone, sand and hedges](docs/screenshots/l15_gardens.jpg)
+![The yard at the gate: scaffolding over the stars](docs/screenshots/l16_yard.jpg)
+![The hearing: halls of polished stone](docs/screenshots/l17_hearing.jpg)
+![The computing moon: the archon speaks](docs/screenshots/l18_moon.jpg)
+![Vault Zero: a gallery outside, the star's shadow bar](docs/screenshots/l19_vault.jpg)
+![Velm, the last week: the alleys under siege](docs/screenshots/l20_velm.jpg)
+![Brannt: a cutting line glows on the crust](docs/screenshots/l21_brannt.jpg)
+![The ore stream: containers over the stars](docs/screenshots/l22_stream.jpg)
+![Inside the Mill: plating, slag and racks](docs/screenshots/l23_mill.jpg)
+![The control room: server racks](docs/screenshots/l24_control.jpg)
+![The net: the night shift's world](docs/screenshots/l25_net.jpg)
+![An ending's card](docs/screenshots/epilogue.jpg)
+
 ## Items, levels, skills
 
 Kills, champions, lockers and bosses drop gear with a beam and a label: common, magic, rare and unique, for seven
@@ -322,9 +387,17 @@ decoded when it loads, so a fight's music is there when the fight begins. „Mus
 | mother | Mother Sevenfold | fight, rage |
 | victory, death | stingers | – |
 | loss, actend | the prologue's last scene, the end of Act I | – |
+| ship, ring | the ship (Acts II and IV), Ring Serenity | – |
+| seren, hesper, halden, arche, tesh, kael, wanderer, kuehltransport (each with `_fight`) | Act II | calm, tense; fight |
+| sterbegaerten, werft, rechenmond, verlies, velm2, brannt, erzstrom, muehle, leitwerk, netz (each with `_fight`) | Acts III and IV | calm, tense; fight |
+| klinik, anhoerung, anhoerung_fight | the clinic, the hearing | –; fight |
+| boss2, boss3, swarm, final | the machines, the men in frames, the swarms, the last fight | fight, rage |
+| hale, ysolde, ilka | while they talk | – |
+| act2end, act3end, end_a, end_b, end_c, epilogue | the acts' ends, the endings, the epilogue | – |
 
 **Backgrounds:** a recorded loop per place (`ambience` in the level file: ship, street, coolant, market, depths, suit,
-water, vault) in `assets/sound`; without one the synthesised hum plays as before.
+water, vault; Act II's shiphub, ice, clouds, dusk, ark, plasma, snow, transport, alien; Act III's and IV's ring,
+clinic, arena, yard, hearing, cryo, heat, siege, cutting, stream, furnace, servers, net) in `assets/sound`; without one the synthesised hum plays as before.
 
 **How it is made** (`tools/make_audio.py`): the pieces are written in [tools/music.json](tools/music.json) and made by
 the AudioGenerator's soundtrack mode (ACE-Step 1.5 XL, local; loops cut to the measured beat grid, the tense layer a
@@ -348,3 +421,11 @@ under the Stability AI Community License (to be checked before a sale).
 Gemini's image model on Vertex AI (the PC's gcloud ADC, project `plenary-office-432719-u6`); Imagen 3 and 4 are gone
 (404). The pictures are made seamless, the baked light removed, normal, roughness, metal and occlusion maps derived.
 Sign plates are painted once per language from the `sign_...` lines of the text files.
+
+The later places have walls and floors of their own (Game::themeSurfaces): plaster and alley paving in the drums,
+hull plates, the Core Bank's ceramic and polished stone, glacial ice and snow, dust and sandstone, the refinery's
+rust-red deck, the ark's padded walls, lawn and hedges on the ring, clinic tiles, arena sand and sandstone, yellow
+construction plating, veined stone, hoarfrost, scorched plates, regolith, slag, server racks and floors, the net's
+grid and its walls of memories. A level may choose others for a theme (`walltex theme texture`, `floortex theme
+texture`; the drowned quarter has algae and wet floors). The speakers have portrait paintings
+(`tools/make_portraits.py`).

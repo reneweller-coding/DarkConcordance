@@ -80,6 +80,15 @@ struct Marker
     Vector3 m_pos;    ///< centre of the cell on its floor
 };
 
+/** @brief Something placed by name in the level's head ("thing r c name"): the later places' things. */
+struct Thing
+{
+    std::string m_name;       ///< what it is
+    int         m_row = 0;    ///< map row
+    int         m_col = 0;    ///< map column
+    Vector3     m_pos = {};   ///< centre of the cell on its floor
+};
+
 /** @brief A spoken line. */
 struct Line
 {
@@ -107,18 +116,20 @@ struct LevelLight
 /** @brief Surfaces the level geometry uses. */
 struct LevelSurfaces
 {
-    int m_rock;     ///< rock walls
-    int m_floor;    ///< deck plates
-    int m_grate;    ///< grating
-    int m_metal;    ///< steel
-    int m_hazard;   ///< hazard stripes
-    int m_rust;     ///< rusty steel
-    int m_foil;     ///< thermal foil (the bodies)
-    int m_glow;     ///< lamps
-    int m_crate;    ///< painted crates
-    int m_box;      ///< corrugated container steel
-    int m_hull;     ///< the ship's bulkheads
-    int m_cloth;    ///< fabric (bundles, bags)
+    int m_rock;                  ///< rock walls
+    int m_floor;                 ///< deck plates
+    int m_grate;                 ///< grating
+    int m_metal;                 ///< steel
+    int m_hazard;                ///< hazard stripes
+    int m_rust;                  ///< rusty steel
+    int m_foil;                  ///< thermal foil (the bodies)
+    int m_glow;                  ///< lamps
+    int m_crate;                 ///< painted crates
+    int m_box;                   ///< corrugated container steel
+    int m_hull;                  ///< the ship's bulkheads
+    int m_cloth;                 ///< fabric (bundles, bags)
+    int m_themeWall[64] = {};    ///< per theme (ThemeE): its walls' own surface + 1 (0: the common ones)
+    int m_themeFloor[64] = {};   ///< ... its floors' own surface + 1
 };
 
 /** @brief The character of an area: colours, lining, pipes, props. */
@@ -144,8 +155,27 @@ enum class ThemeE : uint8_t
     SNOW,        ///< a dark world of nitrogen snow: black rock, white ground, floodlight masts
     HOLD,        ///< a transport's hold: container walls, crates of cores glowing blue
     ALIEN,       ///< the object of Tesh: black smooth walls with faint lines of light, terraces, crystal nodes
+    PARK,        ///< the ring's gardens: grass, hedges, trees, benches
+    CLINIC,      ///< the clinic of new bodies: white walls, beds, plants
+    ARENA,       ///< the dying gardens' arena: sand, sandstone tiers, banners
+    YARD,        ///< the gate's yard: yellow plating over open space, girder stacks, welding rigs
+    HALL,        ///< the hearing's hall in an asteroid: polished stone, rows of benches
+    CRYO,        ///< the computing moon: frosted blue bulkheads, blocks of computers
+    PRISON,      ///< vault zero: scorched plating, cells with bars
+    MOON,        ///< Brannt being peeled: grey regolith, boulders
+    CONTAINER,   ///< the ore stream: container roofs over open space
+    FURNACE,     ///< inside the Mill: dark rock, plating, crucibles glowing
+    SERVER,      ///< the control room: dark bulkheads, racks of lights
+    NET,         ///< the night shift's world: pale walls, a canteen, a classroom, a kitchen
     COUNT        ///< number of themes
 };
+
+/**
+ * @brief A theme by its name in a level file.
+ * @param[in] name  e.g. street, ice, park
+ * @return the theme, or -1 cast to ThemeE when there is none of that name
+ */
+ThemeE themeNamed( const std::string &name );
 
 /** @brief A rectangle of the map with a theme. */
 struct Zone
@@ -275,6 +305,13 @@ public:
     void setVoid( int r, int c );
 
     /**
+     * @brief Turns a cell back into a pane (a moon's crust growing over again).
+     * @param[in] r  row
+     * @param[in] c  column
+     */
+    void setGlass( int r, int c );
+
+    /**
      * @brief Opens a door (it no longer blocks).
      * @param[in] r  row
      * @param[in] c  column
@@ -380,7 +417,33 @@ public:
     std::string m_whiteout;          ///< after the boss: this event, then the screen goes white and the act is over
     int         m_bossVariant = 0;   ///< the exoskeleton's man: 0 the Taxator, 2 Okafor, 3 the boarding leader
     bool        m_plasma = false;    ///< a river of star matter arcs through the sky
-    std::vector<TalkNode> m_talk;    ///< the conversations' steps
+    // Acts III and IV.
+    std::string        m_endCard = "act.2end";   ///< the white-out's words ("endcard key music flag")
+    std::string        m_endMusic = "act2end";   ///< ... its piece
+    std::string        m_endFlag = "act2done";   ///< ... what is known afterwards (a flag)
+    std::string        m_epilogue;               ///< after this event the endings' and the epilogue's cards
+    std::vector<Thing> m_things;                 ///< things by name ("thing r c name")
+    std::vector<std::pair<std::string, std::string>> m_wallTex, m_floorTex;   ///< a theme's own surfaces here
+    std::map<std::string, std::string> m_keys;   ///< the later places' settings by key (see GameAct34.cpp)
+    /**
+     * @param[in] key   a setting of the later places
+     * @param[in] def   its value when the level does not set it
+     * @return its first number
+     */
+    float num( const std::string &key, float def = 0.0f ) const;
+    /**
+     * @param[in] key   a setting of the later places
+     * @param[in] i     which of its numbers
+     * @param[in] def   its value when missing
+     * @return that number
+     */
+    float num( const std::string &key, int i, float def ) const;
+    /**
+     * @param[in] key  a setting of the later places
+     * @return its words ("" when not set)
+     */
+    std::string word( const std::string &key ) const;
+    std::vector<TalkNode> m_talk;   ///< the conversations' steps
 
     /**
      * @brief A conversation's step by its key.

@@ -1,0 +1,99 @@
+# Acts III and IV (English): what all the later places share – acts, HUD, enemies, bosses, speakers, destinations.
+
+act.3          = Act III · The Concordance
+act.3hub       = Act III · Ring Serenity
+act.3end       = End of the third act
+act.4          = Act IV · The Mill
+act.4hub       = Act IV · The Way Back
+
+hud.round      = Round %d of %d
+rule.0         = Low gravity
+rule.1         = Darkness
+rule.2         = Storm off the ring wall
+rule.3         = Champions only – all in a hurry
+hud.evidence   = Freight papers secured: %d of %d
+hud.evnext     =   ·  next wipe in %d:%02d
+hud.evwiped    = Wiped. The cleaners were faster.
+hud.jets       = THRUSTERS
+hud.grab       = The catcher grabs in %d:%02d
+hud.cutwarn    = CUTTING LINE – OFF THE GLOW
+hud.pulsewarn  = LASER PULSE – OUT OF THE LINE
+hud.shadow     = The shield's shadow
+
+foe.swarmling   = Swarm drone
+foe.hive        = Swarm carrier
+foe.mender      = Maintenance robot
+
+boss.lamm          = TEODOR LAMM
+boss.chief         = THE CLEANERS' CHIEF
+boss.foreman       = THE FOREMAN
+boss.varn          = YSOLDE VARN
+boss.swarm.drones  = THE COLLEGIUM'S DRONES
+boss.swarm.menders = THE COMPUTING MOON'S DEFENCE
+boss.swarm.archon  = NO CAUSE FOR CONCERN
+boss.swarm.delete  = THE DELETIONS
+boss.platform      = THE CUTTING PLATFORM
+boss.column        = THE CUTTING COLUMN
+boss.catcher       = THE CATCHER
+platform.clamp     = Clamp
+platform.head      = Cutting head
+column.cutter      = Cutter
+column.core        = Control core
+catcher.arm        = Grab arm
+catcher.maw        = Maw
+
+speaker.bedauern   = With All Due Regret
+speaker.sorge      = No Cause For Concern
+speaker.ruul       = Ansgar Ruul
+speaker.lamm       = Teodor Lamm
+speaker.chief      = The cleaners' chief
+speaker.worker     = A worker from Kalvar
+speaker.fan        = A spectator
+speaker.arena      = The Arena
+speaker.berater    = Body counselling
+speaker.spiegel    = Mirror
+speaker.ausgabe    = Dispenser Garden 4
+speaker.zoegernd   = The hesitant platform
+speaker.vorarbeiter = The foreman
+speaker.rigcore    = The Icebreaker's core
+speaker.lancecore  = The Lance's core
+
+h_swarm        = A swarm: the carriers make new drones as long as they stand. Carriers first, then the rest.
+h_swarm.dorra  = A swarm: the carriers make new drones as long as they stand. Blast bolts on the carriers.
+h_swarmling    = Swarm drones circle and dive. When their eye turns white, it is coming.
+h_mender       = Maintenance robots: quick, many, weak. Don't let them surround you.
+h_formation    = The swarm is gathering – they are all about to dive at once. Move!
+
+tram.title         = THE TRAM
+dest.klinik        = The Reembodiment
+dest.gelassenheit  = Ring Serenity · Ysolde's flat
+dest.sterbegaerten = The Dying Gardens
+dest.werft         = The Yard at the Gate
+dest.anhoerung     = The Hearing
+dest.rechenmond    = The Computing Moon
+dest.verlies       = Vault Zero
+dest.unzu4         = Aboard
+dest.velm2         = Velm, the Last Week
+dest.brannt        = The Dismantling of Brannt
+dest.erzstrom      = The Ore Stream
+
+foe.baton.concession  = Concession guard
+foe.gunner.concession = Concession gunner
+foe.shield.concession = Concession shield
+foe.heavy.concession  = Heavy guard
+foe.baton.clearance   = Clearer
+foe.gunner.clearance  = Clearance gunner
+foe.shield.clearance  = Clearance shield
+foe.heavy.clearance   = Heavy clearer
+foe.baton.security    = Works guard
+foe.gunner.security   = Works gunner
+foe.shield.security   = Works shield
+foe.heavy.security    = Heavy works guard
+foe.baton.collegium   = Cleaner
+foe.gunner.collegium  = Cleaner with rifle
+foe.shield.collegium  = Cleaner with shield
+foe.heavy.collegium   = Heavy cleaner
+foe.baton.citizen     = Duellist
+foe.gunner.citizen    = Arena gunner
+foe.shield.citizen    = Arena warden
+foe.heavy.citizen     = Heavy duellist

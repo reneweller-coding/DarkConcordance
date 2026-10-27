@@ -41,3 +41,37 @@ hale loop 2 main
 act2end oneshot 1 main
 tesh loop 2 low mid
 tesh_fight loop 2 main
+ring loop 2 main
+klinik loop 2 main
+sterbegaerten loop 2 low mid
+sterbegaerten_fight loop 2 main
+boss3 loop 2 fight rage
+werft loop 2 low mid
+werft_fight loop 2 main
+anhoerung loop 2 main
+anhoerung_fight loop 2 main
+rechenmond loop 2 low mid
+rechenmond_fight loop 2 main
+verlies loop 2 low mid
+verlies_fight loop 2 main
+swarm loop 2 fight rage
+ysolde loop 2 main
+act3end oneshot 1 main
+velm2 loop 2 low mid
+velm2_fight loop 2 main
+brannt loop 2 low mid
+brannt_fight loop 2 main
+erzstrom loop 2 low mid
+erzstrom_fight loop 2 main
+muehle loop 2 low mid
+muehle_fight loop 2 main
+leitwerk loop 2 low mid
+leitwerk_fight loop 2 main
+netz loop 2 low mid
+netz_fight loop 2 main
+final loop 2 fight rage
+ilka loop 2 main
+end_a oneshot 1 main
+end_b oneshot 1 main
+end_c oneshot 1 main
+epilogue loop 2 main

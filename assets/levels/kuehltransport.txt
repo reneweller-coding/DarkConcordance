@@ -24,7 +24,7 @@ faction  concession
 pressure 70
 whiteout collegium
 area     16
-next     end unzu.txt
+next     end klinik.txt
 gate     never
 ambience transport
 music    kuehltransport

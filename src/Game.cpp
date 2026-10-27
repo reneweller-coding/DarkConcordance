@@ -34,8 +34,70 @@ float Game::rnd()
     return ( m_seed >> 8 ) * ( 1.0f / 16777216.0f );
 }
 
+void Game::themeSurfaces( LevelSurfaces &ls )
+{
+    // Each place its walls and floors (made by tools/make_textures.py; a texture not there: the common ones).
+    struct Own
+    {
+        const char *m_theme, *m_wall, *m_floor;
+    };
+    static const Own own[] = {
+        { "street", "plaster", "streetfloor" },
+        { "hull", "hullplate", "hullplate" },
+        { "vault", "vaultwall", "vaultfloor" },
+        { "coldstore", "frost", nullptr },
+        { "ice", "iceblock", "snowfield" },
+        { "deck", nullptr, "deckrust" },
+        { "dusk", "dustrock", "dust" },
+        { "pods", "podwall", "tiles" },
+        { "station", nullptr, "scorched" },
+        { "snow", nullptr, "snowfield" },
+        { "alien", "obsidian", "obsidian" },
+        { "park", "hedge", "grass" },
+        { "clinic", "tiles", "tiles" },
+        { "arena", "sandstone", "sand" },
+        { "yard", "yellowplate", nullptr },
+        { "hall", nullptr, "marble" },
+        { "cryo", "frost", "frost" },
+        { "prison", "scorched", "scorched" },
+        { "moon", nullptr, "regolith" },
+        { "furnace", "slag", "scorched" },
+        { "server", "serverwall", "serverfloor" },
+        { "net", "netwall", "netgrid" },
+    };
+    std::string dir = m_assets + "/textures/";
+    auto        surface = [&]( const std::string &name ) -> int
+    {
+        auto known = m_ownSurfaces.find( name );
+        if ( known != m_ownSurfaces.end() ) return known->second;
+        if ( !FileExists( ( dir + name + "_albedo.png" ).c_str() ) || !m_gfx ) return -1;
+        Surface surf =
+            m_gfx->surface( loadTexture( dir + name + "_albedo.png" ), loadTexture( dir + name + "_orm.png" ),
+                            loadTexture( dir + name + "_normal.png" ), Texture2D{} );
+        surf.m_uvScale = 0.3f;
+        surf.m_params = { 1.0f, 1.0f, 1.2f, 0.0f };
+        surf.m_variation = 0.4f;
+        surf.m_tint = WHITE;
+        m_surfaces.push_back( surf );
+        return m_ownSurfaces[name] = (int)m_surfaces.size() - 1;
+    };
+    auto set = [&]( const std::string &theme, const char *wall, const char *floor )
+    {
+        int t = (int)themeNamed( theme );
+        if ( t < 0 ) return;
+        int w = wall ? surface( wall ) : -1, f = floor ? surface( floor ) : -1;
+        if ( w >= 0 ) ls.m_themeWall[t] = w + 1;
+        if ( f >= 0 ) ls.m_themeFloor[t] = f + 1;
+    };
+    for ( const Own &o : own ) set( o.m_theme, o.m_wall, o.m_floor );
+    for ( const auto &wt : m_level.m_wallTex ) set( wt.first, wt.second.c_str(), nullptr );
+    for ( const auto &ft : m_level.m_floorTex ) set( ft.first, nullptr, ft.second.c_str() );
+}
+
 void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
 {
+    m_gfx = &gfx;
+    m_ownSurfaces.clear();
     std::string dir = assets + "/textures/";
     m_surfaces.resize( S_COUNT );
     auto tile = [&]( int s, const char *name, float uv, Vector4 params, float variation, Color tint = WHITE )
@@ -85,6 +147,12 @@ void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
     tile( S_SECURITY, "armor", 1.6f, { 0.8f, 1.0f, 1.5f, 0.0f }, 0.15f, { 34, 36, 42, 255 } );
     tile( S_ICE, "rock", 0.25f, { 0.6f, 0.0f, 1.0f, 0.0f }, 0.6f, { 196, 222, 240, 255 } );
     tile( S_SNOW, "rock", 0.25f, { 0.9f, 0.0f, 1.0f, 0.0f }, 0.5f, { 232, 236, 244, 255 } );
+    tile( S_COLLEGIUM, "armor", 1.6f, { 0.7f, 1.0f, 1.5f, 0.0f }, 0.15f, { 188, 192, 198, 255 } );
+    tile( S_CITIZEN, "armor", 1.6f, { 0.6f, 1.0f, 1.5f, 0.0f }, 0.15f, { 40, 150, 140, 255 } );
+    tile( S_LAMM, "armor", 1.6f, { 0.6f, 1.0f, 1.5f, 0.0f }, 0.15f, { 150, 30, 36, 255 } );
+    tile( S_FOREMAN, "armor", 1.6f, { 1.1f, 1.0f, 1.5f, 0.0f }, 0.15f, { 176, 92, 40, 255 } );
+    tile( S_VARN, "armor", 1.6f, { 0.6f, 1.0f, 1.5f, 0.0f }, 0.15f, { 70, 46, 96, 255 } );
+    tile( S_MENDER, "armor", 1.6f, { 0.8f, 1.0f, 1.5f, 0.0f }, 0.15f, { 214, 220, 228, 255 } );
 }
 
 bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound )
@@ -106,9 +174,10 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     // The lift's cell is part of its well.
     for ( const Marker &m : m_level.m_markers )
         if ( m.m_kind == 'X' ) m_level.setVoid( m.m_row, m.m_col );
-    m_level.build(
-        { S_ROCK, S_FLOOR, S_GRATE, S_METAL, S_HAZARD, S_RUST, S_FOIL, S_GLOW, S_CRATE, S_BOX, S_HULL, S_CLOTH2 },
-        m_static );
+    LevelSurfaces ls = { S_ROCK, S_FLOOR, S_GRATE, S_METAL, S_HAZARD, S_RUST,
+                         S_FOIL, S_GLOW,  S_CRATE, S_BOX,   S_HULL,   S_CLOTH2 };
+    themeSurfaces( ls );
+    m_level.build( ls, m_static );
 
     // Signs: each picture its own surface, lit a little from within so it reads in the dark.
     for ( const Sign &sign : m_level.m_signs )
@@ -392,6 +461,8 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     loadWorld();
     loadTug();
     loadElements();
+    loadAct34();
+    loadSwarm();
     loadVault();
     // Who stands, walks or sits on a stool is a skinned figure; those huddled on the floor and Ilka stay as they are.
     for ( size_t i = 0; i < m_people.size(); ++i )
@@ -403,6 +474,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     m_stims = m_progress.m_stims;
     m_scrap = m_progress.m_scrap;
     for ( const std::string &f : m_progress.m_flags ) m_fired.insert( f );
+    loadStory();
 
     loadFont();
     renderBoard();
@@ -448,6 +520,7 @@ Progress Game::progress() const
     p.m_scrap = m_scrap;
     p.m_stims = m_stims;
     p.m_level = m_levelFile;
+    p.m_deaths = m_progress.m_deaths + m_deaths;
     if ( m_finished )
     {
         p.m_flags.insert( "done." + m_levelFile.substr( 0, m_levelFile.find( '.' ) ) );
@@ -463,6 +536,7 @@ std::string Game::title() const
 
 bool Game::bossFight() const
 {
+    if ( m_swarmAwake && !m_swarmDone ) return true;
     if ( tugFighting() || motherFighting() ) return true;
     if ( m_fired.count( "bossdead" ) ) return false;
     if ( m_fired.count( "bossstart" ) && ( m_pressActive || boss() >= 0 ) ) return true;
@@ -473,6 +547,12 @@ bool Game::bossFight() const
 
 bool Game::bossRage() const
 {
+    if ( m_swarmAwake && !m_swarmDone )
+    {
+        int standing = 0;
+        for ( int id : m_hives ) standing += m_foes[id].m_alive ? 1 : 0;
+        return standing <= 1;
+    }
     if ( m_pressActive && !m_pressDead ) return m_tank[0] <= 0.0f && m_tank[1] <= 0.0f;
     if ( tugFighting() ) return m_tugStage > 0;
     if ( motherFighting() ) return !motherLinked();
@@ -483,7 +563,8 @@ bool Game::bossRage() const
 std::string Game::musicCue() const
 {
     if ( m_scene > 0 ) return "loss";   // Ilka found too late, the shot, the clinic
-    if ( m_whiteT > 0.0f ) return "act2end";
+    if ( m_card >= 0 ) return m_card == 0 ? "end_" + m_ending : "epilogue";
+    if ( m_whiteT > 0.0f ) return m_level.m_endMusic;
     if ( m_talk && !m_level.m_peaceful && !m_level.m_talkMusic.empty() ) return m_level.m_talkMusic;
     if ( ( m_progress.m_flags.count( "act2done" ) || m_fired.count( "act2done" ) ) && m_level.m_music == "ship" )
         return "act2end";
@@ -524,7 +605,9 @@ std::vector<std::string> Game::musicPieces() const
     if ( !m_level.m_peaceful ) ids.push_back( m_level.m_bossMusic.empty() ? "boss" : m_level.m_bossMusic );
     if ( !m_level.m_peaceful && !m_level.m_music.empty() ) ids.push_back( m_level.m_music + "_fight" );
     if ( !m_level.m_talkMusic.empty() ) ids.push_back( m_level.m_talkMusic );
-    if ( !m_level.m_whiteout.empty() ) ids.push_back( "act2end" );
+    if ( !m_level.m_whiteout.empty() ) ids.push_back( m_level.m_endMusic );
+    if ( !m_level.m_epilogue.empty() )
+        for ( const char *id : { "end_a", "end_b", "end_c", "epilogue" } ) ids.push_back( id );
     if ( m_level.m_thrust ) ids.push_back( "loss" );   // the prologue ends in the clinic
     if ( m_level.m_peaceful ) ids.push_back( "actend" ), ids.push_back( "act2end" );
     return ids;
@@ -815,6 +898,25 @@ void Game::explode( Vector3 p, float size )
 
 void Game::killFoe( Foe &f, bool drops )
 {
+    if ( f.m_kind == FoeE::TAXATOR && f.m_variant == 5 && !m_lammAgain )
+    {
+        m_lammAgain = true;
+        f.m_hp = f.m_hpMax * 0.6f;
+        f.m_stage = 0;
+        f.m_stun = 2.0f;
+        explode( Vector3Add( f.m_pos, { 0.0f, 1.5f, 0.0f } ), 1.2f );
+        for ( int i = 0; i < 40; ++i )
+            m_particles.push_back(
+                { Vector3Add( f.m_pos, { ( rnd() - 0.5f ) * 2.0f, rnd() * 4.0f, ( rnd() - 0.5f ) * 2.0f } ),
+                  { 0.0f, 1.0f, 0.0f },
+                  1.2f,
+                  1.2f,
+                  0.04f,
+                  { 255, 220, 140, 255 },
+                  3 } );
+        fire( "lamm.again" );
+        return;
+    }
     f.m_alive = false;
     ++m_kills;
     // Experience for every kill; now and then an item; a champion always leaves one, a better one.
@@ -1204,6 +1306,7 @@ void Game::updateHero( float dt, const GameInput &in )
             m_invuln = 1.5f;
             m_path.clear();   // the autopilot's way from where it fell no longer starts here
             m_planTimer = 0.0f;
+            if ( m_fired.count( "act3done" ) ) m_markT = 1.6f;   // now one knows who prints the bodies
             for ( int i = 0; i < 30; ++i )
                 m_particles.push_back(
                     { Vector3Add( m_pos, { ( rnd() - 0.5f ) * 0.8f, rnd() * 2.0f, ( rnd() - 0.5f ) * 0.8f } ),
@@ -1836,7 +1939,15 @@ void Game::updateFoes( float dt )
         }
         else if ( f.m_pos.y > floor + 0.1f )
             f.m_ground = false;
-        if ( f.m_pos.y < -12.0f )
+        if ( f.m_pos.y < -12.0f &&
+             ( f.m_kind == FoeE::TAXATOR || f.m_elite == 2 || ( f.m_kind == FoeE::DRONE && f.m_variant == 6 ) ) )
+        {
+            // A boss does not end in a shaft: it climbs back into its hall.
+            f.m_pos = f.m_home;
+            f.m_vel = { 0.0f, 0.0f, 0.0f };
+            f.m_stun = fmaxf( f.m_stun, 1.0f );
+        }
+        else if ( f.m_pos.y < -12.0f )
         {
             f.m_alive = false;   // fell into a shaft
             ++m_kills;
@@ -1854,6 +1965,9 @@ void Game::updateFoes( float dt )
     {
         spawnFoe( s.first, s.second, true );
         m_foes.back().m_variant = s.variant;
+        // The swarm's units are small: a few hits each.
+        if ( ( s.first == FoeE::DRONE && s.variant == 5 ) || ( s.first == FoeE::SAW && s.variant == 3 ) )
+            m_foes.back().m_hp *= 0.4f, m_foes.back().m_hpMax = m_foes.back().m_hp;
         explode( Vector3Add( s.second, { 0.0f, 0.3f, 0.0f } ), 0.4f );
     }
     m_summons.clear();
@@ -1881,7 +1995,9 @@ void Game::updateFoes( float dt )
         if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ) continue;
         const LouseModel &model = f.m_kind == FoeE::WELDER
                                       ? m_welder
-                                      : ( f.m_kind == FoeE::SAW ? ( f.m_variant ? m_hound : m_saw )
+                                      : ( f.m_kind == FoeE::SAW ? ( f.m_variant == 3 ? m_mender
+                                                                    : f.m_variant    ? m_hound
+                                                                                     : m_saw )
                                                                 : ( f.m_kind == FoeE::BOMBER ? m_bomber : m_louse ) );
         LousePose         pose;
         pose.m_pos = f.m_pos;
@@ -2213,7 +2329,9 @@ void Game::plan()
     m_level.cellOf( m_pos, sr, sc );
     int     goal = -1;
     Vector3 o = m_pressModel.m_origin;
-    if ( m_waypoint < m_level.m_route.size() )
+    if ( m_talkGoal >= 0 )
+        goal = m_talkGoal;   // someone to speak to
+    else if ( m_waypoint < m_level.m_route.size() )
     {
         // The level's route, one waypoint after the other.
         goal = m_level.m_route[m_waypoint].first * cols + m_level.m_route[m_waypoint].second;
@@ -2223,6 +2341,22 @@ void Game::plan()
         int gr, gc;
         m_level.cellOf( { o.x, 0.0f, o.z + 13.0f }, gr, gc );
         goal = gr * cols + gc;
+    }
+    else if ( m_swarmAwake && !m_swarmDone )
+    {
+        // A swarm: to the nearest carrier still standing (the floor under it).
+        float best = 1e9f;
+        for ( int id : m_hives )
+        {
+            const Foe &h = m_foes[id];
+            float      d = Vector3Distance( h.m_pos, m_pos );
+            if ( !h.m_alive || d >= best ) continue;
+            int gr, gc;
+            m_level.cellOf( h.m_pos, gr, gc );
+            if ( !m_level.walkable( gr, gc ) ) continue;
+            best = d, goal = gr * cols + gc;
+        }
+        if ( goal >= 0 && m_heroKind != HeroE::DORRA && best < 16.0f ) goal = -1;   // Corvin shoots from where he is
     }
     else if ( tugFighting() )
     {
@@ -2329,9 +2463,10 @@ void Game::plan()
         // How many cells of shaft a running jump clears in this gravity (three at most).
         float jump = m_heroKind == HeroE::DORRA ? DorraJump : JumpSpeed;
         int   maxGap = std::clamp( (int)( ( runSpeed() * 2.0f * jump / m_level.m_gravity - 0.8f ) / CellSize ), 0, 3 );
-        if ( m_level.m_space && m_level.m_below != "ocean" ) maxGap = 0;   // over open space the catwalks lead
-                                                                           // everywhere (a jump short of a floe
-                                                                           // only means cold water)
+        if ( m_level.m_space && m_level.m_below != "ocean" && m_level.m_below != "magma" )
+            maxGap = 0;   // over open space the catwalks lead
+                          // everywhere (a jump short of a floe
+                          // only means cold water)
         // A shut door is a way through (the autopilot opens it), unless it is locked.
         auto passable = [&]( int r, int c )
         {
@@ -2401,21 +2536,45 @@ void Game::autopilot( float dt, GameInput &in )
             in.m_special = true;
         return;
     }
-    if ( !m_level.m_autotalk.empty() && !m_fired.count( "talked." + m_level.m_autotalk ) )
+    std::stringstream talkTo( m_level.m_autotalk );
+    std::string       who;
+    m_talkGoal = -1;
+    while ( talkTo >> who && m_talkGoal < 0 )
+    {
+        if ( m_fired.count( "talked." + who ) ) continue;
+        bool waiting = false;
         for ( const NpcState &n : m_npcs )
         {
-            if ( m_level.m_npcs[n.m_def].m_id != m_level.m_autotalk ) continue;
+            if ( m_level.m_npcs[n.m_def].m_id != who || n.m_hidden ) continue;
             // Within sight: straight to them, then talk.
             Vector2 to = { n.m_pos.x - m_pos.x, n.m_pos.z - m_pos.z };
             float   dist = Vector2Length( to );
-            if ( dist > 10.0f || !los( Vector3Add( m_pos, { 0, 1.5f, 0 } ), Vector3Add( n.m_pos, { 0, 1.5f, 0 } ) ) )
+            // In a hub only who is in sight; in a fight's level whoever has stepped out (round the cover, too).
+            if ( m_level.m_peaceful && ( dist > 10.0f || !los( Vector3Add( m_pos, { 0, 1.5f, 0 } ),
+                                                               Vector3Add( n.m_pos, { 0, 1.5f, 0 } ) ) ) )
                 break;
+            if ( !m_level.m_peaceful && dist > 60.0f ) break;
+            waiting = true;
+            bool seen = los( Vector3Add( m_pos, { 0, 1.5f, 0 } ), Vector3Add( n.m_pos, { 0, 1.5f, 0 } ) );
+            if ( dist > 1.8f && !m_level.m_peaceful && ( !seen || dist > 8.0f ) )
+            {
+                // Out of sight or far: the way there like any other (the planner goes to them).
+                int nr, nc;
+                m_level.cellOf( n.m_pos, nr, nc );
+                if ( m_talkGoal != nr * m_level.cols() + nc ) m_planTimer = 0.0f;
+                m_talkGoal = nr * m_level.cols() + nc;
+                break;
+            }
             if ( dist > 1.8f )
                 in.m_move = Vector2Scale( to, 1.0f / dist );
-            else
+            else if ( m_level.m_peaceful )
                 in.m_jump = true;
+            else
+                in.m_use = true, m_autoTalkTo = (int)( &n - m_npcs.data() );
             return;
         }
+        if ( !waiting ) break;   // the next only once this one has been spoken to
+    }
     int cols = m_level.cols();
     if ( m_waypoint < m_level.m_route.size() )
     {
@@ -2446,6 +2605,18 @@ void Game::autopilot( float dt, GameInput &in )
         if ( d < bestDist && d < 18.0f && los( chest, targetPoint( { 0, i, {} } ) ) &&
              !rackInWay( chest, targetPoint( { 0, i, {} } ) ) )
             bestDist = d, best = { 0, i, {} };
+    }
+    // A swarm: its carriers first (they make the rest; the units only dive and pull away again).
+    if ( m_swarmAwake && !m_swarmDone )
+    {
+        float hiveDist = 26.0f;
+        for ( int id : m_hives )
+        {
+            const Foe &h = m_foes[id];
+            float      d = Vector3Distance( h.m_pos, m_pos );
+            if ( h.m_alive && d < hiveDist && los( chest, targetPoint( { 0, id, {} } ) ) )
+                hiveDist = d, best = { 0, id, {} }, bestDist = d;
+        }
     }
     // At the press the weak spots come first, unless a louse is close (for the hammer: in reach).
     float close = m_heroKind == HeroE::DORRA ? 2.5f : 6.0f;
@@ -2585,7 +2756,8 @@ void Game::autopilot( float dt, GameInput &in )
     if ( door.m_kind == CellE::DOOR && !door.m_open ) in.m_use = true;
     // A jump edge: take a run-up, jump at the brink, and do not shoot in the air.
     int nr = next / cols, nc = next % cols;
-    if ( abs( nr - r ) + abs( nc - c ) > 1 && m_ground && ( !m_level.m_space || m_level.m_below == "ocean" ) )
+    if ( abs( nr - r ) + abs( nc - c ) > 1 && m_ground &&
+         ( !m_level.m_space || m_level.m_below == "ocean" || m_level.m_below == "magma" ) )
     {
         in.m_fire = false;
         Vector3 ahead = Vector3Add( m_pos, { in.m_move.x * 0.6f, 0.0f, in.m_move.y * 0.6f } );
@@ -2604,6 +2776,25 @@ void Game::autopilot( float dt, GameInput &in )
         }
     }
     if ( !m_ground ) in.m_fire = false;
+    {
+        int hr, hc;
+        m_level.cellOf( m_pos, hr, hc );
+        for ( const Cut &k : m_cuts )
+        {
+            if ( k.m_fired ) continue;
+            int  along = k.m_dr ? hr - k.m_r0 : hc - k.m_c0;
+            bool on = along >= 0 && along < k.m_len && ( k.m_dr ? abs( hc - k.m_c0 ) <= 1 : abs( hr - k.m_r0 ) <= 1 );
+            if ( !on ) continue;
+            // Across the line, to the side with floor.
+            Vector2 side = k.m_dr ? Vector2{ 1.0f, 0.0f } : Vector2{ 0.0f, 1.0f };
+            int     off = k.m_dr ? hc - k.m_c0 : hr - k.m_r0;
+            if ( off < 0 ||
+                 ( off == 0 && groundAt( Vector3Add( m_pos, { side.x * 3.0f, 0.0f, side.y * 3.0f } ) ) < -100.0f ) )
+                side = Vector2Negate( side );
+            in.m_move = side;
+            break;
+        }
+    }
     unstick();
 }
 
@@ -2624,6 +2815,8 @@ void Game::update( float dt, const GameInput &inRaw )
         dt = 0.0f;
     }
     if ( m_finished ) m_endTimer += dt;
+    if ( updateEpilogue( dt, in ) ) in = GameInput(), dt = 0.0f;
+    m_markT = fmaxf( 0.0f, m_markT - dt );
     m_time += dt;
     m_titleTimer = fmaxf( 0.0f, m_titleTimer - dt );
     // The camera turns about Corvin; the sticks and keys move him relative to it (the autopilot thinks in the world).
@@ -2644,10 +2837,12 @@ void Game::update( float dt, const GameInput &inRaw )
     if ( updateUse( dt, in ) ) in = GameInput();
     if ( updateHub( dt, in ) ) in = GameInput();
     updateThrust( dt );
+    updateAct34( dt, in );
     useSkills( dt, in );
     updateHero( dt, in );
     updateBoreHoles();
     updateFoes( dt );
+    updateSwarm( dt );
     updateTug( dt );
     updateVault( dt );
     updatePress( dt );
@@ -2662,7 +2857,10 @@ void Game::update( float dt, const GameInput &inRaw )
     updateSkins( dt );
 
     // The door opens with the level's event (the press dead, the bridge clear).
-    if ( m_doorHalf > 0.0f && m_fired.count( m_level.m_gate ) ) m_doorOpen = fminf( 1.0f, m_doorOpen + dt * 0.5f );
+    // (Where the level ends otherwise - the white-out, the endings - the gate opens once the boss is down.)
+    if ( m_doorHalf > 0.0f &&
+         ( m_fired.count( m_level.m_gate ) || ( m_level.m_gate == "never" && m_fired.count( "bossdead" ) ) ) )
+        m_doorOpen = fminf( 1.0f, m_doorOpen + dt * 0.5f );
     // The bridge is clear once all who held it are down; then the others come aboard, by the containers.
     if ( m_fired.count( "f" ) && !m_fired.count( "bridgeclear" ) )
     {
@@ -2743,6 +2941,7 @@ void Game::update( float dt, const GameInput &inRaw )
     m_cam.up = Vector3Add( Vector3Scale( { 0.0f, 1.0f, 0.0f }, cosf( m_roll ) ), Vector3Scale( side, sinf( m_roll ) ) );
     m_cam.fovy = 38.0f;
     m_cam.projection = CAMERA_PERSPECTIVE;
+    applyVista( dt );
     m_audio.update();
     updateMusic( dt );
 }
@@ -2767,7 +2966,7 @@ Lighting Game::lighting() const
     L.m_roomMin = { 0.0f, -PitDepth, 0.0f };
     L.m_roomMax = { m_level.cols() * CellSize, m_level.m_wallHeight, m_level.rows() * CellSize };
     if ( !m_level.m_view.empty() ) L.m_roomMin.y = 0.0f;   // no fog below a window in the floor
-    if ( m_skyTex.id > 0 )
+    if ( m_skyTex.id > 0 || m_ringMesh.vertexCount > 0 )
     {
         // Out there is vacuum. The red dwarf shines up through the window in the floor.
         L.m_roomMin.y = 0.0f;
@@ -2994,6 +3193,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     poseVariants( m_dynamic );
     poseWorld( m_dynamic );
     poseElements( m_dynamic );
+    poseAct34( m_dynamic );
     poseTug( m_dynamic );
     poseVault( m_dynamic );
     for ( const Foe &f : m_foes )
@@ -3122,17 +3322,19 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     }
 
     Lighting L = lighting();
-    gfx.m_sunShadows = m_skyTex.id > 0;
+    gfx.m_sunShadows = m_skyTex.id > 0 || m_ringMesh.vertexCount > 0;
     gfx.m_cutCentre = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
     gfx.m_cutRadius = 2.6f;
     gfx.m_exposure = 1.7f * m_brightness;
     gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );
     gfx.beginScene( m_cam, L, m_time, m_skyTex.id > 0 ? m_skyTex : ( m_skyColorTex.id > 0 ? m_skyColorTex : m_dot ) );
     drawView( gfx );
+    drawAct34( gfx );
     gfx.draw( m_static, m_surfaces );
     gfx.draw( m_dynamic, m_surfaces );
     drawSea( gfx );
-    if ( m_glassMesh.vertexCount > 0 ) gfx.glass( m_glassMesh, MatrixIdentity(), m_level.m_ice ? 1.0f : 0.0f );
+    if ( m_glassMesh.vertexCount > 0 && !m_crust )
+        gfx.glass( m_glassMesh, MatrixIdentity(), m_level.m_ice ? 1.0f : 0.0f );
     drawWater( gfx );
     drawParticles( gfx );
     gfx.endScene();
@@ -3290,6 +3492,8 @@ void Game::drawHud( int w, int h )
     drawFoeHud( w, h, s );
     drawWorldHud( w, h, s );
     drawElementsHud( w, h, s );
+    drawAct34Hud( w, h, s );
+    drawSwarmHud( w, h, s );
     drawTugHud( w, h, s );
     drawVaultHud( w, h, s );
 
@@ -3339,7 +3543,7 @@ void Game::drawHud( int w, int h )
         text( tr( "hud.lift" ), w * 0.5f, h * 0.62f, 26, { 160, 255, 190, 230 }, true );
     if ( m_finished && autoAdvance() )
         DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 255 * Clamp( m_endTimer, 0.0f, 1.0f ) ) } );
-    else if ( m_finished )
+    else if ( m_finished && m_whiteT <= 0.0f && m_card < 0 )
     {
         float a = Clamp( m_endTimer / 2.0f, 0.0f, 1.0f );
         DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 225 * a ) } );
@@ -3358,6 +3562,7 @@ void Game::drawHud( int w, int h )
     drawHubHud( w, h, s );
     drawUseHud( w, h, s );
     drawLootHud( w, h, s );
+    drawEndCard( w, h, s );
 
     if ( m_intro > 0.0f )
     {
@@ -3379,9 +3584,18 @@ void Game::drawHud( int w, int h )
 
 std::string Game::report() const
 {
-    char        buf[640];
+    char        buf[1024];
     std::string parts;
     for ( const BossPart &q : m_parts ) parts += TextFormat( "%.0f/", fmaxf( 0.0f, q.m_hp ) );
+    // Who waits to be spoken to: where, hidden, spoken to.
+    for ( const NpcState &n : m_npcs )
+    {
+        const std::string &id = m_level.m_npcs[n.m_def].m_id;
+        parts += TextFormat( " %s@%.0f,%.0f%s%s", id.c_str(), n.m_pos.x, n.m_pos.z, n.m_hidden ? "(h)" : "",
+                             m_fired.count( "talked." + id ) ? "(t)" : "" );
+    }
+    if ( m_talkGoal >= 0 )
+        parts += TextFormat( " goal=%d,%d", m_talkGoal / m_level.cols(), m_talkGoal % m_level.cols() );
     if ( m_motherOn ) parts += m_motherAwake ? "awake" : "asleep";
     int alive = 0;
     for ( const Foe &f : m_foes ) alive += f.m_alive ? 1 : 0;

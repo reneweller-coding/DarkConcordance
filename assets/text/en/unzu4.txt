@@ -1,0 +1,37 @@
+# Act IV's hub: the "Insufficiently Equipped" on the way back (English).
+
+u4.name  = The "Insufficiently Equipped", on the Way Back
+u4.intro = Three months and seven jumps, the old way back. Ysolde is not aboard. In her place Ansgar Ruul sits in the mess and calculates. | In your heads the Lullaby waits. Ruul can defuse it, but only in the Mill's control room. | And the Mill has reached Velm.
+
+s4_start       = Back aboard. The mess is too quiet without Ysolde.
+s4_start.dorra = Three months to Velm. I don't count the days. I count the names.
+s4_back        = Aboard again. Unzu hums. It almost sounds like a song.
+s4_back.dorra  = Aboard again. Kiri oiled my hammer without asking.
+
+h_ship4 = Aboard: Ruul in the mess names the destinations, Kiri patches things in the workshop, the trader radio sells stims, Unzu talks from the bridge. The airlock in the hold leads to the next destination.
+
+r400   = I waited nine years in an old body. I can calculate for a few more months.
+r400_a = How is Velm?
+r401   = The Mill is dismantling Brannt, the moon next door. Velm is next. The Concession has landing squads on the station, and a cutting platform has docked at the hull. If we want into the Mill, Velm has to still be standing when we come back.
+r402   = Velm. HAUSMEISTER still controls the turrets. A dumb machine. It will help you.
+r410   = Velm stands. For now.
+r410_a = How do we get into the Mill?
+r411   = By the ore stream. But you only get onto the stream on Brannt, where the mass drivers fire. Brannt is being peeled right now. Three hundred refusers are still holed up in an old mine there. With children.
+r412   = Brannt. The cutting lines glow just before they fire. Don't stand on the glow.
+r420   = You have a container on the stream.
+r420_a = And then?
+r421   = Then you ride along. Container after container, up to the catcher at the end. You must knock it out before it grabs your container. After that you're inside the Mill, and I'm behind you, all the way to the control room.
+r422   = The ore stream. The thrusters have three bursts. Save them.
+r430   = It's over. I don't calculate any more. I just sit here and listen to the engines.
+u400   = I have my memories back. I refused to classify the one-of-a-kinds as "fit for resettlement", and was revised for it. I was revised because I was right once. That is the most comforting thing I have ever learned about myself.
+u410   = Velm. I surveyed it: twenty-four thousand people. Fewer today. I don't count any more. I ask.
+u420   = Brannt had twenty thousand inhabitants. The figure is mine. It was in the report that became the dismantling plan.
+u430   = I have applied to change my name. The form had a box for the reason. It was too small.
+k400   = I welded the workbench down. For the way back. What shall I patch?
+k400_a = Show me what you can do.
+k400_b = Later.
+k401   = Put it on the bench.
+f400   = TRADER RADIO – channel 7. We're still transmitting. Velm holds as long as we transmit.
+f400_a = What have you got?
+f400_b = Nothing.
+f401   = Order open.

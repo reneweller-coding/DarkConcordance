@@ -1,0 +1,78 @@
+# Level 18: Der Rechenmond (Akt III). Der Körper von »Mit Allem Gebotenen Bedauern«: Hallen voller Rechenblöcke, fast
+# beim absoluten Nullpunkt, Nebel, blaues Licht; Supraleiter-Spulen "[", die Schüsse ablenken; Kälte überall (auch
+# drinnen: nur die Heizpfosten helfen). Keine Menschen: Sägebots, Drohnen, Geschütze. Am Ende die Abwehr des Mondes,
+# Wartungsroboter, die die Rechenkerne steuern. Danach reden der Archont und Unzu; die Codes öffnen den Weg hinaus.
+
+name     l18.name
+act      act.3
+intro    l18.intro
+gravity  3.2
+fog      0.003 0.012 0.55 0.9
+fogcolor 0.0012 0.002 0.004
+ambient  0.05 0.06 0.08 0.025 0.03 0.045
+walls    4.5
+sky      nebula
+meter    warmth 150 1
+swarm    menders 12 3
+area     20
+next     gelassenheit.txt
+gate     codes
+ambience cryo
+music    rechenmond
+bossmusic swarm
+autotalk bedauern unzu
+npcafter bedauern bossdead
+npcafter unzu bossdead
+
+genrooms      19
+genside       7
+gensize       12 18 10 14
+gentheme      cryo server cryo station
+genstarttheme station
+genarenatheme cryo
+genarena      guardian
+genguard      %
+genoxygen     0.5
+genfeature    [  0.45
+genpack       ***     2
+genpack       **?     1.5
+genpack       ^^^     1.5
+genpack       `^      1.2
+genpack       %*      1
+gendensity    1.05
+genelite      0.3
+gennote       note.cooling18 note.defence18 note.unzu18 note.codes18 note.children18
+
+[npcs]
+bedauern | -1 -1 | terminal | b18a | codes:b18c
+unzu     | -1 -1 | terminal | u18a | unzu.memory:u18e
+
+[talk]
+b18a | bedauern | -           | b18a_a>b18b
+b18b | bedauern | codes       |
+b18c | bedauern | -           |
+u18a | unzu     | -           | u18a_a>u18b
+u18b | unzu     | -           | u18b_a>u18c
+u18c | bedauern | -           | u18c_a>u18d
+u18d | unzu     | unzu.memory |
+u18e | unzu     | -           |
+
+[lines]
+l18_start    | a                | hero
+l18_voice    | b                | bedauern
+l18_numbers  | c                | bedauern
+l18_magnet   | d                | hero
+l18_champion | champion         | hero
+l18_boss     | swarm            | hero
+l18_end      | bossdead         | bedauern
+
+[hints]
+h_cold18     | a
+h_coil18     | d
+h_mender     | mender
+h_swarm18    | swarm
+h_talk18     | appear.bedauern
+h_lowwarmth  | lowmeter
+h_turret     | turret
+h_champion   | champion
+h_stim       | hurt

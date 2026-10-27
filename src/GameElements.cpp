@@ -103,7 +103,7 @@ void Game::loadElements()
         MeshBuilder blob;
         blob.roundedBox( place( { 0.0f, 0.0f, 0.0f } ), { 1.0f, 0.35f, 1.0f }, 0.34f, 3 );
         m_colonyMesh = blob.build().front();
-        for ( int i = 0; i < Colonies; ++i )
+        for ( int i = 0; i < ( m_level.m_keys.count( "crust" ) ? 0 : Colonies ); ++i )
             m_colonies.push_back( { lo.x - 20.0f + rnd() * ( hi.x - lo.x + 40.0f ), -0.9f - rnd() * 0.6f,
                                     lo.z - 20.0f + rnd() * ( hi.z - lo.z + 40.0f ), rnd() * 6.283f } );
     }
@@ -172,7 +172,10 @@ void Game::rebuildGlass()
     for ( auto rc : m_level.m_glass )
     {
         Vector3 p = m_level.centre( rc.first, rc.second );
-        glass.box( place( { p.x, -0.02f, p.z } ), { CellSize * 0.5f, 0.02f, CellSize * 0.5f } );
+        if ( m_level.m_keys.count( "crust" ) )
+            glass.box( place( { p.x, -0.25f, p.z } ), { CellSize * 0.5f, 0.25f, CellSize * 0.5f } );   // a slab
+        else
+            glass.box( place( { p.x, -0.02f, p.z } ), { CellSize * 0.5f, 0.02f, CellSize * 0.5f } );
     }
     m_glassMesh = glass.build().front();
 }
@@ -198,6 +201,7 @@ void Game::crackIce( Vector3 p, float radius, float amount )
         }
         // The pane goes: shards, a splash, open water where one stood.
         m_level.setVoid( r, c );
+        if ( m_crust ) m_regrow.push_back( { r, c, 30.0f } );
         for ( size_t i = 0; i < m_level.m_glass.size(); ++i )
             if ( m_level.m_glass[i].first == r && m_level.m_glass[i].second == c )
             {
@@ -270,8 +274,11 @@ void Game::updateElements( float dt )
             drain = exposed( m_pos );
         else
         {
-            m_meterHot = c < m_level.m_bandHot;
-            drain = m_meterHot || c > m_level.m_bandCold;
+            // "shadow": the shield's shadow sweeps; out of it, in the open, the star burns on both sides.
+            bool shadow = m_level.m_meter == "shadow";
+            m_meterHot = c < m_level.m_bandHot || shadow;
+            drain = c < m_level.m_bandHot || c > m_level.m_bandCold;
+            if ( shadow ) drain = drain && m_level.outdoor( r, c );
         }
         m_metering = drain && !post;
         float refill = post ? 25.0f : ( m_level.m_meter == "dose" ? 3.0f : 12.0f );
@@ -447,7 +454,7 @@ void Game::updateElements( float dt )
     }
 
     // The guard keeps sending men while the hero is on board.
-    if ( m_level.m_pressure > 0.0f && !m_finished && !m_dead && !bossFight() )
+    if ( m_level.m_pressure > 0.0f && !m_finished && !m_dead && !bossFight() && !m_fired.count( "bossdead" ) )
     {
         m_pressureT += dt;
         m_clock = fmaxf( 0.0f, m_clock - dt );
@@ -464,6 +471,15 @@ void Game::updateElements( float dt )
                 if ( !m_level.walkable( pr, pc ) || m_level.cell( pr, pc ).m_kind == CellE::DOOR ) continue;
                 p = m_level.centre( pr, pc );
                 int n = 2 + m_level.m_area / 5;
+                if ( m_level.word( "squad" ) == "drones" )
+                {
+                    // The Collegium sends drones, not men.
+                    for ( int k = 0; k < n + 1; ++k )
+                        m_summons.push_back( { FoeE::DRONE, Vector3Add( p, { ( rnd() - 0.5f ) * 2.0f, 1.8f,
+                                                                             ( rnd() - 0.5f ) * 2.0f } ) } );
+                    fire( "reinforce" );
+                    break;
+                }
                 for ( int k = 0; k < n; ++k )
                     m_summons.push_back(
                         { k == 0 ? FoeE::SHIELD : ( k % 2 ? FoeE::GUNNER : FoeE::BATON ),
@@ -485,7 +501,23 @@ void Game::updateElements( float dt )
             const Npc &def = m_level.m_npcs[n.m_def];
             if ( def.m_row < 0 )
             {
-                n.m_pos = Vector3Add( m_bossAt, { 1.2f, 0.0f, 1.2f } );
+                n.m_pos = Vector3Add( m_bossAt, { 1.2f + 3.2f * m_appeared, 0.0f, 1.2f } );
+                ++m_appeared;
+                // On floor one can reach: the nearest open cell (a boss may fall over a shaft or by cover).
+                int nr, nc, best = -1;
+                m_level.cellOf( n.m_pos, nr, nc );
+                for ( int d = 0; d <= 8 && best < 0; ++d )
+                    for ( int dr = -d; dr <= d && best < 0; ++dr )
+                        for ( int dc = -d; dc <= d && best < 0; ++dc )
+                        {
+                            int rr = nr + dr, cc = nc + dc;
+                            if ( std::max( abs( dr ), abs( dc ) ) != d || !m_level.walkable( rr, cc ) ) continue;
+                            CellE k = m_level.cell( rr, cc ).m_kind;
+                            if ( k != CellE::FLOOR && k != CellE::GRATE && k != CellE::GLASS ) continue;
+                            if ( m_level.cell( rr, cc ).m_height != 0.0f ) continue;
+                            best = rr * m_level.cols() + cc;
+                        }
+                if ( best >= 0 ) n.m_pos = m_level.centre( best / m_level.cols(), best % m_level.cols() );
                 n.m_pos.y = fmaxf( 0.0f, groundAt( n.m_pos ) );
                 n.m_figure.m_pos = n.m_pos;
             }
@@ -493,18 +525,18 @@ void Game::updateElements( float dt )
         }
 
     // The act's end: the boss down, a call (two ships), seven seconds, then everything goes white.
-    if ( !m_level.m_whiteout.empty() && m_fired.count( "bossdead" ) )
+    if ( m_level.m_whiteout == "collegium" && m_fired.count( "bossdead" ) )
     {
         fire( "collegiumcall" );
         m_collegiumT += dt;
         if ( m_collegiumT > 7.0f ) fire( m_level.m_whiteout );
     }
-    if ( !m_level.m_whiteout.empty() && m_fired.count( m_level.m_whiteout ) )
+    if ( !m_level.m_whiteout.empty() && m_fired.count( m_level.m_whiteout ) && !m_talk )
     {
         m_whiteT += dt;
         if ( m_whiteT > 11.0f && !m_finished )
         {
-            runEvent( "act2done" );   // kept: the ship's people know the act is over
+            runEvent( m_level.m_endFlag );   // kept: the people of the next hub know the act is over
             m_finished = true;
         }
     }
@@ -530,8 +562,19 @@ void Game::poseElements( std::vector<Drawable> &out )
         Drawable floor;
         floor.m_mesh = m_deepMesh;
         floor.m_transform = MatrixIdentity();
-        floor.m_surface = S_GLOW;
-        floor.m_emissive = { 0.006f, 0.02f, 0.035f, 0.0f };
+        floor.m_surface = S_CAVERN;   // matte and nearly black: the lamps must not light the sea's floor
+        if ( m_level.m_keys.count( "crust" ) )
+        {
+            // Under a peeled moon's crust its inside glows.
+            float pulse = 0.85f + 0.15f * sinf( m_time * 0.9f );
+            floor.m_surface = S_GLOW;
+            floor.m_emissive = { 4.0f * pulse, 1.1f * pulse, 0.18f * pulse, 0.0f };
+            out.push_back( floor );
+            floor.m_emissive = { -1.0f, 0.0f, 0.0f, 0.0f };
+            floor.m_surface = S_CAVERN;
+        }
+        else
+            floor.m_emissive = { 0.006f, 0.02f, 0.035f, 0.0f };
         floor.m_spotShadow = floor.m_sunShadow = false;
         out.push_back( floor );
         for ( const Vector4 &k : m_colonies )
@@ -665,26 +708,13 @@ void Game::drawElementsHud( int w, int h, float s )
         text( tr( "hud.gustwarn" ), w * 0.5f, h * 0.16f, 34, { 230, 220, 190, 255 }, true );
     else if ( m_gustState == 2 )
         text( tr( "hud.gust" ), w * 0.5f, h * 0.16f, 34, { 255, 235, 190, 255 }, true );
-    if ( m_level.m_pressure > 0.0f && !m_finished )
+    if ( m_level.m_pressure > 0.0f && !m_finished && m_level.m_whiteout == "collegium" )
     {
         int left = (int)m_clock;
         text( TextFormat( tr( "hud.clock" ), left / 60, left % 60 ), w * 0.5f, 92.0f * s, 22,
               m_clock > 0.0f ? Color{ 200, 220, 255, 220 } : Color{ 255, 90, 70, 255 }, true );
     }
     if ( m_lightning > 0.0f ) DrawRectangle( 0, 0, w, h, { 220, 225, 255, (unsigned char)( 120 * m_lightning ) } );
-    if ( m_whiteT > 3.0f )
-    {
-        // White, and then the words.
-        float a = Clamp( ( m_whiteT - 3.0f ) / 2.5f, 0.0f, 1.0f );
-        DrawRectangle( 0, 0, w, h, { 255, 255, 255, (unsigned char)( 255 * a ) } );
-        if ( m_whiteT > 6.5f )
-        {
-            unsigned char t = (unsigned char)( 255 * Clamp( ( m_whiteT - 6.5f ) / 1.5f, 0.0f, 1.0f ) );
-            Vector2       m = MeasureTextEx( m_font, tr( "act.2end" ), 40 * s, 1.0f );
-            DrawTextEx( m_font, tr( "act.2end" ), { w * 0.5f - m.x * 0.5f, h * 0.45f }, 40 * s, 1.0f,
-                        { 60, 60, 70, t } );
-        }
-    }
 }
 
 }   // namespace spaceopera

@@ -1,0 +1,31 @@
+# Level 22: Der Erzstrom (Deutsch, die Quelle).
+
+l22.name  = Der Erzstrom
+l22.intro = Der einzige unbemerkte Weg in die Mühle: im Strom der Erzcontainer mitfliegen. | Eine Kette aus Containern, alle gleich schnell, relativ zueinander fast still. Man springt mit Steuerdüsen von einem zum nächsten. Unter euch dreht sich der halb zerlegte Mond, über euch wächst die Mühle. | In manchen Containern liegt nicht nur Erz. Möbel, Rohre, ein Kinderfahrrad. Alles wird gemahlen.
+
+l22_start        = Der Strom. Kein Geräusch, nur mein Atem. Und die Mühle wird größer.
+l22_start.dorra  = Ein Container voller Fels. Wie auf Kalvar, nur ohne Boden darunter.
+l22_jet          = Die Düsen tragen. Drei Stöße, dann muss ich landen.
+l22_bike         = Ein Kinderfahrrad. In einem Erzcontainer. Es wird gemahlen.
+l22_pulse        = Ein Laserpuls! Die Mühle korrigiert den Kurs.
+l22_furniture    = Ein Tisch, Stühle, ein Regal mit Büchern. Jemand hat hier gewohnt.
+l22_mill         = Die Mühle. Jetzt sehe ich die Öffnungen, in die der Strom fällt.
+l22_champion     = Eine Wachdrohne mit Panzerung. Die Mühle schützt ihren Strom.
+l22_boss         = Der Fänger. Ein Trichter mit Armen. Und er greift nach unserem Container.
+l22_grab         = Er hat uns!
+l22_end          = Der Fänger ist blind. Wir fallen mit dem Strom hinein.
+
+h_jets    = Steuerdüsen: in der Luft noch einmal springen. Drei Stöße; am Boden füllen sie sich wieder.
+h_pulse   = Ein Laserpuls glüht auf: aus der Linie, bevor er feuert.
+h_catcher = Der Fänger: zwei Greifarme und der Schlund. Oben läuft die Uhr – bis dahin muss er still sein.
+
+note.manifest22.title = Ladeliste Container 88.412
+note.manifest22       = Regolith 31 t. Mobiliar (unsortiert) 0,4 t. Fahrrad (Kind) 1 Stück.
+note.mass22.title     = Massetreiber Brannt-Nord
+note.mass22           = Taktung 2,1 Sekunden. Abweichung des Stroms: wird per Laserpuls korrigiert.
+note.catcher22.title  = Fänger 4, Steuerkern
+note.catcher22        = Einbaujahr unbekannt. Leistung 108 Prozent. Bemerkungen: keine.
+note.letter22.title   = Brief, in einem Container eingeklemmt
+note.letter22         = Falls jemand das findet: Wir sind nach Velm. Die Katze heißt Pipa.
+note.route22.title    = Strombahn
+note.route22          = Brannt – Mühle, 340 Kilometer, sechs Stunden. Unterwegs: nichts.

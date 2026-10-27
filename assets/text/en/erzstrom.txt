@@ -1,0 +1,31 @@
+# Level 22: The Ore Stream (English).
+
+l22.name  = The Ore Stream
+l22.intro = The only unnoticed way into the Mill: ride along in the stream of ore containers. | A chain of containers, all at the same speed, almost motionless relative to each other. You jump with thrusters from one to the next. Below you the half-dismantled moon turns; above you the Mill grows. | Some containers hold more than ore. Furniture, pipes, a child's bicycle. Everything gets ground.
+
+l22_start        = The stream. No sound, only my breath. And the Mill keeps getting bigger.
+l22_start.dorra  = A container full of rock. Like Kalvar, only without ground beneath.
+l22_jet          = The thrusters hold. Three bursts, then I have to land.
+l22_bike         = A child's bicycle. In an ore container. It will be ground.
+l22_pulse        = A laser pulse! The Mill is correcting its course.
+l22_furniture    = A table, chairs, a shelf of books. Someone lived here.
+l22_mill         = The Mill. Now I can see the openings the stream falls into.
+l22_champion     = An armoured guard drone. The Mill protects its stream.
+l22_boss         = The catcher. A funnel with arms. And it's reaching for our container.
+l22_grab         = It's got us!
+l22_end          = The catcher is blind. We fall in with the stream.
+
+h_jets    = Thrusters: jump once more in mid-air. Three bursts; they refill on the ground.
+h_pulse   = A laser pulse lights up: out of the line before it fires.
+h_catcher = The catcher: two grab arms and the maw. The clock runs at the top – it must be silent by then.
+
+note.manifest22.title = Manifest, container 88,412
+note.manifest22       = Regolith 31 t. Furniture (unsorted) 0.4 t. Bicycle (child's) 1 item.
+note.mass22.title     = Mass driver Brannt North
+note.mass22           = Cycle 2.1 seconds. Deviation of the stream: corrected by laser pulse.
+note.catcher22.title  = Catcher 4, control core
+note.catcher22        = Year of installation unknown. Output 108 per cent. Remarks: none.
+note.letter22.title   = Letter wedged in a container
+note.letter22         = If anyone finds this: we've gone to Velm. The cat is called Pipa.
+note.route22.title    = Stream track
+note.route22          = Brannt – Mill, 340 kilometres, six hours. On the way: nothing.

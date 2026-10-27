@@ -44,5 +44,5 @@ note.okafor.title  = Personal message, not sent
 note.okafor        = Dear Mira, dear Jonas, Mum is working out here for one more year, then we're citizens. All three of us. You'll get a room with a window. I promise.
 note.relay8.title  = Collection point ledger
 note.relay8        = Batch T-1207 (»child«), from Hesper: not used here. Forwarded: ark salvage? NO – corrected: Kael, installation. Signature illegible.
-note.child.title   = Chalk drawing on a container wall
-note.child         = A house, a sun standing exactly in the middle. Below it in a child's writing: THAT'S HOW IT WAS AT HOME.
+note.child8.title   = Chalk drawing on a container wall
+note.child8         = A house, a sun standing exactly in the middle. Below it in a child's writing: THAT'S HOW IT WAS AT HOME.

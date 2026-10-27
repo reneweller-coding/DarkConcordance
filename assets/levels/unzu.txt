@@ -31,6 +31,7 @@ exit     kael.txt job11
 exit     wanderer.txt job12
 exit     kuehltransport.txt job13
 exit     wracks.txt job6 again
+exit     klinik.txt act2done
 zone     2 13 7 28 bridge
 zone     13 4 18 13 bar
 zone     13 27 18 36 works

@@ -1,0 +1,48 @@
+# Level 19: Verlies Null (Deutsch, die Quelle).
+
+l19.name  = Verlies Null
+l19.intro = Das Gefängnis des Kollegiums: eine Station in enger Umlaufbahn um einen heißen Stern, versteckt hinter einem Hitzeschild von zwei Kilometern Durchmesser. Das Funkrauschen des Sterns verschluckt jedes Signal. | Rundherum wölben sich Plasmabögen der Korona. Der Schild dreht sich langsam, und wer draußen aus dem Schatten gerät, verbrennt. | Das Kollegium löscht niemanden. Es wartet einfach. Ansgar Ruul wartet hier seit neun Jahren.
+
+l19_start        = Verlies Null. Hinter dem Schild ein Stern, der alles verbrennt.
+l19_start.dorra  = Ein Gefängnis, in dem niemand stirbt. Auf Kalvar hätten wir das Gnade genannt.
+l19_shadow       = Der Schatten wandert. Ich muss mit ihm gehen.
+l19_cells        = Zellen. Menschen in alten Körpern, ungesichert. Sie warten. Worauf?
+l19_scratch      = Der in der Zelle dort hat eine Uhr an die Wand gekratzt. Neun Jahre Striche.
+l19_champion     = Ein Wärter mit Rang. Er sieht aus, als wäre er gern hier.
+l19_boss         = Willkommen in Verlies Null. Sie hätten nicht kommen müssen. Es gibt keinen Grund zur Sorge.
+l19_formation    = Der ganze Schwarm sammelt sich!
+l19_end          = Bedauerlich. Ich werde mich an Sie erinnern.
+l19_ruul         = Ihr seid nicht vom Kollegium. Kommt her. Lasst mich eure Köpfe ansehen.
+l19_ysolde       = Ich dachte mir, dass ihr ihn findet.
+
+h_shadow   = Der Schild dreht sich: draußen verbrennt, wer nicht in seinem Schatten steht. Der Balken oben zeigt, wo der Schatten gerade ist.
+h_swarm19  = Kein Grund Zur Sorge: ein Schwarm aus Tausenden Drohnen. Die Träger zuerst. Werden alle Augen weiß: ausweichen!
+h_ruul     = Ruul will reden: mit E heran.
+
+r19a   = Neun Jahre. Ich habe das Verfahren erfunden, wisst ihr? Ich wollte es erzählen. Lasst mich … ja. Haltet still.
+r19a_a = Was ist?
+r19b   = Da ist etwas in euren Köpfen, das nicht hineingehört. Ein Code. Er heißt »Wiegenlied«. Sobald ihr euch mit den Übersteuerungscodes ins Leitwerk einwählt, verbreitet er sich und löscht alle vierzigtausend Steuerkerne. Samt aller Aufzeichnungen. Kein Skandal. Keine Zeugen.
+r19b_a = Wer hat ihn da hineingetan?
+r19c   = Fragt die, die euch gedruckt hat.
+y19a   = Er hat recht. Ich bestreite nichts.
+y19a_a = Warum?
+y19b   = Ihr seid seit Velm {deaths}-mal gestorben. Ich habe euch jedes Mal zurückgeholt.
+y19z   = Nur einmal. Im Prolog. Ihr habt es nicht einmal gemerkt.
+y19b_a = (schweigen)
+y19c   = Die Konkordanz wird diese vierzigtausend nie als Menschen anerkennen. Sie arbeiten ewig, oder man löscht sie irgendwann heimlich. Ich biete ihnen ein schnelles Ende. Und Velm bleibt stehen.
+y19c_a = Und wir?
+y19d   = Ihr seid meine Werkzeuge. Und ich mag euch. Beides ist wahr. Ich lüge euch nie an. Ich sage euch nur nie alles.
+y19d_a = Ruul?
+y19e   = Ich kann das Wiegenlied entschärfen. Aber nur von innen, im Leitwerk. Und die Mühle hat Velm inzwischen erreicht.
+y19f   = Geht. Die Mühle wartet nicht.
+
+note.prison19.title = Insassenliste
+note.prison19       = Verlies Null: 211 Insassen. Gesichert: keiner. Verfahren: Warten.
+note.ruul19.title   = Akte Ruul, Ansgar
+note.ruul19         = Entwickler des Steuerkernverfahrens. Versuch der Offenlegung (vereitelt). Verwahrung: unbefristet.
+note.shield19.title = Schildrotation
+note.shield19       = Eine Umdrehung in 90 Sekunden. Außenbereiche nur im Schatten betreten. Verbrennungen werden nicht behandelt.
+note.letter19.title = Brief einer Gefangenen, nie abgeschickt
+note.letter19       = Wenn ihr mich vergessen habt, ist das in Ordnung. Ich habe euch auch fast vergessen.
+note.sorge19.title  = Grundsatz des Kollegiums
+note.sorge19        = Ein Skandal, der nicht stattfindet, braucht keine Lösung.

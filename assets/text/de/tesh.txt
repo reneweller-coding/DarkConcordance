@@ -30,7 +30,7 @@ p10e           = Geht. Es schaut euch nach.
 
 h_tesh         = Das Objekt ist überall kalt: die Wärme des Anzugs schwindet auch in den Hallen. Nur die Heizer der Bergungstrupps (orange) helfen.
 h_float        = Kaum Schwerkraft: Sprünge tragen weit, auch über Lücken. Wer danebenspringt, fällt lange.
-h_move         = Wandernde Bauteile: große schwarze Blöcke, die langsam durch die Hallen gleiten. Wer zwischen ihnen und einer Wand steht, wird zerquetscht.
+h_move10         = Wandernde Bauteile: große schwarze Blöcke, die langsam durch die Hallen gleiten. Wer zwischen ihnen und einer Wand steht, wird zerquetscht.
 h_scaffold     = Der Bergungsmeister im Schneidgerüst: er stampft, schneidet mit dem Laser aus der Ferne und ruft Drohnen und Schneider. Ganz am Ende rennt er an.
 h_pell         = Pell will reden: mit E an ihn herantreten.
 

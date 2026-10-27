@@ -1,0 +1,74 @@
+# Level 14: The Reembodiment, and Act III's hub: Ring Serenity (English).
+
+l14.name   = The Reembodiment
+l14.intro  = White. Then a window, and beyond it land that rises into the sky on both sides and closes overhead into a thin arch. | You are in the Concordance, on Ring Serenity, in a clinic where the dead wake in new bodies. | Your old bodies drift somewhere among the wreckage of the transport.
+
+k14_start        = I'm alive. Or someone who remembers being me.
+k14_start.dorra  = My arms. They're bare. The names are gone.
+k14_window       = The land rises. It doesn't stop rising. Right over my head.
+k14_window.dorra = On Kalvar the sky was heavy below and empty above. Here, above is land.
+
+h_klinik = Ysolde waits on the terrace. In the ward: body counselling (redistribute skills) and a mirror.
+h_respec = All skill points are free again: give them anew on the character page (C).
+
+c14a   = Welcome back. No – welcome. "Back" would be a lie. The transport exploded when the Collegium's ships came. You were on it.
+c14a_a = How did we get here?
+c14b   = I scanned you in Velm. As a precaution. That is true. … It isn't everything. But it is true.
+c14b_a = And now?
+c14c   = Now you are citizens. Registered, backed up, immortal, if you like. Rest. My flat is by the garden; the tram will take you there. Then we'll talk about the Mill.
+c14d   = The tram is waiting. Take your time. You have some now.
+b14a   = Good day! Your new body is freshly printed. Many returnees like to re-sort their abilities. Would you?
+b14a_a = Yes. All of it, anew.
+b14a_b = No, thank you.
+b14b   = Done. You may now feel a little differently sorted. That is normal.
+b14c   = Your abilities have been re-sorted. A second time only after your next death. Little joke.
+s14a        = (In the mirror, a face without scars.) I look like someone who has never done anything.
+s14a.dorra  = (In the mirror, smooth skin where forty-one names were.) I need a tattooist. Today.
+
+gel.name   = Ring Serenity
+gel.intro  = A ring habitat a thousand kilometres in radius and three hundred wide. Seas, forests and towns on its inside, and over everything the arch of the far side, where at night the towns glitter. | Ysolde has a flat here by the garden. Unzu lies in the dock and is quieter than usual; Kiri came with him. | The act's goal: the Mill's override codes. With them one gets into the control room – and to Ilka.
+
+g_start        = Serenity. A garden, children, a fountain. And nobody is afraid.
+g_start.dorra  = Serenity. It smells of grass here. I had forgotten how grass smells.
+g_back         = Back on the ring. The tram hums. Someone laughs in the garden.
+g_back.dorra   = Back. The garden acts as if nothing has happened. For the garden nothing has.
+
+h_ring        = On the ring: Ysolde in her flat names the destinations, Kiri patches things in the garden, the dispenser on the promenade gives stims, Unzu talks over the terminal. The tram at the garden's end goes to the destinations.
+h_exitlocked3 = The tram only runs once Ysolde has named a destination – she is in her flat.
+h_exitlater3  = No new destination. Ysolde hasn't said anything yet.
+
+y300   = Serenity. Eighty million people, none hungry, none poor, none dead for ever. And none of them knows what the Harvest is.
+y300_a = What do we need?
+y301   = The Mill's override codes. With them one gets into the control room – to Ilka. The archon who leads the incorporation keeps the codes. You can't reach him without a key, and the key is carried by a man who dies for his audience in the Dying Gardens: Teodor Lamm.
+y302   = The Dying Gardens. You'll hate them. That's the point, say the people there.
+y310   = You have the key. And Lamm has one more death in his collection.
+y310_a = What does it open?
+y311   = The archives of the yard at the gate. The ore containers arrive there, with freight papers. If you can prove that control cores steer the freighters, you can demand a hearing. The Collegium knows that too. Its cleaners are already on their way.
+y312   = The yard. Be quick. The cleaners don't delete quickly, but thoroughly.
+y320   = You have papers.
+y320_a = Are they enough for a hearing?
+y321   = Every citizen may demand a public hearing. You are citizens now. That was … not entirely an accident. It takes place in a hollowed asteroid. The archons attend through avatars.
+y322   = The hearing. Tell the truth. They will regret it.
+y330   = An inquiry over three years. Velm dismantled in five months.
+y330_a = Then we'll get the codes ourselves.
+y331   = The computing moon: the body of "With All Due Regret". The codes are there. He won't stop you. His defences will – they act without him.
+y332   = The computing moon. Cold. Very cold. And he speaks out of every wall.
+y340   = You have the codes.
+y340_a = What else is missing?
+y341   = Someone who knows what the procedure does to your heads. Ansgar Ruul. He invented the control cores and wanted to talk. The Collegium holds him in Vault Zero, in the shadow of a star.
+y342   = Vault Zero. The shield turns. Stay in the shadow.
+
+u300 = I lie in the dock. The Concordance offered me maintenance. Free of charge. I declined. You never know what they shorten while they're at it.
+u310 = Teodor Lamm has died four thousand times. I counted. The figure is correct and means nothing.
+u320 = The ore containers: Seren, Halden, Kael. I know the names. I surveyed them. I … classified them.
+u330 = No Cause For Concern led the majority. I know the voice. I don't know from where.
+u340 = I have my memories back. I don't want to talk about it. Not yet.
+
+k300   = Everything's free here in the garden except good tools. Those I brought.
+k300_a = Show me what you can do.
+k300_b = Later.
+k301   = Put it on the bench.
+a300   = DISPENSER GARDEN 4. What would you like? (Raw-material balance in scrap, for the unregistered.)
+a300_a = Stims.
+a300_b = Nothing.
+a301   = Order open.

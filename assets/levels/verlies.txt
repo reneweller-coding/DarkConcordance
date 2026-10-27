@@ -1,0 +1,95 @@
+# Level 19: Verlies Null (Akt III-Finale). Das Gefängnis des Kollegiums hinter einem Hitzeschild, nah an einem heißen
+# Stern: Zellen, verbrannte Platten, Galerien draußen. Der Schild dreht sich: sein Schatten wandert über die Station;
+# wer draußen nicht in ihm steht, verbrennt (meter shadow, shadow periode breite). Säuberer, Scharfschützen. Am Ende
+# Kein Grund Zur Sorge als Schwarm aus Tausenden Drohnen. Danach Ruul, dann Ysolde: die Zahl der Tode, das Wiegenlied,
+# und alles wird weiß.
+#   meter shadow s 0       die Hitze: s Sekunden draußen außerhalb des Schattens
+#   shadow p b             der Schatten wandert in p Sekunden einmal hin und her, b Spalten breit
+#   whiteout ev / endcard  nach dem Ereignis wird alles weiß; die Worte, die Musik, was danach bekannt ist
+
+name     l19.name
+act      act.3
+intro    l19.intro
+gravity  8.0
+fog      0.002 0.007 0.45 0.8
+fogcolor 0.004 0.0025 0.0012
+ambient  0.07 0.055 0.045 0.03 0.022 0.018
+walls    4.5
+sky      nebula
+space    1
+star     -2800 -1800 -7000 3800
+sundir   0.5 -0.6 0.4
+suncolor 3.4 2.2 1.2
+meter    shadow 26 0
+shadow   90 14
+faction  collegium
+swarm    archon 22 4
+whiteout act3end
+endcard  act.3end act3end act3done
+area     21
+next     end unzu4.txt
+gate     never
+ambience heat
+music    verlies
+bossmusic swarm
+talkmusic ysolde
+autotalk ruul ysolde
+npcafter ruul bossdead
+npcafter ysolde ruul.found
+
+genrooms      19
+genside       7
+gensize       12 18 10 14
+gentheme      prison station hull prison
+genoutdoor    hull
+genstarttheme station
+genarenatheme prison
+genarena      guardian
+genguard      $
+genvoid       1
+genpack       ETT     2
+genpack       $TT     1.5
+genpack       ''T     1.3
+genpack       %T      1
+genpack       ^^      1
+gendensity    1.1
+genelite      0.33
+gennote       note.prison19 note.ruul19 note.shield19 note.letter19 note.sorge19
+
+[npcs]
+ruul   | -1 -1 | ruul   | r19a | ruul.found:r19c
+ysolde | -1 -1 | ysolde | y19a | act3end:y19f
+
+[talk]
+r19a | ruul   | -          | r19a_a>r19b
+r19b | ruul   | ruul.found | r19b_a>r19c
+r19c | ruul   | -          |
+y19a | ysolde | -          | y19a_a>y19b?!deaths.none y19a_a>y19z?deaths.none
+y19b | ysolde | -          | y19b_a>y19c
+y19z | ysolde | -          | y19b_a>y19c
+y19c | ysolde | -          | y19c_a>y19d
+y19d | ysolde | -          | y19d_a>y19e
+y19e | ruul   | act3end    |
+y19f | ysolde | -          |
+
+[lines]
+l19_start    | a                | hero
+l19_shadow   | b                | hero
+l19_cells    | c                | hero
+l19_scratch  | d                | hero
+l19_champion | champion         | hero
+l19_boss     | swarm            | sorge
+l19_formation | formation       | hero
+l19_end      | bossdead         | sorge
+l19_ruul     | appear.ruul      | ruul
+l19_ysolde   | appear.ysolde    | ysolde
+
+[hints]
+h_shadow     | a
+h_swarm19    | swarm
+h_formation  | formation
+h_ruul       | appear.ruul
+h_sniper     | sniper
+h_shield     | shieldguard
+h_champion   | champion
+h_stim       | hurt

@@ -148,8 +148,20 @@ show where the boss fell, in a fight's level); music and backgrounds made like A
 Built with Tesh (27.10.2026): the ALIEN theme, wandering components (GameElements.cpp), the salvage master (the
 exoskeleton's fourth man), Pell (a choice); Unzu offers the detour after the ark.
 
-Open: the epilogue cards; skinned heroes and enemies with the animation packs' combat clips;
-Ione; voices; the user's play (balance, the music's choices and levels).
+Built with Acts III and IV (27.10.2026): the Concordance – the clinic of new bodies (skills given anew once), Ring
+Serenity as hub with its land rising into the sky (the camera looks up when one arrives), the Dying Gardens (rounds
+with changing rules, Teodor Lamm who dies twice), the yard at the gate (evidence the cleaners wipe), the hearing (an
+archon's verdict, then drones among people who don't run), the computing moon (the archon gives the codes, Unzu reads
+his memories), Vault Zero (the heat shield's shadow as a clock, the archon of the Collegium as a swarm, the deaths
+counted, the Lullaby, the act's end); the Mill – the ship on the way back with Ruul, Velm besieged (HAUSMEISTER's
+turrets on the hero's side), Brannt being peeled (crust and cutting lines), the ore stream (thrusters, laser pulses,
+the catcher's clock), the Mill's inside (molten metal, centrifuges, the foreman), the control room (Ysolde), the net
+(the night shift fights along; Ilka; three endings, the third only if the night shift trusts the hero) and the
+epilogue's cards. New surfaces for the later places of every act and portraits for every speaker; music and
+backgrounds for both acts. Seren's and Kael's control cores now speak after their fights (the night shift remembers).
+
+Open: skinned heroes and enemies with the animation packs' combat clips; Ione; voices; the companions' flashback
+levels; the user's play (balance, the music's choices and levels).
 
 Still to come, by first use:
 
@@ -167,16 +179,16 @@ Still to come, by first use:
 | Zero g, freezing gear | 10 Tesh — done as low gravity, cold everywhere and wandering components (27.10.2026) |
 | Radiation as a running resource, magnetic fields | 11 Kael — done (27.10.2026) |
 | Darkness as cover, geysers | 12 Wanderer — done (27.10.2026) |
-| Talking to control cores instead of fighting (the night shift remembers) | 6 onwards |
-| New bodies: talents redistributed once | 14 |
-| Arena waves with changing rules | 15 |
-| Zero-g construction site, moving girders | 16 |
-| Hearing: conversation level, crowd that does not panic | 17 |
-| Heat as a clock (rotating shield) | 19 |
-| Terrain cut during the level | 21 |
-| Jumping between containers with limited fuel | 22 |
-| Molten metal, centrifuges | 23 |
-| Split finale (one in the net, one guarding the bodies), three endings | 24 |
+| Talking to control cores instead of fighting (the night shift remembers) | 6 onwards — done (27.10.2026: six choices count) |
+| New bodies: talents redistributed once | 14 — done (27.10.2026) |
+| Arena waves with changing rules | 15 — done (27.10.2026) |
+| Zero-g construction site, moving girders | 16 — done (27.10.2026; with evidence the cleaners wipe) |
+| Hearing: conversation level, crowd that does not panic | 17 — done (27.10.2026) |
+| Heat as a clock (rotating shield) | 19 — done (27.10.2026) |
+| Terrain cut during the level | 21 — done (27.10.2026: the crust closes again) |
+| Jumping between containers with limited fuel | 22 — done (27.10.2026) |
+| Molten metal, centrifuges | 23 — done (27.10.2026) |
+| Split finale (one in the net, one guarding the bodies), three endings | 24 — done as two levels and three endings (27.10.2026; co-op still to come) |
 | Co-op for two (shared screen) | early, then everywhere |
 | Companion flashback levels | after each act |
 
@@ -222,7 +234,7 @@ Still to come, by first use:
    still Ione and voices for **Act I complete**.
 4. Act II with the ship as hub and the first choices — done (27.10.2026: the ship, levels 6–13 with Tesh as a detour,
    the wreck field; the epilogue cards still to come); co-op for two.
-5. Acts III and IV, endings, epilogue cards, flashback levels.
+5. Acts III and IV, endings, epilogue cards — done (27.10.2026); flashback levels still to come.
 6. Steam Deck: half-resolution fog, no supersampling, gamepad everywhere.
 
 ## Open decisions (the user's)

@@ -423,6 +423,8 @@ bool loadProgress( Progress &p )
             p.m_points = atoi( value );
         else if ( !strcmp( key, "seed" ) )
             p.m_seed = atoi( value );
+        else if ( !strcmp( key, "deaths" ) )
+            p.m_deaths = atoi( value );
         else if ( !strcmp( key, "hero" ) )
             p.m_hero = !strcmp( value, "dorra" ) ? HeroE::DORRA : HeroE::CORVIN;
         else if ( !strcmp( key, "level" ) )
@@ -449,7 +451,8 @@ void saveProgress( const Progress &p )
     if ( !f ) return;
     fprintf( f, "hero %s\nlevel %s\nscrap %d\nstims %d\nweapon %d\narmor %d\n", heroKey( p.m_hero ), p.m_level.c_str(),
              p.m_scrap, p.m_stims, p.m_weapon, p.m_armor );
-    fprintf( f, "xp %d\nherolevel %d\npoints %d\nseed %d\n", p.m_xp, p.m_heroLevel, p.m_points, p.m_seed );
+    fprintf( f, "xp %d\nherolevel %d\npoints %d\nseed %d\ndeaths %d\n", p.m_xp, p.m_heroLevel, p.m_points, p.m_seed,
+             p.m_deaths );
     for ( size_t i = 0; i < p.m_ranks.size(); ++i )
         if ( p.m_ranks[i] > 0 ) fprintf( f, "rank %d %d\n", (int)i, p.m_ranks[i] );
     for ( int i = 0; i < EquipSlots; ++i )

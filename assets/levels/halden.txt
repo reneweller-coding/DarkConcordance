@@ -48,7 +48,7 @@ genpack       ETT     2
 genpack       ''      0.8
 gendensity    1.15
 genelite      0.32
-gennote       note.notice8 note.camp note.okafor note.relay8 note.child
+gennote       note.notice8 note.camp note.okafor note.relay8 note.child8
 
 [npcs]
 okafor | -1 -1 | okafor | o8a | okafor.deal:o8d okafor.taken:o8e

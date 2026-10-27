@@ -1,0 +1,77 @@
+# Level 17: Die Anhörung (Akt III). Ein ausgehöhlter Asteroid: Säle aus poliertem Stein, Bänke, Menschen, die stehen
+# bleiben (sie kommen ja wieder), Archonten als Avatare. Erst das Gespräch mit »Mit Allem Gebotenen Bedauern« (am Start),
+# dann der Anschlag: Drohnentrupps des Kollegiums, bis zum Schwarm im großen Saal.
+#   crowd n                n Leute in den Sälen (HALL), die nicht weglaufen
+#   pressureafter ev s     die Trupps erst nach dem Ereignis, alle s Sekunden; squad drones: Drohnen statt Männer
+#   swarm art n träger     der Boss: ein Schwarm (hier: Drohnen), n zugleich, aus so vielen Trägern
+#   Zeile -2 -2            jemand steht beim Start
+
+name     l17.name
+act      act.3
+intro    l17.intro
+gravity  6.0
+fog      0.0015 0.005 0.4 0.75
+fogcolor 0.002 0.002 0.003
+ambient  0.08 0.08 0.09 0.04 0.04 0.045
+walls    5.0
+sky      nebula
+faction  collegium
+squad    drones
+crowd    46
+pressureafter verdict 42
+swarm    drones 14 3
+area     19
+next     gelassenheit.txt
+gate     bossdead
+ambience hearing
+music    anhoerung
+bossmusic swarm
+autotalk bedauern
+
+genrooms      17
+genside       6
+gensize       12 18 10 15
+gentheme      hall hall vault hall gangway
+genstarttheme hall
+genarenatheme hall
+genarena      guardian
+genguard      ^
+genpack       ^^^     2
+genpack       ^^T     1.5
+genpack       ETT     1.2
+genpack       $T      1
+genpack       ''      0.8
+gendensity    0.9
+genelite      0.3
+gennote       note.hearing17 note.vote17 note.witness17 note.drone17 note.public17
+
+[npcs]
+bedauern | -2 -2 | terminal | a17a | verdict:a17e
+
+[talk]
+a17a | bedauern | -       | a17a_a>a17b?evidence.full a17a_b>a17c?!evidence.full
+a17b | bedauern | -       | a17b_a>a17d
+a17c | bedauern | -       | a17b_a>a17d
+a17d | bedauern | verdict | a17d_a>a17e
+a17e | bedauern | -       |
+
+[lines]
+l17_start    | start     | hero
+l17_verdict  | verdict   | hero
+l17_attack   | verdict   | sorge
+l17_drones   | reinforce | hero
+l17_crowd    | b         | hero
+l17_film     | c         | fan
+l17_witness  | d         | hero
+l17_champion | champion  | hero
+l17_boss     | swarm     | hero
+l17_end      | bossdead  | hero
+
+[hints]
+h_hearing    | a
+h_crowd      | b
+h_swarm      | swarm
+h_swarmling  | swarmling
+h_sniper     | sniper
+h_champion   | champion
+h_stim       | hurt

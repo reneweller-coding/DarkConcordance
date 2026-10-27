@@ -1,0 +1,34 @@
+# Level 16: The Yard at the Gate (English).
+
+l16.name  = The Yard at the Gate
+l16.intro = The far end of the jump gate: a ring two hundred kilometres across, half finished, in open space. Thousands of construction drones weld at the frame, a rain of sparks two hundred kilometres long. | Ore containers arrive, labelled with their origin: Seren, Halden, Kael. The material of sixty-one places. The workers are Kalvarans, incorporated citizens, well paid and content. | Somewhere here are the freight papers that prove control cores steer the ore freighters. The Collegium's cleaners are already wiping them.
+
+l16_start        = The yard. No floor, only scaffolding and stars. And sparks, sparks everywhere.
+l16_start.dorra  = Kalvarans. I can hear the accent on the radio. My people are building the gate.
+l16_crates       = Ore containers: SEREN. HALDEN. KAEL. I know every one of these labels.
+l16_worker       = Watch out for the girders, they wander. And don't let the grey ones catch you. They wipe everything here.
+l16_worker.dorra = Dorra Vask? From the uprising? … You know, I pity you. We won. Just differently than you thought.
+l16_pity         = The Kalvarans are building the gate that will eat the Fringe. And they sing while they do it.
+l16_pity.dorra   = Pity. That's worse than hate.
+l16_read         = Freight papers secured.
+l16_wiped        = Too late – the cleaners have wiped the papers.
+l16_girder       = The girders! Don't get caught between them!
+l16_champion     = A cleaner with rank. He doesn't only wipe data.
+l16_boss         = Cleaning squad, formation. The intruders cannot be deleted. Regrettably.
+l16_end          = The squad is down. What we have, we have.
+
+h_evidence = Freight papers on terminals: reading them secures them. The cleaners wipe them one after another – the time is at the top right.
+h_air16    = No air out here: huts, air posts and canisters refill the suit.
+h_girder   = Wandering girders crush whoever stands between them and a wall.
+h_chief    = The cleaners' chief: a frame with a rifle, and his cleaners follow.
+
+note.yard16.title    = Gate construction, far end
+note.yard16          = Frame 52 per cent closed. Kalvaran shift 3: bonus for keeping to schedule. Next milestone: connection to the Fringe.
+note.freight16.title = Bill of lading, container 7,104
+note.freight16       = Origin: Kael. Steering: "core class C". Remark: scheduled for deletion.
+note.song16.title    = Song sheet stuck to a girder
+note.song16          = We bring the Fringe back home, we bring it piece by piece. (Kalvaran, with notes.)
+note.cleaner16.title = Cleaning order
+note.cleaner16       = Freight data, yard at the gate. Deadline: today. Method: thorough. Witnesses: none planned.
+note.payroll16.title = Payroll, shift 3
+note.payroll16       = Vask, Ilse: bonus paid. Vask, Bren: bonus paid. Remark: reliable.

@@ -73,7 +73,7 @@ l10_pell     | appear.pell      | pell
 [hints]
 h_tesh       | b
 h_float      | c
-h_move       | d
+h_move10       | d
 h_cutter     | cutter
 h_sniper     | sniper
 h_shield     | shieldguard

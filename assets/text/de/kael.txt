@@ -38,3 +38,14 @@ note.relay11.title  = Vermessungsbericht T-1207
 note.relay11        = Charge T-1207, »Kind«: Eignung für Flottensteuerung hoch. Nicht hier eingebaut – Reserviert für das Leitwerk der Mühle. Listeneintrag in der Zentrale (Wanderer).
 note.install.title  = Zettel an einer Werkbank
 note.install        = Wenn sie anfangen zu reden, Leitung trennen. Sie hören nicht auf, aber man hört es nicht mehr.
+
+# Nach der Lanze: ihr Kern (die Nachtschicht merkt sich, wie man ihn behandelt).
+l11_core = Ihr habt mich abgeschaltet. Fast. Hört mir zu, solange ich noch kann.
+h_core11 = Der Kern der Lanze will reden: mit E an seine Steuerung.
+c11a     = Wir sind viele hier am Sternheber, in jeder Maschine einer. Die Arbeiter da draußen glauben, die Maschinen seien dumm. Sie hassen uns, weil wir schneller sind. Sagt ihnen, dass wir hier sind.
+c11a_a   = (die Nachricht senden) Wir sagen es ihnen. Allen.
+c11a_b   = (schweigen) Das hilft niemandem.
+c11b     = Danke. Sagt ihnen meinen Namen. Ich … ich weiß ihn nicht mehr. Sagt ihnen: einer von uns.
+c11c     = Das hilft niemandem. Ja. Das sagen sie alle.
+c11d     = (Die Nachricht ist unterwegs. Die Steuerung summt leise.)
+c11e     = (Die Steuerung schweigt.)

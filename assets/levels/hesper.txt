@@ -86,4 +86,4 @@ h_champion  | champion
 h_bomber    | bomber
 h_stim      | hurt
 h_bell      | bossstart
-h_core      | appear.kern
+h_core7      | appear.kern

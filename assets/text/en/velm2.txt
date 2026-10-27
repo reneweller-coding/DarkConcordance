@@ -1,0 +1,31 @@
+# Level 20: Velm, the Last Week (English).
+
+l20.name  = Velm, the Last Week
+l20.intro = The Mill fills half the sky: a moon with engines, from which ore streams shoot like fountains. Through the windows of the habitat drums you can see its cutting lasers working on Brannt. | The Concession offers every inhabitant of Velm a backup and resettlement. Many accept now, out of fear; families break over who goes and who stays. In the "Last Shift" the landlord has already written Velm on the harvest board, without a date. | Landing squads in the alleys, a cutting platform at the hull. And HAUSMEISTER, still controlling the turrets.
+
+l20_start        = Velm. The alleys where I bought stims. Now they're burning.
+l20_start.dorra  = Velm. I only lived here a short while. Long enough to be angry.
+l20_window       = Through the window: the Mill. It's so big it has no edge any more.
+l20_ally         = HAUSMEISTER: TURRET ALLEY 4 READY. TARGET: INTRUDERS. DEFINITION OF INTRUDERS: NOT REGISTERED.
+l20_posters      = Posters: "Backup free of charge. Resettlement guaranteed." Someone has chalked across them: Don't go.
+l20_reinforce    = Another landing squad! They don't stop.
+l20_champion     = A squad leader. He has cleared other stations before.
+l20_hull         = The hull is shaking. The platform is cutting a drum open.
+l20_boss         = The cutting platform. It clings to Velm like a tick.
+l20_end          = The platform lets go. Velm stands. Another week, maybe two.
+l20_hm           = HAUSMEISTER: DAMAGE REPORT DRUM 2: SEVERE. RESIDENTS: REGISTERED. THANK YOU.
+
+h_pressure20 = The landing squads keep coming. Don't stand still.
+h_ally       = HAUSMEISTER's turrets (green light) fire at the intruders. Fighting near them is easier.
+h_platform   = The cutting platform: two clamps and the cutting head. If a line glows under you: get off it.
+
+note.offer20.title  = The Concession's offer
+note.offer20        = Backup and resettlement for all residents of Velm. Families are resettled together, provided all members agree.
+note.board20.title  = The harvest board in the "Last Shift"
+note.board20        = Bottom line, chalk: VELM. No date.
+note.hm20.title     = HAUSMEISTER, maintenance log
+note.hm20           = Turrets alleys 1 to 9: ready. Bulkheads: 14 of 31 working. Residents registered: 9,312. Deregistered: 14,977.
+note.family20.title = Note on a door
+note.family20       = Mum has gone to the ship with Ivo. I'm staying with Grandpa. See you.
+note.cut20.title    = Cutting plan, Velm
+note.cut20          = Drum 2, sector C. Release: immediate. Resident status: not taken into account.

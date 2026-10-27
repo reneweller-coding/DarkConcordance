@@ -245,6 +245,99 @@ const Look Looks[(int)ThemeE::COUNT] = {
       { 255, 255, 255, 255 },
       0.3f },
     { 0, { 40, 42, 50, 255 }, 0.0f, 0.0f, 0, { 255, 255, 255, 255 }, { 58, 60, 70, 255 }, { 34, 36, 44, 255 }, 0.18f },
+    // PARK, CLINIC, ARENA, YARD, HALL, CRYO, PRISON, MOON, CONTAINER, FURNACE, SERVER, NET.
+    { 0, { 0, 0, 0, 255 }, 0.0f, 0.0f, 0, { 255, 255, 255, 255 }, { 120, 150, 84, 255 }, { 92, 132, 70, 255 }, 0.32f },
+    { 2,
+      { 236, 238, 240, 255 },
+      0.95f,
+      0.0f,
+      1,
+      { 220, 225, 232, 255 },
+      { 232, 230, 224, 255 },
+      { 255, 255, 255, 255 },
+      0.35f },
+    { 0,
+      { 0, 0, 0, 255 },
+      0.0f,
+      0.0f,
+      0,
+      { 255, 255, 255, 255 },
+      { 222, 196, 150, 255 },
+      { 206, 176, 132, 255 },
+      0.22f },
+    { 2,
+      { 214, 176, 60, 255 },
+      0.6f,
+      0.5f,
+      1,
+      { 232, 186, 70, 255 },
+      { 150, 150, 156, 255 },
+      { 255, 255, 255, 255 },
+      0.25f },
+    { 0,
+      { 0, 0, 0, 255 },
+      0.0f,
+      0.0f,
+      0,
+      { 255, 255, 255, 255 },
+      { 190, 182, 172, 255 },
+      { 128, 118, 108, 255 },
+      0.12f },
+    { 2,
+      { 150, 176, 212, 255 },
+      0.9f,
+      0.05f,
+      2,
+      { 180, 212, 242, 255 },
+      { 176, 194, 214, 255 },
+      { 255, 255, 255, 255 },
+      0.3f },
+    { 2,
+      { 124, 100, 88, 255 },
+      0.7f,
+      0.3f,
+      1,
+      { 205, 125, 80, 255 },
+      { 112, 102, 96, 255 },
+      { 255, 255, 255, 255 },
+      0.25f },
+    { 0,
+      { 0, 0, 0, 255 },
+      0.0f,
+      0.0f,
+      0,
+      { 255, 255, 255, 255 },
+      { 146, 144, 140, 255 },
+      { 112, 110, 108, 255 },
+      0.15f },
+    { 1,
+      { 200, 200, 200, 255 },
+      0.0f,
+      0.0f,
+      0,
+      { 255, 255, 255, 255 },
+      { 150, 150, 156, 255 },
+      { 255, 255, 255, 255 },
+      0.3f },
+    { 0, { 0, 0, 0, 255 }, 0.0f, 0.0f, 0, { 255, 255, 255, 255 }, { 92, 82, 76, 255 }, { 84, 66, 56, 255 }, 0.22f },
+    { 2,
+      { 62, 68, 80, 255 },
+      0.9f,
+      0.05f,
+      2,
+      { 92, 112, 142, 255 },
+      { 72, 76, 84, 255 },
+      { 255, 255, 255, 255 },
+      0.35f },
+    { 2,
+      { 205, 218, 236, 255 },
+      0.9f,
+      0.0f,
+      0,
+      { 255, 255, 255, 255 },
+      { 64, 74, 96, 255 },
+      { 255, 255, 255, 255 },
+      0.3f },
 };
 
 /** @brief Paint of the house fronts in a habitat, faded. */
@@ -283,10 +376,28 @@ ThemeE themeOf( const std::string &name )
     if ( name == "snow" ) return ThemeE::SNOW;
     if ( name == "hold" ) return ThemeE::HOLD;
     if ( name == "alien" ) return ThemeE::ALIEN;
+    if ( name == "park" ) return ThemeE::PARK;
+    if ( name == "clinic" ) return ThemeE::CLINIC;
+    if ( name == "arena" ) return ThemeE::ARENA;
+    if ( name == "yard" ) return ThemeE::YARD;
+    if ( name == "hall" ) return ThemeE::HALL;
+    if ( name == "cryo" ) return ThemeE::CRYO;
+    if ( name == "prison" ) return ThemeE::PRISON;
+    if ( name == "moon" ) return ThemeE::MOON;
+    if ( name == "container" ) return ThemeE::CONTAINER;
+    if ( name == "furnace" ) return ThemeE::FURNACE;
+    if ( name == "server" ) return ThemeE::SERVER;
+    if ( name == "net" ) return ThemeE::NET;
     return ThemeE::SERVICE;
 }
 
 }   // namespace
+
+ThemeE themeNamed( const std::string &name )
+{
+    ThemeE t = themeOf( name );
+    return t == ThemeE::SERVICE && name != "service" ? (ThemeE)-1 : t;
+}
 
 bool Level::load( const std::string &path, unsigned seed )
 {
@@ -463,6 +574,33 @@ bool Level::loadText( const std::string &text )
         }
         else if ( key == "whiteout" )
             kv >> m_whiteout;
+        else if ( key == "endcard" )
+            kv >> m_endCard >> m_endMusic >> m_endFlag;
+        else if ( key == "epilogue" )
+            kv >> m_epilogue;
+        else if ( key == "walltex" || key == "floortex" )
+        {
+            std::string th, tex;
+            kv >> th >> tex;
+            ( key == "walltex" ? m_wallTex : m_floorTex ).push_back( { th, tex } );
+        }
+        else if ( key == "thing" )
+        {
+            Thing th;
+            kv >> th.m_row >> th.m_col >> th.m_name;
+            m_things.push_back( th );
+        }
+        else if ( key == "view" || key == "vista" || key == "waves" || key == "evidence" || key == "shadow" ||
+                  key == "crust" || key == "cuts" || key == "pulses" || key == "jetfuel" || key == "reluctant" ||
+                  key == "waterfalls" || key == "swarm" || key == "clock" || key == "zaps" || key == "crowd" ||
+                  key == "pressureafter" || key == "ventlook" || key == "lava" || key == "duel" || key == "squad" ||
+                  key == "shadow" )
+        {
+            std::string rest;
+            std::getline( kv, rest );
+            m_keys[key] = trim( rest );
+            if ( key == "view" ) m_view = trim( rest );
+        }
         else if ( key == "gate" )
             kv >> m_gate;
         else if ( key == "ambience" )
@@ -533,7 +671,10 @@ bool Level::loadText( const std::string &text )
         else if ( key == "back" )
             kv >> m_back;
         else if ( key == "autotalk" )
-            kv >> m_autotalk;
+        {
+            std::getline( kv, m_autotalk );   // one or more, in order
+            m_autotalk = trim( m_autotalk );
+        }
         else if ( key == "intro" )
             kv >> m_intro;
         else if ( key == "exit" )
@@ -647,18 +788,45 @@ bool Level::loadText( const std::string &text )
                 m_markers.push_back( { ch, r, c, {} } );
         }
     for ( Marker &m : m_markers ) m.m_pos = centre( m.m_row, m.m_col );
+    for ( Thing &t : m_things ) t.m_pos = centre( t.m_row, t.m_col );
     // The twilight band as shares of the map's width (a generated map's width is known only now).
     if ( m_bandHotF > 0.0f ) m_bandHot = (int)( m_bandHotF * m_cols ), m_bandCold = (int)( m_bandColdF * m_cols );
     // An ice moon: the open floors are clear ice over the ocean (raised floors stay snow, the huts stay floors).
+    // A moon being peeled: its open ground is a crust of slabs over glowing rock (they break like the ice).
+    bool crust = m_keys.count( "crust" ) > 0;
+    if ( crust ) m_ice = true, m_below = "magma";
     if ( m_ice )
         for ( int r = 0; r < m_rows; ++r )
             for ( int c = 0; c < m_cols; ++c )
             {
                 Cell &k = m_cells[(size_t)r * m_cols + c];
-                if ( k.m_kind == CellE::FLOOR && k.m_height == 0.0f && theme( r, c ) == ThemeE::ICE )
+                if ( k.m_kind == CellE::FLOOR && k.m_height == 0.0f &&
+                     ( theme( r, c ) == ThemeE::ICE || ( crust && theme( r, c ) == ThemeE::MOON ) ) )
                     k.m_kind = CellE::GLASS;
             }
     return m_rows > 0;
+}
+
+float Level::num( const std::string &key, float def ) const
+{
+    return num( key, 0, def );
+}
+
+float Level::num( const std::string &key, int i, float def ) const
+{
+    auto it = m_keys.find( key );
+    if ( it == m_keys.end() ) return def;
+    std::stringstream ss( it->second );
+    float             v = def;
+    for ( int k = 0; k <= i; ++k )
+        if ( !( ss >> v ) ) return def;
+    return v;
+}
+
+std::string Level::word( const std::string &key ) const
+{
+    auto it = m_keys.find( key );
+    return it == m_keys.end() ? "" : it->second;
 }
 
 const Cell &Level::cell( int r, int c ) const
@@ -666,6 +834,14 @@ const Cell &Level::cell( int r, int c ) const
     static const Cell rock;
     if ( r < 0 || c < 0 || r >= m_rows || c >= m_cols ) return rock;
     return m_cells[(size_t)r * m_cols + c];
+}
+
+void Level::setGlass( int r, int c )
+{
+    if ( r < 0 || c < 0 || r >= m_rows || c >= m_cols ) return;
+    Cell &k = m_cells[(size_t)r * m_cols + c];
+    k.m_kind = CellE::GLASS;
+    k.m_height = 0.0f;
 }
 
 void Level::setVoid( int r, int c )
@@ -851,6 +1027,10 @@ bool Level::raycast( Vector3 from, Vector3 to, Vector3 &hit, Vector3 &normal ) c
 void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
 {
     MeshBuilder rock, floor, grate, metal, hazard, rust, foil, fins, crate, box, hull, cloth, drape, ground, plate;
+    // A theme with walls or floors of its own builds them apart (key: surface * 2, + 1 for walls).
+    std::map<int, MeshBuilder> themed;
+    MeshBuilder *const allRock = &rock, *const allHull = &hull, *const allFloor = &floor, *const allGround = &ground,
+                       *const allPlate = &plate;
     struct Glow
     {
         Vector3 m_at;
@@ -1025,14 +1205,25 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         }
     };
 
+#pragma warning( push )
+#pragma warning( disable : 4456 )   // the builders below stand in for the common ones
     for ( int r = 0; r < m_rows; ++r )
         for ( int c = 0; c < m_cols; ++c )
         {
-            const Cell &k = cell( r, c );
-            const Look &look = Looks[(int)theme( r, c )];
-            float       x0 = c * CellSize;
-            float       z0 = r * CellSize;
-            Vector3     mid = { x0 + CellSize * 0.5f, 0.0f, z0 + CellSize * 0.5f };
+            const Cell  &k = cell( r, c );
+            int          ownWall = s.m_themeWall[(int)theme( r, c )], ownFloor = s.m_themeFloor[(int)theme( r, c )];
+            MeshBuilder &rock = ownWall ? themed[( ownWall - 1 ) * 2 + 1] : *allRock;
+            MeshBuilder &hull = ownWall ? themed[( ownWall - 1 ) * 2 + 1] : *allHull;
+            MeshBuilder &floor = ownFloor ? themed[( ownFloor - 1 ) * 2] : *allFloor;
+            MeshBuilder &ground = ownFloor ? themed[( ownFloor - 1 ) * 2] : *allGround;
+            MeshBuilder &plate = ownFloor ? themed[( ownFloor - 1 ) * 2] : *allPlate;
+            // Its own surfaces carry their colour: the tints are for the common ones.
+            Look look = Looks[(int)theme( r, c )];
+            if ( ownWall ) look.m_rock = look.m_lining = WHITE, look.m_liningChance *= 0.3f;
+            if ( ownFloor ) look.m_floor = WHITE;
+            float   x0 = c * CellSize;
+            float   z0 = r * CellSize;
+            Vector3 mid = { x0 + CellSize * 0.5f, 0.0f, z0 + CellSize * 0.5f };
             if ( k.m_kind == CellE::ROCK )
             {
                 bool border = false;
@@ -1042,7 +1233,9 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 Vector3 lid = { CellSize * 0.5f, 0.01f, CellSize * 0.5f };
                 if ( look.m_walls == 0 )
                 {
-                    rock.m_color = { 70, 66, 64, 255 };
+                    rock.m_color = { (unsigned char)( look.m_rock.r * 0.3f ), (unsigned char)( look.m_rock.g * 0.3f ),
+                                     (unsigned char)( look.m_rock.b * 0.3f ), 255 };
+                    if ( theme( r, c ) < ThemeE::PARK ) rock.m_color = { 70, 66, 64, 255 };
                     rock.box( place( { mid.x, m_wallHeight + 0.01f, mid.z } ), lid );
                     rock.m_color = look.m_rock;
                 }
@@ -1173,6 +1366,60 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 metal.box( place( { mid.x, -0.04f, mid.z - CellSize * 0.5f } ), { CellSize * 0.5f, 0.04f, 0.025f } );
                 continue;
             }
+            if ( k.m_kind == CellE::COUNTER && theme( r, c ) >= ThemeE::PARK )
+            {
+                // Waist high in the later places: a bed, a bench, a rack of computers, a desk, a bunk, a console.
+                floor.box( place( { mid.x, -0.25f, mid.z } ), { CellSize * 0.5f, 0.25f, CellSize * 0.5f } );
+                ThemeE t = theme( r, c );
+                if ( t == ThemeE::CLINIC || t == ThemeE::PRISON )
+                {
+                    metal.box( place( { mid.x, 0.3f, mid.z } ), { 0.5f, 0.3f, 0.9f } );
+                    cloth.m_color = t == ThemeE::CLINIC ? Color{ 230, 234, 238, 255 } : Color{ 110, 100, 90, 255 };
+                    cloth.roundedBox( place( { mid.x, 0.66f, mid.z } ), { 0.48f, 0.08f, 0.88f }, 0.05f, 2 );
+                    cloth.m_color = WHITE;
+                    if ( t == ThemeE::CLINIC )
+                        glows.push_back(
+                            { { mid.x, 1.2f, mid.z - 0.85f }, { 0.25f, 0.18f, 0.02f }, { 0.4f, 2.0f, 1.4f, 0.0f } } );
+                }
+                else if ( t == ThemeE::HALL || t == ThemeE::PARK || t == ThemeE::ARENA )
+                {
+                    rock.m_color = { 150, 140, 128, 255 };
+                    rock.box( place( { mid.x, 0.42f, mid.z } ), { 0.95f, 0.06f, 0.32f } );
+                    rock.box( place( { mid.x, 0.2f, mid.z } ), { 0.8f, 0.2f, 0.2f } );
+                    rock.box( place( { mid.x, 0.85f, mid.z + 0.3f } ), { 0.95f, 0.4f, 0.05f } );
+                    rock.m_color = look.m_rock;
+                }
+                else if ( t == ThemeE::CRYO || t == ThemeE::SERVER )
+                {
+                    metal.m_color = t == ThemeE::CRYO ? Color{ 190, 210, 230, 255 } : Color{ 70, 74, 84, 255 };
+                    metal.box( place( { mid.x, 0.55f, mid.z } ), { 0.85f, 0.55f, 0.6f } );
+                    metal.m_color = WHITE;
+                    Vector4 g =
+                        t == ThemeE::CRYO ? Vector4{ 0.4f, 1.6f, 4.5f, 0.0f } : Vector4{ 0.3f, 3.0f, 1.2f, 0.0f };
+                    for ( float u : { -0.55f, -0.2f, 0.15f, 0.5f } )
+                        glows.push_back( { { mid.x + u, 0.7f + 0.2f * ( hashCell( r, c, (int)( u * 10 ) + 50 ) % 3 ),
+                                             mid.z + 0.61f },
+                                           { 0.06f, 0.03f, 0.01f },
+                                           g } );
+                }
+                else if ( t == ThemeE::NET )
+                {
+                    // Remembered furniture: a school desk, a kitchen table, a canteen bench; a little unsure of itself.
+                    crate.m_color = hashCell( r, c, 3 ) % 2 ? Color{ 170, 130, 90, 255 } : Color{ 200, 200, 196, 255 };
+                    crate.box( place( { mid.x, 0.74f, mid.z } ), { 0.8f, 0.04f, 0.5f } );
+                    for ( float sx : { -0.7f, 0.7f } )
+                        for ( float sz : { -0.4f, 0.4f } )
+                            crate.box( place( { mid.x + sx, 0.36f, mid.z + sz } ), { 0.04f, 0.36f, 0.04f } );
+                    crate.m_color = WHITE;
+                    glows.push_back( { { mid.x, 0.79f, mid.z }, { 0.8f, 0.004f, 0.5f }, { 0.3f, 0.6f, 1.2f, 0.0f } } );
+                }
+                else
+                {
+                    metal.box( place( { mid.x, 0.5f, mid.z } ), { 0.8f, 0.5f, 0.6f } );
+                    glows.push_back( { { mid.x, 1.02f, mid.z }, { 0.6f, 0.01f, 0.4f }, { 4.0f, 2.2f, 0.5f, 0.0f } } );
+                }
+                continue;
+            }
             if ( k.m_kind == CellE::COUNTER && ( theme( r, c ) == ThemeE::PODS || theme( r, c ) == ThemeE::HOLD ||
                                                  theme( r, c ) == ThemeE::STATION ) )
             {
@@ -1290,8 +1537,11 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 // Out in nature the ground is stone, dust or snow; a refinery's or a station's deck is hull plating.
                 float  h = k.m_height;
                 ThemeE th = theme( r, c );
-                bool   natural = th == ThemeE::DUSK || th == ThemeE::SNOW || th == ThemeE::ICE || th == ThemeE::ALIEN;
-                MeshBuilder &fb = natural ? ground : ( th == ThemeE::DECK || th == ThemeE::STATION ? plate : floor );
+                bool   natural = th == ThemeE::DUSK || th == ThemeE::SNOW || th == ThemeE::ICE || th == ThemeE::ALIEN ||
+                                 th == ThemeE::PARK || th == ThemeE::ARENA || th == ThemeE::MOON || th == ThemeE::HALL;
+                bool   plated = th == ThemeE::DECK || th == ThemeE::STATION || th == ThemeE::YARD ||
+                                th == ThemeE::CONTAINER || th == ThemeE::FURNACE || th == ThemeE::PRISON;
+                MeshBuilder &fb = natural ? ground : ( plated ? plate : floor );
                 fb.m_color = look.m_floor;
                 fb.box( place( { mid.x, ( h - 0.5f ) * 0.5f, mid.z } ),
                         { CellSize * 0.5f, ( h + 0.5f ) * 0.5f, CellSize * 0.5f } );
@@ -1731,6 +1981,126 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 box.box( place( { at.x, 0.55f, at.z }, { 0.0f, turn, 0.0f } ), { 0.6f, 0.55f, 0.6f } );
                 m_props.push_back( { at, 0.6f } );
                 break;
+            case ThemeE::PARK:
+            {
+                // A tree: a trunk, a crown of leaves; now and then a bench instead.
+                if ( hash01( r, c, 35 ) < 0.7f )
+                {
+                    rust.m_color = { 110, 80, 60, 255 };
+                    rust.cylinder( place( { at.x, 0.0f, at.z } ), 0.16f, 2.2f, 10 );
+                    rust.m_color = WHITE;
+                    cloth.m_color = hashCell( r, c, 36 ) % 2 ? Color{ 70, 120, 55, 255 } : Color{ 96, 136, 60, 255 };
+                    cloth.roundedBox( place( { at.x, 2.9f, at.z }, { 0.0f, turn, 0.0f } ), { 1.1f, 0.9f, 1.0f }, 0.6f,
+                                      3 );
+                    cloth.roundedBox( place( { at.x + 0.4f, 3.5f, at.z - 0.2f } ), { 0.7f, 0.6f, 0.7f }, 0.45f, 3 );
+                    cloth.m_color = WHITE;
+                    m_props.push_back( { at, 0.35f } );
+                }
+                else
+                {
+                    float yaw = atan2f( n.x, n.z );
+                    crate.m_color = { 150, 110, 76, 255 };
+                    crate.box( place( { at.x, 0.45f, at.z }, { 0.0f, yaw, 0.0f } ), { 0.8f, 0.04f, 0.25f } );
+                    crate.m_color = WHITE;
+                    metal.box( place( { at.x, 0.22f, at.z }, { 0.0f, yaw, 0.0f } ), { 0.7f, 0.22f, 0.04f } );
+                    m_props.push_back( { at, 0.5f } );
+                }
+                break;
+            }
+            case ThemeE::CLINIC:
+                // A plant in a white pot.
+                crate.m_color = { 238, 238, 236, 255 };
+                crate.cylinder( place( { at.x, 0.0f, at.z } ), 0.3f, 0.55f, 14 );
+                crate.m_color = WHITE;
+                cloth.m_color = { 80, 130, 70, 255 };
+                cloth.roundedBox( place( { at.x, 1.0f, at.z }, { 0.0f, turn, 0.0f } ), { 0.45f, 0.5f, 0.45f }, 0.3f,
+                                  2 );
+                cloth.m_color = WHITE;
+                m_props.push_back( { at, 0.4f } );
+                break;
+            case ThemeE::ARENA:
+            {
+                // A banner on a pole, the colours of a house that dies for fun.
+                metal.cylinder( place( { at.x, 0.0f, at.z } ), 0.06f, 4.2f, 8 );
+                drape.m_color = Washing[hashCell( r, c, 37 ) % 5];
+                drape.box( place( Vector3Add( { at.x, 3.1f, at.z }, Vector3Scale( n, 0.1f ) ),
+                                  { 0.0f, atan2f( n.x, n.z ) + PI * 0.5f, 0.0f } ),
+                           { 0.5f, 0.95f, 0.02f } );
+                drape.m_color = WHITE;
+                m_props.push_back( { at, 0.3f } );
+                break;
+            }
+            case ThemeE::YARD:
+            case ThemeE::CONTAINER:
+                // A stack of girders, yellow; a welding rig with its arc.
+                hazard.box( place( { at.x, 0.2f, at.z }, { 0.0f, turn, 0.0f } ), { 0.9f, 0.2f, 0.25f } );
+                hazard.box( place( { at.x, 0.55f, at.z }, { 0.0f, turn + 0.2f, 0.0f } ), { 0.85f, 0.15f, 0.22f } );
+                if ( hash01( r, c, 35 ) < 0.4f )
+                    glows.push_back( { { at.x, 0.95f, at.z }, { 0.06f, 0.06f, 0.06f }, { 6.0f, 6.5f, 9.0f, 0.0f } } );
+                m_props.push_back( { at, 0.6f } );
+                break;
+            case ThemeE::CRYO:
+            case ThemeE::SERVER:
+            {
+                // A tall cabinet of computers, its lights in rows.
+                bool cryo = theme( r, c ) == ThemeE::CRYO;
+                metal.m_color = cryo ? Color{ 196, 214, 234, 255 } : Color{ 64, 68, 78, 255 };
+                metal.box( place( { at.x, 1.2f, at.z }, { 0.0f, atan2f( n.x, n.z ), 0.0f } ), { 0.55f, 1.2f, 0.4f } );
+                metal.m_color = WHITE;
+                Vector3 face = Vector3Add( { at.x, 0.0f, at.z }, Vector3Scale( n, 0.41f ) );
+                for ( int i = 0; i < 5; ++i )
+                    glows.push_back(
+                        { { face.x, 0.5f + i * 0.38f, face.z },
+                          { fabsf( n.z ) > 0.5f ? 0.4f : 0.01f, 0.02f, fabsf( n.x ) > 0.5f ? 0.4f : 0.01f },
+                          cryo ? Vector4{ 0.4f, 1.5f, 4.0f, 0.0f } : Vector4{ 0.3f, 2.6f, 1.0f, 0.0f } } );
+                m_props.push_back( { at, 0.6f } );
+                break;
+            }
+            case ThemeE::PRISON:
+                // Bars of a cell against the wall.
+                for ( int i = -3; i <= 3; ++i )
+                {
+                    Vector3 side = { n.z, 0.0f, -n.x };
+                    Vector3 b = Vector3Add( at, Vector3Scale( side, i * 0.22f ) );
+                    rust.cylinder( place( { b.x, 0.0f, b.z } ), 0.03f, 2.4f, 6 );
+                }
+                m_props.push_back( { at, 0.5f } );
+                break;
+            case ThemeE::FURNACE:
+                // A crucible, its rim glowing with what it held.
+                rust.lathe(
+                    place( { at.x, 0.0f, at.z } ),
+                    { { 0.0f, 0.0f }, { 0.45f, 0.0f }, { 0.6f, 0.9f }, { 0.5f, 0.9f }, { 0.4f, 0.2f }, { 0.0f, 0.2f } },
+                    16 );
+                glows.push_back( { { at.x, 0.85f, at.z }, { 0.42f, 0.02f, 0.42f }, { 9.0f, 3.0f, 0.5f, 0.0f } } );
+                m_props.push_back( { at, 0.6f } );
+                break;
+            case ThemeE::NET:
+                // A chair someone remembers, a lamp from a kitchen.
+                crate.m_color = { 180, 140, 100, 255 };
+                crate.box( place( { at.x, 0.45f, at.z } ), { 0.22f, 0.03f, 0.22f } );
+                crate.box( place( Vector3Add( { at.x, 0.75f, at.z }, Vector3Scale( n, -0.2f ) ) ),
+                           { 0.22f, 0.3f, 0.03f } );
+                crate.m_color = WHITE;
+                glows.push_back( { { at.x, 2.2f, at.z }, { 0.15f, 0.08f, 0.15f }, { 4.0f, 3.2f, 2.0f, 0.0f } } );
+                m_props.push_back( { at, 0.35f } );
+                break;
+            case ThemeE::MOON:
+            case ThemeE::HALL:
+            {
+                rock.m_color =
+                    theme( r, c ) == ThemeE::MOON ? Color{ 120, 118, 114, 255 } : Color{ 140, 128, 116, 255 };
+                for ( int i = 0; i < 3; ++i )
+                {
+                    float a = turn + i * 2.1f, d = 0.15f + 0.15f * i;
+                    rock.roundedBox( place( { at.x + cosf( a ) * d, 0.25f + 0.1f * i, at.z + sinf( a ) * d },
+                                            { a, a * 0.7f, 0.3f } ),
+                                     { 0.35f - 0.07f * i, 0.28f, 0.3f }, 0.12f, 2 );
+                }
+                rock.m_color = look.m_rock;
+                m_props.push_back( { at, 0.55f } );
+                break;
+            }
             case ThemeE::ALIEN:
             {
                 // A crystal node grown out of the wall's foot, a faint light inside it.
@@ -1955,6 +2325,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         m_signs.push_back( sign );
     }
 
+#pragma warning( pop )
     auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f } )
     {
         for ( Mesh mesh : b.build() )
@@ -1972,6 +2343,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     add( floor, s.m_floor, false );
     add( ground, s.m_rock, false );
     add( plate, s.m_hull, false );
+    for ( auto &tb : themed ) add( tb.second, tb.first / 2, tb.first % 2 == 1 );
     add( grate, s.m_grate, false );
     add( metal, s.m_metal, true );
     add( hazard, s.m_hazard, false );

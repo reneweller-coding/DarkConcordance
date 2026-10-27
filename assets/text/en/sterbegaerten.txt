@@ -1,0 +1,37 @@
+# Level 15: The Dying Gardens (English).
+
+l15.name  = The Dying Gardens
+l15.intro = A pleasure park at the foot of the ring wall, two hundred kilometres high. Waterfalls plunge from above and, because of the spin, drift aside in wide arcs; the spectators sit on balconies in the wall. | Citizens die here for fun: cliff jumps, duels, fights against bred predators. An hour later they wake up and tell the story over dinner. | Teodor Lamm, four thousand deaths, carries the key you need. He gives it only to whoever beats him.
+
+l15_start        = A park. Children, picnic blankets, and over there someone is killing himself. Laughing.
+l15_start.dorra  = On Kalvar we dug graves. Here they raise their glasses.
+l15_fan          = My two hundredth death was last week! A spike worm. It was beautiful.
+l15_fan2         = Two hundred. In the Fringe that would be two hundred graves.
+l15_free         = If I die here, it costs nothing. That's exactly what feels wrong.
+l15_free.dorra   = Here a death costs nothing. Then it's worth nothing too. That's the mistake.
+l15_champion     = A champion. They wear their deaths like medals.
+l15_hounds       = Predators. Bred to hunt. Printed to die.
+l15_arena        = The arena. Above us the waterfalls, and on the balconies in the wall thousands of spectators.
+l15_wave1        = Round one! Low gravity – fly, my dears, fly!
+l15_wave2        = Round two! Lights out!
+l15_wave3        = Round three! A storm off the ring wall!
+l15_wave4        = Round four! Champions only – and all in a hurry!
+l15_lamm         = Bravo! You fight as if something were at stake. How old-fashioned. Then fight me.
+l15_again        = Ouch. – And here I am again. Four thousand and one. Once more?
+l15_end          = Well done. Here, the key. Why are you so serious? It's only a death.
+
+h_arena    = The arena: four rounds with changing rules, then Teodor Lamm himself.
+h_rules    = Each round has its rule – it's shown at the top. The next one begins once all are down.
+h_lamm     = Teodor Lamm: quick, tough, and he doesn't stay dead the first time.
+h_lamm.dorra = Teodor Lamm: quick, with a hammer like yours. Shield up when he charges. He gets up once.
+
+note.gardens.title = Today's programme, Dying Gardens
+note.gardens       = 10:00 cliff jump (40 minutes' wait). 12:00 duel of your choice. 15:00 spike worms (booking required). 20:00 Teodor Lamm.
+note.deaths.title  = Reembodiment log
+note.deaths        = Deaths today: 1,204. Complaints: three (waiting time, waiting time, taste of the welcome drink).
+note.lamm.title    = Fan mail to Teodor Lamm
+note.lamm          = Dear Teodor, I died because of you. Thank you! May I come again next week?
+note.ticket.title  = Ticket, torn
+note.ticket        = Valid for one death. Further deaths at the box office.
+note.printer.title = Maintenance, body printer 7
+note.printer       = Print time per citizen: 52 minutes. Load: 98 per cent. Please no double bookings.

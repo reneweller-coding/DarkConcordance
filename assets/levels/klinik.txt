@@ -1,0 +1,66 @@
+# Level 14: Die Wiederverkörperung (Akt III). Eine Klinik auf dem Ring Gelassenheit, in der Tote in neuen Körpern
+# erwachen: der Saal mit den Betten, ein Gang, die Terrasse mit dem Blick über den Ring. Kein Kampf. Ysolde auf der
+# Terrasse, die Körperberatung (die Fertigkeiten einmal neu verteilen: Ereignis respec), ein Spiegel. Die Bahn am Ende
+# der Terrasse fährt zu Ysoldes Wohnung, sobald sie gesprochen hat.
+#   view ring              der Ring um das Level: Land, das zu beiden Seiten in den Himmel steigt
+#   vista s                s Sekunden der Blick hinauf, wenn man ankommt
+
+name     l14.name
+act      act.3
+intro    l14.intro
+gravity  9.0
+fog      0.0008 0.003 0.4 0.75
+fogcolor 0.004 0.005 0.007
+ambient  0.16 0.17 0.19 0.08 0.085 0.09
+walls    3.6
+peaceful 1
+skycolor 0.42 0.58 0.85
+view     ring
+vista    9
+sundir   0.25 -1.0 0.15
+suncolor 2.1 2.0 1.85
+ambience clinic
+music    klinik
+menutitle tram.title
+autotalk ysolde
+exit     gelassenheit.txt k14
+zone     0 0 9 12 clinic
+zone     0 13 9 22 clinic
+zone     0 23 9 39 park
+route    6 12  5 20  5 30  5 37
+
+[map]
+########################################
+########################################
+##A.........A##########A.............A##
+##.+.+.+.+...##########...............##
+##...........##########...............##
+##.+.+.+.+...........................O##
+##..........P.........................##
+##A.........A##########A.............A##
+########################################
+########################################
+
+[npcs]
+# Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...
+ysolde  | 4 31 | ysolde   | c14a | k14:c14d
+berater | 2 6  | terminal | b14a | respec:b14c
+spiegel | 7 7  | terminal | s14a
+
+[talk]
+c14a | ysolde  | -       | c14a_a>c14b
+c14b | ysolde  | -       | c14b_a>c14c
+c14c | ysolde  | k14     |
+c14d | ysolde  | -       |
+b14a | berater | -       | b14a_a>b14b b14a_b>-
+b14b | berater | respec  |
+b14c | berater | -       |
+s14a | spiegel | -       |
+
+[lines]
+k14_start  | start | hero
+k14_window | b     | hero
+
+[hints]
+h_klinik   | a
+h_respec   | respec

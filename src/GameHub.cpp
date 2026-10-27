@@ -79,6 +79,15 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
         std::string look = n.m_look;
         s.m_def = (int)i;
         s.m_pos = m_level.centre( n.m_row, n.m_col );
+        if ( n.m_row == -2 )
+        {
+            float a = -0.6f + 1.2f * (float)( i % 3 );
+            s.m_pos = Vector3Add( m_pos, { sinf( a ) * 4.0f, 0.0f, -cosf( a ) * 4.0f } );
+            int r, c;
+            m_level.cellOf( s.m_pos, r, c );
+            if ( !m_level.walkable( r, c ) )
+                s.m_pos = Vector3Add( m_pos, { 2.0f * ( i % 2 ? 1.0f : -1.0f ), 0.0f, 0.0f } );
+        }
         s.m_yaw = 0.0f;
         s.m_look = look == "terminal" ? -1 : look == "ysolde" ? 4 : look == "kiri" ? 5 : look == "ottla" ? 1 : 0;
         // Drawn as a skinned figure where the bodies are there: Ysolde's hair pinned up and grey, Ottla's cropped
@@ -95,6 +104,29 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
             s.m_figure.m_hair = look == "ysolde" ? 1 : look == "ottla" ? 2 : 0;
             s.m_figure.m_hairColour = look == "kiri" ? 0 : 4;
             s.m_figure.m_tone = look == "kiri" ? 0 : 1;
+            // The later people: body (0 a man, 1 a woman), hair (-1 none), its colour (black, brown, blond, red,
+            // grey), skin (0 dark, 1 light), clothes.
+            struct Who
+            {
+                const char *m_look;
+                int         m_body, m_hair, m_colour, m_tone;
+                Vector3     m_cloth;
+            };
+            static const Who who[] = {
+                { "okafor", 1, 2, 4, 0, { 0.33f, 0.36f, 0.24f } }, { "hale", 1, 1, 4, 1, { 0.1f, 0.1f, 0.12f } },
+                { "pell", 0, 0, 4, 1, { 0.42f, 0.34f, 0.24f } },   { "ruul", 0, -1, 0, 1, { 0.55f, 0.44f, 0.28f } },
+                { "ilka", 1, 2, 0, 1, { 0.4f, 0.42f, 0.46f } },    { "lamm", 0, 0, 2, 1, { 0.5f, 0.1f, 0.12f } },
+                { "crew", 0, 1, 1, 0, { 0.3f, 0.32f, 0.36f } },
+            };
+            for ( const Who &w : who )
+                if ( look == w.m_look )
+                {
+                    s.m_figure.m_body = w.m_body;
+                    s.m_figure.m_hair = w.m_hair;
+                    s.m_figure.m_hairColour = w.m_colour;
+                    s.m_figure.m_tone = w.m_tone;
+                    s.m_figure.m_cloth = w.m_cloth;
+                }
         }
         m_npcs.push_back( s );
         m_blocked.insert( n.m_row * m_level.cols() + n.m_col );
@@ -354,9 +386,28 @@ void Game::openForPicture( const std::string &who, int menu )
 
 void Game::enterNode( const TalkNode *node )
 {
-    m_talk = node;
+    // An answer may need something to have happened ("key>node?flag"), or not ("?!flag").
+    m_talk = nullptr;
     m_choice = 0;
-    if ( !node || node->m_event.empty() ) return;
+    if ( !node ) return;
+    m_shown = *node;
+    m_shown.m_answers.clear();
+    for ( const auto &a : node->m_answers )
+    {
+        size_t q = a.second.find( '?' );
+        if ( q == std::string::npos )
+        {
+            m_shown.m_answers.push_back( a );
+            continue;
+        }
+        std::string flag = a.second.substr( q + 1 );
+        bool        not_ = !flag.empty() && flag[0] == '!';
+        if ( not_ ) flag = flag.substr( 1 );
+        if ( ( m_fired.count( flag ) > 0 ) != not_ )
+            m_shown.m_answers.push_back( { a.first, a.second.substr( 0, q ) } );
+    }
+    m_talk = &m_shown;
+    if ( node->m_event.empty() ) return;
     // A step's own events run as it is shown; the shop and the workshop open once it has been read.
     std::stringstream events( node->m_event );
     std::string       e;
@@ -371,6 +422,15 @@ void Game::runEvent( const std::string &event )
         m_scrap += atoi( event.c_str() + 5 );
         m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.8f );
         return;
+    }
+    // A new body: the talents are free to be given again (once, at the clinic).
+    if ( event == "respec" )
+    {
+        int spent = 0;
+        for ( int &k : m_progress.m_ranks ) spent += k, k = 0;
+        m_progress.m_points += spent;
+        refreshStats();
+        m_hp = fminf( m_hp, hpMax() );
     }
     // Anything else is something that has happened: it stays, from level to level.
     fire( event );
@@ -610,6 +670,7 @@ bool Game::updateFightTalk( GameInput &in )
     m_navY = m_rawMove.y;
     if ( m_talk ) return talkStep( step, in.m_jump || in.m_confirm || in.m_use, in.m_special );
     int near = nearNpc();
+    if ( m_autoplay && m_autoTalkTo >= 0 && near >= 0 ) near = m_autoTalkTo;
     if ( near >= 0 && in.m_use )
     {
         openTalk( near );
@@ -764,7 +825,7 @@ void Game::drawHubHud( int w, int h, float s )
         std::string name = tr( "speaker." + m_talk->m_speaker );
         text( name.c_str(), tx, y0 + 20.0f * s, 24, { 255, 190, 110, 255 } );
         float used =
-            wrapped( trAs( m_talk->m_id, who ), tx, y0 + 56.0f * s, 26, x1 - tx - 30.0f * s, { 240, 236, 228, 255 } );
+            wrapped( spoken( m_talk->m_id ), tx, y0 + 56.0f * s, 26, x1 - tx - 30.0f * s, { 240, 236, 228, 255 } );
         float ay = y0 + 66.0f * s + used;
         if ( m_talk->m_answers.empty() )
             text( tr( "talk.next" ), x1 - 24.0f * s - MeasureTextEx( m_font, tr( "talk.next" ), 20 * s, 1.0f ).x,

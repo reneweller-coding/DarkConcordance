@@ -15,9 +15,9 @@ name     l6.name
 act      act.2
 intro    l6.intro
 gravity  3.4
-fog      0.002 0.008 0.4 0.75
-fogcolor 0.0006 0.0012 0.002
-ambient  0.04 0.05 0.065 0.02 0.028 0.04
+fog      0.0012 0.005 0.4 0.75
+fogcolor 0.0003 0.0006 0.0011
+ambient  0.02 0.026 0.038 0.009 0.013 0.02
 walls    4.0
 sky      nebula
 space    1
@@ -26,7 +26,7 @@ ice      1
 planet   gasgiant 0.3
 star     -3200 2600 -9000 5600
 sundir   0.3 -0.8 0.5
-suncolor 1.05 1.0 0.95
+suncolor 0.55 0.58 0.66
 meter    warmth 150 0
 faction  concession
 area     10
@@ -35,6 +35,8 @@ gate     bossdead
 ambience ice
 music    seren
 bossmusic boss2
+npcafter rigcore bossdead
+autotalk rigcore
 
 genrooms      14
 genside       5
@@ -56,7 +58,17 @@ genpack       ""E     1.2
 genpack       $$E     1
 gendensity    1.15
 genelite      0.3
-gennote       note.pump note.colony note.settler note.miner note.relay6
+gennote       note.pump6 note.colony note.settler note.miner note.relay6
+
+[npcs]
+rigcore | -1 -1 | terminal | r6a | seren.taken:r6d seren.off:r6e
+
+[talk]
+r6a | rigcore | -           | r6a_a>r6b r6a_b>r6c
+r6b | rigcore | seren.taken |
+r6c | rigcore | seren.off   |
+r6d | rigcore | -           |
+r6e | rigcore | -           |
 
 [lines]
 # Schlüssel | Auslöser | Sprecher   (die Texte: assets/text/<sprache>/seren.txt)
@@ -77,6 +89,7 @@ l6_late     | tug2             | rig
 l6_home     | bossdead         | rig
 l6_end      | bossdead         | hero
 
+l6_core      | appear.rigcore   | rigcore
 [hints]
 # Schlüssel | Auslöser
 h_warmth    | b
@@ -90,3 +103,4 @@ h_champion  | champion
 h_stim      | hurt
 h_lowwarmth | lowmeter
 h_rig       | bossstart
+h_core6     | appear.rigcore

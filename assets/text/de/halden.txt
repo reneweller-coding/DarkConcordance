@@ -44,5 +44,5 @@ note.okafor.title  = Persönliche Nachricht, nicht gesendet
 note.okafor        = Liebe Mira, lieber Jonas, Mama arbeitet noch ein Jahr hier draußen, dann sind wir Bürger. Alle drei. Ihr bekommt ein Zimmer mit Fenster. Ich verspreche es.
 note.relay8.title  = Ausgangsbuch Sammelstelle
 note.relay8        = Charge T-1207 (»Kind«), aus Hesper: nicht hier verwendet. Weitergeleitet: Arche-Bergung? NEIN – korrigiert: Kael, Einbau. Unterschrift unleserlich.
-note.child.title   = Kreidezeichnung an einer Containerwand
-note.child         = Ein Haus, eine Sonne, die genau in der Mitte steht. Darunter in Kinderschrift: SO WAR ES ZU HAUSE.
+note.child8.title   = Kreidezeichnung an einer Containerwand
+note.child8         = Ein Haus, eine Sonne, die genau in der Mitte steht. Darunter in Kinderschrift: SO WAR ES ZU HAUSE.

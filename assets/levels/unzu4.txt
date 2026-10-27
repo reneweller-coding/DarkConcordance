@@ -1,0 +1,94 @@
+# Hub in Akt IV: die »Unzureichend Ausgestattet« auf dem alten Weg zurück, drei Monate, sieben Sprünge. Ysolde ist
+# nicht an Bord; Ansgar Ruul sitzt in der Messe und nennt die Ziele. Unzu hat seine Erinnerungen zurück. Kiri, der
+# Händlerfunk. Die Schleuse im Frachtraum führt zu den Zielen. Karte wie in unzu.txt.
+
+name     u4.name
+act      act.4hub
+intro    u4.intro
+gravity  7.0
+fog      0.003 0.01 0.6 0.9
+fogcolor 0.0018 0.002 0.0028
+ambient  0.06 0.06 0.07 0.035 0.035 0.04
+walls    3.6
+peaceful 1
+sky      nebula
+view     planet
+planet   mill 0.6
+ambience shiphub
+music    ship
+menutitle nav.title
+back     done.velm2
+autotalk ruul
+exit     velm2.txt job20
+exit     brannt.txt job21
+exit     erzstrom.txt job22
+exit     wracks.txt job20 again
+exit     tiefen.txt job20 again
+zone     2 13 7 28 bridge
+zone     13 4 18 13 bar
+zone     13 27 18 36 works
+zone     19 16 21 24 cargo
+zone     0 0 23 39 gangway
+route    9 21  11 9  13 8  14 7  11 9  11 20  16 20  20 20
+
+[map]
+########################################
+########################################
+#############A..............A###########
+#############................###########
+#############...__________...###########
+#############...__________...###########
+#############................###########
+#############................###########
+#####################/##################
+####A................P...............A##
+####.......aaaaa.....................A##
+####..................................##
+########/##########...#########/########
+####A.........#####...#####.........A###
+####..........#####...#####..........###
+####...++++...#####...#####..........###
+####...++++...#####...#####..........###
+####..........#####...#####..........###
+####A.........#####...#####.........A###
+################.........###############
+################....O....###############
+################R.......R###############
+########################################
+########################################
+
+[npcs]
+# Name | Zeile Spalte | Aussehen | erster Knoten | Ereignis:Knoten ...
+ruul  | 14 6  | ruul     | r400 | job20:r402 done.velm2:r410 job21:r412 done.brannt:r420 job22:r422 gamedone:r430
+unzu  | 3 20  | terminal | u400 | done.velm2:u410 done.brannt:u420 gamedone:u430
+kiri  | 16 32 | kiri     | k400
+funk  | 10 35 | terminal | f400
+
+[talk]
+r400 | ruul | -        | r400_a>r401
+r401 | ruul | job20    |
+r402 | ruul | -        |
+r410 | ruul | -        | r410_a>r411
+r411 | ruul | job21    |
+r412 | ruul | -        |
+r420 | ruul | -        | r420_a>r421
+r421 | ruul | job22    |
+r422 | ruul | -        |
+r430 | ruul | -        |
+u400 | unzu | -        |
+u410 | unzu | -        |
+u420 | unzu | -        |
+u430 | unzu | -        |
+k400 | kiri | -        | k400_a>k401 k400_b>-
+k401 | kiri | workshop |
+f400 | funk | -        | f400_a>f401 f400_b>-
+f401 | funk | shop     |
+
+[lines]
+s4_start | start | hero
+s4_back  | back  | hero
+
+[hints]
+h_ship4       | a
+h_exitlocked2 | exitlocked
+h_exitlater2  | exitlater

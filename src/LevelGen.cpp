@@ -100,10 +100,20 @@ struct Recipe
     float                               m_oxygen = 0.0f;   ///< chance of an oxygen canister in a room out in the open
     float                               m_water = 0.0f;    ///< chance of a ball of water floating in a room
     std::vector<std::pair<char, float>> m_features;        ///< things per room: bore holes, geysers, coils, power cells
-    char                                m_hover = 0;   ///< who hangs over the abyss beside the rooms (balloon guards)
-    float                               m_hoverRate = 0.0f;   ///< how many per room
-    int m_power = 0;   ///< the ark: every door on the way locked until powered (its cost)
-    bool machine() const { return m_arena == "tug" || m_arena == "rig" || m_arena == "bell" || m_arena == "lance"; }
+    struct ThingRate
+    {
+        std::string m_name, m_where;   ///< what, where: main, side, arena, all
+        float       m_rate;
+    };
+    std::vector<ThingRate> m_things;             ///< things by name per room ("genthing name rate where")
+    char                   m_hover = 0;          ///< who hangs over the abyss beside the rooms (balloon guards)
+    float                  m_hoverRate = 0.0f;   ///< how many per room
+    int                    m_power = 0;          ///< the ark: every door on the way locked until powered (its cost)
+    bool machine() const
+    {
+        return m_arena == "tug" || m_arena == "rig" || m_arena == "bell" || m_arena == "lance" ||
+               m_arena == "platform" || m_arena == "column" || m_arena == "catcher";
+    }
 };
 
 const int DR[4] = { -1, 0, 1, 0 };   ///< north, east, south, west
@@ -189,6 +199,13 @@ Recipe parse( const std::string &text, std::string &head, std::string &tail )
             kv >> sym >> rate;
             if ( !sym.empty() ) r.m_features.push_back( { sym[0], rate } );
         }
+        else if ( key == "genthing" )
+        {
+            Recipe::ThingRate th;
+            kv >> th.m_name >> th.m_rate >> th.m_where;
+            if ( th.m_where.empty() ) th.m_where = "all";
+            if ( !th.m_name.empty() ) r.m_things.push_back( th );
+        }
         else if ( key == "genhover" )
         {
             std::string sym;
@@ -231,7 +248,12 @@ public:
         std::string out = "# Generated (seed " + std::to_string( seed ) + ").\n" + head;
         for ( const std::string &l : m_extra ) out += l + "\n";
         out += "\n[map]\n";
-        for ( const std::string &row : m_g ) out += row + "\n";
+        for ( std::string row : m_g )
+        {
+            for ( char &ch : row )
+                if ( ch == '\\' ) ch = '.';   // the things' cells, kept free while the rooms were filled
+            out += row + "\n";
+        }
         out += "\n" + tail;
         return out;
     }
@@ -461,6 +483,8 @@ private:
             if ( m_rc.m_void && !outdoor( r.m_theme ) ) fill( r.m_r.grown( 1 ), '#' );
             fill( r.m_r, '.' );
         }
+        // In rock the machine's berth is a breach in the hall's wall, open to what lies beyond.
+        if ( m_hasTug && !m_rc.m_void ) fill( m_tug, '~' );
         for ( const Hall &h : m_halls )
         {
             for ( int y = h.m_r.m_r0; y <= h.m_r.m_r1; ++y )
@@ -611,7 +635,51 @@ private:
             for ( int k = m_rng.range( 1, 2 ); k > 0; --k ) block( r, anywhere( r, 1, m_rng.range( 2, 3 ) ), '#' );
             return;
         }
-        if ( t == "ice" || t == "dusk" || t == "snow" )
+        if ( t == "park" )
+        {
+            // Gardens: hedges, a raised lawn, benches along a path.
+            for ( int k = m_rng.range( 2, 4 ); k > 0; --k ) block( r, anywhere( r, 1, m_rng.range( 2, 4 ) ), '#' );
+            if ( big && m_rng.chance( 0.6f ) ) block( r, anywhere( r, m_rng.range( 3, 4 ), m_rng.range( 3, 5 ) ), '1' );
+            for ( int k = m_rng.range( 1, 3 ); k > 0; --k ) block( r, anywhere( r, 1, 1 ), '+' );
+            return;
+        }
+        if ( t == "clinic" || t == "hall" || t == "server" || t == "cryo" || t == "net" || t == "prison" )
+        {
+            // Rows: beds, benches, racks of computers, desks, bunks; aisles between them.
+            int len0 = t == "hall" ? 4 : 2, len1 = t == "hall" ? 7 : 4;
+            for ( int y = r.m_r0 + 2; y <= r.m_r1 - 2; y += t == "hall" ? 2 : 3 )
+                for ( int x = r.m_c0 + 2; x <= r.m_c1 - 3; )
+                {
+                    int len = m_rng.range( len0, len1 );
+                    block( r, { y, x, y, std::min( x + len - 1, r.m_c1 - 2 ) }, '+' );
+                    x += len + 2;
+                }
+            if ( t == "cryo" || t == "prison" )
+                for ( int k = m_rng.range( 1, 2 ); k > 0; --k ) block( r, anywhere( r, 2, 2 ), '#' );
+            return;
+        }
+        if ( t == "arena" )
+        {
+            // Sand, a few pillars; the middle stays open.
+            for ( int k = m_rng.range( 1, 3 ); k > 0; --k ) block( r, anywhere( r, 1, 1 ), '#' );
+            return;
+        }
+        if ( t == "yard" || t == "container" )
+        {
+            // Holes in the plating (space shows through), stacks, a generator to hide behind.
+            for ( int k = m_rng.range( 1, 3 ); k > 0; --k ) block( r, anywhere( r, 2, m_rng.range( 2, 3 ) ), '~' );
+            for ( int k = m_rng.range( 1, 3 ); k > 0; --k ) block( r, anywhere( r, 2, 2 ), '#' );
+            if ( m_rng.chance( 0.5f ) ) block( r, anywhere( r, 2, 3 ), 'F' );
+            return;
+        }
+        if ( t == "furnace" )
+        {
+            // Channels of molten metal across (the level's below shows them), crucibles to hide behind.
+            for ( int k = m_rng.range( 1, 2 ); k > 0; --k ) block( r, anywhere( r, 1, m_rng.range( 3, 5 ) ), '~' );
+            for ( int k = m_rng.range( 1, 3 ); k > 0; --k ) block( r, anywhere( r, 2, 2 ), 'F' );
+            return;
+        }
+        if ( t == "ice" || t == "dusk" || t == "snow" || t == "moon" )
         {
             // Out in the open: ridges of pressure ice, boulders, black rock; mounds one can stand on.
             for ( int k = m_rng.range( 1, 3 ); k > 0; --k )
@@ -1022,6 +1090,25 @@ private:
             if ( outdoor( room.m_theme ) && m_rng.chance( m_rc.m_oxygen * 0.5f ) ) put( r, ';' );
             if ( outdoor( room.m_theme ) && m_rng.chance( m_rc.m_oxygen * 0.4f ) ) put( r, ':' );
             if ( room.m_theme == "exchanger" && m_rng.chance( 0.2f ) ) put( r, 'D' );
+            // Things by name: a free cell each, kept free (marked until the map is written).
+            for ( const auto &th : m_rc.m_things )
+            {
+                bool here =
+                    th.m_where == "all" || ( th.m_where == "side" && room.m_kind == SIDE ) ||
+                    ( th.m_where == "arena" && room.m_kind == ARENA ) ||
+                    ( th.m_where == "main" && room.m_kind != SIDE && room.m_kind != ARENA && room.m_kind != START );
+                if ( !here ) continue;
+                int count = (int)th.m_rate + ( m_rng.chance( th.m_rate - (int)th.m_rate ) ? 1 : 0 );
+                for ( int k = 0; k < count; ++k )
+                    for ( int t = 0; t < 40; ++t )
+                    {
+                        int y = m_rng.range( r.m_r0 + 1, r.m_r1 - 1 ), x = m_rng.range( r.m_c0 + 1, r.m_c1 - 1 );
+                        if ( !free( y, x ) ) continue;
+                        m_g[y][x] = '\\';
+                        m_extra.push_back( "thing " + cellText( y, x ) + " " + th.m_name );
+                        break;
+                    }
+            }
             // The place's own things: bore holes in the ice, geysers, coils, power cells (in the side rooms).
             for ( const auto &f : m_rc.m_features )
             {

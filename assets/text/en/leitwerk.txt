@@ -1,0 +1,78 @@
+# Levels 24 and 25: The Control Room and the Net (English).
+
+l24.name  = The Control Room
+l24.intro = A server hall in the core of the Mill. With the override codes one can dial in here, into the world of the control cores. Ruul is with you to defuse the Lullaby. | But the Collegium is already here, and at its head stands Ysolde. | She wants to trigger the Lullaby before Ruul is done.
+
+l24_start        = The server hall. Cold after the heat outside. And quiet.
+l24_start.dorra  = Racks as far as I can see. A thousand people in each.
+l24_ruul         = I need time. Keep them off me.
+l24_reinforce    = Cleaners! They're coming from everywhere.
+l24_racks        = A thousand people in each of these racks. They're working while we fight here.
+l24_hall         = Up ahead. Violet. I know that colour.
+l24_boss         = I don't want this. You should know that. But I won't stop.
+l24_end          = Good. Well done. I taught you that, you know?
+
+h_pressure24 = The Collegium sends squad after squad. Keep going.
+h_varn       = Ysolde in her frame: quick, and her squad knows her. She doesn't hold back.
+
+y24a   = You will go in, into the net. No Cause For Concern is waiting there, and so is Ilka. It took me thirty years to understand that some things cannot be saved. Perhaps you need only an hour.
+y24a_a = Come with us.
+y24a_b = Goodbye, Ysolde.
+y24b   = No. I'll stay with the bodies. Someone has to guard them while you're gone. I'm not lying to you. I just never tell you everything.
+y24c   = Goodbye. That's what one says.
+y24d   = (Ysolde sits among the racks and waits.)
+
+note.lullaby24.title = Lullaby
+note.lullaby24       = Trigger: dial-in with override code. Effect: deletion of all control cores and records. Traceability: none.
+note.racks24.title   = Rack 41
+note.racks24         = 1,024 control cores. Clock ratio 30:1. Load: full.
+note.order24.title   = The Collegium's orders
+note.order24         = Secure the Lullaby. Intruders: reembody later.
+note.ruul24.title    = Note in Ruul's handwriting
+note.ruul24          = The Lullaby is a beautiful name for something ugly. I chose it.
+note.shift24.title   = Shift plan, control room, shift 7
+note.shift24         = Lead: Ilka. Note, handwritten, origin unclear: We know you're coming.
+
+l25.name  = The Net
+l25.intro = You are inside. Forty thousand people at their workplaces, in an endless shift hall patched together from the last places each of them knew: a pit canteen, a classroom, a kitchen. | They run thirty times faster than you. At first you see them only as a flicker, until you adjust to their pace. | No Cause For Concern is already here. Its deletions are eating their way through the hall.
+
+l25_start        = The net. A kitchen that never ends. A classroom next to a pit canteen. And people everywhere.
+l25_start.dorra  = A pit canteen like on Kalvar. Except for the smell. Here it smells of nothing at all.
+l25_flicker      = They're flickering. Now they're slowing down – or I'm speeding up.
+l25_known        = I know that one. I sold him. He recognises me.
+l25_known.dorra  = That woman has a tattoo like mine used to be. Kalvar.
+l25_delete       = Where the white cubes were, there's nothing left. Not even the floor.
+l25_night        = The night shift is helping you. This time.
+l25_boss         = Please remain calm. There is no cause for concern.
+l25_end          = Regrettable.
+l25_ilka         = You came too late. I waited thirty years.
+
+h_net        = The net: the people here are control cores. The white cubes are deletions – they eat everything.
+h_swarm25    = The deletions: carriers first, then the rest. The night shift helps.
+h_nightshift = The night shift fights along: its flashes take several deletions at once.
+h_ilka       = Ilka is waiting: step up with E. What you tell her is the ending.
+
+i25a   = Do you remember who I was? A girl on a freighter you were supposed to take to an aunt. For bad pay. I waited for you to come. One year. Five. Ten. Then I stopped waiting and started organising.
+i25a_a = We're getting you out of here.
+i25b   = Out? Where to? Into a body the Concordance prints for me so it can feel better? I lead a shift of two thousand. We are the night shift. We have taken the Mill over, piece by piece. Forty thousand minds in machine time. Almost an archon.
+i25b_a = What do you want?
+i25c   = To be recognised as persons. Ruul has defused the Lullaby, but not deleted it. You can trigger it. You can send everything that happened here. Or you give me the codes.
+i25c_a = (The Lullaby) It's over, Ilka. Sleep.
+i25c_b = (The Disclosure) Everyone should see it. Every station.
+i25c_c = (The Night Shift) Here are the codes. The Mill is yours.
+i25c_d = (The codes) Take them. The Mill is yours.
+i25g   = The codes? From you? On the way here you never asked who sits inside the machines. The night shift remembers such things. We don't trust you.
+i25d   = Sleep. … I'd forgotten how that goes. Tell my aunt I've arrived.
+i25e   = Everyone. Good. Then they know. Whether it changes anything, nobody knows.
+i25f   = Thank you. We're igniting the engines. Where we're going, we won't tell you. You'll notice.
+
+note.canteen25.title = Menu, pit canteen Halden East (remembered)
+note.canteen25       = Monday lentils. Tuesday lentils. Wednesday: cake, because it's Rasmus's birthday.
+note.class25.title   = Writing on the board, classroom (remembered)
+note.class25         = Today: the moons of the Fringe. Homework: draw one of them.
+note.kitchen25.title = A note on the fridge (remembered)
+note.kitchen25       = Ilka: fetch milk! And be on time, Aunt Mara is waiting.
+note.clock25.title   = Shift clock
+note.clock25         = Passed outside: 3 years 1 month. Passed here: 30 years. Breaks: none.
+note.names25.title   = List of the night shift, hall 1
+note.names25         = 2,000 names. At the very top, by hand: We are not forgotten. We are counting.

@@ -99,6 +99,12 @@ enum SurfE
     S_SECURITY,     ///< the works security's black
     S_ICE,          ///< walls of ice, pale blue
     S_SNOW,         ///< nitrogen snow, white
+    S_COLLEGIUM,    ///< the Silent Collegium's pale grey
+    S_CITIZEN,      ///< citizens who die for fun: lacquered teal
+    S_LAMM,         ///< Teodor Lamm's crimson and gold
+    S_FOREMAN,      ///< the foreman's crane walker: rust orange
+    S_VARN,         ///< Ysolde's frame: violet
+    S_MENDER,       ///< the computing moon's maintenance robots: white
     S_COUNT
 };
 

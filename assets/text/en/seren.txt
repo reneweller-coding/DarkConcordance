@@ -34,8 +34,8 @@ h_dunk         = Fell through: that costs health and warmth. Keep away from crac
 h_lowwarmth    = Little warmth left: get to a hut or a heater post before the cold goes for your health.
 h_rig          = The Icebreaker: two pumps and the drill head. Red rings show where the drill strikes – the ice breaks there too.
 
-note.pump.title    = Production log, pump station 4
-note.pump          = Output week 41: 2.1 million cubic metres. Level drop since the start of the year: 12.3 metres. | Concession note: the colonies under station 4 have fallen dry. No effect on production.
+note.pump6.title    = Production log, pump station 4
+note.pump6          = Output week 41: 2.1 million cubic metres. Level drop since the start of the year: 12.3 metres. | Concession note: the colonies under station 4 have fallen dry. No effect on production.
 note.colony.title  = A biologist's note
 note.colony        = They don't glow to be seen. They glow because they live. When the water under them is gone, they glow for three more days. Then no more. | I reported it. The answer was a form.
 note.settler.title = Relocation offer, Hot Spring settlement
@@ -44,3 +44,14 @@ note.miner.title   = Data sheet, control core 7731
 note.miner         = Origin: Fringe, sector 11. Formerly: miner, 51 years. Deployment: autonomous drilling tower »Icebreaker«. Subjective runtime: 80 years. | Remark: believes himself on duty. Do not correct – performance drops otherwise.
 note.relay6.title  = Seren interim store, intake
 note.relay6        = Batch T-1207 (Talgrund, class C, 1 unit) stored. Forwarded to Hesper, balloon control, 6 days later. | Signed: store management, Deepground Concession.
+
+# After the Icebreaker: its core (the night shift remembers how it was treated).
+l6_core = Hello? Is anyone there? Is the shift over?
+h_core6 = The Icebreaker's core wants to talk: step up to its controls with E.
+r6a     = Is the shift over? I've been drilling for … I don't know. The figures say nineteen years. It feels like a long morning.
+r6a_a   = (take it along) The shift is over. Come with us.
+r6a_b   = (switch it off) The shift is over. Sleep now.
+r6b     = Come along? I don't know where I belong. Take me. I'll keep still. (Unzu takes the core into his memory.)
+r6c     = Sleep. Yes. Tell the foreman I made the quota … (The core falls silent.)
+r6d     = (The core is in Unzu's memory. Now and then it asks what time it is.)
+r6e     = (The controls are cold.)

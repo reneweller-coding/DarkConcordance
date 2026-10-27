@@ -114,6 +114,127 @@ TEXTURES = {
                "starfield, a few bright blue stars, a distant spiral galaxy, awe-inspiring, cinematic, photorealistic "
                "astrophotography, no planets, no text",
                0.0, 0.0, 0.0),
+    # The later places' walls and floors (Game::loadSurfaces maps them to themes; a level may choose its own).
+    # Act I: the drum's alleys, the hull, the Core Bank, the drowned quarter.
+    "plaster": ("tile", "1:1",
+                "Seamless tileable texture, orthographic front view of a weathered house facade inside a space habitat: "
+                "cracked and patched plaster in faded ochre and grey, water stains running down, soot, small repaired "
+                "patches of sheet metal, " + FLAT,
+                0.0, 0.85, 3.0),
+    "streetfloor": ("tile", "1:1",
+                    "Seamless tileable texture, top-down orthographic view of a worn street in a space habitat: "
+                    "patched concrete slabs and steel plates, narrow drain channels, grime, oil stains, chewing gum "
+                    "spots, scuffs, " + FLAT,
+                    0.2, 0.8, 2.5),
+    "hullplate": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of a space station's outer hull: large light "
+                  "grey heat-resistant ceramic plates in a grid, stencilled tiny markings without legible text, "
+                  "micrometeorite pits, scorch marks, " + FLAT,
+                  0.3, 0.6, 2.5),
+    "vaultwall": ("tile", "1:1",
+                  "Seamless tileable texture, orthographic front view of a clean bank vault wall: smooth pale ivory "
+                  "ceramic panels with soft rounded seams, small recessed status slots, faint fingerprints, " + FLAT,
+                  0.1, 0.35, 1.5),
+    "vaultfloor": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of a polished pale grey stone floor with "
+                   "thin inlaid brass lines forming large squares, faint reflections, scuffs, " + FLAT,
+                   0.2, 0.2, 1.2),
+    "algae": ("tile", "1:1",
+              "Seamless tileable texture, orthographic front view of a wall that was under water for years: corroded "
+              "steel panels covered in green and brown algae, mineral crusts, white salt lines, wet sheen, " + FLAT,
+              0.3, 0.55, 3.5),
+    "wetfloor": ("tile", "1:1",
+                 "Seamless tileable texture, top-down orthographic view of a flooded metal floor drying out: puddles, "
+                 "silt, green slime in the seams of the plates, rust blooms, wet reflections, " + FLAT,
+                 0.5, 0.35, 2.5),
+    # Act II: ice, snow, dust and desert rock, the refinery's deck, the ark's sleeper halls.
+    "iceblock": ("tile", "1:1",
+                 "Seamless tileable texture, orthographic front view of a wall of rough glacial blue ice with pressure "
+                 "cracks, trapped bubbles and white frost in the crevices, " + FLAT,
+                 0.0, 0.25, 3.0),
+    "snowfield": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of wind-packed snow with fine ripples and "
+                  "sastrugi, bluish shadows in the hollows, no footprints, " + FLAT,
+                  0.0, 0.8, 2.0),
+    "dust": ("tile", "1:1",
+             "Seamless tileable texture, top-down orthographic view of dry ochre desert dust with small pebbles, "
+             "fine cracks and wind ripples, " + FLAT,
+             0.0, 0.9, 2.5),
+    "dustrock": ("tile", "1:1",
+                 "Seamless tileable texture, orthographic front view of a weathered red-brown sandstone cliff face with "
+                 "horizontal strata, wind-carved hollows, dust, " + FLAT,
+                 0.0, 0.85, 4.0),
+    "deckrust": ("tile", "1:1",
+                 "Seamless tileable texture, top-down orthographic view of a refinery deck: rust-red painted steel "
+                 "plates with raised rivets, worn walkways showing bare metal, chemical stains, " + FLAT,
+                 0.7, 0.6, 3.0),
+    "podwall": ("tile", "1:1",
+                "Seamless tileable texture, orthographic front view of an old colony ship's sleeper hall wall: white "
+                "padded panels yellowed by centuries, soft quilted seams, small blue status lenses, frost in the "
+                "corners, " + FLAT,
+                0.1, 0.6, 2.0),
+    # Act III: the ring's gardens, the clinic, the arena, the gate's yard, the hearing, the computing moon, the prison.
+    "grass": ("tile", "1:1",
+              "Seamless tileable texture, top-down orthographic view of a lush trimmed lawn, short green grass with a "
+              "little clover and a few small daisies, " + FLAT,
+              0.0, 0.9, 2.0),
+    "hedge": ("tile", "1:1",
+              "Seamless tileable texture, orthographic front view of a dense neatly trimmed boxwood hedge, small dark "
+              "green leaves, " + FLAT,
+              0.0, 0.9, 4.0),
+    "tiles": ("tile", "1:1",
+              "Seamless tileable texture, clean white ceramic tiles of a modern clinic with thin pale grey grout, a "
+              "subtle pearly sheen, almost no wear, " + FLAT,
+              0.0, 0.25, 1.5),
+    "sand": ("tile", "1:1",
+             "Seamless tileable texture, top-down orthographic view of fine golden arena sand, raked, with footprints "
+             "and drag marks, " + FLAT,
+             0.0, 0.95, 2.5),
+    "sandstone": ("tile", "1:1",
+                  "Seamless tileable texture, orthographic front view of an arena wall of large carved sandstone "
+                  "blocks, weathered edges, faint red pigment left in the carvings, " + FLAT,
+                  0.0, 0.85, 4.0),
+    "yellowplate": ("tile", "1:1",
+                    "Seamless tileable texture, yellow painted construction plating of a giant space structure, "
+                    "scratched, stencilled grid lines without text, welding seams, grey primer showing through, " + FLAT,
+                    0.6, 0.5, 3.0),
+    "marble": ("tile", "1:1",
+               "Seamless tileable texture, top-down orthographic view of polished dark grey veined stone floor slabs "
+               "cut from an asteroid, thin seams, white veins, " + FLAT,
+               0.0, 0.15, 1.5),
+    "frost": ("tile", "1:1",
+              "Seamless tileable texture, pale blue metal panels covered in white hoarfrost and feathery ice crystals, "
+              "seams between the panels, " + FLAT,
+              0.5, 0.6, 3.0),
+    "scorched": ("tile", "1:1",
+                 "Seamless tileable texture, heat-scorched blackened steel plates with rainbow temper colours, soot, "
+                 "blistered paint and warped seams, " + FLAT,
+                 0.8, 0.55, 3.0),
+    # Act IV: Brannt being peeled, the Mill's furnace, its control room, the night shift's world.
+    "regolith": ("tile", "1:1",
+                 "Seamless tileable texture, top-down orthographic view of grey lunar regolith dust with small rocks, "
+                 "tiny craters and boot-free undisturbed surface, " + FLAT,
+                 0.0, 0.95, 3.0),
+    "slag": ("tile", "1:1",
+             "Seamless tileable texture, orthographic front view of a wall of dark volcanic slag and cooled metal with "
+             "thin glowing orange veins in the cracks, " + FLAT,
+             0.2, 0.85, 4.0),
+    "serverfloor": ("tile", "1:1",
+                    "Seamless tileable texture, top-down orthographic view of dark grey raised data centre floor tiles, "
+                    "every other tile a perforated vent panel, " + FLAT,
+                    0.6, 0.5, 2.0),
+    "serverwall": ("tile", "1:1",
+                   "Seamless tileable texture, orthographic front view of dark server rack fronts with rows of tiny "
+                   "green and blue indicator lights, cable bundles, ventilation mesh, " + FLAT,
+                   0.6, 0.5, 3.0),
+    "netgrid": ("tile", "1:1",
+                "Seamless tileable texture, a dark blue-black floor with a faint glowing cyan grid of thin lines, soft "
+                "digital noise and a few flickering cells, " + FLAT,
+                0.1, 0.4, 1.0),
+    "netwall": ("tile", "1:1",
+                "Seamless tileable texture, a pale dreamlike wall of softly glowing translucent panels, faded "
+                "photographs of kitchens and classrooms dissolving into light, abstract, no text, no faces, " + FLAT,
+                0.0, 0.5, 1.0),
     "gasgiant": ("picture", "16:9",
                  "Equirectangular texture map of a gas giant's cloud tops filling the whole frame as a flat projection, "
                  "horizontal turbulent cloud bands in ochre, rust, cream and deep teal, swirling vortex storms, highly "

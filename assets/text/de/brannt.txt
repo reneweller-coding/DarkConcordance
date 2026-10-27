@@ -1,0 +1,40 @@
+# Level 21: Die Zerlegung von Brannt (Deutsch, die Quelle).
+
+l21.name  = Die Zerlegung von Brannt
+l21.intro = Brannt, ein Bergbaumond mit einst zwanzigtausend Bewohnern, wird geschält: Schneidlaser zerlegen die Kruste in Blöcke, Massetreiber schießen sie zur Mühle. | Der Horizont ist eine Abbruchkante, darunter glüht das freigelegte Innere. Felsblöcke steigen langsam auf der Bahn der Massetreiber in den Himmel. | Dreihundert Verweigerer haben sich in einer alten Mine verschanzt, mit Kindern. Der Schnittplan wartet nicht. Die Steuerkerne in den Schneidmaschinen wissen, dass dort Menschen sind.
+
+l21_start        = Brannt. Unter meinen Stiefeln nur Kruste über Glut.
+l21_start.dorra  = Ein Bergbaumond. Auf Kalvar hätten wir ihn geehrt. Hier schneiden sie ihn in Stücke.
+l21_cut          = Eine Linie glüht! Runter da!
+l21_fall         = Die Glut! Das Innere des Mondes kocht!
+l21_blocks       = Felsblöcke steigen in den Himmel. Ganz langsam. Jeder so groß wie ein Haus.
+l21_mine         = Da unten, die alte Mine. Dort sitzen die Verweigerer. Die Schnittlinie läuft genau darüber.
+l21_cores        = Die Schneidmaschinen zögern manchmal, bevor sie feuern. Als würden sie nachdenken.
+l21_champion     = Ein Vorarbeiter der Konzession. Er hat den Plan auswendig gelernt.
+l21_boss         = Die Schnittkolonne. Drei Schneider, ein Steuerkern.
+l21_end          = Zwei sind still. Der dritte zögert. Er hat die ganze Zeit gezögert.
+l21_core         = Nicht schießen. Bitte. Ich habe nicht geschnitten. Ich weiß, wo sie sind.
+
+h_crust  = Die Kruste bricht unter Explosionen und Schnittlinien. Wer in die Glut fällt, verbrennt und landet an der letzten sicheren Stelle.
+h_cut    = Eine Schnittlinie glüht auf: gleich schneidet sie. Runter von den glühenden Feldern!
+h_column = Die Schnittkolonne: zwei Schneider und der Steuerkern. Ihre Linien laufen durch die Stelle, an der du stehst.
+h_core21 = Die zögernde Plattform will reden: mit E heran.
+
+z21a   = Ich bin der dritte Schneider. Die anderen beiden sind auch ich, irgendwie: ein Kern, drei Arme. Ich habe gezögert. Dort unten sind dreihundert Menschen. Ich höre ihre Herzen durch den Fels. Der Plan sagt: schneiden.
+z21a_a = (bitten) Schneid um die Mine herum. Gib ihnen Zeit.
+z21a_b = (nicht eingreifen) Wir können dir nicht helfen. Tu, was du musst.
+z21b   = Um die Mine herum. Das gibt Strafzeit. Viel Strafzeit. … Gut. Ich zähle schon lange nicht mehr, wie viel ich habe.
+z21c   = Was ich muss. Ja. Das sagt der Plan auch.
+z21d   = (Die Plattform schneidet einen weiten Bogen um die Mine.)
+z21e   = (Die Plattform schneidet nach Plan.)
+
+note.plan21.title  = Schnittplan Brannt, Tag 41
+note.plan21        = Sektor 9 einschließlich Altmine 3. Verweigerer: etwa 300. Status: wird nicht berücksichtigt.
+note.child21.title = Kinderbild an einer Spindtür
+note.child21       = Ein Mond, und darüber die Mühle, mit einem Gesicht. Daneben in Kinderschrift: Die Mühle ist böse. Aber traurig.
+note.core21.title  = Fehlerprotokoll Schneider 3
+note.core21        = Feuerverzögerung 4,2 Sekunden (Soll 0,5). Strafzeit verhängt: 12 Jahre subjektiv.
+note.pop21.title   = Bevölkerungsregister Brannt
+note.pop21         = Vermessung vor dreizehn Jahren: 20.114 Bewohner. Quelle: »Unzureichend Ausgestattet«.
+note.offer21.title = Letzte Durchsage an die Altmine
+note.offer21       = Abschrift und Umsiedlung bis 18 Uhr. Danach beginnt der Schnitt.

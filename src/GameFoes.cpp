@@ -145,6 +145,10 @@ Figure &Game::foeFigure( const Foe &f )
                : f.m_variant == 2 ? m_okaforFigure
                : f.m_variant == 3 ? m_leaderFigure
                : f.m_variant == 4 ? m_salvagerFigure
+               : f.m_variant == 5 ? m_lammFigure
+               : f.m_variant == 6 ? m_chiefFigure
+               : f.m_variant == 7 ? m_foremanFigure
+               : f.m_variant == 8 ? m_varnFigure
                                   : m_taxatorFigure;
     default: return m_boarderGun;
     }
@@ -339,6 +343,21 @@ void Game::updateTaxator( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
             help = std::vector<FoeE>{ FoeE::BATON, FoeE::BATON, FoeE::BATON }, helpVariant = 1;
         else if ( f.m_variant == 4 )
             help = std::vector<FoeE>{ FoeE::DRONE, FoeE::DRONE, FoeE::BATON, FoeE::BATON }, helpVariant = 0;
+        // Lamm's admirers jump into the sand; the chief calls his cleaners and their snipers; the foreman his
+        // cutting bots; Ysolde a squad that knows her.
+        else if ( f.m_variant == 5 )
+            help = std::vector<FoeE>{ FoeE::BATON, FoeE::BATON, FoeE::SAW, FoeE::SAW },
+            helpVariant = stage == 1 ? 0 : 1;
+        else if ( f.m_variant == 6 )
+            help = stage == 1 ? std::vector<FoeE>{ FoeE::GUNNER, FoeE::GUNNER, FoeE::SHIELD }
+                              : std::vector<FoeE>{ FoeE::GUNNER, FoeE::DRONE, FoeE::DRONE },
+            helpVariant = stage == 1 ? 0 : 3;
+        else if ( f.m_variant == 7 )
+            help = std::vector<FoeE>{ FoeE::SAW, FoeE::SAW, FoeE::SAW, FoeE::DRONE, FoeE::DRONE }, helpVariant = 0;
+        else if ( f.m_variant == 8 )
+            help = stage == 1 ? std::vector<FoeE>{ FoeE::BATON, FoeE::BATON, FoeE::SHIELD }
+                              : std::vector<FoeE>{ FoeE::GUNNER, FoeE::GUNNER, FoeE::BATON },
+            helpVariant = stage == 1 ? 1 : 0;
         for ( size_t i = 0; i < help.size(); ++i )
         {
             // From the room's edges, where there is floor.
@@ -359,7 +378,9 @@ void Game::updateTaxator( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
         m_audio.play( SfxE::KLAXON, f.m_pos, m_camTarget, 1.0f );
     }
     float speed = stage == 2 ? 2.5f : 1.9f;
-    f.m_aim = fmaxf( 0.0f, f.m_aim - dt );   // until he may charge again
+    if ( f.m_variant == 5 || f.m_variant == 8 ) speed *= 1.35f;   // the duellists are quick on their feet
+    if ( f.m_variant == 7 ) speed *= 0.85f;                       // the crane walker is not
+    f.m_aim = fmaxf( 0.0f, f.m_aim - dt );                        // until he may charge again
     f.m_spit -= dt;
     switch ( f.m_state )
     {
@@ -666,9 +687,13 @@ void Game::poseFoes( std::vector<Drawable> &out )
             // Tilted into its flight; rotors spinning; the eye red, white when hit.
             Matrix tilt = MatrixMultiply( MatrixRotateX( Clamp( f.m_vel.z * 0.06f, -0.3f, 0.3f ) ),
                                           MatrixRotateZ( Clamp( -f.m_vel.x * 0.06f, -0.3f, 0.3f ) ) );
-            Matrix at =
-                MatrixMultiply( MatrixMultiply( turn, tilt ), MatrixTranslate( f.m_pos.x, f.m_pos.y, f.m_pos.z ) );
-            add( m_droneBody, S_DARK, at );
+            float  size = f.m_variant == 5 ? 0.55f : ( f.m_variant == 6 ? 2.4f : 1.0f );
+            Matrix at = MatrixMultiply( MatrixMultiply( MatrixMultiply( MatrixScale( size, size, size ), turn ), tilt ),
+                                        MatrixTranslate( f.m_pos.x, f.m_pos.y, f.m_pos.z ) );
+            add( m_droneBody, f.m_variant >= 5 && m_level.m_faction == "collegium" ? S_COLLEGIUM : S_DARK, at );
+            if ( f.m_variant == 6 )
+                add( m_ring, S_GLOW, MatrixMultiply( MatrixScale( 1.3f, 1.0f, 1.3f ), at ),
+                     { 0.6f + f.m_flash * 3.0f, 2.0f + f.m_flash * 3.0f, 4.0f + f.m_flash * 3.0f, 0.0f } );
             for ( int i = 0; i < 4; ++i )
             {
                 float a = PI * 0.25f + i * PI * 0.5f;
@@ -678,8 +703,13 @@ void Game::poseFoes( std::vector<Drawable> &out )
                                      at ) );
             }
             float w = 3.0f * f.m_flash;
-            add( m_droneEye, S_GLOW, MatrixMultiply( MatrixTranslate( 0.0f, -0.02f, 0.36f ), at ),
-                 { 6.0f + w, 0.5f + w, 0.2f + w, 0.0f } );
+            // The eye: red; the swarm's cold blue (white before it dives), the deletions white.
+            Vector4 eye = { 6.0f + w, 0.5f + w, 0.2f + w, 0.0f };
+            if ( f.m_variant == 5 )
+                eye = f.m_state == FoeStateE::LEAP || m_fired.count( "formation" ) ? Vector4{ 8.0f, 8.0f, 9.0f, 0.0f }
+                      : m_swarmKind == "delete" ? Vector4{ 6.0f + w, 6.0f + w, 6.5f + w, 0.0f }
+                                                : Vector4{ 0.6f + w, 2.6f + w, 6.0f + w, 0.0f };
+            add( m_droneEye, S_GLOW, MatrixMultiply( MatrixTranslate( 0.0f, -0.02f, 0.36f ), at ), eye );
         }
         else if ( f.m_kind == FoeE::SAW && f.m_variant == 0 )
         {
@@ -761,6 +791,10 @@ void Game::drawFoeHud( int w, int h, float s )
                                               : f.m_variant == 2 ? "boss.okafor"
                                               : f.m_variant == 3 ? "boss.leader"
                                               : f.m_variant == 4 ? "boss.salvager"
+                                              : f.m_variant == 5 ? "boss.lamm"
+                                              : f.m_variant == 6 ? "boss.chief"
+                                              : f.m_variant == 7 ? "boss.foreman"
+                                              : f.m_variant == 8 ? "boss.varn"
                                                                  : "boss.taxator" ) )
                            : std::string( TextFormat( tr( "boss.guardian" ), tr( foeKey( (int)f.m_kind ) ) ) );
     float       pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s;

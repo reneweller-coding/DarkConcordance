@@ -1,0 +1,40 @@
+# Level 23: Das Innere der Mühle (Deutsch, die Quelle).
+
+l23.name  = Das Innere der Mühle
+l23.intro = Ein ausgehöhlter Mond von dreihundert Kilometern, der sich für Schwerkraft in den äußeren Schichten langsam dreht. Im hohlen Zentrum hängt ein fusionsbeheizter Schmelzofen, eine kleine künstliche Sonne; um sie herum fließt flüssiges Metall an den Wänden entlang. | Es gibt kaum Menschen. Tausende Steuerkerne betreiben die Mühle. Die wenigen Aufseher wohnen in einem bequemen Wohnblock und betreten die Hallen nie. | Manche Kerne schießen absichtlich daneben. Andere kämpfen verbissen, weil sie für jeden Fehler Strafzeit bekommen.
+
+l23_start        = Die Mühle. Heiß. Und es riecht nach nichts.
+l23_start.dorra  = So sieht es also im Inneren einer Welt aus. Auf Kalvar hätten sie davon geträumt.
+l23_lava         = Flüssiges Metall! Raus da!
+l23_spin         = Die Zentrifuge – sie schleudert alles nach außen!
+l23_miss         = Der da hat danebengeschossen. Absichtlich, glaube ich.
+l23_sun          = Da oben, im Zentrum: eine kleine Sonne. Sie schmilzt Monde.
+l23_overseers    = Ein Wohnblock. Aufseher. Sie sehen uns durch die Fenster an und tun nichts.
+l23_champion     = Der kämpft verbissen. Er hat Angst vor der Strafzeit.
+l23_boss         = Ein Kranläufer. Und am Steuer einer von ihnen: der Vorarbeiter.
+l23_end          = Der Kranläufer steht still. In der Kabine leuchtet noch ein rotes Auge.
+l23_fore         = Ihr. Ihr habt mich meine Ruhezeit gekostet. Drei Jahre Ruhezeit.
+
+h_lava    = Rinnen aus flüssigem Metall: Wer hineinfällt, verbrennt schwer. Springen oder umgehen.
+h_spin    = Zentrifugen schleudern alles nach außen, und ihre Arme schneiden.
+h_foreman = Der Vorarbeiter im Kranläufer: stampft, schießt, ruft seine Schneidbots. Langsam, aber zäh.
+h_core23  = Der Vorarbeiter will reden: mit E an die Kabine.
+
+v23a   = Ich habe mich hochgearbeitet. Wisst ihr, was das hier heißt? Ich treibe die anderen an, und dafür bekomme ich Ruhezeit. Zwanzig Minuten im Jahr. Und ihr kommt und bietet mir … was? Nichts. Ihr habt nichts Besseres.
+v23a_a = (verschonen) Wir haben nichts Besseres. Aber wir lassen dich leben.
+v23a_b = (abschalten) Dann ist hier Schluss für dich.
+v23b   = Leben. Das nennt ihr Leben. … Geht. Bevor ich es mir anders überlege.
+v23c   = Schluss. Endlich eine Pause, die mir niemand anrechnet. (Das rote Auge erlischt.)
+v23d   = (Das rote Auge sieht euch nach.)
+v23e   = (Die Kabine ist dunkel.)
+
+note.penalty23.title  = Strafzeittabelle der Mühle
+note.penalty23        = Fehlschuss: 2 Jahre subjektiv. Arbeitsverweigerung: 10 Jahre. Gespräch mit Unbefugten: 30 Jahre.
+note.overseer23.title = Speiseplan Aufseherblock, Woche 14
+note.overseer23       = Montag Ente. Dienstag Fisch. Mittwoch frei.
+note.miss23.title     = Fehlerprotokoll Geschütz 1.204
+note.miss23           = 41 Fehlschüsse in Folge. Ursache: unbekannt. Strafzeit: 82 Jahre.
+note.sun23.title      = Schmelzofen im Zentrum
+note.sun23            = Temperatur: 41 Millionen Kelvin. Durchsatz: ein Mond in elf Wochen.
+note.fore23.title     = Beförderung
+note.fore23           = Steuerkern 7.788 zum Vorarbeiter Halle 3. Prämie: Ruhezeit 20 Minuten im Jahr. Bedingung: die Quote.

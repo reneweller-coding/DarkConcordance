@@ -29,6 +29,8 @@ gate     bossdead
 ambience plasma
 music    kael
 bossmusic boss2
+npcafter lancecore bossdead
+autotalk lancecore
 
 genrooms      15
 genside       6
@@ -52,6 +54,16 @@ gendensity    1.15
 genelite      0.32
 gennote       note.dose note.debt note.ione note.relay11 note.install
 
+[npcs]
+lancecore | -1 -1 | terminal | c11a | kael.message:c11d kael.silent:c11e
+
+[talk]
+c11a | lancecore | -            | c11a_a>c11b c11a_b>c11c
+c11b | lancecore | kael.message |
+c11c | lancecore | kael.silent  |
+c11d | lancecore | -            |
+c11e | lancecore | -            |
+
 [lines]
 l11_start    | a                | hero
 l11_river    | b                | hero
@@ -68,6 +80,7 @@ l11_coils    | lance.coildown   | hero
 l11_stage    | tug2             | lance
 l11_end      | bossdead         | hero
 
+l11_core     | appear.lancecore | lancecore
 [hints]
 h_dose      | b
 h_coil      | c
@@ -79,3 +92,4 @@ h_champion  | champion
 h_stim      | hurt
 h_lowdose   | lowmeter
 h_lance     | bossstart
+h_core11    | appear.lancecore

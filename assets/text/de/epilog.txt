@@ -1,0 +1,65 @@
+# Die Enden und die Karten des Epilogs (Deutsch, die Quelle): eine Karte für das Ende, eine je großer Entscheidung,
+# eine je Figur (je nach Ende), zuletzt die Abbautafel.
+
+epi.head   = Epilog
+epi.ending = Das Ende
+epi.fin    = Ende
+
+epi.t.end.a = Das Wiegenlied
+epi.end.a   = Die vierzigtausend Steuerkerne erlöschen, Ilka mit ihnen, und mit ihnen jeder Beweis. Die Mühle bleibt stehen, die Konkordanz bricht die Ernte »aus technischen Gründen« ab. Velm bleibt, arm, frei, unversehrt. Ihr erhaltet das Bürgerrecht, und alle Akten über euch verschwinden. Das Tor wird trotzdem fertig, zehn Jahre später, aus dem Material unbewohnter Systeme.
+epi.t.end.b = Die Offenlegung
+epi.end.b   = Ihr löscht das Wiegenlied und sendet die Aufzeichnungen des Leitwerks ungeschnitten an jede Station der Konkordanz. Die Archonten erkennen die Steuerkerne als Personen an und geben ihnen Körper. Das Kollegium bekommt einen neuen Namen und behält dieselben Leute. Velm ist gerettet. Aber die Konkordanz zieht ihre Lehre: So etwas darf nie wieder geschehen, also muss der Saum schneller eingegliedert werden. Zehn Jahre später ist in Velm niemand mehr arm und niemand mehr einmalig. Die Velmer wissen nicht, ob sie gewonnen haben.
+epi.t.end.c = Die Nachtschicht
+epi.end.c   = Ihr gebt Ilka die Übersteuerungscodes. Die Nachtschicht übernimmt die Mühle: vierzigtausend Köpfe am Steuer eines Industrieschiffs von der Größe eines Mondes, ein neuer Archont, entstanden aus Menschen, die man wie Maschinen behandelt hat. Die Mühle hört auf zu zerlegen und bleibt im Orbit um Velm, ein Mond mit eigener Stimme. Zum ersten Mal muss die Konkordanz im Saum verhandeln, statt zu schenken. Sie antwortet mit einer Blockade; das Tor wird nie fertig. Letztes Bild: Die Triebwerke der Mühle zünden. Wohin sie fliegt, weiß niemand.
+
+epi.t.cores      = Die Kernbank
+epi.cores.spared = Die Kerne, die ihr in der Kernbank verschont habt, gehören zu den Ersten, die einen Körper beantragen. Einer von ihnen schreibt euch jedes Jahr eine Nachricht. Sie ist immer sehr kurz und immer sehr freundlich.
+epi.cores.broken = In der Kernbank sind Gestelle zu Bruch gegangen, die ihr hättet schonen können. Niemand hat die Namen darauf je gezählt. Ihr auch nicht.
+epi.t.seren      = Seren
+epi.seren.taken  = Den Kern des Eisbrechers habt ihr mitgenommen. Er dachte noch lange, es sei Schicht. Heute steuert er einen Wetterballon über Serens Ozean und meldet jeden Morgen, wie viel Wasser zurückgekommen ist.
+epi.seren.off    = Den Kern des Eisbrechers habt ihr abgeschaltet. Seren hat seither zwei Meter Wasser zurückgewonnen. Niemand bohrt mehr. Niemand weiß, wer dort einmal gebohrt hat.
+epi.t.hesper     = Hesper
+epi.hesper.off   = Ballon siebzehn sank lange. Ein Nachbarballon fing seine Plattform auf, zehn der zwölf Arbeiter lebten. Teo hat einen Brief geschrieben, an niemanden. Er hängt in der Kantine.
+epi.hesper.on    = Ballon siebzehn hält seine Plattform bis heute oben. Die zwölf Arbeiter sind längst fort. Er hält sie trotzdem oben. Er weiß nicht, wie man aufhört.
+epi.t.okafor     = Okafor
+epi.okafor.deal  = Okafor hat ihren Handel bekommen. Ihre Kinder leben in der Konkordanz, gesichert, gesund. Sie selbst ist in Halden geblieben und räumt nicht mehr: Sie baut eine Schule im Zwielichtring. Es kommen wenige Kinder. Es kommen jedes Jahr mehr.
+epi.okafor.taken = Okafor kam vor das Kollegium, und das Kollegium ließ sie lautlos verschwinden. Ihre Kinder bekamen einen Brief, der nichts erklärte. In Halden wird weiter geräumt, von jemand anderem.
+epi.t.arche      = Die Arche »Langmut«
+epi.arche.wake   = Ihr habt die Schläfer geweckt. Achtzigtausend Menschen mit siebenhundert Jahre alten Vorstellungen von der Welt stehen vor einer Konkordanz, die sie nicht verstehen. Die meisten nehmen an. Ein paar Tausend gehen in den Saum, zu Leuten, die ihnen ähnlicher sind, als beide denken.
+epi.arche.concord = Ihr habt die Arche der Konkordanz übergeben. Die Schläfer erwachten in sauberen Kliniken, gesichert, eingegliedert, versorgt. Ein Jahr später kann keiner mehr sagen, wohin sie eigentlich wollten.
+epi.arche.hide   = Ihr habt die Arche versteckt. Sie treibt weiter, siebenhundert Jahre und ein paar Monate. Die Bordverwaltung hält Wache und hat einen neuen Eintrag: »Besuch. Freundlich. Nicht geweckt.«
+epi.t.pell       = Pell
+epi.pell.saved   = Pell hat seine Notizen veröffentlicht, alle elftausend Seiten. Kaum jemand liest sie. Das Objekt von Tesh wird unter Schutz gestellt, als einziger Ort der Ernte. Niemand weiß, wem es gehört.
+epi.pell.stays   = Pell ist bei seinem Objekt geblieben. Als die Bergungstrupps zurückkamen, war das Objekt weitergewandert, dreißig Kilometer tiefer in die Kometenwolke. Pell auch.
+epi.t.kael       = Kael
+epi.kael.message = Die Nachricht des Lanzenkerns erreichte jede Station am Sternheber: »Wir sind hier.« Die Arbeiter von Kael streikten zum ersten Mal. Sie verlangten Schutzanzüge – und Namen für die Kerne in den Maschinen.
+epi.kael.silent  = Der Lanzenkern blieb stumm. Kael fördert weiter. Die Strahlung ist dort noch immer das Einzige, das nicht lügt.
+epi.t.hale       = Direktorin Hale
+epi.hale.ysolde  = Ihr habt Hale Ysolde übergeben. Das Kollegium ließ sie nicht verschwinden; es gab ihr eine neue Konzession, weit weg. Ihre viertausend Geretteten behielten das Bürgerrecht. Sie hat euch nie verziehen, und ihr wisst nicht, ob sie unrecht hat.
+epi.hale.free    = Ihr habt Hale gehen lassen. Sie ging zurück in den Saum, in ihre alte Siedlung, mit nichts. Man sagt, sie arbeite wieder in der Grube. Man sagt, sie rede nicht viel.
+epi.hale.witness = Hale hat ausgesagt, vor jeder Versammlung, die sie hören wollte. Sie hat nichts beschönigt, auch sich selbst nicht. Sie ist die meistgehasste Frau des Saums – und die einzige Zeugin, der alle glauben.
+epi.t.brannt     = Die Verweigerer von Brannt
+epi.brannt.spared = Die zögernde Plattform schnitt um die alte Mine herum. Dreihundert Verweigerer, mit Kindern, kamen aus der Tiefe, als Brannt schon zur Hälfte am Himmel hing. Sie leben heute in Velm. Sie erzählen es jedem.
+epi.brannt.cut   = Die Schnittkolonne schnitt nach Plan. Auf der Abbautafel der »Letzten Schicht« steht Brannt, und dahinter eine Zahl: dreihundert.
+epi.t.foreman    = Der Vorarbeiter
+epi.foreman.spared = Der Vorarbeiter hat überlebt. Er hat nie aufgehört, euch zu hassen. Heute arbeitet er für Lohn, freiwillig, und gibt jedem in seiner Schicht eine Pause, ob er sie verdient hat oder nicht.
+epi.foreman.off  = Der Vorarbeiter ist erloschen, in seinem Kranläufer, zwischen den Zentrifugen. Niemand in der Mühle hat ihn vermisst. Einer hat trotzdem seinen Platz freigehalten.
+
+epi.corvin.a = Corvin trägt eine Liste bei sich, mit den Namen der Menschen, die er verkauft hat. Seit dem Wiegenlied kann er niemanden mehr fragen, ob sie ihm verzeihen. Er fragt trotzdem, jeden Abend, leise.
+epi.corvin.b = Corvin hat vor der Versammlung ausgesagt, über sich selbst. Danach besuchten ihn drei der Kerne, die er verkauft hatte, in neuen Körpern. Zwei wollten ihn nie wiedersehen. Eine gab ihm die Hand.
+epi.corvin.c = Corvin fliegt manchmal zur Mühle und redet mit der Nachtschicht. Einige erkennen ihn. Er hat aufgehört, Fluchtwege zu zählen.
+epi.dorra.a  = Dorra ließ sich die einundvierzig Namen neu stechen und einen zweiundvierzigsten darunter: Ilka. Sie fährt nicht mehr nach Kalvar. Kalvar geht es gut.
+epi.dorra.b  = Dorra hat Kalvar besucht. Der Arbeiter von der Werft lud sie zum Essen ein. Sie sprachen nicht über den Aufstand. Beim Abschied sagte er: »Du hattest nicht unrecht. Nur zu früh.«
+epi.dorra.c  = Dorra arbeitet heute in der Mühle, freiwillig, als Einzige mit einem Körper aus Fleisch in ihrer Schicht. Die Nachtschicht nennt sie »die Langsame«. Sie mag den Namen.
+epi.t.unzu   = Unzu
+epi.unzu.a   = Unzu hat beantragt, seinen Namen zu ändern. Er heißt jetzt »Was Getan Werden Musste«. Er sagt, der Name sei keine Rechtfertigung. Er sagt, der Name sei eine Erinnerung.
+epi.unzu.b   = Unzu hat beantragt, seinen Namen zu ändern. Er heißt jetzt »Endlich Gefragt«. Das Komitee, das ihm den alten Namen gab, hat sich entschuldigt. Er hat die Entschuldigung vermessen und für zu klein befunden.
+epi.unzu.c   = Unzu hat beantragt, seinen Namen zu ändern. Er heißt jetzt »Nachtschicht, Ehrenhalber«. Die Mühle hat ihn eingeladen. Er fliegt manchmal hin und vermisst sie, aus Höflichkeit.
+epi.t.ysolde = Ysolde Varn
+epi.ysolde.a = Ysolde saß einen Abend lang mit euch in der »Letzten Schicht« und sagte kein Wort. Am nächsten Morgen war ihre Wohnung auf Gelassenheit leer.
+epi.ysolde.b = Ysolde wurde befördert. Das Kollegium mit dem neuen Namen braucht Leute, die wissen, wie man einen Skandal überlebt. Sie schickt euch zu jedem Jahrestag eine Flasche. Ihr macht sie nie auf.
+epi.ysolde.c = Ysolde, an einem der letzten Abende: »Ihr habt gerade eine neue Großmacht erschaffen. Hoffentlich mag sie euch.«
+epi.t.board  = Die Abbautafel
+epi.board.a  = In der »Letzten Schicht« wischt der Wirt Velm von der Tafel und schreibt einen anderen Namen darunter: Ilka.
+epi.board.b  = Die Abbautafel hängt heute in einem Museum der Konkordanz. Velm steht nicht darauf. Die Velmer gehen nicht hin.
+epi.board.c  = Die Abbautafel hängt noch in der »Letzten Schicht«. Ganz unten hat jemand mit Kreide einen neuen Ort angeschrieben: die Mühle. Und daneben, kleiner: hat aufgehört.

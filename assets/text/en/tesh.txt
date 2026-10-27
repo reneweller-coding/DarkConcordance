@@ -30,7 +30,7 @@ p10e           = Go. It's watching you leave.
 
 h_tesh         = The object is cold everywhere: the suit's warmth fades in the halls too. Only the salvage crews' heaters (orange) help.
 h_float        = Hardly any gravity: jumps carry far, even over gaps. Miss, and the fall is long.
-h_move         = Wandering components: big black blocks that glide slowly through the halls. Whoever stands between one and a wall is crushed.
+h_move10         = Wandering components: big black blocks that glide slowly through the halls. Whoever stands between one and a wall is crushed.
 h_scaffold     = The salvage master in his cutting scaffold: he stomps, cuts with the laser from afar and calls drones and cutters. At the very end he charges.
 h_pell         = Pell wants to talk: step up to him and press E.
 

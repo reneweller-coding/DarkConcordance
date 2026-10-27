@@ -1,0 +1,78 @@
+# Level 25: Das Netz (Akt IV, Finale, zweiter Teil). Die Welt der Steuerkerne: eine endlose Schichthalle, geflickt aus
+# den letzten Orten, die sie kannten (Kantine, Klassenzimmer, Küche); Leute an ihren Plätzen, die nicht weglaufen.
+# Kein Grund Zur Sorge greift mit Löschprozessen an (ein Schwarm aus weißen Würfeln); die Nachtschicht kämpft mit
+# (zaps). Danach Ilka, und die Entscheidung: das Wiegenlied, die Offenlegung, oder die Codes für die Nachtschicht (nur
+# wenn sie dem Helden vertraut: "trust"). Dann das Ende und die Karten des Epilogs.
+#   crowd n thema          n Leute in diesem Thema
+#   zaps s                 alle s Sekunden nimmt die Nachtschicht ein paar Einheiten des Schwarms
+#   epilogue ev            nach dem Ereignis (und dem Gespräch) die Karten des Endes und des Epilogs
+
+name     l25.name
+act      act.4
+intro    l25.intro
+gravity  7.5
+fog      0.002 0.007 0.5 0.9
+fogcolor 0.002 0.0025 0.004
+ambient  0.07 0.075 0.095 0.035 0.04 0.05
+walls    4.4
+sky      nebula
+faction  collegium
+crowd    40 net
+swarm    delete 18 3
+zaps     5
+epilogue ending
+area     27
+next     end unzu4.txt
+gate     never
+ambience net
+music    netz
+bossmusic final
+talkmusic ilka
+npcafter ilka bossdead
+autotalk ilka
+
+genrooms      16
+genside       5
+gensize       12 18 10 14
+gentheme      net net net
+genstarttheme net
+genarenatheme net
+genarena      guardian
+genguard      ^
+genpack       ^^^     2
+genpack       ^^E     1.5
+genpack       ""^     1
+genpack       ETT     1
+gendensity    0.9
+genelite      0.3
+gennote       note.canteen25 note.class25 note.kitchen25 note.clock25 note.names25
+
+[npcs]
+ilka | -1 -1 | ilka | i25a
+
+[talk]
+i25a | ilka | -              | i25a_a>i25b
+i25b | ilka | -              | i25b_a>i25c
+i25c | ilka | -              | i25c_a>i25d i25c_b>i25e i25c_c>i25f?trust i25c_d>i25g?!trust
+i25g | ilka | -              | i25c_a>i25d i25c_b>i25e
+i25d | ilka | end.a,ending   |
+i25e | ilka | end.b,ending   |
+i25f | ilka | end.c,ending   |
+
+[lines]
+l25_start    | a           | hero
+l25_flicker  | b           | hero
+l25_known    | c           | hero
+l25_delete   | d           | hero
+l25_night    | nightshift  | ilka
+l25_boss     | swarm       | sorge
+l25_end      | bossdead    | sorge
+l25_ilka     | appear.ilka | ilka
+
+[hints]
+h_net        | a
+h_swarm25    | swarm
+h_nightshift | nightshift
+h_ilka       | appear.ilka
+h_champion   | champion
+h_stim       | hurt

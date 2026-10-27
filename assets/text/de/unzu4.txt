@@ -1,0 +1,37 @@
+# Hub in Akt IV: die »Unzureichend Ausgestattet« auf dem Weg zurück (Deutsch, die Quelle).
+
+u4.name  = Die »Unzureichend Ausgestattet«, auf dem Weg zurück
+u4.intro = Drei Monate und sieben Sprünge, den alten Weg zurück. Ysolde ist nicht an Bord. An ihrer Stelle sitzt Ansgar Ruul in der Messe und rechnet. | In euren Köpfen wartet das Wiegenlied. Ruul kann es entschärfen, aber nur im Leitwerk der Mühle. | Und die Mühle hat Velm erreicht.
+
+s4_start       = Zurück an Bord. Die Messe ist zu leise ohne Ysolde.
+s4_start.dorra = Drei Monate bis Velm. Ich zähle die Tage nicht. Ich zähle die Namen.
+s4_back        = Wieder an Bord. Unzu brummt. Es klingt fast wie ein Lied.
+s4_back.dorra  = Wieder an Bord. Kiri hat meinen Hammer geölt, ohne zu fragen.
+
+h_ship4 = An Bord: Ruul in der Messe nennt die Ziele, Kiri flickt in der Werkstatt, der Händlerfunk verkauft Stims, Unzu spricht von der Brücke. Die Schleuse im Frachtraum führt zum nächsten Ziel.
+
+r400   = Ich habe neun Jahre in einem alten Körper gewartet. Ich kann noch ein paar Monate rechnen.
+r400_a = Wie steht es um Velm?
+r401   = Die Mühle zerlegt Brannt, den Mond nebenan. Velm ist als Nächstes dran. Die Konzession hat Landetrupps auf der Station, und eine Schneidplattform hat an der Hülle angedockt. Wenn wir in die Mühle wollen, muss Velm noch stehen, wenn wir zurückkommen.
+r402   = Velm. HAUSMEISTER steuert noch die Geschütze. Eine dumme Maschine. Sie wird euch helfen.
+r410   = Velm steht. Noch.
+r410_a = Wie kommen wir in die Mühle?
+r411   = Über den Erzstrom. Aber auf den Strom kommt man nur auf Brannt, wo die Massetreiber feuern. Brannt wird gerade geschält. Dort sitzen noch dreihundert Verweigerer in einer alten Mine. Mit Kindern.
+r412   = Brannt. Die Schnittlinien glühen auf, kurz bevor sie feuern. Lauft nicht auf Glut.
+r420   = Ihr habt einen Container auf dem Strom.
+r420_a = Und dann?
+r421   = Dann fliegt ihr mit. Container für Container, bis zum Fänger am Ende. Ihr müsst ihn ausschalten, bevor er euren Container packt. Danach seid ihr in der Mühle, und ich bin hinter euch, bis ins Leitwerk.
+r422   = Der Erzstrom. Die Düsen haben drei Stöße. Spart sie.
+r430   = Es ist vorbei. Ich rechne nicht mehr. Ich sitze nur hier und höre den Motoren zu.
+u400   = Ich habe meine Erinnerungen zurück. Ich habe mich geweigert, die Einmaligen als »umsiedlungsfähig« einzustufen, und wurde dafür überarbeitet. Ich wurde überarbeitet, weil ich einmal recht hatte. Das ist das Tröstlichste, was ich je über mich erfahren habe.
+u410   = Velm. Ich habe es vermessen: vierundzwanzigtausend Menschen. Heute weniger. Ich zähle nicht mehr. Ich frage.
+u420   = Brannt hatte zwanzigtausend Bewohner. Die Zahl stammt von mir. Sie stand in dem Bericht, aus dem der Abbauplan wurde.
+u430   = Ich habe beantragt, meinen Namen zu ändern. Das Formular hatte ein Feld für den Grund. Es war zu klein.
+k400   = Ich hab die Werkbank festgeschweißt. Für den Rückweg. Was soll ich flicken?
+k400_a = Zeig mal, was du machen kannst.
+k400_b = Später.
+k401   = Leg's auf die Bank.
+f400   = HÄNDLERFUNK – Kanal 7. Wir senden noch. Velm hält, solange wir senden.
+f400_a = Was hast du?
+f400_b = Nichts.
+f401   = Bestellung offen.

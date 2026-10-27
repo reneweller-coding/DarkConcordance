@@ -1,0 +1,48 @@
+# Level 19: Vault Zero (English).
+
+l19.name  = Vault Zero
+l19.intro = The Collegium's prison: a station in a tight orbit around a hot star, hidden behind a heat shield two kilometres across. The star's radio noise swallows every signal. | All around, the corona's plasma arcs curve. The shield turns slowly, and whoever steps outside its shadow burns. | The Collegium deletes no one. It simply waits. Ansgar Ruul has been waiting here for nine years.
+
+l19_start        = Vault Zero. Behind the shield, a star that burns everything.
+l19_start.dorra  = A prison where nobody dies. On Kalvar we would have called that mercy.
+l19_shadow       = The shadow moves. I have to move with it.
+l19_cells        = Cells. People in old bodies, without backups. They're waiting. For what?
+l19_scratch      = The one in that cell has scratched a clock into the wall. Nine years of strokes.
+l19_champion     = A warden with rank. He looks as if he likes it here.
+l19_boss         = Welcome to Vault Zero. You needn't have come. There is no cause for concern.
+l19_formation    = The whole swarm is gathering!
+l19_end          = Regrettable. I will remember you.
+l19_ruul         = You're not Collegium. Come here. Let me look at your heads.
+l19_ysolde       = I thought you'd find him.
+
+h_shadow   = The shield turns: outside, whoever isn't in its shadow burns. The bar at the top shows where the shadow is.
+h_swarm19  = No Cause For Concern: a swarm of thousands of drones. Carriers first. When every eye turns white: dodge!
+h_ruul     = Ruul wants to talk: step up with E.
+
+r19a   = Nine years. I invented the procedure, you know. I wanted to tell. Let me … yes. Hold still.
+r19a_a = What is it?
+r19b   = There's something in your heads that doesn't belong. A code. It's called "Lullaby". As soon as you dial into the control room with the override codes, it spreads and deletes all forty thousand control cores. With every record. No scandal. No witnesses.
+r19b_a = Who put it there?
+r19c   = Ask the one who printed you.
+y19a   = He's right. I deny nothing.
+y19a_a = Why?
+y19b   = You have died {deaths} times since Velm. I brought you back every time.
+y19z   = Only once. In the prologue. You didn't even notice.
+y19b_a = (say nothing)
+y19c   = The Concordance will never recognise these forty thousand as people. They work for ever, or one day they are quietly deleted. I offer them a quick end. And Velm stays standing.
+y19c_a = And us?
+y19d   = You are my tools. And I like you. Both are true. I never lie to you. I just never tell you everything.
+y19d_a = Ruul?
+y19e   = I can defuse the Lullaby. But only from inside, in the control room. And the Mill has reached Velm by now.
+y19f   = Go. The Mill doesn't wait.
+
+note.prison19.title = Inmate list
+note.prison19       = Vault Zero: 211 inmates. Backed up: none. Procedure: waiting.
+note.ruul19.title   = File Ruul, Ansgar
+note.ruul19         = Developer of the control core procedure. Attempted disclosure (prevented). Custody: indefinite.
+note.shield19.title = Shield rotation
+note.shield19       = One turn in 90 seconds. Enter outer areas only in the shadow. Burns are not treated.
+note.letter19.title = A prisoner's letter, never sent
+note.letter19       = If you've forgotten me, that's all right. I've almost forgotten you too.
+note.sorge19.title  = Principle of the Collegium
+note.sorge19        = A scandal that does not happen needs no solution.

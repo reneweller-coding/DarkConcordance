@@ -1,0 +1,69 @@
+# Level 20: Velm, letzte Woche (Akt IV). Der Hub aus Akt I ist jetzt Schlachtfeld: die Gassen der Trommeln, Werkhallen,
+# das Kühllager; durch die Fenster im Boden "_" die Mühle, die den halben Himmel füllt. Landetrupps der Konzession kommen
+# immer neu (pressure), Brennschneider und Sägebots. HAUSMEISTERs Geschütze ("thing ally") schießen auf die Eindringlinge.
+# Am Ende die Schneidplattform an der Hülle: zwei Klammern, der Schneidkopf, Linien, die aufglühen und schneiden.
+#   genthing ally r wo     je Raum r Geschütze von HAUSMEISTER
+#   genarena platform      die Schneidplattform am Rand der Halle
+
+name     l20.name
+act      act.4
+intro    l20.intro
+gravity  7.0
+coriolis 0.04
+fog      0.003 0.01 0.55 0.9
+fogcolor 0.0016 0.0012 0.0010
+ambient  0.06 0.05 0.045 0.03 0.025 0.022
+walls    4.6
+sky      nebula
+view     planet
+planet   mill 0.9
+star     900 -2600 -3200 1700
+faction  concession
+pressure 80
+area     22
+next     unzu4.txt
+gate     bossdead
+ambience siege
+music    velm2
+bossmusic boss2
+
+genrooms      19
+genside       7
+gensize       12 18 10 15
+gentheme      street street works coldstore street
+genstarttheme street
+genarenatheme works
+genarena      platform
+genthing      ally 0.6 main
+genfeature    _  0.3
+genpack       ETT     2.5
+genpack       $TT     1.5
+genpack       %T      1.2
+genpack       ""E     1.2
+genpack       ***     1
+genpack       ^^T     1
+gendensity    1.1
+genelite      0.32
+gennote       note.offer20 note.board20 note.hm20 note.family20 note.cut20
+
+[lines]
+l20_start     | a         | hero
+l20_window    | b         | hero
+l20_ally      | c         | hausmeister
+l20_posters   | d         | hero
+l20_reinforce | reinforce | hero
+l20_champion  | champion  | hero
+l20_hull      | g         | hero
+l20_boss      | bossstart | hero
+l20_end       | bossdead  | hero
+l20_hm        | bossdead  | hausmeister
+
+[hints]
+h_pressure20 | a
+h_ally       | c
+h_platform   | bossstart
+h_cutter     | cutter
+h_sniper     | sniper
+h_shield     | shieldguard
+h_champion   | champion
+h_stim       | hurt
