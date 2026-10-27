@@ -582,4 +582,9 @@ float Audio::voice( const std::string &path )
     return 0.0f;
 }
 
+void Audio::stopVoice()
+{
+    if ( m_hasVoice ) StopSound( m_voice );
+}
+
 }   // namespace spaceopera

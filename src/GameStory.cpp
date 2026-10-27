@@ -104,6 +104,20 @@ std::string Game::spoken( const std::string &key ) const
     return t;
 }
 
+float Game::speak( const std::string &key )
+{
+    // The voice in the chosen language, else the German one (under the chosen language's subtitles). Each hero has
+    // their own take of what they say, as has a line written differently for them: "<key>.<hero>" before "<key>".
+    const std::string own = key + "." + heroKey( m_heroKind );
+    for ( const std::string &lang : { language(), std::string( "de" ) } )
+        for ( const std::string &file : { own, key } )
+        {
+            float len = m_audio.voice( m_assets + "/voice/" + lang + "/" + file );
+            if ( len > 0.0f ) return len;
+        }
+    return 0.0f;
+}
+
 void Game::startEpilogue()
 {
     m_ending = m_fired.count( "end.c" ) ? "c" : ( m_fired.count( "end.b" ) ? "b" : "a" );

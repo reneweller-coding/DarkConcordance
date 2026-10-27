@@ -50,12 +50,12 @@ genelite      0.25
 gennote       note.shift1 note.shift2 note.shift3 note.shift4
 
 [npcs]
-k2281 | -1 -1 | terminal | k1
+k2281 | -1 -1 | terminal | tk1
 
 [talk]
-k1 | k2281 | -                 | k1_a>k2 k1_b>k3
-k2 | k2281 | tale.ione.promise |
-k3 | k2281 | tale.ione.promise |
+tk1 | k2281 | -                 | tk1_a>tk2 tk1_b>tk3
+tk2 | k2281 | tale.ione.promise |
+tk3 | k2281 | tale.ione.promise |
 
 [lines]
 ti_a1        | a             | hero

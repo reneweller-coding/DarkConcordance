@@ -1,0 +1,158 @@
+{
+  "_": "Who speaks how (tools/make_voices.py): a description for Qwen3-TTS VoiceDesign (once per figure and language, then cloned for every line), effects after the voice (radio, machine, pa), a pitch range in Hz for figures whose description alone lands off (several takes, the nearest kept) and, for a figure that speaks with someone else's voice, that one's name (hero: the hero played).",
+  "corvin": {
+    "describe": "A man in his mid-forties with a low, slightly husky baritone. Tired and world-weary, dry understated humour, speaks calmly and quietly, a faint rasp from years on space stations."
+  },
+  "dorra": {
+    "describe": "A sturdy woman in her late thirties from a heavy-gravity mining world. Firm, warm alto with a strong chest voice, grounded and blunt, a slight working-class roughness, steady unhurried pace."
+  },
+  "ione": {
+    "describe": "A woman around thirty, a precise maintenance technician. Clear mid-range voice, quick and exact articulation, cool and controlled with a hint of dry irony, slightly soft-spoken."
+  },
+  "spiegel": { "voice": "hero" },
+  "ysolde": {
+    "describe": "A woman in her mid-fifties, a cultivated power broker. Low, smooth mezzo-soprano, measured and persuasive, warm on the surface with steel beneath, precise diction, never raises her voice."
+  },
+  "unzu": {
+    "describe": "An ancient surveying machine with a male voice, centuries old. Calm, deliberate and slightly formal, a soft mid-low register, deadpan dry humour, every word weighed.",
+    "fx": ["machine"]
+  },
+  "ruul": {
+    "describe": "A man in his seventies, frail but sharp. A thin, dry, slightly reedy voice, impatient and precise, a scientist who calculates everything and has no time left to waste."
+  },
+  "bedauern": {
+    "describe": "The mind of a vast warship, a smooth male-sounding synthetic voice. Very polite, unhurried and soft-spoken, faintly amused, the calm of something that cannot be threatened.",
+    "fx": ["radio", "machine"]
+  },
+  "sorge": {
+    "describe": "The mind of a warship, a warm mid-range female-sounding synthetic voice. Cheerful and reassuring like customer service, an uncanny unbroken calm.",
+    "pitch": [170, 260],
+    "fx": ["radio", "machine"]
+  },
+  "patrol": {
+    "describe": "The mind of a patrol ship, a flat male-sounding synthetic voice. Bureaucratic and indifferent, reading out regulations, polite without any interest.",
+    "fx": ["radio", "machine"]
+  },
+  "ilka": {
+    "describe": "A nine-year-old girl. A small, quiet and slightly hoarse child's voice, shy and anxious, hesitant, speaks softly."
+  },
+  "hale": {
+    "describe": "A woman in her late fifties, a mining director. Hard, controlled alto with a working-class edge under polished authority, firm and unapologetic, a little weary."
+  },
+  "arche": {
+    "describe": "An old ship's administration computer with a gentle female-sounding voice. Patient, slow and kindly, a little worn and frail, like an elderly nurse.",
+    "fx": ["machine"]
+  },
+  "kiri": {
+    "describe": "A woman in her forties, a mechanic and tinkerer. Brisk, practical and economical with words, a warm slightly raspy voice, quietly amused."
+  },
+  "okafor": {
+    "describe": "A woman in her forties, a military commander. Low, commanding voice, clipped and pragmatic, unsentimental, speaks in short decisive sentences."
+  },
+  "kern": {
+    "describe": "A middle-aged man whose mind is trapped in a machine. Utterly exhausted, slow and breathy, almost broken, pleading quietly.",
+    "fx": ["radio", "machine"]
+  },
+  "pilot": {
+    "describe": "A woman in her early thirties, a ship's pilot on the intercom. Fast, focused and professional, a clear mid-range voice, tense but controlled.",
+    "pitch": [170, 260],
+    "fx": ["radio"]
+  },
+  "zoegernd": {
+    "describe": "A timid machine voice, androgynous and soft. Hesitant and uncertain, stammering slightly, apologetic, as if afraid of its own decisions.",
+    "fx": ["machine"]
+  },
+  "lancecore": {
+    "describe": "A young man's voice from inside a machine. Quiet, lost and sad, gentle and slow, as if remembering nothing of who he was.",
+    "fx": ["machine"]
+  },
+  "lance": { "voice": "lancecore", "fx": ["radio", "machine"] },
+  "rigcore": {
+    "describe": "A middle-aged woman's voice from inside a drilling machine. Confused and dreamy, slow and kind, like someone waking from a very long shift.",
+    "fx": ["machine"]
+  },
+  "rig": { "voice": "rigcore", "fx": ["radio", "machine"] },
+  "pump": { "voice": "rigcore", "fx": ["radio", "machine"] },
+  "vorarbeiter": {
+    "describe": "A man in his fifties, a hardened foreman. Gravelly, bitter and aggressive voice, used to shouting over machines, contemptuous and tired."
+  },
+  "pell": {
+    "describe": "An old man in his seventies, a lonely scholar. Soft, wondering and slow, a thin voice, speaks with long pauses as if he rarely talks to anyone."
+  },
+  "k2281": {
+    "describe": "A young man's voice, a calm tenor, of a cognitive control core. Polite, careful and earnest, gentle, choosing each word.",
+    "pitch": [100, 160],
+    "fx": ["machine"]
+  },
+  "hausmeister": {
+    "describe": "A station's caretaker computer with a deep male-sounding voice. Flat and mechanical, a steady monotone of status announcements, perfectly precise and literal.",
+    "pitch": [80, 140],
+    "fx": ["machine", "pa"]
+  },
+  "doctor": {
+    "describe": "A tired middle-aged male doctor in a charity clinic. Kind but overworked, calm, low and matter-of-fact."
+  },
+  "arena": {
+    "describe": "A male arena announcer with a deep bass voice, speaking into a microphone, smooth and warm like a late-night radio host, amused and unhurried.",
+    "pitch": [85, 150],
+    "fx": ["pa"]
+  },
+  "funk": {
+    "describe": "A fast-talking salesman on the radio, a man in his thirties with a medium-low male voice. Cheerful hustler, quick and slick, always selling.",
+    "pitch": [90, 150],
+    "fx": ["radio"]
+  },
+  "ottla": {
+    "describe": "A woman in her sixties who runs a bar. Warm, husky smoker's voice, motherly but tough, has heard every story."
+  },
+  "berater": {
+    "describe": "A sweet, overly friendly female-sounding synthetic voice of a body clinic's service. Upbeat, smooth and hollow, smiling all the time.",
+    "fx": ["machine"]
+  },
+  "ausgabe": {
+    "describe": "A cheap vending machine's synthetic voice, androgynous. Chirpy, clipped and robotic, the same cheerful tone for everything.",
+    "fx": ["machine"]
+  },
+  "lamm": {
+    "describe": "A man in his forties, a bored decadent aristocrat and arena champion. Light theatrical tenor, mocking and amused, savouring every word."
+  },
+  "mira": {
+    "describe": "An eight-year-old girl. Clear high voice, bold, suspicious and quick, a street-wise child."
+  },
+  "kind": { "describe": "A six-year-old boy. High, bright voice, curious and cheerful, a little breathless." },
+  "fan": {
+    "describe": "A young woman in her twenties with a low, husky alto, an arena spectator, excited but talking quietly to her neighbour.",
+    "pitch": [180, 280]
+  },
+  "leader": {
+    "describe": "A man in his forties with a deep, rough male voice, a pirate boarding leader. Harsh and threatening, cold menace rather than shouting.",
+    "pitch": [80, 140]
+  },
+  "siel": {
+    "describe": "A woman in her forties, a military major. Controlled, cool and measured, a low voice of authority with a trace of weariness."
+  },
+  "dreier": {
+    "describe": "A man in his sixties, a cynical crime boss. Smooth, sardonic and gravelly, quietly menacing, enjoys his own words."
+  },
+  "josse": {
+    "describe": "A man in his forties, a miner. A gentle, warm baritone, singing a slow folk song softly to himself."
+  },
+  "brask": {
+    "describe": "A man in his fifties with a low, gruff male voice, a shift supervisor on a call from home. Irritated and bullying, impatient, talking down.",
+    "pitch": [85, 150],
+    "fx": ["radio"]
+  },
+  "editor": {
+    "describe": "A cold, clinical synthetic voice, androgynous. Soft and calm, chillingly gentle, like a nurse who does not care.",
+    "fx": ["machine"]
+  },
+  "worker": {
+    "describe": "A man in his thirties with a low male voice, a worker. Nervous and hurried, speaking quietly, warning someone.",
+    "pitch": [90, 150]
+  },
+  "chief": {
+    "describe": "The commander of a cleaning squad, a cold male-sounding synthetic voice. Flat and precise, regretful in words only.",
+    "fx": ["radio", "machine"]
+  },
+  "zuender": { "voice": "hero" }
+}

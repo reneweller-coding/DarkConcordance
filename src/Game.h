@@ -1040,6 +1040,7 @@ private:
     // counted since the prologue, the night shift's trust, the act's end card, the endings and the epilogue.
     void loadStory();
     std::string spoken( const std::string &key ) const;
+    float speak( const std::string &key );   // a line's voice; its length in seconds, 0 if it has none
     bool updateEpilogue( float dt, GameInput &in );
     void startEpilogue();
     void drawEndCard( int w, int h, float s );

@@ -389,14 +389,14 @@ press that builds new lice from scrap.
 - **Areas of their own:** the maintenance access (warm light, crates), the heat exchanger hall (cold blue, many pipes,
   puddles), the shaft (raw rock, rust, cable drums), the cold store (pale frosted panels), the drone works (hazard
   paint, barrels, scrap); signs name them. The level ends on a freight lift down to the Knochenmarkt.
-- **Rescue capsules** are checkpoints (and count the deaths, quietly); scrap and stims to pick up; spoken lines as
-  subtitles (voices from `assets/voice/<id>.ogg` once they exist); hints; walls dissolve where they hide Corvin.
+- **Rescue capsules** are checkpoints (and count the deaths, quietly); scrap and stims to pick up; spoken lines with
+  subtitles; hints; walls dissolve where they hide Corvin.
 - **Difficulty** Leicht (less damage, weaker enemies, health returns slowly), Normal, Schwer; **brightness** in the
   menu; both kept in `settings.txt` beside the program.
 - **Sound** is synthesised at start (rifle, hits, lice, press, steam, hum); `--mute` silences it.
 - **Languages:** German and English (menu, at first the system's language). Every text lives in
-  `assets/text/<language>/` (`key = text`), German fills the gaps; the signs are painted per language, voices go to
-  `assets/voice/<language>/<key>.ogg`.
+  `assets/text/<language>/` (`key = text`), German fills the gaps; the signs are painted per language, the voices
+  are spoken per language (see Voices).
 
 Move with WASD, the arrows or the left stick; turn the camera with the right stick or the right mouse button held;
 jump with Space or A; shoot (Dorra: strike) with the left mouse button, the right trigger or X; hold the facing
@@ -499,6 +499,39 @@ under the Stability AI Community License (to be checked before a sale).
 
     G:\Tools\PythonSkripts\AudioGenerator\venv\Scripts\python.exe tools\make_audio.py music      # [--encode-only]
     G:\Tools\PythonSkripts\AudioGenerator\venv\Scripts\python.exe tools\make_audio.py ambience   # [--encode-only]
+
+## Voices
+
+Every line is spoken, in German and in English: what the heroes say in the levels, the companions, the people in the
+conversations (Ysolde, Unzu, Ottla, Kiri, Hale, Ilka …) and the machines (HAUSMEISTER, the ships of the Concordance,
+the cores). Each hero has their own take of every line they say, so Corvin, Dorra and Ione sound like themselves
+whoever is played. Conversations speak each step as it opens and fall silent when they close; the heroes' answers are
+read, not spoken. Stage directions in brackets stay on screen only. A line without a voice in the chosen language
+plays the German one, a line without any is shown for as long as it takes to read.
+
+**How it is made** (`tools/make_voices.py`, Qwen3-TTS 1.7B, Apache 2.0, local on the GPU from
+`G:\Tools\VoiceLab`): every figure gets a voice per language, designed from a description in
+[tools/voices.json](tools/voices.json) and spoken on a few of its own lines; that clip is kept in `tools/voices/`
+(the heroes' come from the samples the voices were chosen by) and cloned for every line, so a figure keeps its voice
+for lines written later. A take whose length does not fit its text is made again. Radios, machines and loudspeakers
+get their effect afterwards; all lines are levelled to -17 LUFS (a step above the effects) and stored as OGG Vorbis
+(quality 3) in `assets/voice/<language>/<key>.ogg`, `<key>.<hero>.ogg` for the heroes' takes.
+`work/voice/voices_<language>.wav` has all voices one after the other, to listen to.
+
+**Checked by ear, a machine's:** `tools/check_voices.py` lets Whisper (large-v3-turbo, faster-whisper from Text2Video's
+venv, on the GPU with miniforge's CUDA 12 libraries) transcribe every take and every voice clip and compares them with
+their texts, numbers left out (Whisper writes digits). A take below 0.8 goes to `work/voice/redo_<language>.txt`; a
+voice clip that does not end as its text does is reported, because every clone then says the missing rest first (it
+happened once: the lance's German voice). Names (Kael, Hale, Sarrath) and counted numbers are the usual false alarms.
+The first full run: 2548 takes, 4 redone.
+
+    set PYTHONNOUSERSITE=1
+    G:\Tools\VoiceLab\env-qwen\python.exe tools\make_voices.py --list               # lines per figure
+    G:\Tools\VoiceLab\env-qwen\python.exe tools\make_voices.py                      # what is missing
+    G:\Tools\VoiceLab\env-qwen\python.exe tools\make_voices.py --who unzu --force   # a figure again
+    G:\Tools\Text2Video\venv\Scripts\python.exe tools\check_voices.py [--refs]      # Whisper against the texts
+
+A figure's new voice: delete its clips in `tools/voices/`, change its description, run with `--who` and `--force`.
 
 ## Textures
 

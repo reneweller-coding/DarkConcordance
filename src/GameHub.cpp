@@ -400,8 +400,10 @@ void Game::enterNode( const TalkNode *node )
     // An answer may need something to have happened ("key>node?flag"), or not ("?!flag").
     m_talk = nullptr;
     m_choice = 0;
+    m_audio.stopVoice();
     if ( !node ) return;
     m_shown = *node;
+    speak( node->m_id );
     m_shown.m_answers.clear();
     for ( const auto &a : node->m_answers )
     {
@@ -692,6 +694,7 @@ bool Game::talkStep( int step, bool ok, bool back )
         else
             enterNode( m_level.talk( a.second ) );
     }
+    if ( !m_talk ) m_audio.stopVoice();   // closed: the voice stops with it
     return true;
 }
 

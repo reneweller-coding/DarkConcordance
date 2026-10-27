@@ -22,7 +22,7 @@ on the RTX 5090 (the Steam Deck needs half-resolution fog); the 3D generator is 
 | Conversations | portraits from the image model (one reference per figure, expressions from it), subtitles, voice |
 | Texts | `assets/text/<language>/*.txt`, one `key = text` per line (menus and HUD in `ui.txt`, one file per level); the level files carry only the keys. German is the source and fills every gap |
 | Signs | painted per language by the image model from the same text files (`make_textures.py --lang en`) |
-| Voice | local TTS in batches, per language: F5-TTS German (the user's choice in Text2Video), XTTS-v2 speaks German and English from one cloned reference per figure, Qwen3-TTS as alternative; for a sale Chatterbox (MIT) or Qwen3-TTS (Apache) instead of F5 (non-commercial weights). `assets/voice/<language>/<key>.ogg` is played when present, else the German one under the chosen subtitles |
+| Voice | Qwen3-TTS locally (`tools/make_voices.py`, Apache 2.0, the user's choice after samples against VoxCPM2): a voice per figure and language designed from a description (`tools/voices.json`, kept in `tools/voices/`), then cloned for every line; radio, machine and loudspeaker effects after it. `assets/voice/<language>/<key>[.<hero>].ogg` is played when present, else the German one under the chosen subtitles; conversations speak too, the hero's answers not |
 | Cutscenes | films from Text2Video (see below), without speech: voice and subtitles per language at playback |
 | Music | the AudioGenerator's soundtrack mode (ACE-Step 1.5 XL, local) from `tools/music.json`: a piece per place in two layers (calm, tense) on one beat grid and a fight piece, boss pieces in two layers, stingers, pieces for scenes; the game follows the danger near the hero (Score.cpp); OGG Vorbis q4 |
 | Sound effects | synthesised in code; the backgrounds per place from TextureGen (Stable Audio Open), `tools/ambience.txt`, seamless loops, OGG Vorbis q3 |
@@ -181,7 +181,7 @@ families of the places' own creatures in three tiers each (13 levels, three guar
 resistances and weaknesses for every enemy, twelve champion gifts (two from Act III on), a leader with an escort in
 every generated level, burning, corroding and freezing ground, the hero chilled, burning or corroded.
 
-Open: skinned heroes and enemies with the animation packs' combat clips; voices (German and English); the user's play
+Open: skinned heroes and enemies with the animation packs' combat clips; the user's play
 (balance, the music's choices and levels). Co-op is set aside for now (the user, 27.10.2026).
 
 Still to come, by first use:
@@ -261,8 +261,7 @@ Still to come, by first use:
 ## Open decisions (the user's)
 
 - Title: *DARK CONCORDANCE* or *KATABASIS* (collision check before it is final).
-- Where the reference voices come from (proposed: Qwen3-TTS, a voice designed per figure from a description, then
-  cloned for every line; Apache 2.0, so a sale stays possible; download not yet done).
 - Where human character models come from, if the suits are not enough.
 
-Decided (27.10.2026, the user): voices in German and English; the cutscene films photographic; co-op not for now.
+Decided (27.10.2026, the user): voices in German and English, with Qwen3-TTS; the cutscene films photographic; co-op
+not for now.

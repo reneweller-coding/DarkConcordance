@@ -93,6 +93,9 @@ public:
      */
     float voice( const std::string &path );
 
+    /** @brief Stops the spoken line (a conversation closed or moved on). */
+    void stopVoice();
+
     bool  m_on = false;      ///< sound is running
     float m_muffle = 1.0f;   ///< what reaches the ears (out in a vacuum only what the suit carries)
     float m_yaw = 0.0f;      ///< the camera's turn (radians), so left and right follow the screen

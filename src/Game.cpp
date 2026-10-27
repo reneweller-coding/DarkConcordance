@@ -3231,13 +3231,8 @@ void Game::update( float dt, const GameInput &inRaw )
         {
             m_line = m_lineQueue.front();
             m_lineQueue.erase( m_lineQueue.begin() );
-            // The voice in the chosen language, else the German one (under the chosen language's subtitles); a line
-            // the hero says in their own way has its own file.
-            std::string key = m_line->m_id;
-            if ( hasText( key + "." + heroKey( m_heroKind ) ) ) key += std::string( "." ) + heroKey( m_heroKind );
-            float spoken = m_audio.voice( m_assets + "/voice/" + language() + "/" + key );
-            if ( spoken <= 0.0f && language() != "de" ) spoken = m_audio.voice( m_assets + "/voice/de/" + key );
-            int chars = GetCodepointCount( tr( key ) );
+            float spoken = speak( m_line->m_id );
+            int   chars = GetCodepointCount( trAs( m_line->m_id, heroKey( m_heroKind ) ) );
             m_lineTimer = spoken > 0.0f ? spoken + 0.4f : 1.5f + 0.055f * (float)chars;
         }
     }

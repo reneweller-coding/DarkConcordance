@@ -80,6 +80,6 @@ td_fuse      | appear.zuender | hero
 
 [hints]
 h_tale       | a
-h_ally       | a
+h_ally_union | a
 h_champion   | champion
 h_stim       | hurt
