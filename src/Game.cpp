@@ -387,7 +387,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
 
     loadFont();
     renderBoard();
-    m_audio.init( sound, m_level.m_ambience );
+    m_audio.init( sound, m_level.m_ambience, assets );
     putHero( m_pos.x, m_pos.z, 0.0f );
     return true;
 }
@@ -440,6 +440,75 @@ Progress Game::progress() const
 std::string Game::title() const
 {
     return std::string( tr( m_level.m_act ) ) + "  —  " + tr( m_level.m_name );
+}
+
+bool Game::bossFight() const
+{
+    if ( tugFighting() || motherFighting() ) return true;
+    if ( m_fired.count( "bossdead" ) ) return false;
+    if ( m_fired.count( "bossstart" ) && ( m_pressActive || boss() >= 0 ) ) return true;
+    // A guardian (the depths) has no opening scene: its fight begins when it comes for the hero.
+    int b = boss();
+    return b >= 0 && m_foes[b].m_awake && Vector3Distance( m_foes[b].m_pos, m_pos ) < 30.0f;
+}
+
+bool Game::bossRage() const
+{
+    if ( m_pressActive && !m_pressDead ) return m_tank[0] <= 0.0f && m_tank[1] <= 0.0f;
+    if ( tugFighting() ) return m_tugStage > 0;
+    if ( motherFighting() ) return !motherLinked();
+    int b = boss();
+    return b >= 0 && m_foes[b].m_hp < 0.5f * m_foes[b].m_hpMax;
+}
+
+std::string Game::musicCue() const
+{
+    if ( m_scene > 0 ) return "loss";   // Ilka found too late, the shot, the clinic
+    if ( m_progress.m_flags.count( "act1done" ) || m_fired.count( "act1done" ) ) return "actend";
+    if ( bossFight() ) return m_level.m_bossMusic.empty() ? "boss" : m_level.m_bossMusic;
+    if ( m_fightMusic && !m_level.m_peaceful && !m_level.m_music.empty() ) return m_level.m_music + "_fight";
+    return m_level.m_music;
+}
+
+float Game::danger() const
+{
+    float near = 0.0f;
+    for ( const Foe &f : m_foes )
+        if ( f.m_alive && !f.m_hidden && f.m_awake && Vector3Distance( f.m_pos, m_pos ) < 22.0f )
+            near += f.m_elite ? 2.0f : 1.0f;
+    return near;
+}
+
+void Game::updateMusic( float dt )
+{
+    float near = danger();
+    m_quiet = near > 0.0f ? 0.0f : m_quiet + dt;
+    if ( near >= 3.0f || ( near > 0.0f && m_hp < hpMax() * 0.3f ) ) m_fightMusic = true;
+    if ( m_quiet > 5.0f || m_dead ) m_fightMusic = false;
+}
+
+float Game::musicHeat() const
+{
+    if ( bossFight() ) return bossRage() ? 1.0f : 0.0f;
+    // The place's piece: calm alone, its tense layer with an enemy or two close (the fight has a piece of its own).
+    return fminf( 1.0f, danger() / 2.0f );
+}
+
+std::vector<std::string> Game::musicPieces() const
+{
+    std::vector<std::string> ids = { m_level.m_music, "victory", "death" };
+    if ( !m_level.m_peaceful ) ids.push_back( m_level.m_bossMusic.empty() ? "boss" : m_level.m_bossMusic );
+    if ( !m_level.m_peaceful && !m_level.m_music.empty() ) ids.push_back( m_level.m_music + "_fight" );
+    if ( m_level.m_thrust ) ids.push_back( "loss" );   // the prologue ends in the clinic
+    if ( m_level.m_peaceful ) ids.push_back( "actend" );
+    return ids;
+}
+
+std::vector<std::string> Game::takeStings()
+{
+    std::vector<std::string> s;
+    s.swap( m_stings );
+    return s;
 }
 
 void Game::shutdown()
@@ -602,6 +671,7 @@ void Game::fire( const std::string &trigger )
 {
     if ( m_fired.count( trigger ) ) return;
     m_fired.insert( trigger );
+    if ( trigger == "bossdead" ) m_stings.push_back( "victory" );
     // The press's moments go before everything waiting: they matter now.
     bool urgent = trigger == "bossstart" || trigger == "ramwarn" || trigger == "coreopen" || trigger == "tank1" ||
                   trigger == "armour";
@@ -671,6 +741,7 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
         m_dead = true;
         m_deadTimer = 0.0f;
         ++m_deaths;
+        m_stings.push_back( "death" );
         if ( m_autoplay )
         {
             // Who stood near: what killed the autopilot.
@@ -1297,6 +1368,7 @@ void Game::moveHero( float dt )
         m_dead = true;
         m_deadTimer = 1.0f;
         ++m_deaths;
+        m_stings.push_back( "death" );
         if ( m_autoplay ) TraceLog( LOG_WARNING, "DEATH: fall at %.1f,%.1f t=%.0f", m_pos.x, m_pos.z, m_time );
     }
     m_invuln -= dt;
@@ -2622,6 +2694,7 @@ void Game::update( float dt, const GameInput &inRaw )
     m_cam.fovy = 38.0f;
     m_cam.projection = CAMERA_PERSPECTIVE;
     m_audio.update();
+    updateMusic( dt );
 }
 
 Lighting Game::lighting() const

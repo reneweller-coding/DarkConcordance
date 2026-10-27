@@ -9,6 +9,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <cstring>
 #include <vector>
 
 namespace spaceopera
@@ -437,16 +438,10 @@ Wave loop( Wave w )
 
 }   // namespace
 
-void Audio::init( bool on, const std::string &ambienceName )
+void Audio::init( bool on, const std::string &ambienceName, const std::string &assets )
 {
-    m_on = on;
-    if ( !on ) return;
-    InitAudioDevice();
-    if ( !IsAudioDeviceReady() )
-    {
-        m_on = false;
-        return;
-    }
+    m_on = on && IsAudioDeviceReady();
+    if ( !m_on ) return;
     SetMasterVolume( 0.8f );
     for ( int s = 0; s < (int)SfxE::COUNT; ++s )
     {
@@ -454,6 +449,20 @@ void Audio::init( bool on, const std::string &ambienceName )
         m_sounds[s][0] = LoadSoundFromWave( w );
         UnloadWave( w );
         for ( int v = 1; v < Voices; ++v ) m_sounds[s][v] = LoadSoundAlias( m_sounds[s][0] );
+    }
+    // The recorded background, streamed in a loop; levelled by make_audio.py to sit where the synthesised one did.
+    std::string bed = assets + "/sound/amb_" + ambienceName + ".ogg";
+    if ( !assets.empty() && FileExists( bed.c_str() ) )
+    {
+        m_bed = LoadMusicStream( bed.c_str() );
+        m_hasBed = m_bed.frameCount > 0;
+    }
+    if ( m_hasBed )
+    {
+        m_bed.looping = true;
+        SetMusicVolume( m_bed, 0.55f );
+        PlayMusicStream( m_bed );
+        return;
     }
     Wave a = loop( ambienceName == "ship"    ? shipAmbience()
                    : ambienceName == "suit"  ? suitAmbience()
@@ -464,6 +473,26 @@ void Audio::init( bool on, const std::string &ambienceName )
     SetSoundVolume( m_ambience, 0.55f );
 }
 
+void Audio::dump( const std::string &dir )
+{
+    for ( int s = 0; s < (int)SfxE::COUNT; ++s )
+    {
+        Wave w = make( (SfxE)s );
+        ExportWave( w, TextFormat( "%s/sfx_%02d.wav", dir.c_str(), s ) );
+        UnloadWave( w );
+    }
+    const char *names[] = { "tunnels", "ship", "suit", "water" };
+    for ( const char *name : names )
+    {
+        Wave w = loop( !strcmp( name, "ship" )    ? shipAmbience()
+                       : !strcmp( name, "suit" )  ? suitAmbience()
+                       : !strcmp( name, "water" ) ? waterAmbience()
+                                                  : ambience() );
+        ExportWave( w, TextFormat( "%s/amb_%s.wav", dir.c_str(), name ) );
+        UnloadWave( w );
+    }
+}
+
 void Audio::shutdown()
 {
     if ( !m_on ) return;
@@ -472,9 +501,11 @@ void Audio::shutdown()
         for ( int v = 1; v < Voices; ++v ) UnloadSoundAlias( m_sounds[s][v] );
         UnloadSound( m_sounds[s][0] );
     }
-    UnloadSound( m_ambience );
+    if ( m_hasBed )
+        UnloadMusicStream( m_bed ), m_hasBed = false;
+    else
+        UnloadSound( m_ambience );
     if ( m_hasVoice ) UnloadSound( m_voice );
-    CloseAudioDevice();
     m_on = false;
 }
 
@@ -497,7 +528,11 @@ void Audio::play( SfxE s, Vector3 at, Vector3 listener, float volume )
 
 void Audio::update()
 {
-    if ( m_on && !IsSoundPlaying( m_ambience ) ) PlaySound( m_ambience );
+    if ( !m_on ) return;
+    if ( m_hasBed )
+        UpdateMusicStream( m_bed );
+    else if ( !IsSoundPlaying( m_ambience ) )
+        PlaySound( m_ambience );
 }
 
 float Audio::voice( const std::string &path )

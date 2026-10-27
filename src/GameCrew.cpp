@@ -288,7 +288,7 @@ void Game::blast( Vector3 p, float damage, float radius )
         {
             float d = Vector3Distance( p, m_parts[i].m_pos ) - m_parts[i].m_radius;
             if ( m_parts[i].m_hp > 0.0f && d < radius )
-                hitPart( i, damage * 1.3f * ( 1.0f - 0.5f * fmaxf( 0.0f, d ) / radius ), p );
+                hitPart( i, damage * 2.0f * ( 1.0f - 0.5f * fmaxf( 0.0f, d ) / radius ), p );   // charges on plating
         }
     // The press's parts take more: it is what the bolts are for.
     Vector3 o = m_pressModel.m_origin;

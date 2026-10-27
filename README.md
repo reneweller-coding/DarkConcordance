@@ -256,7 +256,50 @@ language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewher
 sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture;
 `--panel 0|1|2|3` shows the inventory, skills, character or map page, `--map` the map over the game; `--seed n` picks
 a generated level's layout, `--dumpgen FILE` writes the generated level file, `--herolevel n`, `--loot n` (items
-scattered round the hero) and `--xp n` set up a hero for tests, `--trace s` logs the run every s seconds.
+scattered round the hero) and `--xp n` set up a hero for tests, `--trace s` logs the run (and the music's piece and
+heat) every s seconds. `--silent` runs the sound (device, music, backgrounds) at volume 0, also with `--shot`;
+`--scoretest FILE` mixes a scripted stretch of music (title, a level calm to fight, a boss, the stingers, a change of
+takes) into a WAV without playing it; `--dumpsound DIR` writes the synthesised effects and backgrounds as WAVs.
+
+## Music and sound
+
+**The music follows what happens.** Every place has its own piece in two layers that play in lockstep: calm while
+nobody is near, its busier layer fading in once an enemy or two are close and awake. With three or more (a champion
+counts two, or the hero badly hurt) the place's fight piece takes over, and five quiet seconds after the last enemy
+the calm piece comes back. Boss fights have their own piece (Mother Sevenfold hers) whose second layer comes in for
+the boss's second half: the press's tanks gone, the tug casting off, the masts down. Pieces cross-fade; a stinger
+marks a boss beaten or the hero down; the prologue's end and the end of Act I have pieces of their own; the title
+menu has the main theme. Each piece has two takes, which take turns every second time round. A level's pieces are
+decoded when it loads, so a fight's music is there when the fight begins. „Musik“ in the menus sets the volume
+(`settings.txt`).
+
+| Piece | Where | Layers |
+|---|---|---|
+| title | title menu, choice of hero | – |
+| prologue, prologue_fight | „Gute Hoffnung“ | calm, tense; fight |
+| velm | Station Velm | – |
+| kuehlgedaerme, knochenmarkt, tiefen, aussenhaut, ertrunken, kernbank (each with `_fight`) | the levels | calm, tense; fight |
+| boss | the press, the Taxator, the tug, the Hydrauliker, guardians | fight, rage |
+| mother | Mother Sevenfold | fight, rage |
+| victory, death | stingers | – |
+| loss, actend | the prologue's last scene, the end of Act I | – |
+
+**Backgrounds:** a recorded loop per place (`ambience` in the level file: ship, street, coolant, market, depths, suit,
+water, vault) in `assets/sound`; without one the synthesised hum plays as before.
+
+**How it is made** (`tools/make_audio.py`): the pieces are written in [tools/music.json](tools/music.json) and made by
+the AudioGenerator's soundtrack mode (ACE-Step 1.5 XL, local; loops cut to the measured beat grid, the tense layer a
+cover of the calm one, so both layers of a take share one grid; the fight pieces made on their own: covers barely
+follow a changed style, a fight needs a piece of its own). The backgrounds are written in
+[tools/ambience.txt](tools/ambience.txt) and made by TextureGen (Stable Audio Open), cut into seamless loops. Both are
+levelled against the game's own sounds (`--dumpsound DIR` writes the synthesised ones as WAVs) and stored as OGG
+Vorbis, the music at quality 4 (~128 kbit/s), the backgrounds at quality 3: the format raylib plays, small, and
+transparent enough for music. The game decodes a piece in the background when it is wanted and mixes the layers
+itself (Score.cpp), so layers and takes stay sample-exact. Licences: ACE-Step 1.5 is MIT; Stable Audio Open 1.0 falls
+under the Stability AI Community License (to be checked before a sale).
+
+    G:\Tools\PythonSkripts\AudioGenerator\venv\Scripts\python.exe tools\make_audio.py music      # [--encode-only]
+    G:\Tools\PythonSkripts\AudioGenerator\venv\Scripts\python.exe tools\make_audio.py ambience   # [--encode-only]
 
 ## Textures
 

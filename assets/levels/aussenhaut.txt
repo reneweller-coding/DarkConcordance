@@ -28,6 +28,7 @@ area     5
 next     velm.txt
 gate     bossdead
 ambience suit
+music    aussenhaut
 
 genrooms      12
 genside       4

@@ -102,6 +102,10 @@ void Game::hitPart( int i, float damage, Vector3 at )
     explode( p.m_pos, 2.0f );
     m_shake = fmaxf( m_shake, 0.6f );
     fire( std::string( p.m_key ) + "down" );
+    // Mother Sevenfold feels a mast go: all seven bodies stumble at once.
+    if ( std::string( p.m_key ) == "mother.relay" )
+        for ( Foe &f : m_foes )
+            if ( f.m_kind == FoeE::SHELL && f.m_variant == 2 && f.m_alive ) f.m_stun = 1.5f, f.m_swingT = -1.0f;
 }
 
 void Game::updateTug( float dt )
@@ -204,15 +208,15 @@ void Game::updateTug( float dt )
                 fireShot( bridge, Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } ), 22.0f, 6.0f, 1.4f );
         m_tugPd = 3.4f;
     }
-    // The hangar: two drones now and then, while there are few.
+    // The hangar: a drone or two now and then, never more than two in the air (Dorra has only her bolts for them).
     m_tugDrone -= dt;
     if ( m_tugDrone <= 0.0f )
     {
         int drones = 0;
         for ( const Foe &f : m_foes ) drones += f.m_alive && f.m_kind == FoeE::DRONE ? 1 : 0;
-        for ( int k = 0; k < 2 && drones + k < 4; ++k )
+        for ( int k = 0; k < 2 && drones + k < 2; ++k )
             m_summons.push_back( { FoeE::DRONE, Vector3Transform( { -2.0f, 4.0f, -3.0f + 3.0f * k }, frame ) } );
-        m_tugDrone = 24.0f;
+        m_tugDrone = 28.0f;
     }
 }
 

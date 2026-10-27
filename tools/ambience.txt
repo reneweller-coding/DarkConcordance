@@ -1,0 +1,10 @@
+# The background sounds, one per place (TextureGen, Stable Audio Open). make_audio.py turns each into a seamless loop
+# assets/sound/amb_<name>.ogg; a level names its own with `ambience <name>`.
+interior of an old cargo spaceship under thrust, deep engine rumble, hull creaks and groans, ventilation hum, steady | name=ship
+busy underground street at night inside a space station, distant crowd murmur, footsteps, ventilation hum, distant machinery | name=street
+industrial pipe tunnels, dripping water, hissing steam leaks, gurgling coolant in pipes, deep electrical hum | name=coolant
+huge enclosed market hall, distant crowd murmur, wind through a vast space, low rumble, faint birds | name=market
+dark maintenance tunnels, heavy machinery rumble, slow rhythmic clanking, electrical buzz, distant drips | name=depths
+inside a space suit helmet, slow calm breathing, soft radio static hiss, quiet suit fan hum | name=suit
+underwater ambience, muffled bubbles, deep water pressure rumble, distant groaning metal | name=water
+cold server vault, electrical hum of server racks, faint clicking relays, cold air ventilation, eerie quiet | name=vault

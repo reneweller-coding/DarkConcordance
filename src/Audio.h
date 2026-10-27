@@ -1,8 +1,10 @@
 /**
  * @file Audio.h
  * @brief Sound effects synthesised at start (no sample files): the Gauss rifle, hits, the lice, the press, steam,
- *        explosions, pickups, the hum of the tunnels; played with distance and panning. Spoken lines are played from
- *        assets/voice when they exist.
+ *        explosions, pickups; played with distance and panning. The background of a place is a recorded loop
+ *        (assets/sound/amb_<name>.ogg, made by tools/make_audio.py) or, without one, synthesised. Spoken lines are
+ *        played from assets/voice when they exist. The device is opened once by the program (the music lives on
+ *        across levels).
  * @author Rene Weller
  */
 #pragma once
@@ -53,14 +55,22 @@ class Audio
 {
 public:
     /**
-     * @brief Opens the device and synthesises the effects.
+     * @brief Synthesises the effects and starts the background (the device must be open).
      * @param[in] on        false: stay silent (tests, pictures)
-     * @param[in] ambience  the background: "tunnels" (Velm's hum) or "ship" (a hull under thrust)
+     * @param[in] ambience  the background: assets/sound/amb_<ambience>.ogg, else synthesised ("ship", "suit",
+     *                      "water", otherwise Velm's hum)
+     * @param[in] assets    the assets folder
      */
-    void init( bool on, const std::string &ambience = "tunnels" );
+    void init( bool on, const std::string &ambience = "tunnels", const std::string &assets = "" );
 
-    /** @brief Closes the device. */
+    /** @brief Lets go of the effects and the background. */
     void shutdown();
+
+    /**
+     * @brief Writes every synthesised effect and background as a WAV (to level recorded sounds against them).
+     * @param[in] dir  the folder
+     */
+    static void dump( const std::string &dir );
 
     /**
      * @brief Plays an effect at a place.
@@ -89,7 +99,9 @@ private:
     static constexpr int Voices = 6;   ///< copies of each effect that can play at once
     Sound                m_sounds[(int)SfxE::COUNT][Voices] = {};
     int                  m_next[(int)SfxE::COUNT] = {};
-    Sound                m_ambience = {};
+    Sound                m_ambience = {};   ///< the synthesised background
+    Music                m_bed = {};        ///< ... or the recorded one
+    bool                 m_hasBed = false;
     Sound                m_voice = {};
     bool                 m_hasVoice = false;
 };

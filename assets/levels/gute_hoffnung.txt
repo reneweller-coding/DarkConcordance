@@ -32,6 +32,7 @@ thrust   1
 gate     bridgeclear
 next     velm.txt
 ambience ship
+music    prologue
 zone     0 22 8 42 bridge
 zone     29 22 43 59 cargo
 zone     30 0 39 18 bar

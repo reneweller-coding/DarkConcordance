@@ -311,7 +311,9 @@ public:
     std::string                                              m_next;             ///< the level after this one
     std::string                                              m_gate = "bossdead";   ///< the event that opens the door
     std::string                                              m_ambience = "tunnels";   ///< the background sound
-    std::vector<std::pair<int, int>>                         m_route;   ///< the autopilot's waypoints (cells), in order
+    std::string                      m_music;              ///< the place's piece (assets/music/music.txt); "" none
+    std::string                      m_bossMusic;          ///< the piece of its boss fight ("" the common one, boss)
+    std::vector<std::pair<int, int>> m_route;              ///< the autopilot's waypoints (cells), in order
     std::vector<std::pair<int, int>> m_glass;              ///< the window cells (after build: the game lays the panes)
     bool                             m_peaceful = false;   ///< a hub: no fighting, the trigger and A talk
     std::string                      m_view;               ///< what the floor windows show: star, drums

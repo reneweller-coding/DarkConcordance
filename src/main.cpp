@@ -18,6 +18,7 @@
 #include "Game.h"
 #include "Gfx.h"
 #include "Scene.h"
+#include "Score.h"
 #include "Text.h"
 
 #include <raylib.h>
@@ -56,6 +57,9 @@ struct Options
     bool        m_report = false;                ///< log the autopilot's run
     bool        m_mute = false;                  ///< no sound
     bool        m_lookdev = false;               ///< the look test
+    std::string m_dumpSound;                     ///< write the synthesised sounds as WAVs into this folder, then end
+    std::string m_scoreTest;                     ///< mix a scripted stretch of music into this WAV, then end
+    bool        m_silent = false;                ///< tests: the sound runs (device, music, beds), at volume 0
     float       m_warm = 4.0f;                   ///< seconds simulated before the picture
     float       m_exposure = -1.0f;              ///< exposure (negative: the renderer's)
     int         m_bench = 0;               ///< with --shot: render this many frames first and log the time per frame
@@ -125,8 +129,14 @@ Options parse( int argc, char **argv )
             o.m_report = true;
         else if ( a == "--mute" )
             o.m_mute = true;
+        else if ( a == "--silent" )
+            o.m_silent = true;
         else if ( a == "--lookdev" )
             o.m_lookdev = true;
+        else if ( a == "--dumpsound" && i + 1 < argc )
+            o.m_dumpSound = argv[++i];
+        else if ( a == "--scoretest" && i + 1 < argc )
+            o.m_scoreTest = argv[++i];
         else if ( a == "--level" )
             o.m_level = next();
         else if ( a == "--warm" )
@@ -333,6 +343,7 @@ struct Settings
 {
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
     float       m_brightness = 1.0f;                  ///< exposure factor
+    float       m_music = 0.7f;                       ///< music volume 0..1
     std::string m_language;                           ///< the texts' language
 };
 
@@ -358,6 +369,8 @@ Settings loadSettings()
             s.m_brightness = Clamp( (float)atof( value ), 0.6f, 2.0f );
         else if ( !strcmp( key, "language" ) )
             s.m_language = value;
+        else if ( !strcmp( key, "music" ) )
+            s.m_music = Clamp( (float)atof( value ), 0.0f, 1.0f );
     }
     fclose( f );
     return s;
@@ -451,8 +464,8 @@ void saveSettings( const Settings &s )
 {
     FILE *f = fopen( settingsPath().c_str(), "w" );
     if ( !f ) return;
-    fprintf( f, "difficulty %d\nbrightness %.2f\nlanguage %s\n", (int)s.m_difficulty, s.m_brightness,
-             s.m_language.c_str() );
+    fprintf( f, "difficulty %d\nbrightness %.2f\nlanguage %s\nmusic %.1f\n", (int)s.m_difficulty, s.m_brightness,
+             s.m_language.c_str(), s.m_music );
     fclose( f );
 }
 
@@ -538,9 +551,18 @@ std::string brightnessBar( float b )
     return bar;
 }
 
+/** @brief The music volume as a bar. */
+std::string musicBar( float v )
+{
+    int         n = (int)roundf( v * 10.0f );
+    std::string bar = std::string( tr( "menu.music" ) ) + "  ";
+    for ( int i = 1; i <= 10; ++i ) bar += i <= n ? "|" : ".";
+    return bar;
+}
+
 /**
- * @brief The menu's items. Title: start, difficulty, brightness, language, quit. Pause: resume, difficulty,
- *        brightness, language, restart, quit.
+ * @brief The menu's items. Title: start, difficulty, brightness, music, language, quit. Pause: resume, difficulty,
+ *        brightness, music, language, restart, quit.
  */
 std::vector<std::string> menuItems( bool title, const Settings &s, bool saved )
 {
@@ -549,17 +571,73 @@ std::vector<std::string> menuItems( bool title, const Settings &s, bool saved )
     items.push_back( tr( title ? "menu.start" : "menu.resume" ) );
     items.push_back( std::string( tr( "menu.difficulty" ) ) + "  " + difficultyName( s.m_difficulty ) );
     items.push_back( brightnessBar( s.m_brightness ) );
+    items.push_back( musicBar( s.m_music ) );
     items.push_back( std::string( tr( "menu.language" ) ) + "  " + tr( "language.name" ) );
     if ( !title ) items.push_back( tr( "menu.restart" ) );
     items.push_back( tr( "menu.quit" ) );
     return items;
 }
 
+/**
+ * @brief The music's test, silent: mixes a scripted stretch of play into a WAV (the title; a level calm and tense;
+ *        its fight; a boss in both halves; the stingers; a long calm stretch in which the takes change; silence).
+ * @param[in] path  the WAV
+ */
+int runScoreTest( const std::string &path )
+{
+    Score score;
+    score.init( assetsDir() + "/music", true, false );
+    std::vector<std::string> ids = { "title", "kuehlgedaerme", "kuehlgedaerme_fight", "boss", "victory", "death" };
+    score.keep( ids );
+    for ( const std::string &id : ids )
+        for ( int i = 0; i < 600 && !score.has( id ); ++i ) WaitTime( 0.05 );
+    struct Step
+    {
+        float       m_at;
+        const char *m_cue;
+        float       m_heat;
+        const char *m_sting;
+    };
+    const Step         steps[] = { { 0.0f, "title", 0.0f, nullptr },
+                                   { 10.0f, "kuehlgedaerme", 0.0f, nullptr },
+                                   { 30.0f, "kuehlgedaerme", 1.0f, nullptr },
+                                   { 45.0f, "kuehlgedaerme_fight", 1.0f, nullptr },
+                                   { 60.0f, "boss", 0.0f, nullptr },
+                                   { 75.0f, "boss", 1.0f, nullptr },
+                                   { 90.0f, "kuehlgedaerme", 0.0f, "victory" },
+                                   { 100.0f, "kuehlgedaerme", 0.0f, "death" },
+                                   { 230.0f, "", 0.0f, nullptr } };
+    const int          perFrame = 800;   // 1/60 s at 48 kHz
+    const float        dt = 1.0f / 60.0f, length = 240.0f;
+    std::vector<float> mixed( perFrame * 2 );
+    std::vector<short> out;
+    int                step = -1;
+    for ( float t = 0.0f; t < length; t += dt )
+    {
+        int now = step;
+        while ( now + 1 < (int)( sizeof( steps ) / sizeof( steps[0] ) ) && steps[now + 1].m_at <= t ) ++now;
+        if ( now != step && steps[now].m_sting ) score.sting( steps[now].m_sting );
+        step = now;
+        score.update( dt, steps[step].m_cue, steps[step].m_heat );
+        score.mix( mixed.data(), perFrame );
+        for ( float v : mixed ) out.push_back( (short)( v * 32767.0f ) );
+    }
+    Wave w = { (unsigned)( out.size() / 2 ), 48000, 16, 2, out.data() };
+    bool ok = ExportWave( w, path.c_str() );
+    score.shutdown();
+    return ok ? 0 : 1;
+}
+
 /** @brief The level. */
 int runGame( const Options &o, Gfx &gfx )
 {
-    bool     sound = !o.m_mute && o.m_shot.empty();
+    bool     sound = ( !o.m_mute && o.m_shot.empty() ) || o.m_silent;
     Settings settings = loadSettings();
+    // The device is opened once: the music plays on across levels and menus.
+    if ( sound ) InitAudioDevice();
+    Score score;
+    score.init( assetsDir() + "/music", sound );
+    score.m_volume = settings.m_music;
     if ( !o.m_language.empty() ) settings.m_language = o.m_language;
     if ( !loadTexts( assetsDir(), settings.m_language ) ) settings.m_language = "de";
     HeroE       hero = o.m_hero == "dorra" ? HeroE::DORRA : HeroE::CORVIN;
@@ -585,6 +663,12 @@ int runGame( const Options &o, Gfx &gfx )
         TraceLog( LOG_ERROR, "LEVEL: %s not found", level.c_str() );
         return 1;
     }
+    {
+        std::vector<std::string> pieces = game->musicPieces();
+        pieces.push_back( "title" );
+        score.keep( pieces );
+    }
+    if ( o.m_silent ) SetMasterVolume( 0.0f );
     if ( !o.m_dumpGen.empty() && !game->generated().empty() )
         SaveFileText( o.m_dumpGen.c_str(), const_cast<char *>( game->generated().c_str() ) );
     if ( !o.m_difficulty.empty() )
@@ -613,8 +697,11 @@ int runGame( const Options &o, Gfx &gfx )
             in.m_move = o.m_move;
             in.m_map = o.m_map && i == 0;
             game->update( dt, in );
+            for ( const std::string &s : game->takeStings() ) score.sting( s );
+            score.update( dt, game->musicCue(), game->musicHeat() );
             if ( o.m_trace > 0.0f && i % std::max( 1, (int)( o.m_trace * 60.0f ) ) == 0 )
-                TraceLog( LOG_WARNING, "TRACE: %s", game->report().c_str() );
+                TraceLog( LOG_WARNING, "TRACE: %s music=%s/%.2f", game->report().c_str(), game->musicCue().c_str(),
+                          game->musicHeat() );
         }
         if ( o.m_report ) TraceLog( LOG_WARNING, "RUN: %s", game->report().c_str() );
         if ( !o.m_talk.empty() || o.m_shop ) game->openForPicture( o.m_talk, o.m_shop );
@@ -644,6 +731,8 @@ int runGame( const Options &o, Gfx &gfx )
         else
             savePicture( gfx, o.m_shot, draw );
         game->shutdown();
+        score.shutdown();
+        if ( IsAudioDeviceReady() ) CloseAudioDevice();
         return 0;
     }
 
@@ -674,6 +763,8 @@ int runGame( const Options &o, Gfx &gfx )
         game->m_brightness = settings.m_brightness;
         game->m_autoplay = o.m_autoplay;
         game->m_zoom = zoom;
+        score.keep( game->musicPieces() );
+        if ( o.m_silent ) SetMasterVolume( 0.0f );
     };
     while ( !WindowShouldClose() && !quit )
     {
@@ -770,9 +861,10 @@ int runGame( const Options &o, Gfx &gfx )
             // The items as menuItems lists them (the title's "continue" first when there is a save).
             MenuKeys k = menuKeys( dt );
             int      base = mode == TITLE && hasSave ? 1 : 0;
-            int      count = ( mode == TITLE ? 5 : 6 ) + base;
+            int      count = ( mode == TITLE ? 6 : 7 ) + base;
             chosen = ( chosen + k.m_move + count ) % count;
-            int  diffItem = 1 + base, brightItem = 2 + base, langItem = 3 + base, restartItem = mode == PAUSE ? 4 : -1;
+            int  diffItem = 1 + base, brightItem = 2 + base, musicItem = 3 + base, langItem = 4 + base;
+            int  restartItem = mode == PAUSE ? 5 : -1;
             auto nextLanguage = [&]( int step )
             {
                 std::vector<std::string> all = languages( assetsDir() );
@@ -795,6 +887,12 @@ int runGame( const Options &o, Gfx &gfx )
             {
                 settings.m_brightness = Clamp( settings.m_brightness + 0.1f * k.m_change, 0.6f, 2.0f );
                 game->m_brightness = settings.m_brightness;
+                saveSettings( settings );
+            }
+            if ( chosen == musicItem && k.m_change )
+            {
+                settings.m_music = Clamp( roundf( settings.m_music * 10.0f + k.m_change ) / 10.0f, 0.0f, 1.0f );
+                score.m_volume = settings.m_music;
                 saveSettings( settings );
             }
             if ( k.m_confirm )
@@ -831,6 +929,10 @@ int runGame( const Options &o, Gfx &gfx )
             if ( k.m_back && mode == PAUSE ) mode = PLAY;
             lastMouse = GetMousePosition();
         }
+        // The music: the title's piece in the menus before the game, else what the game calls for; quieter in a menu.
+        for ( const std::string &s : game->takeStings() ) score.sting( s );
+        score.m_duck = mode == PAUSE ? 0.5f : ( mode == PANEL ? 0.75f : 1.0f );
+        score.update( dt, mode == TITLE || mode == CHOOSE ? "title" : game->musicCue(), game->musicHeat() );
         if ( IsKeyPressed( KEY_F1 ) ) showFps = !showFps;
         if ( IsKeyPressed( KEY_F12 ) )
             savePicture( gfx, std::string( GetApplicationDirectory() ) + TextFormat( "shot_%03d.png", ++shots ), draw );
@@ -855,6 +957,8 @@ int runGame( const Options &o, Gfx &gfx )
         EndDrawing();
     }
     game->shutdown();
+    score.shutdown();
+    if ( IsAudioDeviceReady() ) CloseAudioDevice();
     return 0;
 }
 
@@ -877,6 +981,18 @@ int main( int argc, char **argv )
     Gfx gfx;
     gfx.init( o.m_width, o.m_height, o.m_ss );
     if ( o.m_exposure > 0.0f ) gfx.m_exposure = o.m_exposure;
+    if ( !o.m_scoreTest.empty() )
+    {
+        int r = runScoreTest( o.m_scoreTest );
+        CloseWindow();
+        return r;
+    }
+    if ( !o.m_dumpSound.empty() )
+    {
+        Audio::dump( o.m_dumpSound );
+        CloseWindow();
+        return 0;
+    }
     int result = o.m_lookdev ? runLookdev( o, gfx ) : runGame( o, gfx );
     CloseWindow();
     if ( g_log ) fclose( g_log );

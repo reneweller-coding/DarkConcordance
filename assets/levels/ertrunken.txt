@@ -17,6 +17,7 @@ area     7
 next     velm.txt
 gate     bossdead
 ambience water
+music    ertrunken
 
 genrooms      12
 genside       4

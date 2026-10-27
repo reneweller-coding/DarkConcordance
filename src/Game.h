@@ -191,6 +191,18 @@ public:
     /** @return the act and the level's name in the loaded language (for the title menu) */
     std::string title() const;
 
+    /** @return the piece this moment calls for: the place's, its fight's, its boss's, the prologue's or the act's end */
+    std::string musicCue() const;
+
+    /** @return how hot it is for the music: 0 calm, 1 enemies close (in a boss fight: its second half) */
+    float musicHeat() const;
+
+    /** @return the pieces this level may call for (decoded ahead: its own, its boss's, the stingers, its end) */
+    std::vector<std::string> musicPieces() const;
+
+    /** @return the stingers due since the last call (victory, death); they are forgotten then */
+    std::vector<std::string> takeStings();
+
     /**
      * @brief Draws the inventory, the character page or the map over the frame (the game waits meanwhile).
      * @param[in] w    width (pixels)
@@ -509,6 +521,17 @@ private:
     void poseFoes( std::vector<Drawable> &out );
     void drawFoeHud( int w, int h, float s );
     int boss() const;
+    /** @return the boss fight is on (the music changes) */
+    bool bossFight() const;
+    /** @return the boss is in its second half: the press's tanks gone, the tug casting off, the masts down */
+    bool bossRage() const;
+    std::vector<std::string> m_stings;   ///< stingers for the music, until main takes them
+    /** @return the danger close by: awake enemies within 22 m, champions double */
+    float danger() const;
+    /** @brief The fight's music on at three (or a champion, or badly hurt), off after five quiet seconds. */
+    void updateMusic( float dt );
+    bool       m_fightMusic = false;                            ///< the place's fight piece plays
+    float      m_quiet = 0.0f;                                  ///< seconds without danger
     Figure     m_guardFigure, m_heavyFigure, m_taxatorFigure;   ///< market guards, heavies, the Taxator
     LouseModel m_saw, m_bomber;                                 ///< the saw bots, the bombers
     Mesh       m_droneBody = {}, m_droneRotor = {}, m_droneEye = {}, m_blade = {}, m_sac = {}, m_ring = {};

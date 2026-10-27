@@ -16,7 +16,9 @@ walls    5.5
 area     9
 next     velm.txt
 gate     bossdead
-ambience tunnels
+ambience vault
+music    kernbank
+bossmusic mother
 
 genrooms      13
 genside       4

@@ -27,7 +27,8 @@ walls    5.0
 area     3
 next     velm.txt
 gate     bossdead
-ambience tunnels
+ambience market
+music    knochenmarkt
 
 genrooms      12
 genside       4

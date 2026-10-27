@@ -25,7 +25,7 @@ namespace
 
 constexpr float ShellScratch = 8.0f;     ///< a shell's blow
 constexpr float MotherScratch = 10.0f;   ///< a body of Mother Sevenfold's
-constexpr float RelayHp = 1100.0f;
+constexpr float RelayHp = 900.0f;
 constexpr float MotherHp = 1100.0f;
 
 }   // namespace
@@ -152,7 +152,8 @@ void Game::breakRack( int i )
 
 void Game::updateShell( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw )
 {
-    // It shambles at the hero and scratches; Mother's bodies are quicker and hit harder.
+    // It shambles at the hero and scratches; Mother's bodies are quicker and hit harder (slower while the masts still
+    // pull at them).
     bool mother = f.m_variant == 2;
     if ( f.m_swingT >= 0.0f )
     {
@@ -161,10 +162,10 @@ void Game::updateShell( Foe &f, float dt, Vector3 dir, float dist, Vector3 path,
         faceYaw = atan2f( dir.x, dir.z );
         if ( before < 0.45f && f.m_swingT >= 0.45f && dist < 1.9f && fabsf( m_pos.y - f.m_pos.y ) < 1.5f )
             hurtHero( mother ? MotherScratch : ShellScratch, { dir.x * 1.5f, 0.2f, dir.z * 1.5f }, f.m_pos );
-        if ( f.m_swingT >= 1.0f ) f.m_swingT = -1.0f, f.m_timer = mother ? 0.3f : 0.6f;
+        if ( f.m_swingT >= 1.0f ) f.m_swingT = -1.0f, f.m_timer = mother ? 0.5f : 0.6f;
         return;
     }
-    want = Vector3Scale( path, mother ? 2.2f : 1.7f );
+    want = Vector3Scale( path, mother ? ( motherLinked() ? 1.8f : 2.2f ) : 1.7f );
     faceYaw = dist < 4.0f ? atan2f( dir.x, dir.z ) : atan2f( path.x, path.z );
     if ( dist < 1.6f && f.m_los && f.m_timer <= 0.0f ) f.m_swingT = 0.0f;
 }

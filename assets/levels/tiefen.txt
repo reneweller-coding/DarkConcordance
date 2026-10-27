@@ -12,7 +12,8 @@ walls    4.5
 area     0
 next     velm.txt
 gate     bossdead
-ambience tunnels
+ambience depths
+music    tiefen
 
 genrooms      9
 genside       3

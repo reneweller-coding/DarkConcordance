@@ -388,6 +388,10 @@ bool Level::loadText( const std::string &text )
             kv >> m_gate;
         else if ( key == "ambience" )
             kv >> m_ambience;
+        else if ( key == "music" )
+            kv >> m_music;
+        else if ( key == "bossmusic" )
+            kv >> m_bossMusic;
         else if ( key == "route" )
         {
             int r = 0, c = 0;

@@ -24,8 +24,8 @@ on the RTX 5090 (the Steam Deck needs half-resolution fog); the 3D generator is 
 | Signs | painted per language by the image model from the same text files (`make_textures.py --lang en`) |
 | Voice | local TTS in batches, per language: F5-TTS German (the user's choice in Text2Video), XTTS-v2 speaks German and English from one cloned reference per figure, Qwen3-TTS as alternative; for a sale Chatterbox (MIT) or Qwen3-TTS (Apache) instead of F5 (non-commercial weights). `assets/voice/<language>/<key>.ogg` is played when present, else the German one under the chosen subtitles |
 | Cutscenes | films from Text2Video (see below), without speech: voice and subtitles per language at playback |
-| Music | renders from the VRAudio generators (Noctuary for Velm, Empyrean for the Concordance, Totality/Skybreak for fights) |
-| Sound effects | synthesised in code for now |
+| Music | the AudioGenerator's soundtrack mode (ACE-Step 1.5 XL, local) from `tools/music.json`: a piece per place in two layers (calm, tense) on one beat grid and a fight piece, boss pieces in two layers, stingers, pieces for scenes; the game follows the danger near the hero (Score.cpp); OGG Vorbis q4 |
+| Sound effects | synthesised in code; the backgrounds per place from TextureGen (Stable Audio Open), `tools/ambience.txt`, seamless loops, OGG Vorbis q3 |
 
 ## Languages
 
@@ -128,8 +128,16 @@ auto-aim spares them, the game remembers a clean run), shells (emptied bodies), 
 three radio masts that heal and shield them while they stand. Velm's jobs chain to the end of Act I (Ilka sold to the
 Mill); the lift lists every open place. Enemies and hits grow with the area (1 to 9).
 
-Open: skinned heroes and enemies with the animation packs' combat clips; Ione; voices; balance from the user's play
-(the autopilot's Dorra needs long against the tug, its Corvin dies often against Mother Sevenfold).
+Balance after the first measurements (27.10.2026): the tug sends at most two drones and Dorra's blast bolts do double
+on its plating (her runs: 760 and 716 s with 1 and 0 deaths, before 908 and 1298 s with 4 and 7); Mother Sevenfold's
+bodies are slower while the masts stand, stumble at each mast that falls and pause longer between blows, the masts
+have less health (Corvin: 3 and 4 deaths, before 7 and 5, most of them from guards he drags into her hall).
+
+Built with the soundtrack (27.10.2026): music that follows what happens (Score.cpp, see the README) and recorded
+backgrounds per place, both made locally (tools/make_audio.py) and stored as OGG Vorbis (~50 MB together: 60 music files, 8 backgrounds).
+
+Open: skinned heroes and enemies with the animation packs' combat clips; Ione; voices; the user's play (balance, the
+music's choices and levels).
 
 Still to come, by first use:
 

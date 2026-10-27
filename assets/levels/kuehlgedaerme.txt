@@ -14,6 +14,8 @@
 name     l1.name
 act      act.1
 gravity  3.2
+ambience coolant
+music    kuehlgedaerme
 fog      0.006 0.025 0.6 1.2
 fogcolor 0.004 0.0012 0.0009
 ambient  0.03 0.026 0.026 0.02 0.016 0.016

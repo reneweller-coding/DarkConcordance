@@ -1,0 +1,23 @@
+# Made by tools/make_audio.py from tools/music.json: piece, kind, takes, layers (calm to fierce).
+title loop 2 main
+prologue loop 2 low mid
+prologue_fight loop 2 main
+velm loop 2 main
+kuehlgedaerme loop 2 low mid
+kuehlgedaerme_fight loop 2 main
+knochenmarkt loop 2 low mid
+knochenmarkt_fight loop 2 main
+tiefen loop 2 low mid
+tiefen_fight loop 2 main
+aussenhaut loop 2 low mid
+aussenhaut_fight loop 2 main
+ertrunken loop 2 low mid
+ertrunken_fight loop 2 main
+kernbank loop 2 low mid
+kernbank_fight loop 2 main
+boss loop 2 fight rage
+mother loop 2 fight rage
+victory stinger 2 main
+death stinger 2 main
+loss oneshot 1 main
+actend oneshot 1 main

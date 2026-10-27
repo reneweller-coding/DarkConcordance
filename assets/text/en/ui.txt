@@ -7,6 +7,7 @@ menu.continue     = Continue
 menu.resume       = Resume
 menu.difficulty   = Difficulty
 menu.brightness   = Brightness
+menu.music        = Music
 menu.language     = Language
 menu.restart      = Restart level
 menu.quit         = Quit
