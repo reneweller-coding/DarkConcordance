@@ -622,6 +622,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     loadAct34();
     loadSwarm();
     loadVault();
+    loadBreakables();
     // Who stands, walks or sits on a stool is a skinned figure; those huddled on the floor and Ilka stay as they are.
     for ( size_t i = 0; i < m_people.size(); ++i )
         if ( m_people[i].m_sit < 0.5f ) dressPerson( m_people[i], (unsigned)( i * 7919u + 13u ) );
@@ -720,6 +721,7 @@ bool Game::bossRage() const
 
 std::string Game::musicCue() const
 {
+    if ( m_film.playing() ) return m_film.m_music;
     if ( m_scene > 0 ) return "loss";   // Ilka found too late, the shot, the clinic
     if ( m_card >= 0 ) return m_card == 0 ? "end_" + m_ending : "epilogue";
     if ( m_whiteT > 0.0f ) return m_level.m_endMusic;
@@ -1442,6 +1444,12 @@ void Game::shootPellet( bool first )
         float t = rayCylinder( from, dir, m_racks[i].m_pos, 0.5f, 2.3f );
         if ( t >= 0.0f && t < tBest ) tBest = t, kind = 6, index = i;
     }
+    // So does a crate, a drum, a tank.
+    {
+        float t = tBest;
+        int   b = breakableOnRay( from, dir, t );
+        if ( b >= 0 ) tBest = t, kind = 8, index = b;
+    }
     Vector3 at = Vector3Add( from, Vector3Scale( dir, tBest ) );
     float   damage = m_stats.m_damage * ( m_inWater ? 0.6f : 1.0f );
     if ( kind == 0 )
@@ -1491,7 +1499,9 @@ void Game::shootPellet( bool first )
                      dist > 1e-3f ? Vector3Scale( d, 1.0f / dist ) : dir, f.m_pos );
         }
     }
-    if ( kind == 7 )
+    if ( kind == 8 )
+        hitBreakable( index, damage, at, dir );
+    else if ( kind == 7 )
         popBalloon( index );
     else if ( kind == 6 )
         breakRack( index );
@@ -3145,6 +3155,15 @@ void Game::update( float dt, const GameInput &inRaw )
     GameInput in = inRaw;
     m_rawMove = inRaw.m_move;
     m_hurtBy = "";
+    // A level may open with a film, once per game; nothing moves while one plays.
+    if ( !m_filmChecked )
+    {
+        m_filmChecked = true;
+        std::string film = m_level.word( "film" );
+        if ( !film.empty() && !m_progress.m_flags.count( "film." + film ) && startFilm( film ) )
+            m_progress.m_flags.insert( "film." + film );
+    }
+    if ( updateFilm( dt, inRaw ) ) return;
     // A level that opens with a card: nothing moves under it until it has been read (A, Enter or a click ends it).
     if ( m_intro > 0.0f )
     {
@@ -3191,6 +3210,7 @@ void Game::update( float dt, const GameInput &inRaw )
     updateGear( dt );
     updateTug( dt );
     updateVault( dt );
+    updateBreakables( dt );
     updatePress( dt );
     updateEffects( dt );
     updateWorld( dt );
@@ -3559,6 +3579,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     poseAct34( m_dynamic );
     poseTug( m_dynamic );
     poseVault( m_dynamic );
+    poseBreakables( m_dynamic );
     for ( const Foe &f : m_foes )
     {
         if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ||
@@ -3956,8 +3977,18 @@ void Game::drawHud( int w, int h )
     drawUseHud( w, h, s );
     drawLootHud( w, h, s );
     drawEndCard( w, h, s );
+    drawFilm( w, h, s );
+    if ( m_film.playing() && !m_filmKey.empty() )
+    {
+        // The film's subtitle: who, then what, over the lower picture (as a level's lines).
+        std::string who = tr( "speaker." + m_filmWho );
+        for ( char &ch : who ) ch = (char)toupper( (unsigned char)ch );
+        float ly = h - 150.0f * s;
+        text( who.c_str(), w * 0.5f, ly, 22, { 255, 190, 110, 255 }, true );
+        wrapped( spoken( m_filmKey ), w * 0.5f, ly + 30 * s, 28, w * 0.6f, { 245, 242, 236, 255 } );
+    }
 
-    if ( m_intro > 0.0f )
+    if ( m_intro > 0.0f && !m_film.playing() )
     {
         // The opening card: black, the act and the name, then what has brought the hero here, a paragraph at a time.
         float a = Clamp( m_intro, 0.0f, 1.0f ), t = IntroTime - m_intro;
@@ -3980,6 +4011,13 @@ std::string Game::report() const
     char        buf[1024];
     std::string parts;
     for ( const BossPart &q : m_parts ) parts += TextFormat( "%.0f/", fmaxf( 0.0f, q.m_hp ) );
+    // Things broken of those that break.
+    if ( !m_breakables.empty() )
+    {
+        int broken = 0;
+        for ( const Breakable &b : m_breakables ) broken += b.m_alive ? 0 : 1;
+        parts += TextFormat( " broke=%d/%d", broken, (int)m_breakables.size() );
+    }
     // Who waits to be spoken to: where, hidden, spoken to.
     for ( const NpcState &n : m_npcs )
     {

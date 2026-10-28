@@ -71,6 +71,7 @@ struct Options
     std::string m_hero;                    ///< corvin, dorra (else the choice in the menu)
     std::string m_flags;                   ///< what has happened already (comma-separated; tests)
     std::string m_talk;                    ///< with --shot: a conversation open in the picture
+    std::string m_film;                    ///< a film played over the level (assets/films/<name>)
     int         m_shop = 0;                ///< with --shot: Ottla's (1) or Kiri's (2) menu open
     int         m_panel = -1;              ///< with --shot: the inventory (0), character (1) or map (2) page
     bool        m_map = false;             ///< with --shot: the map over the game
@@ -159,6 +160,8 @@ Options parse( int argc, char **argv )
             o.m_flags = next();
         else if ( a == "--talk" )
             o.m_talk = next();
+        else if ( a == "--film" )
+            o.m_film = next();
         else if ( a == "--shop" )
             o.m_shop = atoi( next().c_str() );
         else if ( a == "--camyaw" )
@@ -696,6 +699,7 @@ int runGame( const Options &o, Gfx &gfx )
     if ( o.m_loot > 0 || o.m_xp > 0 ) game->testGifts( o.m_loot, o.m_xp );
     if ( !o.m_gear.empty() ) game->testGear( o.m_gear );
     if ( o.m_awake ) game->wakeAll();
+    if ( !o.m_film.empty() ) game->startFilm( o.m_film );
     auto draw = [&]( const RenderTexture2D *rt ) { game->render( gfx, rt ); };
 
     if ( !o.m_shot.empty() )

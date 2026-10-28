@@ -16,6 +16,7 @@
 #include "Audio.h"
 #include "Creatures.h"
 #include "Figure.h"
+#include "Film.h"
 #include "Gfx.h"
 #include "Items.h"
 #include "Level.h"
@@ -171,6 +172,13 @@ public:
      * @param[in] menu  0 none, 1 stims, 2 workshop
      */
     void openForPicture( const std::string &who, int menu );
+
+    /**
+     * @brief Plays a film over the game (assets/films/<name>); the game holds until it is over or skipped.
+     * @param[in] name  the film (tools/films.json)
+     * @return false if it is not there (or the autopilot plays)
+     */
+    bool startFilm( const std::string &name );
 
     /** @return a generated level's file ("" for a written one) */
     const std::string &generated() const { return m_level.m_generated; }
@@ -729,6 +737,35 @@ private:
     Vector3               m_podPos = { 0, 0, 0 }, m_podVel = { 0, 0, 0 };
     float                 m_podSpin = 0.0f;
 
+    // GameBreak.cpp: things that break when hit (crates, drums, canisters, cases, tanks, spools, crystals), their pieces.
+    struct Breakable
+    {
+        Vector3 m_pos;            ///< on the floor
+        float   m_yaw;            ///< which way it faces
+        BreakE  m_kind;           ///< what it is
+        float   m_hp;             ///< what it still takes
+        int     m_prop;           ///< its circle in the level's props
+        bool    m_alive = true;   ///< standing
+        float   m_shake = 0.0f;   ///< a hit makes it jolt
+    };
+    struct Chunk
+    {
+        Vector3 m_pos, m_vel, m_rot, m_spin, m_size;
+        float   m_ground;   ///< the floor it lands on
+        int     m_kind;     ///< of what (BreakE)
+        float   m_life;     ///< seconds left
+    };
+    void loadBreakables();
+    void updateBreakables( float dt );
+    void poseBreakables( std::vector<Drawable> &out );
+    int breakableOnRay( Vector3 from, Vector3 dir, float &t ) const;
+    void hitBreakable( int i, float damage, Vector3 at, Vector3 dir );
+    void breakablesInRadius( Vector3 p, float radius, float damage );
+    std::vector<Breakable> m_breakables;
+    std::vector<Chunk>     m_chunks;
+    Mesh                   m_breakMesh[(int)BreakE::COUNT] = {}, m_breakGlow[(int)BreakE::COUNT] = {},
+                           m_chunkMesh[(int)BreakE::COUNT] = {};
+
     // GameVault.cpp: the Core Bank: racks of cores that break, shells, Mother Sevenfold and her relays.
     struct Rack
     {
@@ -913,19 +950,19 @@ private:
     bool                             m_secondUsed = false;               ///< the second life is spent (this level)
     bool                             m_inPower = false;         ///< a power is running (no powers from its own hits)
     Vector3                          m_compPos = { 0, 0, 0 };   ///< the companion drone
-    Mesh                             m_lootMesh[(int)SlotE::COUNT] = {};
-    Mesh                             m_beamMesh = {};
-    float                            m_cool[4] = {};        ///< the active skills' cooldowns, by button
-    float                            m_overcharge = 0.0f;   ///< Corvin's overcharge still running
-    float                            m_dash = 0.0f;         ///< a roll or a charge still running
-    Vector3                          m_dashDir = { 0, 0, 1 };
-    std::set<int>                    m_dashHit;        ///< who the charge has struck already
-    int                              m_dashKind = 0;   ///< 0 a roll, 1 a charge
-    float                            m_dashDamage = 0.0f;
-    float                            m_levelUp = 0.0f;   ///< the level-up banner still showing
-    Color                            m_toastColor = { 240, 235, 225, 255 };
-    float                            m_bagFull = 0.0f;
-    float                            m_regenStore = 0.0f;
+    Mesh          m_lootMesh[(int)SlotE::COUNT + 4] = {};   ///< per slot, then the weapons of Corvin, Dorra, Ione, Unzu
+    Mesh          m_beamMesh = {};
+    float         m_cool[4] = {};        ///< the active skills' cooldowns, by button
+    float         m_overcharge = 0.0f;   ///< Corvin's overcharge still running
+    float         m_dash = 0.0f;         ///< a roll or a charge still running
+    Vector3       m_dashDir = { 0, 0, 1 };
+    std::set<int> m_dashHit;        ///< who the charge has struck already
+    int           m_dashKind = 0;   ///< 0 a roll, 1 a charge
+    float         m_dashDamage = 0.0f;
+    float         m_levelUp = 0.0f;   ///< the level-up banner still showing
+    Color         m_toastColor = { 240, 235, 225, 255 };
+    float         m_bagFull = 0.0f;
+    float         m_regenStore = 0.0f;
 
     // GamePanel.cpp: the map (what the hero has seen), the inventory, the character page.
     struct PanelRow
@@ -1041,6 +1078,15 @@ private:
     void loadStory();
     std::string spoken( const std::string &key ) const;
     float speak( const std::string &key );   // a line's voice; its length in seconds, 0 if it has none
+    // Films (Film.h): before a level ("film"), at an act's end in the white ("endfilm"), before the epilogue.
+    bool updateFilm( float dt, const GameInput &in );
+    void drawFilm( int w, int h, float s );
+    Film        m_film;
+    size_t      m_filmCue = 0;           ///< the next line
+    std::string m_filmWho, m_filmKey;    ///< the line on screen
+    float       m_filmLineT = 0.0f;      ///< how long it stays
+    float       m_filmSkipT = 0.0f;      ///< a press asks once; a second one in this time skips
+    bool        m_filmChecked = false;   ///< the level's own film has been looked for
     bool updateEpilogue( float dt, GameInput &in );
     void startEpilogue();
     void drawEndCard( int w, int h, float s );

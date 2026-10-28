@@ -21,6 +21,7 @@ sundir   0.25 -1.0 0.15
 suncolor 2.1 2.0 1.85
 ambience clinic
 music    klinik
+film     act3_start
 menutitle tram.title
 autotalk ysolde
 exit     gelassenheit.txt k14

@@ -1,0 +1,11 @@
+# end_a: made by tools/make_films.py from tools/films.json
+music  end_a
+length 43.17
+line   0.60 hero f_ea5
+line   5.10 ilka39 f_ea1
+line   9.60 hero f_ea2
+line   14.10 hero f_ea3
+line   20.27 hero f_ea4
+line   24.77 hero f_ea6
+line   30.93 unzu f_ea7
+line   36.10 hero f_ea8

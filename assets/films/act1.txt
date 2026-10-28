@@ -1,0 +1,13 @@
+# act1: made by tools/make_films.py from tools/films.json
+music  actend
+length 56.17
+line   0.60 mother f_a1_7
+line   5.10 mother f_a1_1
+line   10.60 unzu f_a1_2
+line   14.85 unzu f_a1_3
+line   17.10 hero f_a1_8
+line   27.43 ysolde f_a1_4
+line   33.27 unzu f_a1_9
+line   40.77 hero f_a1_5
+line   46.27 hero f_a1_10
+line   50.77 unzu f_a1_6

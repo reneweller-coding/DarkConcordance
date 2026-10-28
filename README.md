@@ -533,6 +533,33 @@ The first full run: 2548 takes, 4 redone.
 
 A figure's new voice: delete its clips in `tools/voices/`, change its description, run with `--who` and `--force`.
 
+## Films
+
+Thirteen films (about ten minutes, 30 to 75 seconds each) carry the big moments: the prologue's opening (a moon cut
+open, the refugee fleet before the red dwarf, Ilka at the porthole, the patrol that watches, the skimmers at the
+airlock), the end of Act I (Mother Sevenfold's last body, the empty core vault, Unzu's offer, the departure), of Act II
+(the boarding, the Mill up close, the cores in the hold, the Collegium's ships) and of Act III (Ruul's cell, the
+Lullaby, Ysolde, the Mill over Velm), the openings of Act III (waking in the clinic, Ring Serenity) and Act IV (Velm
+besieged), the three endings before the epilogue's cards, and the openings of the four tales. A level names its film
+(`film <name>`, once per game; `endfilm <name>` when all goes white at an act's end); the endings play
+`end_a`/`end_b`/`end_c`. The game holds while a film runs; a press asks, a second one skips.
+
+The films are photographic and silent: the game speaks their lines in the chosen language with the same voices as
+everywhere (the hero played says the hero's lines), draws the subtitles and plays the film's music cue under them.
+
+**How they are made** (`tools/make_films.py`, all local): the shots are written in [tools/films.json](tools/films.json)
+(picture, motion, lines), their words in `assets/text/<language>/films.txt`. `pictures` paints each shot with FLUX.2
+in WSL2 (the speakers' portraits as references for faces; a contact sheet per film in `work/film/<film>/sheet.jpg`),
+`motion` sets each picture moving with LTX-2.3 distilled through Text2Video's production batch in WSL2
+(`~/Projekte/Text2Video/LTX-V`, fp8, each model loaded once; silence as its sound, so no mouth moves), each shot as
+long as its lines need in the longer language, `cut` cross-fades them and encodes AV1 (SVT-AV1, CRF 23) in IVF with
+a cue list beside it (`assets/films/<name>.ivf` and `.txt`). The game decodes them with dav1d (BSD-2, built for MSVC
+into `third_party/dav1d`, 8 bit, no assembly: 1280x704 at 24 fps is easy for the CPU).
+
+    python tools\make_films.py all                        # what is missing
+    python tools\make_films.py all --redo prolog:3        # one shot again (picture and motion)
+    SpaceOpera.exe --level velm.txt --film act1          # a film over a level (tests)
+
 ## Textures
 
     G:\Tools\ImageGeneration\venv\Scripts\python.exe tools\make_textures.py [--force NAME ...] [--only NAME ...]
@@ -575,3 +602,28 @@ rooms: a reactor column, a heap of ore under a crane, a worn drill head, a fount
 of advertising light, a model of the station, a planter with a tree, cryo tanks, a crashed shuttle's nose, a dish,
 a monolith. Corridors stay clear; the autopilot walks around them. Textures are kept from level to level and freed
 when a level does not use them.
+
+**Detail on the walls and their tops** (28.10.2026, measured against Baldur's Gate: Dark Alliance's 80–180 kinds of
+pieces per level): every wall face carries fittings of its kind of place, flat on the wall so nothing stands in the
+way – in the works and ships a girder along the top with knee braces, kick plates, junction boxes with their
+conduits, pipes with valve wheels, vents, ladders, breaker cabinets, caged lamps (some of them light the place),
+sealant canisters, gauges, data terminals, cables along the foot of the wall; in the clean halls panel seams, a lit
+cove, displays, handrails, data ports, cabinets; in the cold heater pipes with rime, quilted insulation, thermostats;
+outside rock bolts, mesh, the legs of steel mine arches, cables on hooks, floodlights; in the object of Tesh lines of
+light, stepped relief, crystal nodes; planters and trellises in the gardens; panelling and sconces in the bar. The
+tops of the walls (which the camera looks down on) get a coping along their edge, runs of pipes, cable trays or ducts
+that line up along a wall, lines of light, and now and then an air unit, a tank, a cabinet or a mast with a red
+light. All of it dissolves with its wall when the wall stands between the camera and the hero. The floors get flat
+things to walk over – hatches with handles, cable bundles across the floor, guidance lights along the corridors, vents,
+rime, pebbles, glowing nodes – and every door a status light over its lintel and a control panel on its jamb.
+
+**Things that break** (`src/GameBreak.cpp`): supply crates, fuel drums, gas canisters, equipment cases, glass tanks of
+glowing coolant, cable spools and, in the object of Tesh, crystals stand in ones, twos and threes by the walls of the
+wider rooms (20 to 170 per level, never in a corridor). Slugs, swarms, hammer blows and blasts break them: they jolt
+when hit, burst into pieces that fly, bounce and lie a while, spill their light, and now and then hold scrap, a stim
+or a find. The autopilot's report counts them (`broke=n/m`).
+
+**What lies on the floor** is the find itself: each hero's weapon (Corvin's rifle, Dorra's ram hammer, Ione's swarm
+gauntlet, Unzu's blade module), a chest plate, a helmet with its visor, gloves and boots in pairs, an implant's
+capsule, a harness with pouches, a shield emitter, a power cell, a module's board; a beam of light over the better
+ones shows their rarity.

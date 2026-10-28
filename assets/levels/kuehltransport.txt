@@ -28,6 +28,7 @@ next     end klinik.txt
 gate     never
 ambience transport
 music    kuehltransport
+endfilm  act2
 bossmusic boss2
 
 genrooms      16

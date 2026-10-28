@@ -1,5 +1,5 @@
 """Speaks the game's lines with Qwen3-TTS (local, G:\\Tools\\VoiceLab): every line of [lines] and [talk] in
-assets/levels/*.txt, per language, in the voice of its speaker (tools/voices.json).
+assets/levels/*.txt and of the films (tools/films.json), per language, in the voice of its speaker (tools/voices.json).
 
     design   a voice per figure and language from its description (VoiceDesign 1.7B), spoken on a few of its own
              lines -> tools/voices/<figure>_<language>.flac and .txt (kept, so the figures keep their voices for lines
@@ -78,6 +78,32 @@ def inventory(voices):
     """Every spoken line: {(language, file): (whose voice, who speaks, text)}."""
     words = {lang: texts(lang) for lang in LANGS}
     out, owner = {}, {}
+
+    def add(key, who, place):
+        if owner.setdefault(key, who) != who:
+            print("warning: %s is said by %s and %s" % (key, owner[key], who))
+        heroic = who == "hero" or voices.get(who, {}).get("voice") == "hero"
+        voice = voices.get(who, {}).get("voice", who)
+        # A figure may sound different in one place ("in": {level: voice}): Ilka grown up in the net.
+        voice = voices.get(who, {}).get("in", {}).get(place, voice)
+        for lang in LANGS:
+            own, de = words[lang], words["de"]
+            said = []
+            for h in HEROES:
+                variant = key + "." + h
+                has = variant in own or variant in de
+                if heroic:
+                    said.append((variant, h, own.get(variant if has else key)))
+                elif has:
+                    said.append((variant, voice, own.get(variant)))
+            if not heroic:
+                said.append((key, voice, own.get(key)))
+            for file, v, text in said:
+                # A text only in German: the game plays the German voice under it.
+                spoken = clean(text, lang) if text and text != "-" else None
+                if spoken:
+                    out[(lang, file)] = (v, who, spoken)
+
     for path in sorted(glob.glob(os.path.join(ROOT, "assets", "levels", "*.txt"))):
         section = None
         for line in open(path, encoding="utf-8"):
@@ -88,30 +114,13 @@ def inventory(voices):
             if not t or t[0] == "#" or section not in ("[lines]", "[talk]"):
                 continue
             f = [x.strip() for x in t.split("|")]
-            if len(f) < (3 if section == "[lines]" else 2):
-                continue
-            key, who = f[0], f[2] if section == "[lines]" else f[1]
-            if owner.setdefault(key, who) != who:
-                print("warning: %s is said by %s and %s" % (key, owner[key], who))
-            heroic = who == "hero" or voices.get(who, {}).get("voice") == "hero"
-            voice = voices.get(who, {}).get("voice", who)
-            for lang in LANGS:
-                own, de = words[lang], words["de"]
-                said = []
-                for h in HEROES:
-                    variant = key + "." + h
-                    has = variant in own or variant in de
-                    if heroic:
-                        said.append((variant, h, own.get(variant if has else key)))
-                    elif has:
-                        said.append((variant, voice, own.get(variant)))
-                if not heroic:
-                    said.append((key, voice, own.get(key)))
-                for file, v, text in said:
-                    # A text only in German: the game plays the German voice under it.
-                    spoken = clean(text, lang) if text and text != "-" else None
-                    if spoken:
-                        out[(lang, file)] = (v, who, spoken)
+            if len(f) >= (3 if section == "[lines]" else 2):
+                add(f[0], f[2] if section == "[lines]" else f[1], os.path.basename(path)[:-4])
+    # The films' lines (tools/films.json), spoken as a level's are.
+    for name, film in json.load(open(os.path.join(ROOT, "tools", "films.json"), encoding="utf-8")).items():
+        for shot in film.get("shots", []) if isinstance(film, dict) else []:
+            for who, key in shot.get("say", []):
+                add(key, who, "film_" + name)
     return out
 
 

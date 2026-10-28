@@ -1,0 +1,10 @@
+# end_b: made by tools/make_films.py from tools/films.json
+music  end_b
+length 46.17
+line   0.60 hero f_eb5
+line   5.43 hero f_eb1
+line   14.43 bedauern f_eb2
+line   21.27 hero f_eb3
+line   27.10 unzu f_eb6
+line   31.93 hero f_eb7
+line   37.10 hero f_eb4

@@ -1,5 +1,5 @@
 {
-  "_": "Who speaks how (tools/make_voices.py): a description for Qwen3-TTS VoiceDesign (once per figure and language, then cloned for every line), effects after the voice (radio, machine, pa), a pitch range in Hz for figures whose description alone lands off (several takes, the nearest kept) and, for a figure that speaks with someone else's voice, that one's name (hero: the hero played).",
+  "_": "Who speaks how (tools/make_voices.py): a description for Qwen3-TTS VoiceDesign (once per figure and language, then cloned for every line), effects after the voice (radio, machine, pa), a pitch range in Hz for figures whose description alone lands off (several takes, the nearest kept), for a figure that speaks with someone else's voice, that one's name (hero: the hero played), and \"in\" for a voice of its own in one place (level: voice).",
   "corvin": {
     "describe": "A man in his mid-forties with a low, slightly husky baritone. Tired and world-weary, dry understated humour, speaks calmly and quietly, a faint rasp from years on space stations."
   },
@@ -34,7 +34,22 @@
     "fx": ["radio", "machine"]
   },
   "ilka": {
-    "describe": "A nine-year-old girl. A small, quiet and slightly hoarse child's voice, shy and anxious, hesitant, speaks softly."
+    "describe": "A nine-year-old girl. A small, quiet and slightly hoarse child's voice, shy and anxious, hesitant, speaks softly.",
+    "in": {"netz": "ilka39"}
+  },
+  "ilka39": {
+    "describe": "A woman around forty who has led two thousand people for thirty years. Low, clear and calm voice, tired authority, measured and unsentimental, a faint trace of the shy child she once was.",
+    "pitch": [160, 230]
+  },
+  "mother": {
+    "describe": "A woman in her fifties, the boss of a gang of mind thieves, copied into seven bodies. A rasping, amused alto, contemptuous and very calm, every word slightly drawn out.",
+    "fx": ["radio"],
+    "pitch": [150, 230]
+  },
+  "hold": {
+    "describe": "A young man's quiet voice from inside a machine, resigned and very calm, almost gentle.",
+    "fx": ["machine"],
+    "pitch": [100, 160]
   },
   "hale": {
     "describe": "A woman in her late fifties, a mining director. Hard, controlled alto with a working-class edge under polished authority, firm and unapologetic, a little weary."
@@ -119,7 +134,9 @@
   "mira": {
     "describe": "An eight-year-old girl. Clear high voice, bold, suspicious and quick, a street-wise child."
   },
-  "kind": { "describe": "A six-year-old boy. High, bright voice, curious and cheerful, a little breathless." },
+  "kind": {
+    "describe": "A six-year-old boy. High, bright voice, curious and cheerful, a little breathless."
+  },
   "fan": {
     "describe": "A young woman in her twenties with a low, husky alto, an arena spectator, excited but talking quietly to her neighbour.",
     "pitch": [180, 280]

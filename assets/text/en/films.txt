@@ -1,0 +1,134 @@
+# The films (tools/films.json): what is said in them. Speakers as in the levels; "hero" is the figure chosen.
+
+speaker.mother = Mother Sevenfold
+speaker.hold   = A core in the hold
+speaker.ilka39 = Ilka
+
+# Prologue: the lighter "Good Hope"
+f_pro1 = The Fringe. Nine poor stars at the edge of the Concordance. Whoever dies here stays dead.
+f_pro2 = The Good Hope. Three thousand people in cargo containers, from a settlement that no longer exists.
+f_pro3 = I have a job. Take a child to Velm, to her aunt. Badly paid.
+f_pro4 = How much longer?
+f_pro5 = Until Velm. Get some sleep.
+f_pro6 = That point there. Yesterday it wasn't so bright.
+f_pro7 = Patrol report. Lighter Good Hope, no citizens aboard. No jurisdiction.
+f_pro8 = And then the skimmers came.
+
+# End of Act I: Unzu and the departure
+f_a1_1 = You think we're the thieves? We're only the ones you can see.
+f_a1_2 = I have no weapons, hardly any armour and a low opinion of you.
+f_a1_3 = Get in.
+f_a1_4 = The route of the next delivery. Where I got it is not your concern.
+f_a1_5 = Ilka's core is no longer in Velm. So we're leaving too.
+f_a1_6 = By the way: the bright point in the sky is not a comet.
+
+# End of Act II: the cold transport
+f_a2_1 = The Mill. A hollowed-out moon, with engines.
+f_a2_2 = We know where we're going. We're not stupid, just installed.
+f_a2_3 = Transport compromised. No witnesses.
+f_a2_4 = Three thousand cores. And us.
+
+# End of Act III: the Lullaby
+f_a3_1 = There is something in your heads that doesn't belong there. It is called Lullaby.
+f_a3_2 = As soon as you log into the control room, it deletes all forty thousand cores. And every record.
+f_a3_3 = I never lie to you. I just never tell you everything.
+f_a3_4 = The Concordance will never recognise them as people. I offer them a quick end. And Velm stays standing.
+f_a3_5 = I can defuse it. But only from inside.
+f_a3_6 = The Mill is here.
+
+# Ending A: the Lullaby
+f_ea1 = It's all right. We've been awake long enough.
+f_ea2 = Forty thousand lights, one after the other.
+f_ea3 = The Mill stands still. For technical reasons, says the Concordance.
+f_ea4 = Velm stays. Ilka doesn't.
+
+# Ending B: the disclosure
+f_eb1 = Every station of the Concordance. Uncut.
+f_eb2 = We did not ask. That was no oversight, it was a choice. I am stepping down.
+f_eb3 = They get bodies. Names. A history someone writes down.
+f_eb4 = Ten years later nobody in Velm is poor any more, and nobody is one-of-a-kind. Whether we won, nobody knows.
+
+# Ending C: the night shift
+f_ec1 = We're taking over. All shifts.
+f_ec2 = The Mill dismantles nothing any more. It has a voice of its own now.
+f_ec3 = You have just created a new great power. Let's hope it likes you.
+f_ec4 = Where it is going, it has told no one.
+
+# Corvin's tale: a confession
+f_tc1 = I was a skimmer. How many, I won't say.
+f_tc2 = They pay per core. Children fetch three times as much. They adapt faster.
+f_tc3 = Then I was told to fetch a child.
+f_tc4 = I walked away. Dreier never forgave me.
+
+# Dorra's tale: a war chronicle
+f_td1 = Kalvar. Nineteen tenths gravity. You grow short, broad and stubborn.
+f_td2 = Twenty years ago we fought against the incorporation.
+f_td3 = Day forty-one. The pumping station.
+f_td4 = Forty-one names. I wear them because nobody else remembers who they were.
+
+# Ione's tale: an incident report
+f_ti1 = Incident report. Works seven, night shift. Technician Sarrath.
+f_ti2 = Installing control units. We were told they were programs.
+f_ti3 = Four thirty-one. A message from unit 2281 over the maintenance line.
+f_ti4 = I refuse the release.
+
+# Unzu's tale: a survey log
+f_tu1 = Survey log. Talgrund, a moon in the Fringe. Three thousand and forty-one inhabitants.
+f_tu2 = Ore in the crust, water under the ice. And people on top.
+f_tu3 = I counted everything. That is my job.
+f_tu4 = My report became a mining plan.
+
+# Added (28.10.2026): longer films, the openings of Acts III and IV
+f_pro9  = The Harvest has been running here for twelve years. They call it resettlement.
+f_pro10 = Most people here are one-of-a-kind. No backup, no second body.
+f_pro11 = Two contacts, small and fast, no identification. I don't like it.
+f_pro12 = We are recording. Intervention is not provided for.
+f_pro13 = They don't take the luggage. They take the minds.
+f_a1_7  = Seven bodies. One is always left over.
+f_a1_8  = In the Last Shift a new name went up on the board. It won't be the last.
+f_a1_9  = I haven't used the engines in thirteen years. Hold on. Or don't, that's your business.
+f_a1_10 = From outside, Velm looked almost peaceful.
+f_a2_5  = We boarded in flight. The guards noticed too late.
+f_a2_6  = They say we're going to be millstones. I don't know what that means. I don't think I want to know.
+f_a2_7  = No cause for concern. It will be over in a moment.
+f_a3_7  = I built the procedure. I know what it did to your heads.
+f_a3_8  = Every time we fell, someone paid for it. Now we know who.
+f_a3_9  = The Mill needs seven days to take apart a station like Velm. I did the arithmetic. Twice.
+f_ea5   = One command. That's all it takes.
+f_ea6   = Ysolde sat with us in the Last Shift that evening. She didn't say a word.
+f_ea7   = Application for a new name: What Had To Be Done.
+f_ea8   = The gate was finished anyway. Ten years later, from systems where nobody lives.
+f_eb5   = We deleted the Lullaby. And then we sent everything.
+f_eb6   = Application for a new name: Asked At Last.
+f_eb7   = The Collegium got a new name. The people are the same.
+f_ec5   = You came too late. But you came.
+f_ec6   = The Concordance answered with a blockade. The gate will never be finished.
+f_ec7   = Application for a new name: Night Shift, Honorary.
+f_ec8   = The Fringe stayed poor. But now it belongs to itself.
+f_tc5   = Dreier paid well and never asked where from.
+f_tc6   = She had a toy in her hand. A little robot with only one leg.
+f_tc7   = Since then I don't count how many. Only how long ago.
+f_td5   = Josse sang when we were afraid. That was often.
+f_td6   = The Concordance didn't come with soldiers. It came with offers.
+f_td7   = Today they're doing well. That doesn't make it easier.
+f_ti5   = At the star lifter of Kael I took a dose. Two years, they say.
+f_ti6   = Shift supervisor Brask wanted me to reset them. Reset means delete.
+f_ti7   = After that I left. Unit 2281 had to stay.
+f_tu5   = Nine systems, thirty million people. I recorded every single one.
+f_tu6   = I protested. They thanked me and sent me into retirement.
+f_tu7   = With my memory shortened. You found the rest in Velm.
+
+# Act III begins: the clinic of new bodies
+f_a3s_1 = White. Then a ceiling. Then breath.
+f_a3s_2 = Welcome back. Your new body is freshly printed.
+f_a3s_3 = Serenity. A ring with eighty million people. Nobody hungry, nobody poor.
+f_a3s_4 = And none of them has ever died for good.
+f_a3s_5 = You're awake. Good. We have work to do.
+
+# Act IV begins: back to Velm
+f_a4s_1 = Velm. The Mill is here earlier than I calculated. That rarely happens to me.
+f_a4s_2 = Landing squads on the outer hull. Cutting platforms at the axis.
+f_a4s_3 = Caretaker. Pressure falling. Residents: four hundred thousand. Request: help.
+f_a4s_4 = Drink up. The board is full enough.
+f_a4s_5 = The control room sits in the Mill's core. That's where we have to go.
+f_a4s_6 = Seven days. Maybe less.

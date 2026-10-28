@@ -1,0 +1,12 @@
+# act3: made by tools/make_films.py from tools/films.json
+music  act3end
+length 53.67
+line   0.60 ruul f_a3_7
+line   6.10 ruul f_a3_1
+line   11.93 ruul f_a3_2
+line   18.77 ysolde f_a3_3
+line   23.60 ysolde f_a3_4
+line   31.43 hero f_a3_8
+line   37.27 ruul f_a3_5
+line   41.77 unzu f_a3_9
+line   49.27 hero f_a3_6

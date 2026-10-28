@@ -593,7 +593,7 @@ bool Level::loadText( const std::string &text )
                   key == "waterfalls" || key == "swarm" || key == "clock" || key == "zaps" || key == "crowd" ||
                   key == "pressureafter" || key == "ventlook" || key == "lava" || key == "duel" || key == "squad" ||
                   key == "shadow" || key == "teller" || key == "grade" || key == "rain" || key == "census" ||
-                  key == "bossname" )
+                  key == "bossname" || key == "film" || key == "endfilm" )
         {
             std::string rest;
             std::getline( kv, rest );
@@ -1043,6 +1043,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                        *const allPlate = &plate;
     using Glow = GlowBox;
     std::vector<Glow> glows;
+    DressKit          kit{ metal, rust, crate, box, cloth, hazard, grate, rock, hull, drape, glows };
     m_faces.clear();
     // A wall's or a floor's variants as a patchwork: floors in ragged patches of a few cells, walls in short runs; the
     // plain one is laid most.
@@ -1295,6 +1296,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     hull.m_color = WHITE;
                 }
                 if ( !border ) continue;
+                crownKit( r, c, look.m_walls, mid, kit );
                 if ( look.m_walls == 1 )
                 {
                     // A hold: containers stacked two high, each its own paint, steel rails where they meet.
@@ -1356,6 +1358,30 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 }
                 hazard.box( place( { mid.x, 0.008f, mid.z } ),
                             { alongX ? CellSize * 0.5f : 0.14f, 0.008f, alongX ? 0.14f : CellSize * 0.5f } );
+                // A hatch's fittings on both faces: a status light over the lintel, a control panel by the jamb.
+                Vector3 across = alongX ? Vector3{ 0.0f, 0.0f, 1.0f } : Vector3{ 1.0f, 0.0f, 0.0f };
+                for ( float side : { -1.0f, 1.0f } )
+                {
+                    Vector3 f = Vector3Add( mid, Vector3Scale( across, side * 0.31f ) );
+                    metal.m_color = { 60, 64, 70, 255 };
+                    metal.box( place( { f.x, DoorHeight + 0.18f, f.z } ),
+                               { alongX ? 0.22f : 0.03f, 0.06f, alongX ? 0.03f : 0.22f } );
+                    glows.push_back(
+                        { Vector3Add( f, { across.x * side * 0.035f, DoorHeight + 0.18f, across.z * side * 0.035f } ),
+                          { alongX ? 0.18f : 0.006f, 0.025f, alongX ? 0.006f : 0.18f },
+                          { 0.3f, 3.2f, 0.8f, 0.0f },
+                          true } );
+                    Vector3 panel = Vector3Add( Vector3Add( mid, Vector3Scale( across, side * 0.36f ) ),
+                                                Vector3Scale( axis, CellSize * 0.5f - 0.08f ) );   // on the jamb
+                    metal.box( place( { panel.x, 1.3f, panel.z } ),
+                               { alongX ? 0.07f : 0.02f, 0.11f, alongX ? 0.02f : 0.07f } );
+                    glows.push_back(
+                        { Vector3Add( panel, { across.x * side * 0.025f, 1.36f, across.z * side * 0.025f } ),
+                          { alongX ? 0.04f : 0.005f, 0.02f, alongX ? 0.005f : 0.04f },
+                          { 3.0f, 2.0f, 0.4f, 0.0f },
+                          true } );
+                    metal.m_color = WHITE;
+                }
                 continue;
             }
             if ( k.m_kind == CellE::GLASS )
@@ -1668,6 +1694,9 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     rust.cylinder( MatrixMultiply( axis, MatrixTranslate( p.x, y, p.z ) ), rad, CellSize, 10 );
                 }
                 rust.m_color = WHITE;
+                // Its fittings: what a wall of this place carries (none of it stands in the way).
+                if ( k.m_kind == CellE::FLOOR && !shelved && !board )
+                    wallKit( r, c, d, face, n, base, look.m_walls, ( r + c ) % 2 != 0, kit );
             }
 
             // Across a street, every third column: a string of bulbs from house to house, now and then washing.
@@ -2355,7 +2384,6 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     }
 
 #pragma warning( pop )
-    DressKit kit{ metal, rust, crate, box, cloth, hazard, grate, rock, hull, glows };
     dress( s, kit );
     auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f } )
     {

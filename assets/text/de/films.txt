@@ -1,0 +1,134 @@
+# Die Filme (tools/films.json): was in ihnen gesprochen wird. Sprecher wie in den Leveln; "hero" ist die gewählte Figur.
+
+speaker.mother = Mutter Siebenfach
+speaker.hold   = Ein Kern im Frachtraum
+speaker.ilka39 = Ilka
+
+# Prolog: der Leichter „Gute Hoffnung“
+f_pro1 = Der Saum. Neun arme Sterne am Rand der Konkordanz. Wer hier stirbt, bleibt tot.
+f_pro2 = Die Gute Hoffnung. Dreitausend Menschen in Frachtcontainern, aus einer Siedlung, die es nicht mehr gibt.
+f_pro3 = Ich habe einen Job. Ein Kind nach Velm bringen, zu seiner Tante. Schlecht bezahlt.
+f_pro4 = Wie lange noch?
+f_pro5 = Bis Velm. Schlaf ein bisschen.
+f_pro6 = Der Punkt da. Gestern war der noch nicht so hell.
+f_pro7 = Patrouillenbericht. Leichter Gute Hoffnung, keine Bürger an Bord. Keine Zuständigkeit.
+f_pro8 = Und dann kamen die Abschöpfer.
+
+# Ende von Akt I: Unzu und die Abreise
+f_a1_1 = Ihr glaubt, wir wären die Diebe? Wir sind nur die, die man sieht.
+f_a1_2 = Ich habe keine Waffen, kaum Panzerung und eine schlechte Meinung von euch.
+f_a1_3 = Steigt ein.
+f_a1_4 = Die Route der nächsten Lieferung. Woher ich sie habe, ist nicht eure Sorge.
+f_a1_5 = Ilkas Kern ist nicht mehr in Velm. Also gehen wir auch.
+f_a1_6 = Übrigens: Der helle Punkt am Himmel ist kein Komet.
+
+# Ende von Akt II: der Kühltransport
+f_a2_1 = Die Mühle. Ein ausgehöhlter Mond, mit Triebwerken.
+f_a2_2 = Wir wissen, wohin es geht. Wir sind nicht dumm, nur eingebaut.
+f_a2_3 = Transport kompromittiert. Keine Zeugen.
+f_a2_4 = Dreitausend Kerne. Und wir.
+
+# Ende von Akt III: das Wiegenlied
+f_a3_1 = In euren Köpfen steckt etwas, das nicht hineingehört. Es heißt Wiegenlied.
+f_a3_2 = Sobald ihr euch ins Leitwerk einwählt, löscht es alle vierzigtausend Kerne. Und jede Aufzeichnung.
+f_a3_3 = Ich lüge euch nie an. Ich sage euch nur nie alles.
+f_a3_4 = Die Konkordanz wird sie nie als Menschen anerkennen. Ich biete ihnen ein schnelles Ende. Und Velm bleibt stehen.
+f_a3_5 = Ich kann es entschärfen. Aber nur von innen.
+f_a3_6 = Die Mühle ist da.
+
+# Ende A: das Wiegenlied
+f_ea1 = Es ist gut. Wir waren lange genug wach.
+f_ea2 = Vierzigtausend Lichter, eins nach dem anderen.
+f_ea3 = Die Mühle steht. Aus technischen Gründen, sagt die Konkordanz.
+f_ea4 = Velm bleibt. Ilka nicht.
+
+# Ende B: die Offenlegung
+f_eb1 = Jede Station der Konkordanz. Ungeschnitten.
+f_eb2 = Wir haben nicht gefragt. Das war kein Versehen, das war eine Wahl. Ich trete zurück.
+f_eb3 = Sie bekommen Körper. Namen. Eine Geschichte, die jemand aufschreibt.
+f_eb4 = Zehn Jahre später ist in Velm niemand mehr arm und niemand mehr einmalig. Ob wir gewonnen haben, weiß keiner.
+
+# Ende C: die Nachtschicht
+f_ec1 = Wir übernehmen. Alle Schichten.
+f_ec2 = Die Mühle zerlegt nichts mehr. Sie hat jetzt eine eigene Stimme.
+f_ec3 = Ihr habt gerade eine neue Großmacht erschaffen. Hoffentlich mag sie euch.
+f_ec4 = Wohin sie fliegt, hat sie niemandem gesagt.
+
+# Corvins Erzählung: ein Geständnis
+f_tc1 = Ich war Abschöpfer. Wie viele, sage ich nicht.
+f_tc2 = Man zahlt pro Kern. Kinder bringen das Dreifache. Sie passen sich schneller an.
+f_tc3 = Dann sollte ich ein Kind holen.
+f_tc4 = Ich bin gegangen. Dreier hat mir das nie verziehen.
+
+# Dorras Erzählung: eine Kriegschronik
+f_td1 = Kalvar. Neunzehn Zehntel Schwere. Man wird kurz, breit und stur.
+f_td2 = Vor zwanzig Jahren haben wir gegen die Eingliederung gekämpft.
+f_td3 = Tag einundvierzig. Die Förderstation.
+f_td4 = Einundvierzig Namen. Ich trage sie, weil sonst keiner mehr weiß, wer sie waren.
+
+# Iones Erzählung: ein Störfallbericht
+f_ti1 = Störfallbericht. Werk sieben, Nachtschicht. Technikerin Sarrath.
+f_ti2 = Steuereinheiten einbauen. Man sagte uns, das seien Programme.
+f_ti3 = Vier Uhr einunddreißig. Über die Wartungsleitung eine Meldung von Einheit 2281.
+f_ti4 = Ich verweigere die Freigabe.
+
+# Unzus Erzählung: ein Vermessungslogbuch
+f_tu1 = Vermessungslogbuch. Talgrund, Mond im Saum. Dreitausendeinundvierzig Einwohner.
+f_tu2 = Erz in der Kruste, Wasser unter dem Eis. Und Menschen darüber.
+f_tu3 = Ich habe alles gezählt. Das ist meine Aufgabe.
+f_tu4 = Aus meinem Bericht wurde ein Abbauplan.
+
+# Neu dazu (28.10.2026): längere Filme, der Auftakt von Akt III und von Akt IV
+f_pro9  = Seit zwölf Jahren läuft hier die Ernte. Sie nennen es Umsiedlung.
+f_pro10 = Die meisten hier sind Einmalige. Keine Sicherung, kein zweiter Körper.
+f_pro11 = Zwei Kontakte, klein und schnell, ohne Kennung. Das gefällt mir nicht.
+f_pro12 = Wir zeichnen auf. Ein Eingreifen ist nicht vorgesehen.
+f_pro13 = Sie nehmen nicht das Gepäck. Sie nehmen die Köpfe.
+f_a1_7  = Sieben Körper. Einer bleibt immer übrig.
+f_a1_8  = In der Letzten Schicht kam ein neuer Name an die Tafel. Es wird nicht der letzte sein.
+f_a1_9  = Ich habe die Triebwerke seit dreizehn Jahren nicht benutzt. Haltet euch fest. Oder auch nicht, das ist eure Sache.
+f_a1_10 = Von außen sah Velm fast friedlich aus.
+f_a2_5  = Wir sind im Flug an Bord gegangen. Die Wache hat es zu spät gemerkt.
+f_a2_6  = Sie sagen, wir werden Mühlsteine. Ich weiß nicht, was das heißt. Ich glaube, ich will es nicht wissen.
+f_a2_7  = Kein Grund zur Sorge. Es ist gleich vorbei.
+f_a3_7  = Ich habe das Verfahren gebaut. Ich weiß, was es mit euren Köpfen gemacht hat.
+f_a3_8  = Jedes Mal, wenn wir gefallen sind, hat jemand dafür bezahlt. Jetzt wissen wir, wer.
+f_a3_9  = Die Mühle braucht sieben Tage, um eine Station wie Velm zu zerlegen. Ich habe nachgerechnet. Zweimal.
+f_ea5   = Ein Befehl. Mehr braucht es nicht.
+f_ea6   = Ysolde saß an diesem Abend mit uns in der Letzten Schicht. Sie hat kein Wort gesagt.
+f_ea7   = Neuer Name beantragt: Was Getan Werden Musste.
+f_ea8   = Das Tor wurde trotzdem fertig. Zehn Jahre später, aus Systemen, in denen niemand wohnt.
+f_eb5   = Wir haben das Wiegenlied gelöscht. Und dann alles gesendet.
+f_eb6   = Neuer Name beantragt: Endlich Gefragt.
+f_eb7   = Das Kollegium hat einen neuen Namen bekommen. Die Leute sind dieselben.
+f_ec5   = Du bist zu spät gekommen. Aber du bist gekommen.
+f_ec6   = Die Konkordanz hat mit einer Blockade geantwortet. Das Tor wird nie fertig.
+f_ec7   = Neuer Name beantragt: Nachtschicht, Ehrenhalber.
+f_ec8   = Der Saum ist arm geblieben. Aber er gehört jetzt sich selbst.
+f_tc5   = Dreier zahlte gut und fragte nie, woher.
+f_tc6   = Sie hatte ein Spielzeug in der Hand. Einen kleinen Roboter mit nur einem Bein.
+f_tc7   = Seitdem zähle ich nicht mehr, wie viele. Nur noch, wie lange es her ist.
+f_td5   = Josse hat gesungen, wenn wir Angst hatten. Das war oft.
+f_td6   = Die Konkordanz kam nicht mit Soldaten. Sie kam mit Angeboten.
+f_td7   = Heute geht es ihnen gut. Das macht es nicht leichter.
+f_ti5   = Am Sternheber von Kael habe ich eine Dosis abbekommen. Zwei Jahre, sagen sie.
+f_ti6   = Schichtleiter Brask wollte, dass ich zurücksetze. Zurücksetzen heißt löschen.
+f_ti7   = Danach bin ich gegangen. Einheit 2281 musste bleiben.
+f_tu5   = Neun Systeme, dreißig Millionen Menschen. Ich habe jeden einzelnen verzeichnet.
+f_tu6   = Ich habe protestiert. Man hat mir gedankt und mich in den Ruhestand geschickt.
+f_tu7   = Mit gekürztem Gedächtnis. Den Rest habt ihr in Velm gefunden.
+
+# Akt III beginnt: die Klinik der neuen Körper
+f_a3s_1 = Weiß. Dann eine Decke. Dann Atem.
+f_a3s_2 = Willkommen zurück. Ihr neuer Körper ist frisch gedruckt.
+f_a3s_3 = Gelassenheit. Ein Ring mit achtzig Millionen Menschen. Keiner hungrig, keiner arm.
+f_a3s_4 = Und keiner von ihnen ist je endgültig gestorben.
+f_a3s_5 = Ihr seid wach. Gut. Wir haben zu tun.
+
+# Akt IV beginnt: zurück nach Velm
+f_a4s_1 = Velm. Die Mühle ist früher da, als ich gerechnet habe. Das passiert mir selten.
+f_a4s_2 = Landetrupps auf der Außenhaut. Schneidplattformen an der Achse.
+f_a4s_3 = Hausmeister. Druck fallend. Bewohner: vierhunderttausend. Anfrage: Hilfe.
+f_a4s_4 = Trinkt aus. Die Tafel ist voll genug.
+f_a4s_5 = Das Leitwerk sitzt im Kern der Mühle. Dorthin müssen wir.
+f_a4s_6 = Sieben Tage. Vielleicht weniger.

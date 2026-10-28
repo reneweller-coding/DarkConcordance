@@ -1,0 +1,16 @@
+# prolog: made by tools/make_films.py from tools/films.json
+music  prologue
+length 72.83
+line   0.60 hero f_pro1
+line   8.10 hero f_pro9
+line   13.93 hero f_pro2
+line   21.77 hero f_pro3
+line   28.27 hero f_pro10
+line   34.77 ilka f_pro4
+line   36.49 hero f_pro5
+line   40.27 ilka f_pro6
+line   45.10 pilot f_pro11
+line   50.60 patrol f_pro7
+line   57.43 patrol f_pro12
+line   62.93 hero f_pro8
+line   67.43 hero f_pro13

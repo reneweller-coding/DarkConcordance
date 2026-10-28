@@ -4,8 +4,8 @@ in 4 bits. Windows paths (G:/...) in the tasks are read as /mnt/g/... .
 
     wsl -d Ubuntu-22.04 -- ~/miniconda3/envs/flux/bin/python /mnt/g/Tools/Games/SpaceOpera/tools/flux_wsl.py TASKS.json
 
-TASKS.json: [{"prompt": ..., "out": "path.jpg", "width": 1024, "height": 1024, "seed": 1}, ...]; existing outputs are
-skipped. make_textures.py, make_dress.py and make_items.py hand their jobs here with --local.
+TASKS.json: [{"prompt": ..., "out": "path.jpg", "width": 1024, "height": 1024, "seed": 1, "refs": [...]}, ...];
+existing outputs are skipped; "refs" are pictures FLUX.2 takes faces and things from (the films' portraits). make_textures.py, make_dress.py and make_items.py hand their jobs here with --local.
 """
 import argparse
 import gc
@@ -64,11 +64,13 @@ def paint( tasks, embeds_path ):
                                               cache_dir=CACHE ).to( "cuda" )
     pipe = Flux2Pipeline.from_pretrained( MODEL, transformer=transformer, vae=vae, text_encoder=None, tokenizer=None,
                                           torch_dtype=torch.bfloat16, cache_dir=CACHE )
-    from PIL import Image  # noqa: F401  (saving)
+    from PIL import Image
     for t, e in zip( tasks, embeds ):
         try:
             g = torch.Generator( "cuda" ).manual_seed( int( t.get( "seed", 1 ) ) )
-            image = pipe( prompt_embeds=e.to( "cuda", dtype=torch.bfloat16 ), guidance_scale=t.get( "guidance", 4.0 ),
+            refs = [Image.open( linux( r ) ).convert( "RGB" ) for r in t.get( "refs", [] )] or None
+            image = pipe( prompt_embeds=e.to( "cuda", dtype=torch.bfloat16 ), image=refs,
+                          guidance_scale=t.get( "guidance", 4.0 ),
                           num_inference_steps=t.get( "steps", 28 ), height=t.get( "height", 1024 ),
                           width=t.get( "width", 1024 ), generator=g ).images[0]
             out = linux( t["out"] )

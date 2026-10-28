@@ -30,6 +30,7 @@ whiteout tale.corvin.mira
 endcard  tale.corvin.end tale_end tale.corvin.told
 ambience rain
 music    tale_corvin
+film     tale_corvin
 bossmusic tale_corvin
 walltex  street brick
 walltex  yard brick

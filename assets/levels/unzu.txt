@@ -19,6 +19,7 @@ view     planet
 planet   gasgiant 0.35
 ambience shiphub
 music    ship
+film     act1
 menutitle nav.title
 back     done.seren
 autotalk ysolde

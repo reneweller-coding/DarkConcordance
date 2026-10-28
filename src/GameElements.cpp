@@ -535,6 +535,12 @@ void Game::updateElements( float dt )
     if ( !m_level.m_whiteout.empty() && m_fired.count( m_level.m_whiteout ) && !m_talk )
     {
         m_whiteT += dt;
+        // Once all is white, the act's film (once); the words come after it.
+        if ( m_whiteT > 5.5f && !m_fired.count( "endfilm" ) )
+        {
+            m_fired.insert( "endfilm" );
+            startFilm( m_level.word( "endfilm" ) );
+        }
         if ( m_whiteT > 11.0f && !m_finished )
         {
             runEvent( m_level.m_endFlag );   // kept: the people of the next hub know the act is over

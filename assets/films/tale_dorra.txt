@@ -1,0 +1,10 @@
+# tale_dorra: made by tools/make_films.py from tools/films.json
+music  tale_dorra
+length 37.00
+line   0.60 dorra f_td1
+line   7.43 dorra f_td5
+line   12.93 dorra f_td2
+line   17.43 dorra f_td6
+line   22.27 dorra f_td3
+line   26.77 dorra f_td4
+line   32.60 dorra f_td7

@@ -1,0 +1,8 @@
+# act3_start: made by tools/make_films.py from tools/films.json
+music  klinik
+length 28.00
+line   0.60 hero f_a3s_1
+line   5.43 berater f_a3s_2
+line   10.93 hero f_a3s_3
+line   18.10 hero f_a3s_4
+line   23.60 ysolde f_a3s_5

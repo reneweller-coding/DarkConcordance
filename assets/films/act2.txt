@@ -1,0 +1,10 @@
+# act2: made by tools/make_films.py from tools/films.json
+music  act2end
+length 46.00
+line   0.60 hero f_a2_5
+line   6.10 hero f_a2_1
+line   10.93 hold f_a2_2
+line   16.43 hold f_a2_6
+line   23.60 sorge f_a2_3
+line   28.10 sorge f_a2_7
+line   37.10 hero f_a2_4

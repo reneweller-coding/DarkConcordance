@@ -1,0 +1,276 @@
+{
+  "_": "The films (tools/make_films.py): per film the music cue the game plays under it and its shots. A shot: the picture (FLUX.2, photographic; refs = portraits it takes faces from), the motion (LTX-2.3, image to video), what is said over it ([speaker, text key], German and English in assets/text/<lang>/films.txt) and, if the lines need more, its length in seconds; its id names its files (shots put in later do not move the others). The style is added to every picture.",
+  "style": "Realistic photograph, full frame, shot on 35mm film with natural grain, realistic practical lighting, muted desaturated colours, deep shadows, gritty industrial science fiction set in a far future among spaceships and space stations, only fictional insignia and logos, high detail.",
+  "motion": "Cinematic, photographic, realistic motion, subtle film grain, steady professional camera.",
+  "prolog": {
+    "music": "prologue",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: A moon in deep space half cut away by giant mining machines, its glowing orange interior exposed, swarms of mining lights crawling over the cut, a dim red star behind it.",
+       "motion": "Very slow push towards the cut moon, mining lights crawl and flicker.", "say": [["hero", "f_pro1"]], "seconds": 7},
+      {"id": "s0", "picture": "Deep space. A long chain of small refugee ships braking with bright blue-white fusion flames, strung out in a line in front of a gigantic dim red dwarf star that fills half the frame. Black sky, faint stars.",
+       "motion": "Very slow drift of the camera along the chain of ships, the fusion flames flicker and pulse.", "say": [["hero", "f_pro9"]]},
+      {"id": "s1", "picture": "An old overloaded rusty cargo lighter in space, its hull covered with dozens of strapped-on steel freight containers, patched plates, a weak braking flame at its stern, red starlight on its flank.",
+       "motion": "Slow push-in towards the ship, the braking flame flickers, tiny lights blink on the containers.", "say": [["hero", "f_pro2"]], "seconds": 7},
+      {"id": "s2", "picture": "Science fiction: inside a cramped steel cargo module of a spaceship converted into living space, colonists of mixed origins in padded grey thermal jumpsuits with utility harnesses and clip-on breathing masks, strapped into fold-down webbing seats against the walls so they do not float, glowing amber light strips along the ceiling, an air scrubber unit with blinking status lights, frost and condensation on riveted walls, tired faces.",
+       "motion": "Slow handheld camera moving along the container, people shift and breathe, a child turns in her sleep.", "say": [["hero", "f_pro3"]], "seconds": 6},
+      {"id": "n2", "picture": "Science fiction: Close-up of an old man's weathered hands in a padded grey thermal suit holding a scratched metal identity tag on a cord, inside a cramped spaceship cargo module lit by amber light strips.",
+       "motion": "The hands turn the tag slowly, amber light flickers.", "say": [["hero", "f_pro10"]], "seconds": 6},
+      {"id": "s3", "picture": "A small nine-year-old child, a girl with a round childish face and short dark hair, wearing an oversized adult jacket, sitting at a small round porthole, her face lit dark red by the light of a star outside, quiet and tired.",
+       "motion": "Slow push-in on the girl, she blinks and looks out of the porthole, red light moves softly over her face.", "say": [["ilka", "f_pro4"], ["hero", "f_pro5"]], "seconds": 6},
+      {"id": "s4", "picture": "View through a scratched round porthole into space: among the stars one point of light is unusually bright, a small white glare, with the red dwarf glowing at the edge of the frame.",
+       "motion": "Very slow zoom towards the bright point of light, it pulses faintly.", "say": [["ilka", "f_pro6"]]},
+      {"id": "n3", "picture": "Science fiction: The cramped cockpit of an old cargo spaceship, a woman pilot in her thirties in a worn grey flight suit with a faded patch of a fictional freight company and no flags or national insignia, headset on, at the controls, red warning lights blinking, radar screens with two small contacts, tense.",
+       "motion": "The pilot leans forward and works the controls, warning lights blink.", "say": [["pilot", "f_pro11"]], "seconds": 6},
+      {"id": "s5", "picture": "A sleek white patrol ship of an advanced civilisation, smooth and elegant, hanging motionless far away in space, cold soft lights along its hull, utterly clean, watching.",
+       "motion": "The ship hangs still, the camera slowly circles it, its lights glow steadily.", "say": [["patrol", "f_pro7"]], "seconds": 7},
+      {"id": "n4", "picture": "Science fiction: The bridge of an advanced spaceship, pure white and empty, smooth curved walls, a single soft sphere of light hovering in the middle, a large window showing a small rusty cargo ship far away.",
+       "motion": "The sphere of light pulses softly, the camera drifts slowly.", "say": [["patrol", "f_pro12"]], "seconds": 6},
+      {"id": "s6", "picture": "Black angular raider skiffs with harpoon lines and grappling claws closing in on the hull of a rusty cargo ship, the claws about to bite, sparks.",
+       "motion": "The skiffs accelerate towards the hull, harpoon lines shoot out and snap taut.", "say": [["hero", "f_pro8"]]},
+      {"id": "n5", "picture": "Science fiction: Masked raiders in dark angular armour with glowing visors cutting through a spaceship airlock door with a plasma cutter, sparks spraying, one holds a handheld neural scanner with a glowing ring.",
+       "motion": "Sparks spray, the airlock door gives way, the raiders push forward.", "say": [["hero", "f_pro13"]], "seconds": 6}
+    ]
+  },
+  "act1": {
+    "music": "actend",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: A cyborg figure in a heavy dark armoured utility suit slumped against the wall of a dark red-lit server cellar of a space station, its face hidden by a cracked helmet, thick cables plugged into its back, six empty connection cradles beside it.",
+       "motion": "Slow push-in, a red light blinks on the cracked helmet.", "say": [["mother", "f_a1_7"]]},
+      {"id": "s0", "picture": "A long vault of glass storage cylinders in steel racks, cold blue light, every cylinder empty and dark, frost on the glass, a row of small labels for children's cores, empty.",
+       "motion": "Slow dolly along the empty racks, frost glitters, a light flickers.", "say": [["mother", "f_a1_1"]], "seconds": 6},
+      {"id": "s1", "picture": "A dusty basement storage room full of cable bundles, in the middle an old ship's computer core the size of a wardrobe, scratched, wired up as a data store, one weak amber status light.",
+       "motion": "Slow push-in towards the computer core, its amber light pulses like breathing.", "say": [["unzu", "f_a1_2"], ["unzu", "f_a1_3"]], "seconds": 7},
+      {"id": "n2", "picture": "Science fiction: A shabby space station bar at night, a woman in her sixties writing a new name with chalk on a large board full of place names, workers at the counter watching silently.",
+       "refs": ["ottla"], "motion": "She writes slowly with the chalk, the workers watch.", "say": [["hero", "f_a1_8"]]},
+      {"id": "s2", "picture": "An old battered survey spaceship in the dock of a huge rotating space station, its hull covered in welded patches and scorch marks, dock floodlights, workers' scaffolding.",
+       "motion": "The camera rises slowly along the hull, floodlights sweep across it, sparks drift.", "say": []},
+      {"id": "s3", "picture": "An elegant woman in her mid-fifties with silver hair pinned up, dark tailored coat, in a dim luxurious apartment with old books, holding out a small data chip between two fingers, calm, tired, friendly eyes.",
+       "refs": ["ysolde"], "motion": "Slow push-in on the woman, she holds out the chip and smiles faintly.", "say": [["ysolde", "f_a1_4"]], "seconds": 6},
+      {"id": "n3", "picture": "Science fiction: The worn cockpit of an old survey spaceship, patched consoles, a small spherical sensor eye glowing amber in the middle of the dashboard, stars through the scratched window.",
+       "motion": "The amber sensor eye brightens, consoles flicker on one after another.", "say": [["unzu", "f_a1_9"]], "seconds": 6},
+      {"id": "s4", "picture": "A small battered spaceship undocking from a gigantic rotating drum-shaped space station, city lights inside the drum's windows, engines glowing blue.",
+       "motion": "The ship drifts away from the station, its engines brighten, the station turns slowly.", "say": [["hero", "f_a1_5"]], "seconds": 6},
+      {"id": "n4", "picture": "Science fiction: A gigantic rotating drum-shaped space station seen from far away, its windows glowing, and close beside it in the black sky a bright white point of light.",
+       "motion": "The station turns slowly, the camera pulls back.", "say": [["hero", "f_a1_10"]]},
+      {"id": "s5", "picture": "A tiny spaceship against a dark starfield, far ahead one star-like point burns much brighter than all the others, with a faint smudge around it.",
+       "motion": "The ship moves slowly away from the camera towards the bright point.", "say": [["unzu", "f_a1_6"]], "seconds": 6}
+    ]
+  },
+  "act2": {
+    "music": "act2end",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: A small battered survey spaceship clamped onto the hull of a long skeletal space freighter in flight, a figure in a space suit cutting into the hull with a torch, sparks.",
+       "motion": "Sparks fly from the torch, the two ships drift together through space.", "say": [["hero", "f_a2_5"]], "seconds": 6},
+      {"id": "s0", "picture": "Seen through a large frosted window: a gigantic grey moon that has been cut open and hollowed out like an empty shell, its inside glowing orange, a ring of enormous rocket engines built onto its rim, and in front of it a wide fan of glowing molten rock streaming out into space. No ships.",
+       "motion": "Very slow push towards the window, the ore fan glows and drifts.", "say": [["hero", "f_a2_1"]]},
+      {"id": "s1", "picture": "A cold cargo hold with endless rows of racks holding thousands of small glowing control core cylinders, each with a faint blue light, frost, darkness beyond.",
+       "motion": "Slow dolly through the racks, the core lights pulse gently, one after another.", "say": [["hold", "f_a2_2"]], "seconds": 6},
+      {"id": "n2", "picture": "Science fiction: Close-up of a single glowing control core cylinder in a cargo rack, frost on the glass, inside it a faint pattern of light like a slowly breathing wave.",
+       "motion": "The light inside the core pulses slowly, frost glitters.", "say": [["hold", "f_a2_6"]], "seconds": 6},
+      {"id": "s2", "picture": "Deep space: two sleek black angular warships with thin white edge lights hanging silently beside a long ugly space freighter, a skeletal lattice spine with hundreds of frosted cargo pods clamped to it and a small engine block at the end. Black starry sky, no planet, no water.",
+       "motion": "The black ships slide into frame and stop, completely still and silent.", "say": [["sorge", "f_a2_3"]]},
+      {"id": "n3", "picture": "Science fiction: The dark bridge of a black warship in deep space, no crew visible, only a single cold white light and a closed-eye emblem engraved on the wall, through the window a long skeletal space freighter with frosted cargo pods floating among the stars.",
+       "motion": "The cold light brightens slowly, the emblem catches it.", "say": [["sorge", "f_a2_7"]]},
+      {"id": "s3", "picture": "Deep space: thin beams of blinding white light cutting through a long skeletal space freighter with frosted cargo pods on a lattice spine, the lattice splitting apart silently, pods tumbling, debris and frost spraying out. Black starry sky, no water.",
+       "motion": "The beams sweep across the hull, it breaks apart slowly, debris tumbles.", "say": []},
+      {"id": "s4", "picture": "Close-up of rows of small glowing control cores in a cargo rack, their blue lights going out one by one, darkness spreading.",
+       "motion": "The lights go out one by one along the row until only one is left.", "say": [["hero", "f_a2_4"]]},
+      {"id": "s5", "picture": "Pure blinding white light flooding everything, the faint silhouette of a ship dissolving in it.",
+       "motion": "The white light grows until it fills the whole frame.", "say": []}
+    ]
+  },
+  "act3": {
+    "music": "act3end",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: An elderly gaunt engineer with a thin grey beard sitting in a stark prison cell behind a wall of faint blue energy bars, hands folded, calm and tired.",
+       "refs": ["ruul"], "motion": "Slow push-in through the energy bars, they flicker.", "say": [["ruul", "f_a3_7"]], "seconds": 6},
+      {"id": "s0", "picture": "An elderly gaunt engineer in his seventies with deep lines and a thin grey beard in a sterile white laboratory, looking at a translucent holographic scan of a human brain with one thin red thread of light running through it.",
+       "refs": ["ruul"], "motion": "Slow push-in, the hologram turns slowly, the red thread glows brighter.", "say": [["ruul", "f_a3_1"]], "seconds": 6},
+      {"id": "s1", "picture": "Macro view of a vast network of glowing fibres, a pale cold pattern spreading through it like frost, extinguishing the lights it touches.",
+       "motion": "The frost pattern spreads quickly through the network, lights go out behind it.", "say": [["ruul", "f_a3_2"]], "seconds": 7},
+      {"id": "s2", "picture": "An elegant woman in her mid-fifties with silver hair pinned up, dark tailored coat, standing calm in the doorway of a white corridor, backlit, hands folded.",
+       "refs": ["ysolde"], "motion": "She stands still, the camera slowly pushes in on her calm face.", "say": [["ysolde", "f_a3_3"]]},
+      {"id": "s3", "picture": "A long row of glowing medical capsules, body printers, with a small engraved emblem of a closed eye on each, soft white light, empty.",
+       "motion": "Slow dolly along the capsules, their lights breathe softly.", "say": [["ysolde", "f_a3_4"]], "seconds": 8},
+      {"id": "n2", "picture": "Science fiction: A person in a battered grey space suit with plain fictional patches and a closed helmet seen from behind, standing before a dark mirror-like glass wall on a space station, their reflection faint.",
+       "motion": "The figure stands still, the reflection wavers.", "say": [["hero", "f_a3_8"]]},
+      {"id": "s4", "picture": "An elderly gaunt engineer with a thin grey beard working at an open server rack with tools, determined, cables everywhere, cold light.",
+       "refs": ["ruul"], "motion": "The engineer works quickly, the rack's lights flicker.", "say": [["ruul", "f_a3_5"]]},
+      {"id": "n3", "picture": "Science fiction: Inside a rotating space station drum, people in worn colony clothes packing belongings onto carts in a crowded street, cargo lifts, worried faces, emergency lights.",
+       "motion": "People hurry past with bundles and carts, lights blink.", "say": [["unzu", "f_a3_9"]], "seconds": 6},
+      {"id": "s5", "picture": "From a street inside a huge rotating space station drum, people look up: through the drum's great window a colossal hollowed moon with engines fills half the sky, glowing ore streaming from it.",
+       "motion": "The camera tilts slowly up from the people to the colossal moon in the sky.", "say": [["hero", "f_a3_6"]]}
+    ]
+  },
+  "end_a": {
+    "music": "end_a",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: A gloved hand hovering over a glowing console key in a dark server hall, the key lit soft blue, rows of server racks behind.",
+       "motion": "The hand lowers slowly onto the glowing key.", "say": [["hero", "f_ea5"]]},
+      {"id": "s0", "picture": "A woman around forty with short dark hair and a calm tired face, sitting at a worn kitchen table in a strange patchwork hall made from a mine canteen, a classroom and a kitchen, soft warm light, she closes her eyes.",
+       "refs": ["ilka"], "motion": "Slow push-in, she closes her eyes and smiles faintly.", "say": [["ilka39", "f_ea1"]]},
+      {"id": "s1", "picture": "An endless hall of workplaces stretching into the distance, thousands of small warm lights, and the lights are going out row by row.",
+       "motion": "The rows of lights go out one after another towards the camera.", "say": [["hero", "f_ea2"]]},
+      {"id": "s2", "picture": "Inside a hollowed moon: a gigantic furnace like a small artificial sun hanging in the centre, rivers of molten metal on the walls, the sun dimming and cooling to dark red.",
+       "motion": "The furnace dims slowly, the molten rivers darken and stop.", "say": [["hero", "f_ea3"]], "seconds": 6},
+      {"id": "s3", "picture": "A shabby station bar at night, a woman in her sixties behind the counter wiping a name off a large chalk board full of names of places, and writing a new name in chalk: ILKA.",
+       "refs": ["ottla"], "motion": "She wipes the board slowly and writes with chalk.", "say": [["hero", "f_ea4"]]},
+      {"id": "n2", "picture": "Science fiction: An elegant woman in her mid-fifties with silver hair pinned up, dark coat, sitting alone at a table of a shabby space station bar with a glass, silent, eyes lowered.",
+       "refs": ["ysolde"], "motion": "She sits still and turns the glass slowly.", "say": [["hero", "f_ea6"]]},
+      {"id": "n3", "picture": "Science fiction: A rotating drum-shaped space station intact in space, and beside it a colossal hollowed moon with engines, dark and still, its furnace out.",
+       "motion": "Slow drift past the station, the dark moon hangs motionless.", "say": [["unzu", "f_ea7"]]},
+      {"id": "n4", "picture": "Science fiction: A gigantic ring-shaped jump gate under construction in deep space, scaffolding and work lights, ships ferrying girders, distant stars.",
+       "motion": "Work lights blink, a ship carries a girder slowly across.", "say": [["hero", "f_ea8"]], "seconds": 6}
+    ]
+  },
+  "end_b": {
+    "music": "end_b",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: Antenna masts on the grey rock-and-steel outer hull of a hollowed-out moon in deep space, sending bright streams of data light out to the stars.",
+       "motion": "The streams of light shoot out into space one after another.", "say": [["hero", "f_eb5"]]},
+      {"id": "s0", "picture": "Thousands of screens in the streets and halls of shining white space cities, all showing the same grainy footage of people at work in a strange hall, crowds of citizens standing still and watching.",
+       "motion": "Slow pan across the screens and the silent crowd.", "say": [["hero", "f_eb1"]]},
+      {"id": "n2", "picture": "Science fiction: A shining white city on a space habitat, elegant citizens in white clothes standing still in a plaza, a woman holding her hand over her mouth, watching a huge screen.",
+       "motion": "The citizens stand frozen, the woman lowers her hand slowly.", "say": []},
+      {"id": "s1", "picture": "A vast empty white hall without walls, hundreds of tall slender pillars of soft white light standing in a wide circle on a polished floor, nothing else in the hall, one pillar dimmer than the others. Abstract, calm, silent.",
+       "motion": "The camera glides slowly through the circle of light pillars, one of them fades.", "say": [["bedauern", "f_eb2"]], "seconds": 7},
+      {"id": "s2", "picture": "People waking in clean medical capsules, new bodies, a woman around forty with short dark hair sitting up and looking at her own hands in wonder.",
+       "refs": ["ilka"], "motion": "She sits up slowly and looks at her hands.", "say": [["hero", "f_eb3"]], "seconds": 6},
+      {"id": "n3", "picture": "Science fiction: The worn cockpit of an old survey spaceship, a small spherical sensor eye glowing amber on the dashboard, an official document shown on a screen.",
+       "motion": "The amber eye pulses, the document on the screen scrolls.", "say": [["unzu", "f_eb6"]]},
+      {"id": "n4", "picture": "Science fiction: A sleek angular spaceship floating in the huge pressurised dock of a space station, being repainted from black to white by hovering drones, its crew in grey uniforms standing unchanged on a gantry, stars through the dock's open mouth.",
+       "motion": "Drones spray white paint across the black hull.", "say": [["hero", "f_eb7"]]},
+      {"id": "s3", "picture": "A clean rebuilt street inside a rotating space station drum, ten years later, gardens and new houses, a man standing in the street and looking up, unsure.",
+       "motion": "Slow push-in on the man, people walk past in the background.", "say": [["hero", "f_eb4"]], "seconds": 9}
+    ]
+  },
+  "end_c": {
+    "music": "end_c",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: Close-up of a woman around forty with short dark hair opening her eyes in a soft patchwork hall, calm, a faint smile, people working behind her.",
+       "refs": ["ilka"], "motion": "She opens her eyes slowly and looks into the camera.", "say": [["ilka39", "f_ec5"]]},
+      {"id": "s0", "picture": "A woman around forty with short dark hair and a calm determined face at a large control console in a vast patchwork hall, hundreds of people around her at their stations, streams of code light flowing towards her.",
+       "refs": ["ilka"], "motion": "The code streams flow in, she lays her hand on the console, people turn towards her.", "say": [["ilka39", "f_ec1"]]},
+      {"id": "s1", "picture": "A colossal hollowed moon with engines in space, the glowing fan of ore in front of it fading out, the cutting beams switching off one by one.",
+       "motion": "The ore fan fades, the beams go dark one after another.", "say": [["hero", "f_ec2"]], "seconds": 6},
+      {"id": "n2", "picture": "Science fiction: Rows of sleek white warships lining up at the edge of a star system, a blockade in deep space, distant red star.",
+       "motion": "The warships hold their line, lights blink along their hulls.", "say": [["hero", "f_ec6"]]},
+      {"id": "n3", "picture": "Science fiction: The worn cockpit of an old survey spaceship, a small spherical sensor eye glowing amber on the dashboard, a colossal moon visible through the window.",
+       "motion": "The amber eye pulses, the moon drifts past the window.", "say": [["unzu", "f_ec7"]]},
+      {"id": "s2", "picture": "An elegant woman in her mid-fifties with silver hair pinned up, dark coat, standing at a large window of a space station, looking up at a colossal moon in the sky, wry, tired smile.",
+       "refs": ["ysolde"], "motion": "Slow push-in, she smiles faintly and shakes her head.", "say": [["ysolde", "f_ec3"]], "seconds": 6},
+      {"id": "n4", "picture": "Science fiction: A poor but busy street inside a rotating space station drum, people in worn colony clothes looking up at a colossal moon hanging peacefully in the sky.",
+       "motion": "People stop and look up, the moon hangs still.", "say": [["hero", "f_ec8"]], "seconds": 6},
+      {"id": "s3", "picture": "A colossal hollowed moon igniting its huge engines, blue-white flames blooming at its rim, beginning to move away into the dark.",
+       "motion": "The engines ignite and grow brighter, the moon slowly moves away.", "say": [["hero", "f_ec4"]]}
+    ]
+  },
+  "tale_corvin": {
+    "music": "tale_corvin",
+    "shots": [
+      {"id": "s0", "picture": "Rain-soaked narrow tunnels of a space station's underworld at night, flickering neon signs, steam from grates, puddles reflecting red and green light.",
+       "motion": "Slow tracking shot through the rain, steam rises, neon flickers.", "say": [["corvin", "f_tc1"]]},
+      {"id": "n1", "picture": "Science fiction: A heavy-set man in his sixties in an expensive coat counting glowing control core cylinders on a back-room table in a space station underworld, smiling, cigar smoke.",
+       "refs": ["dreier"], "motion": "He counts the cylinders and smiles, smoke drifts.", "say": [["corvin", "f_tc5"]]},
+      {"id": "s1", "picture": "A handheld neural scanner with a glowing ring lying on a scratched metal table in a back room, next to stacks of cash chips, a single lamp.",
+       "motion": "Slow push-in on the device, its ring glows softly.", "say": [["corvin", "f_tc2"]], "seconds": 7},
+      {"id": "s2", "picture": "A man in his early thirties in a dark hooded coat standing in the rain at the door of a cramped family quarter, light from inside on his face, hesitating.",
+       "refs": ["corvin"], "motion": "He stands still in the rain, then lowers his eyes.", "say": [["corvin", "f_tc3"]]},
+      {"id": "n2", "picture": "Science fiction: Close-up of a small child's hand clutching a tiny toy robot with one leg, in a cramped spaceship family quarter, dim warm light.",
+       "motion": "The small hand tightens around the toy.", "say": [["corvin", "f_tc6"]]},
+      {"id": "s3", "picture": "A man in a dark coat walking away down a rainy neon tunnel, seen from behind, a small device lying in a drain behind him.",
+       "motion": "He walks away into the rain and the steam.", "say": [["corvin", "f_tc4"]]},
+      {"id": "n3", "picture": "Science fiction: Rain running down the window of a station tram at night, a man in a dark coat reflected in the glass, neon lights passing outside.",
+       "motion": "Rain streaks down, lights slide past outside.", "say": [["corvin", "f_tc7"]], "seconds": 6}
+    ]
+  },
+  "tale_dorra": {
+    "music": "tale_dorra",
+    "shots": [
+      {"id": "s0", "picture": "A heavy-gravity mining world: squat massive industrial domes and conveyor towers under a low ochre sky, dust in the air, everything built low and thick.",
+       "motion": "Slow pan across the squat domes, dust drifts.", "say": [["dorra", "f_td1"]]},
+      {"id": "n1", "picture": "Science fiction: A short broad young woman in a heavy mining suit sitting quietly beside a big bearded miner who hums a song softly with closed eyes, both calm and tired, warming their hands at a glowing heater coil in a heavy-gravity mining camp at night, dust in the air.",
+       "refs": ["dorra"], "motion": "The miner hums with closed eyes, the heater glows, dust drifts slowly.", "say": [["dorra", "f_td5"]], "seconds": 6},
+      {"id": "s1", "picture": "Short broad miners in makeshift armour made of mining suit plates behind a barricade of ore carts, holding blasting charges and hammers, determined faces, dust.",
+       "refs": ["dorra"], "motion": "The miners crouch and wait, dust drifts past, one checks a charge.", "say": [["dorra", "f_td2"]]},
+      {"id": "n2", "picture": "Science fiction: A column of clean white vehicles and hovering drones of an advanced civilisation approaching over an ochre dusty plain of a mining world, banners of welcome.",
+       "motion": "The column glides closer, drones hover above it.", "say": [["dorra", "f_td6"]]},
+      {"id": "s2", "picture": "A large pumping station silhouetted at night on a dusty plain, lights still burning in its windows.",
+       "motion": "Very slow push-in, the lights in the windows flicker.", "say": [["dorra", "f_td3"]]},
+      {"id": "s3", "picture": "Close-up of a woman's broad muscular forearms resting on a table, covered with long rows of old faded blue-black tattooed names in small plain letters, weathered healed skin, a pair of worn work gloves beside them.",
+       "motion": "The hands turn slowly, showing the names.", "say": [["dorra", "f_td4"]], "seconds": 6},
+      {"id": "n3", "picture": "Science fiction: A heavy-gravity mining world today: clean new white domes under an ochre sky, short broad miners in ochre canvas overalls with no patches or badges smiling at a shift change, a plain white circle symbol without any letters on the dome wall.",
+       "motion": "Workers walk past smiling, the domes glow in the sun.", "say": [["dorra", "f_td7"]]}
+    ]
+  },
+  "tale_ione": {
+    "music": "tale_ione",
+    "shots": [
+      {"id": "s0", "picture": "A huge factory hall at night under sodium light, rows of heavy machines being fitted with small glowing control units, few workers.",
+       "motion": "Slow dolly through the hall, sparks from a welding robot.", "say": [["ione", "f_ti1"]]},
+      {"id": "s1", "picture": "A woman around thirty in technician overalls with a headset, installing a glowing control core cylinder into the open panel of a heavy machine, focused.",
+       "refs": ["ione"], "motion": "She slides the cylinder into place, its light comes on.", "say": [["ione", "f_ti2"]]},
+      {"id": "n1", "picture": "Science fiction: A woman around thirty in technician overalls sitting on a hospital bed in a space station clinic, a radiation dosimeter badge glowing red on her chest, staring at it.",
+       "refs": ["ione"], "motion": "She looks down at the glowing badge, breathes slowly.", "say": [["ione", "f_ti5"]], "seconds": 6},
+      {"id": "s2", "picture": "An old maintenance terminal in a dark control booth, its small screen showing a glowing green waveform of a faint voice signal, the reflection of a woman's face in the glass.",
+       "motion": "The text on the screen flickers, the reflected face leans closer.", "say": [["ione", "f_ti3"]], "seconds": 6},
+      {"id": "n2", "picture": "Science fiction: A video call screen in a control booth showing an angry man in his fifties in a dressing gown at home, shouting, the screen glow on the dark booth.",
+       "refs": ["brask"], "motion": "The man on the screen shouts and points.", "say": [["ione", "f_ti6"]], "seconds": 6},
+      {"id": "s3", "picture": "Close-up of a console with a large red reset button; above it a woman's gloved hand clenched into a fist, held back, clearly not touching the button, warning lights around.",
+       "motion": "The clenched hand stays above the button, then slowly pulls back out of the frame.", "say": [["ione", "f_ti4"]]},
+      {"id": "n3", "picture": "Science fiction: A woman in technician overalls walking out through a huge factory gate at dawn under a gas giant sky, the factory behind her still running.",
+       "motion": "She walks away, the gate stays open, steam rises.", "say": [["ione", "f_ti7"]]}
+    ]
+  },
+  "tale_unzu": {
+    "music": "tale_unzu",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: A sleek survey spaceship in front of a faint holographic map of nine dim stars and their planets, grid lines connecting them in deep space.",
+       "motion": "The holographic map turns slowly around the ship.", "say": [["unzu", "f_tu5"]], "seconds": 6},
+      {"id": "s0", "picture": "A sleek new survey spaceship orbiting a small blue-green moon with valleys, rivers and scattered settlements, sunlight on the ship.",
+       "motion": "The ship glides slowly over the moon.", "say": [["unzu", "f_tu1"]], "seconds": 6},
+      {"id": "s1", "picture": "Science fiction: a small survey drone with folded cutting arms flying low over a colony settlement on a moon, prefabricated habitat modules and transparent greenhouse domes in a green valley, a huge banded gas giant filling the sky, colony children in bright overalls waving at the drone.",
+       "motion": "The drone flies over the village, the children wave.", "say": [["unzu", "f_tu2"]]},
+      {"id": "s2", "picture": "Science fiction: a colony settlement of prefabricated habitat modules and greenhouse domes in a green valley on a moon, seen from high above, with a faint glowing survey grid projected over it, a gas giant on the horizon.",
+       "motion": "The grid spreads slowly over the valley.", "say": [["unzu", "f_tu3"]]},
+      {"id": "s3", "picture": "Science fiction: a valley on a moon stripped bare and grey, colossal alien-looking mining crawlers with glowing cutting beams carving into the ground, dust clouds, a huge banded gas giant in the sky, no houses left.",
+       "motion": "Slow pan across the stripped valley, machines move in the dust.", "say": [["unzu", "f_tu4"]]},
+      {"id": "n2", "picture": "Science fiction: A vast empty white hall with tall slender pillars of soft light in a circle, a glowing report document floating in the middle.",
+       "motion": "The document floats and turns, the pillars brighten.", "say": [["unzu", "f_tu6"]], "seconds": 6},
+      {"id": "n3", "picture": "Science fiction: An old survey spaceship rusting in a scrapyard on an asteroid among other wrecks, a single amber light still glowing in its cockpit.",
+       "motion": "Dust drifts, the amber light pulses faintly.", "say": [["unzu", "f_tu7"]]}
+    ]
+  },
+  "act3_start": {
+    "music": "klinik",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: Blinding white light slowly resolving into the ceiling of a clean clinic room with soft round lamps, seen from a bed.",
+       "motion": "The white light fades slowly into the ceiling and its lamps.", "say": [["hero", "f_a3s_1"]]},
+      {"id": "n2", "picture": "Science fiction: A body-printing medical capsule opening in a white clinic, mist rolling out, inside a newly printed person lying still, covered up to the shoulders by a thin white medical sheet, the face hidden in the mist.",
+       "motion": "The capsule lid slides open, mist rolls out.", "say": [["berater", "f_a3s_2"]], "seconds": 6},
+      {"id": "n3", "picture": "Science fiction: Through a large window: a gigantic ring-shaped habitat in space with seas, forests and cities on its inner surface, sunlight on clouds, the far side of the ring arching across the sky.",
+       "motion": "Slow push towards the window, clouds drift over the ring.", "say": [["hero", "f_a3s_3"]], "seconds": 7},
+      {"id": "n4", "picture": "Science fiction: Sunny gardens on a ring habitat, elegant people in white clothes walking, a child chasing a floating glowing ball, the ring arching into the sky above.",
+       "motion": "People stroll, the child runs after the floating ball.", "say": [["hero", "f_a3s_4"]], "seconds": 6},
+      {"id": "n5", "picture": "Science fiction: An elegant woman in her mid-fifties with silver hair pinned up, dark coat, sitting on a white bench in a garden on a ring habitat, waiting calmly.",
+       "refs": ["ysolde"], "motion": "She looks up and smiles faintly.", "say": [["ysolde", "f_a3s_5"]]}
+    ]
+  },
+  "act4_start": {
+    "music": "velm2",
+    "shots": [
+      {"id": "n1", "picture": "Science fiction: A small battered survey spaceship approaching a gigantic rotating drum-shaped space station, and beside it a colossal hollowed moon with engines filling half the sky, a fan of glowing ore.",
+       "motion": "The small ship flies towards the station, the colossal moon looms.", "say": [["unzu", "f_a4s_1"]], "seconds": 7},
+      {"id": "n2", "picture": "Science fiction: Landing craft descending onto the outer hull of a huge rotating space station, cutting platforms with glowing beams slicing into the hull plates, sparks into space.",
+       "motion": "The landing craft touch down, cutting beams slice into the hull.", "say": [["hero", "f_a4s_2"]], "seconds": 6},
+      {"id": "n3", "picture": "Science fiction: Inside a rotating space station drum: barricades of cargo containers in a street, people in worn colony clothes with makeshift weapons, automated turrets with green lights on the walls.",
+       "motion": "Turrets swivel, people take cover behind the barricades.", "say": [["hausmeister", "f_a4s_3"]], "seconds": 6},
+      {"id": "n4", "picture": "Science fiction: A shabby space station bar crowded with armed workers, a woman in her sixties behind the counter handing out small medical injectors, a chalk board full of names behind her.",
+       "refs": ["ottla"], "motion": "She hands out injectors across the counter, workers take them.", "say": [["ottla", "f_a4s_4"]]},
+      {"id": "n5", "picture": "Science fiction: An elderly gaunt engineer with a thin grey beard in the cockpit of an old survey spaceship pointing at a holographic map of a hollowed moon and its core.",
+       "refs": ["ruul"], "motion": "The hologram turns, he points to the core.", "say": [["ruul", "f_a4s_5"]]},
+      {"id": "n6", "picture": "Science fiction: The mouth of a colossal hollowed moon in space, a wide fan of glowing molten ore pouring towards the camera.",
+       "motion": "The glowing ore fan pours slowly towards the camera.", "say": [["hero", "f_a4s_6"]]}
+    ]
+  }
+}

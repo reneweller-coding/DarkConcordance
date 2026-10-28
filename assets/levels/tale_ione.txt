@@ -27,6 +27,7 @@ whiteout tale.ione.promise
 endcard  tale.ione.end tale_end tale.ione.told
 ambience nightshift
 music    tale_ione
+film     tale_ione
 bossmusic tale_ione
 walltex  works toolwall
 walltex  station toolwall

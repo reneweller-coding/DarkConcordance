@@ -28,6 +28,7 @@ whiteout bossdead
 endcard  tale.unzu.end tale_end tale.unzu.told
 ambience memory
 music    tale_unzu
+film     tale_unzu
 bossmusic tale_unzu
 walltex  yard plaster
 walltex  park plaster

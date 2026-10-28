@@ -23,7 +23,7 @@ on the RTX 5090 (the Steam Deck needs half-resolution fog); the 3D generator is 
 | Texts | `assets/text/<language>/*.txt`, one `key = text` per line (menus and HUD in `ui.txt`, one file per level); the level files carry only the keys. German is the source and fills every gap |
 | Signs | painted per language by the image model from the same text files (`make_textures.py --lang en`) |
 | Voice | Qwen3-TTS locally (`tools/make_voices.py`, Apache 2.0, the user's choice after samples against VoxCPM2): a voice per figure and language designed from a description (`tools/voices.json`, kept in `tools/voices/`), then cloned for every line; radio, machine and loudspeaker effects after it. `assets/voice/<language>/<key>[.<hero>].ogg` is played when present, else the German one under the chosen subtitles; conversations speak too, the hero's answers not |
-| Cutscenes | films from Text2Video (see below), without speech: voice and subtitles per language at playback |
+| Cutscenes | eleven films (see below), photographic, made locally: FLUX.2 pictures, LTX-2.3 motion, AV1; voice and subtitles per language at playback |
 | Music | the AudioGenerator's soundtrack mode (ACE-Step 1.5 XL, local) from `tools/music.json`: a piece per place in two layers (calm, tense) on one beat grid and a fight piece, boss pieces in two layers, stingers, pieces for scenes; the game follows the danger near the hero (Score.cpp); OGG Vorbis q4 |
 | Sound effects | synthesised in code; the backgrounds per place from TextureGen (Stable Audio Open), `tools/ambience.txt`, seamless loops, OGG Vorbis q3 |
 
@@ -48,16 +48,20 @@ Films for the big moments (the prologue's opening, the end of each act, the thre
 openings); everything else plays in the engine (cheaper, the same look as the game). Made with the Text2Video tools
 (`G:\Tools\Text2Video`):
 
-1. Script per shot (who, where, camera, length), keyframes from the image model (Gemini 3 Pro Image or FLUX.2 locally)
-   with one reference picture per figure and place.
-2. Motion with LTX-2.3 locally (image to video on the RTX 5090), a few seconds per shot, cut together.
-3. No speech in the picture: per language a voice track (the same TTS as the lines) and subtitles from the text files;
-   music from the VRAudio generators. One film serves every language. Lip sync (EchoMimicV3, SoulX) only for close
-   faces, then per language; the suits' helmets spare most of it.
-4. In the game: MPEG-1 decoded with pl_mpeg (one header, MIT; raylib has an example), the language's voice track mixed
-   in, subtitles drawn by the game.
+1. Script per shot in `tools/films.json` (picture, motion, who says what, length), the lines in
+   `assets/text/<language>/films.txt`; pictures from FLUX.2 locally (WSL2), the speakers' portraits as references.
+2. Motion with LTX-2.3 distilled locally through Text2Video's production batch in WSL2 (image and silence to video on
+   the RTX 5090), each shot as long as its lines need.
+3. No speech in the picture: the lines are spoken by the game (the same voices as everywhere, per language) at the
+   times in the film's cue list, with subtitles; under it the music cue the film names. One film serves every
+   language. No lip sync: faces do not speak on screen.
+4. In the game: AV1 in IVF, decoded with dav1d (BSD-2; built once for MSVC into `third_party/dav1d`), the frame
+   turned into a texture (Film.cpp). AV1 rather than MPEG-1 (the first plan, pl_mpeg) or H.265 (patents, no decoder
+   on Windows without a paid extension): about a quarter of MPEG-1's size, royalty-free (the user, 27.10.2026).
 
-The films' look: photographic (the user, 27.10.2026), graded to sit next to the game.
+The films' look: photographic (the user, 27.10.2026). Built 27./28.10.2026: the prologue, the ends of Acts I-III, the
+openings of Acts III and IV, the three endings, the four tales' openings; 13 films, 9 1/2 minutes (the user found the
+first five minutes too little).
 
 ## Systems
 
@@ -180,6 +184,11 @@ Enemies (27.10.2026, the user: "eigene Familien je Ort, Stufen, mehr Champion-Ga
 families of the places' own creatures in three tiers each (13 levels, three guardians), four kinds of damage with
 resistances and weaknesses for every enemy, twelve champion gifts (two from Act III on), a leader with an escort in
 every generated level, burning, corroding and freezing ground, the hero chilled, burning or corroded.
+
+Detail round (28.10.2026, the user: as many kinds of pieces as Dark Alliance or more, all of them science fiction, no
+columns): wall fittings per kind of place, wall tops with copings, pipe runs, trays, ducts and machines, things that
+break (seven kinds, with pieces and drops), the finds on the floor as models; per level now about 60 kinds of wall
+and top pieces, 15-35 kinds of clutter, 2-4 kinds of breakables, 14 loot models, 146 decals.
 
 Open: skinned heroes and enemies with the animation packs' combat clips; the user's play
 (balance, the music's choices and levels). Co-op is set aside for now (the user, 27.10.2026).

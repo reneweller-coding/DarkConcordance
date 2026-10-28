@@ -1,0 +1,10 @@
+# tale_ione: made by tools/make_films.py from tools/films.json
+music  tale_ione
+length 40.33
+line   0.60 ione f_ti1
+line   6.43 ione f_ti2
+line   11.27 ione f_ti5
+line   17.10 ione f_ti3
+line   23.60 ione f_ti6
+line   29.77 ione f_ti4
+line   34.27 ione f_ti7

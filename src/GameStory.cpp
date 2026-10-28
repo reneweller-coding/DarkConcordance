@@ -118,6 +118,59 @@ float Game::speak( const std::string &key )
     return 0.0f;
 }
 
+bool Game::startFilm( const std::string &name )
+{
+    if ( m_autoplay || !m_film.open( m_assets + "/films/" + name ) ) return false;
+    m_audio.stopVoice();
+    m_filmCue = 0;
+    m_filmKey.clear();
+    m_filmLineT = m_filmSkipT = 0.0f;
+    return true;
+}
+
+bool Game::updateFilm( float dt, const GameInput &in )
+{
+    if ( !m_film.playing() ) return false;
+    m_film.update( dt );
+    m_filmLineT -= dt;
+    m_filmSkipT -= dt;
+    if ( m_filmLineT <= 0.0f ) m_filmKey.clear();
+    // The next line once its time has come and the one before it has been said (the languages differ in length).
+    if ( m_filmCue < m_film.m_cues.size() && m_film.time() >= m_film.m_cues[m_filmCue].m_at && m_filmLineT <= 0.1f )
+    {
+        const FilmCue &c = m_film.m_cues[m_filmCue++];
+        float          said = speak( c.m_key );
+        m_filmWho = c.m_who == "hero" ? heroKey( m_heroKind ) : c.m_who;
+        m_filmKey = c.m_key;
+        m_filmLineT = said > 0.0f ? said + 0.3f
+                                  : 1.5f + 0.055f * (float)GetCodepointCount( trAs( c.m_key, heroKey( m_heroKind ) ) );
+    }
+    // A press asks whether to skip; a second one skips.
+    bool press = in.m_confirm || in.m_use || in.m_jump || in.m_special;
+    bool skip = press && m_filmSkipT > 0.0f;
+    if ( press && !skip ) m_filmSkipT = 3.0f;
+    if ( skip || ( m_film.over() && m_filmCue >= m_film.m_cues.size() && m_filmLineT <= 0.0f ) )
+    {
+        m_film.close();
+        m_audio.stopVoice();
+        m_filmKey.clear();
+    }
+    return true;
+}
+
+void Game::drawFilm( int w, int h, float s )
+{
+    if ( !m_film.playing() ) return;
+    m_film.draw( w, h );   // the subtitle is drawn by drawHud, with the lines' wrapping
+    if ( m_filmSkipT > 0.0f )
+    {
+        const char *t = tr( "film.skip" );
+        Vector2     m = MeasureTextEx( m_font, t, 18 * s, 1.0f );
+        DrawTextEx( m_font, t, { w - m.x - 30 * s, 24 * s }, 18 * s, 1.0f,
+                    { 200, 200, 205, (unsigned char)( 220 * fminf( 1.0f, m_filmSkipT ) ) } );
+    }
+}
+
 void Game::startEpilogue()
 {
     m_ending = m_fired.count( "end.c" ) ? "c" : ( m_fired.count( "end.b" ) ? "b" : "a" );
@@ -154,6 +207,7 @@ bool Game::updateEpilogue( float dt, GameInput &in )
         // It begins once its event has happened and the conversation that set it off is closed.
         if ( !m_fired.count( m_level.m_epilogue ) || m_talk ) return false;
         startEpilogue();
+        startFilm( "end_" + m_ending );   // the ending's film first, the cards after it
     }
     if ( m_finished ) return true;
     m_cardT += dt;

@@ -219,6 +219,34 @@ struct Sign
     Vector3     m_lamp;        ///< the small lamp above it
 };
 
+/** @brief Things that break when hit: the level places them (by the walls of its wider rooms), the game breaks them. */
+enum class BreakE : int
+{
+    CRATE,       ///< a supply crate
+    DRUM,        ///< a fuel drum
+    CANISTERS,   ///< gas canisters, strapped together
+    CASE,        ///< equipment cases, stacked
+    TANK,        ///< a glass tank of glowing coolant
+    SPOOL,       ///< a cable spool
+    CRYSTAL,     ///< a cluster of crystals (the object of Tesh)
+    LOCKER,      ///< a standing locker
+    CONSOLE,     ///< a screen on a stand
+    BATTERY,     ///< a bank of power cells, their bands lit
+    SACKS,       ///< sacks piled up
+    POT,         ///< a plant in a pot
+    VIALS,       ///< a rack of glowing sample vials
+    COUNT
+};
+
+/** @brief Where a breakable stands. */
+struct BreakSpot
+{
+    Vector3 m_pos;    ///< on the floor
+    float   m_yaw;    ///< which way it faces
+    BreakE  m_kind;   ///< what it is
+    int     m_prop;   ///< its circle in the level's props (the game moves it away when it breaks)
+};
+
 /** @brief A solid prop on the floor (crates, barrels, scrap): a circle that blocks. */
 struct Prop
 {
@@ -394,6 +422,7 @@ public:
     std::vector<Zone>       m_zones;                                             ///< areas with their themes
     std::vector<Sign>       m_signs;                                             ///< signs (after build)
     std::vector<Prop>       m_props;                                             ///< solid props (after build)
+    std::vector<BreakSpot>  m_breaks;                                            ///< things that break (after build)
     std::vector<Seat>       m_seats;                                             ///< stools (after build)
     std::vector<Decal>      m_decals;                                            ///< decals (after build)
     std::vector<std::pair<std::string, std::pair<int, int>>> m_signRequests;     ///< "sign" lines: texture, cell
@@ -525,6 +554,7 @@ private:
     struct DressKit
     {
         MeshBuilder          &m_metal, &m_rust, &m_crate, &m_box, &m_cloth, &m_hazard, &m_grate, &m_rock, &m_hull;
+        MeshBuilder          &m_drape;   ///< cloth that dissolves with the walls (what hangs on them)
         std::vector<GlowBox> &m_glows;
     };
 
@@ -535,6 +565,32 @@ private:
      * @param[in,out] kit  the builders
      */
     void dress( const LevelSurfaces &s, DressKit &kit );
+    /**
+     * @brief Fittings on a wall face, as the place's kind has them (LevelDress.cpp): girders, kick plates, junction
+     *        boxes, valves, vents, ladders, cabinets, terminals, rails, insulation, rock bolts, lines of light. All of it
+     *        lies flat on the wall: nothing stands in the way. A face that carries a decal keeps its middle free.
+     * @param[in]     r      the cell's row (in front of the wall)
+     * @param[in]     c      its column
+     * @param[in]     d      the direction of the wall from it (0 north, 1 east, 2 south, 3 west)
+     * @param[in]     face   the middle of the face on the floor
+     * @param[in]     n      the face's normal, into the cell
+     * @param[in]     base   the floor's height
+     * @param[in]     walls  what the walls are made of (0 rock, 1 containers, 2 bulkheads, 3 house fronts)
+     * @param[in]     decal  the face carries a decal
+     * @param[in,out] kit    the builders
+     */
+    void wallKit( int r, int c, int d, Vector3 face, Vector3 n, float base, int walls, bool decal, DressKit &kit );
+    /**
+     * @brief What lies on the top of a wall by an open cell (LevelDress.cpp): a coping along the edge, runs of pipes,
+     *        cable trays or ducts that line up along the wall, lines of light, now and then a machine; it dissolves with
+     *        the wall.
+     * @param[in]     r      the wall cell's row
+     * @param[in]     c      its column
+     * @param[in]     walls  what the walls are made of (0 rock, 1 containers, 2 bulkheads, 3 house fronts)
+     * @param[in]     mid    the middle of the cell on the floor
+     * @param[in,out] kit    the builders
+     */
+    void crownKit( int r, int c, int walls, Vector3 mid, DressKit &kit );
     /**
      * @brief Something standing by a wall (LevelDress.cpp).
      * @param[in]     group  the place's kind (DressE)

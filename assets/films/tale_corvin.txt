@@ -1,0 +1,10 @@
+# tale_corvin: made by tools/make_films.py from tools/films.json
+music  tale_corvin
+length 36.00
+line   0.60 corvin f_tc1
+line   5.10 corvin f_tc5
+line   9.60 corvin f_tc2
+line   16.43 corvin f_tc3
+line   20.93 corvin f_tc6
+line   26.10 corvin f_tc4
+line   30.60 corvin f_tc7

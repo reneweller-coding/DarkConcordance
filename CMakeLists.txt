@@ -31,6 +31,16 @@ FetchContent_MakeAvailable( raylib )
 file( GLOB SPACEOPERA_SOURCES CONFIGURE_DEPENDS ${CMAKE_SOURCE_DIR}/src/*.cpp ${CMAKE_SOURCE_DIR}/src/*.h )
 add_executable( SpaceOpera WIN32 ${SPACEOPERA_SOURCES} )
 target_link_libraries( SpaceOpera PRIVATE raylib )
+# The films are AV1, decoded by dav1d (BSD-2): built once with Meson for MSVC into third_party/dav1d (8 bit, no
+# assembly, static /MT); elsewhere the system's library.
+if( MSVC )
+    target_include_directories( SpaceOpera PRIVATE ${CMAKE_SOURCE_DIR}/third_party/dav1d/include )
+    target_link_libraries( SpaceOpera PRIVATE ${CMAKE_SOURCE_DIR}/third_party/dav1d/lib/win64/dav1d.lib )
+else()
+    find_package( PkgConfig REQUIRED )
+    pkg_check_modules( DAV1D REQUIRED IMPORTED_TARGET dav1d )
+    target_link_libraries( SpaceOpera PRIVATE PkgConfig::DAV1D )
+endif()
 # The textures are read from assets/ beside the program, else from the source tree.
 target_compile_definitions( SpaceOpera PRIVATE SPACEOPERA_ASSETS="${CMAKE_SOURCE_DIR}/assets" )
 if( MSVC )

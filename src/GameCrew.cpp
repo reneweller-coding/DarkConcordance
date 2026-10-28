@@ -169,6 +169,18 @@ void Game::strike( int swing )
                 3.0f );
         hit = true;
     }
+    // Crates and drums in the swing.
+    for ( int i = 0; i < (int)m_breakables.size(); ++i )
+    {
+        const Breakable &b = m_breakables[i];
+        if ( !b.m_alive || fabsf( b.m_pos.y - m_pos.y ) > 1.5f ) continue;
+        Vector3 d = { b.m_pos.x - m_pos.x, 0.0f, b.m_pos.z - m_pos.z };
+        float   dist = Vector3Length( d );
+        if ( dist > reach + 0.4f || ( dist > 0.3f && Vector3DotProduct( d, fwd ) / dist < cosf( cone ) ) ) continue;
+        hitBreakable( i, damage, Vector3Add( b.m_pos, { 0.0f, 0.5f, 0.0f } ),
+                      dist > 1e-3f ? Vector3Scale( d, 1.0f / dist ) : fwd );
+        hit = true;
+    }
     // The tug's weak points within reach of the deck's edge, Mother Sevenfold's relays.
     if ( partsLive() )
         for ( int i = 0; i < (int)m_parts.size(); ++i )
@@ -284,6 +296,7 @@ void Game::blast( Vector3 p, float damage, float radius )
         if ( m_racks[i].m_alive &&
              Vector2Distance( { p.x, p.z }, { m_racks[i].m_pos.x, m_racks[i].m_pos.z } ) < radius * 0.8f )
             breakRack( i );
+    breakablesInRadius( p, radius, damage );
     if ( partsLive() )
         for ( int i = 0; i < (int)m_parts.size(); ++i )
         {

@@ -1,0 +1,11 @@
+# end_c: made by tools/make_films.py from tools/films.json
+music  end_c
+length 42.50
+line   0.60 ilka39 f_ec5
+line   5.10 ilka39 f_ec1
+line   9.60 hero f_ec2
+line   15.77 hero f_ec6
+line   21.60 unzu f_ec7
+line   27.10 ysolde f_ec3
+line   32.60 hero f_ec8
+line   38.10 hero f_ec4

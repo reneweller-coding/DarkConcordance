@@ -33,6 +33,7 @@ gate     bridgeclear
 next     velm.txt
 ambience ship
 music    prologue
+film     prolog
 zone     0 22 8 42 bridge
 zone     29 22 43 59 cargo
 zone     30 0 39 18 bar

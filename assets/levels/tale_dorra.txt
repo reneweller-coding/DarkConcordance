@@ -25,6 +25,7 @@ whiteout tale.dorra.fired
 endcard  tale.dorra.end tale_end tale.dorra.told
 ambience kalvar
 music    tale_dorra
+film     tale_dorra
 bossmusic tale_dorra
 walltex  works ochrerock
 walltex  yard ochrerock

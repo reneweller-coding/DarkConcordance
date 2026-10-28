@@ -265,17 +265,124 @@ void Game::poseLoot( std::vector<Drawable> &out )
 {
     if ( m_lootMesh[0].vertexCount == 0 )
     {
-        // What lies on the floor: a long case for a weapon, a crate for armour, small ones for the rest; a beam of
-        // light over the better ones.
-        const Vector3 half[(int)SlotE::COUNT] = { { 0.08f, 0.07f, 0.42f }, { 0.28f, 0.16f, 0.22f },
-                                                  { 0.16f, 0.14f, 0.16f }, { 0.14f, 0.06f, 0.12f },
-                                                  { 0.13f, 0.1f, 0.18f },  { 0.08f, 0.08f, 0.08f },
-                                                  { 0.26f, 0.05f, 0.1f },  { 0.14f, 0.14f, 0.06f },
-                                                  { 0.09f, 0.14f, 0.09f }, { 0.06f, 0.03f, 0.06f } };
-        for ( int i = 0; i < (int)SlotE::COUNT; ++i )
+        // What lies on the floor is the thing itself: a weapon (each hero's own), armour, a helmet with its visor, a
+        // pair of gloves or boots, an implant's capsule, a harness with pouches, a shield emitter, a power cell, a
+        // module's board; a beam of light over the better ones.
+        const Color plate = { 150, 154, 160, 255 }, dark = { 58, 62, 68, 255 }, trim = { 200, 150, 60, 255 },
+                    lit = { 120, 220, 255, 255 };
+        for ( int i = 0; i < (int)SlotE::COUNT + 4; ++i )
         {
             MeshBuilder b;
-            b.roundedBox( place( { 0.0f, half[i].y, 0.0f } ), half[i], 0.03f, 2 );
+            b.m_color = plate;
+            switch ( i )
+            {
+            case (int)SlotE::WEAPON:
+            case (int)SlotE::COUNT:   // Corvin's rifle: body, barrel, scope, stock
+                b.roundedBox( place( { 0.0f, 0.08f, 0.0f } ), { 0.05f, 0.06f, 0.24f }, 0.02f, 2 );
+                b.m_color = dark;
+                b.cylinder( place( { 0.0f, 0.09f, 0.22f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.022f, 0.3f, 8 );
+                b.cylinder( place( { 0.0f, 0.16f, -0.06f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.025f, 0.14f, 8 );
+                b.box( place( { 0.0f, 0.06f, -0.3f } ), { 0.035f, 0.05f, 0.07f } );
+                b.m_color = trim;
+                b.box( place( { 0.0f, 0.03f, 0.04f } ), { 0.02f, 0.05f, 0.02f } );
+                break;
+            case (int)SlotE::COUNT + 1:   // Dorra's ram hammer: haft, head, its bolt chambers
+                b.m_color = dark;
+                b.cylinder( place( { 0.0f, 0.04f, -0.3f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.025f, 0.55f, 8 );
+                b.m_color = plate;
+                b.box( place( { 0.0f, 0.1f, 0.3f } ), { 0.11f, 0.09f, 0.08f } );
+                b.m_color = trim;
+                for ( float x : { -0.06f, 0.06f } )
+                    b.cylinder( place( { x, 0.1f, 0.38f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.025f, 0.05f, 8 );
+                break;
+            case (int)SlotE::COUNT + 2:   // Ione's swarm projector: a gauntlet, its emitter, drone pods
+                b.roundedBox( place( { 0.0f, 0.07f, 0.0f } ), { 0.08f, 0.06f, 0.14f }, 0.03f, 2 );
+                b.m_color = dark;
+                b.cylinder( place( { 0.0f, 0.13f, 0.08f } ), 0.05f, 0.03f, 12 );
+                b.m_color = lit;
+                for ( int k = 0; k < 3; ++k )
+                    b.box( place( { -0.05f + k * 0.05f, 0.14f, -0.06f } ), { 0.018f, 0.018f, 0.018f } );
+                break;
+            case (int)SlotE::COUNT + 3:   // Unzu's blade module: a housing, two folded blades
+                b.box( place( { 0.0f, 0.06f, 0.0f } ), { 0.1f, 0.06f, 0.1f } );
+                b.m_color = { 210, 214, 220, 255 };
+                for ( float x : { -0.07f, 0.07f } )
+                    b.box( place( { x, 0.05f, 0.2f }, { 0.0f, x * 2.0f, 0.0f } ), { 0.01f, 0.03f, 0.14f } );
+                break;
+            case (int)SlotE::ARMOR:   // a chest plate with shoulder pieces
+                b.roundedBox( place( { 0.0f, 0.12f, 0.0f } ), { 0.22f, 0.1f, 0.18f }, 0.05f, 2 );
+                b.m_color = dark;
+                for ( float x : { -0.24f, 0.24f } )
+                    b.roundedBox( place( { x, 0.13f, -0.06f } ), { 0.08f, 0.06f, 0.1f }, 0.03f, 2 );
+                b.m_color = trim;
+                b.box( place( { 0.0f, 0.22f, 0.06f } ), { 0.14f, 0.012f, 0.03f } );
+                break;
+            case (int)SlotE::HELMET:   // a dome, its dark visor
+                b.lathe( place( { 0.0f, 0.0f, 0.0f } ),
+                         { { 0.0f, 0.0f },
+                           { 0.15f, 0.0f },
+                           { 0.16f, 0.1f },
+                           { 0.13f, 0.2f },
+                           { 0.07f, 0.26f },
+                           { 0.0f, 0.27f } },
+                         14 );
+                b.m_color = dark;
+                b.roundedBox( place( { 0.0f, 0.12f, 0.1f } ), { 0.1f, 0.05f, 0.06f }, 0.02f, 2 );
+                break;
+            case (int)SlotE::GLOVES:   // a pair of gauntlets
+                for ( float x : { -0.09f, 0.09f } )
+                {
+                    b.m_color = plate;
+                    b.roundedBox( place( { x, 0.04f, 0.0f } ), { 0.06f, 0.04f, 0.08f }, 0.02f, 2 );
+                    b.m_color = dark;
+                    b.box( place( { x, 0.03f, 0.1f } ), { 0.055f, 0.025f, 0.03f } );
+                }
+                break;
+            case (int)SlotE::BOOTS:   // a pair of magnetic boots
+                for ( float x : { -0.09f, 0.09f } )
+                {
+                    b.m_color = plate;
+                    b.roundedBox( place( { x, 0.1f, -0.03f } ), { 0.06f, 0.1f, 0.06f }, 0.02f, 2 );
+                    b.m_color = dark;
+                    b.box( place( { x, 0.03f, 0.04f } ), { 0.065f, 0.03f, 0.11f } );
+                }
+                break;
+            case (int)SlotE::IMPLANT:   // a capsule, its core showing through
+                b.cylinder( place( { 0.0f, 0.06f, -0.08f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.05f, 0.16f, 10 );
+                b.m_color = lit;
+                b.cylinder( place( { 0.0f, 0.06f, -0.03f }, { PI * 0.5f, 0.0f, 0.0f } ), 0.055f, 0.06f, 10 );
+                break;
+            case (int)SlotE::HARNESS:   // a belt with pouches
+                b.m_color = dark;
+                b.box( place( { 0.0f, 0.02f, 0.0f } ), { 0.28f, 0.02f, 0.04f } );
+                b.m_color = { 110, 100, 80, 255 };
+                for ( float x : { -0.18f, 0.0f, 0.18f } )
+                    b.roundedBox( place( { x, 0.06f, 0.02f } ), { 0.06f, 0.05f, 0.05f }, 0.015f, 2 );
+                break;
+            case (int)SlotE::EMITTER:   // a disc in a ring
+                b.cylinder( place( { 0.0f, 0.0f, 0.0f } ), 0.12f, 0.05f, 16 );
+                b.m_color = lit;
+                b.cylinder( place( { 0.0f, 0.05f, 0.0f } ), 0.07f, 0.02f, 16 );
+                b.m_color = dark;
+                b.box( place( { 0.0f, 0.03f, 0.13f } ), { 0.03f, 0.03f, 0.03f } );
+                break;
+            case (int)SlotE::CELL:   // a power cell, a lit band round it
+                b.cylinder( place( { 0.0f, 0.0f, 0.0f } ), 0.07f, 0.24f, 12 );
+                b.m_color = lit;
+                b.cylinder( place( { 0.0f, 0.15f, 0.0f } ), 0.073f, 0.03f, 12 );
+                b.m_color = dark;
+                b.cylinder( place( { 0.0f, 0.24f, 0.0f } ), 0.03f, 0.03f, 8 );
+                break;
+            default:   // a module: a board, its pins, a chip
+                b.m_color = { 40, 90, 60, 255 };
+                b.box( place( { 0.0f, 0.01f, 0.0f } ), { 0.08f, 0.01f, 0.06f } );
+                b.m_color = dark;
+                b.box( place( { 0.0f, 0.03f, 0.0f } ), { 0.04f, 0.012f, 0.03f } );
+                b.m_color = trim;
+                for ( int k = 0; k < 4; ++k )
+                    b.box( place( { -0.06f + k * 0.04f, 0.01f, 0.065f } ), { 0.006f, 0.004f, 0.01f } );
+                break;
+            }
             m_lootMesh[i] = b.build().front();
         }
         MeshBuilder beam;
@@ -287,10 +394,13 @@ void Game::poseLoot( std::vector<Drawable> &out )
         Drawable d;
         d.m_transform =
             MatrixMultiply( MatrixRotateY( l.m_t * 0.8f ), MatrixTranslate( l.m_pos.x, l.m_pos.y, l.m_pos.z ) );
-        d.m_mesh = m_lootMesh[(int)itemSlot( l.m_item )];
+        int hero = itemBases()[l.m_item.m_base].m_hero;
+        d.m_mesh =
+            m_lootMesh[itemSlot( l.m_item ) == SlotE::WEAPON && hero >= 0 && hero < 4 ? (int)SlotE::COUNT + hero
+                                                                                      : (int)itemSlot( l.m_item )];
         d.m_surface = S_METAL;
         Color c = rarityColor( l.m_item.m_rarity );
-        float glow = l.m_item.m_rarity == RarityE::COMMON ? 0.05f : 0.2f;
+        float glow = l.m_item.m_rarity == RarityE::COMMON ? 0.02f : 0.07f;   // the beam tells the rarity
         d.m_emissive = { c.r / 255.0f * glow, c.g / 255.0f * glow, c.b / 255.0f * glow, 0.0f };
         out.push_back( d );
         if ( l.m_item.m_rarity == RarityE::COMMON ) continue;

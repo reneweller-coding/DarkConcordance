@@ -44,6 +44,7 @@ speaker.dorra       = Dorra
 hero.ione           = IONE SARRATH
 speaker.ione        = Ione
 hud.next            = Enter oder Start: weiter
+film.skip           = Nochmal drücken: Film überspringen
 use.open            = A / E: öffnen
 use.search          = A / E: durchsuchen
 use.read            = A / E: lesen

@@ -1,0 +1,9 @@
+# act4_start: made by tools/make_films.py from tools/films.json
+music  velm2
+length 34.17
+line   0.60 unzu f_a4s_1
+line   7.10 hero f_a4s_2
+line   12.93 hausmeister f_a4s_3
+line   20.43 ottla f_a4s_4
+line   24.93 ruul f_a4s_5
+line   29.77 hero f_a4s_6

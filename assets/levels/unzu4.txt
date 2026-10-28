@@ -16,6 +16,7 @@ view     planet
 planet   mill 0.6
 ambience shiphub
 music    ship
+film     act4_start
 menutitle nav.title
 back     done.velm2
 autotalk ruul
