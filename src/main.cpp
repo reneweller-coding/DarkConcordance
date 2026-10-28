@@ -17,10 +17,12 @@
  */
 #include "Game.h"
 #include "Bindings.h"
+#include "Crash.h"
 #include "Files.h"
 #include "Glyphs.h"
 #include "Journal.h"
 #include "PlayLog.h"
+#include "Rumble.h"
 #include "Gfx.h"
 #include "Scene.h"
 #include "Score.h"
@@ -35,6 +37,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <sstream>
 #include <functional>
 #include <memory>
 #include <string>
@@ -74,6 +77,7 @@ struct Options
     std::string              m_language;     ///< de, en (else the saved setting)
     bool                     m_menu = false;       ///< with --shot: the title menu over the picture
     bool                     m_controls = false;   ///< with --shot: the controls' page over the picture
+    bool                     m_slots = false;      ///< with --shot: the list of saves over the picture
     std::string              m_photo;   ///< with --shot: the photo mode, its camera turned, tilted, pulled ("t,p,z")
     std::vector<std::string> m_binds;   ///< tests: keys and buttons bound otherwise ("<name> <key> <pad>")
     float                    m_camYaw = 0.0f;           ///< camera turned about the hero (degrees)
@@ -91,17 +95,20 @@ struct Options
     int                      m_creatures = -1;    ///< with --shot: the creatures in front of the hero (page 0 or 1)
     int                      m_figures = -1;   ///< with --shot: figures in their poses in front of the hero (page 0, 1)
     std::string              m_pad;   ///< keys, xbox, ps, deck: the buttons shown in the texts (else the device used)
-    int                      m_cycle = 0;      ///< tests: a new game+'s cycle
-    std::string              m_playLog;        ///< tests: write the play log here
-    std::string              m_saveFile;       ///< tests: where a capsule's save goes (instead of save.txt)
-    std::string              m_loadFile;       ///< tests: a save to go on from
-    int                      m_colours = -1;   ///< tests: colour vision 0..2 (else the setting)
-    float                    m_zoom = 0.0f;    ///< with --shot: the camera's distance factor (0: as it is)
-    int                      m_loot = 0;       ///< tests: items scattered round the hero at the start
-    std::string              m_gear;           ///< tests: what the hero puts on at the start (--gear item.rail3,u12,s5)
-    int                      m_xp = 0;         ///< tests: experience given at the start
-    unsigned                 m_seed = 0;       ///< a generated level's seed (0: from the progress)
-    std::string              m_dumpGen;        ///< write the generated level's file here
+    int                      m_cycle = 0;          ///< tests: a new game+'s cycle
+    int                      m_tier = 0;           ///< tests: the Depths' tier (0: as saved)
+    bool                     m_crash = false;      ///< tests: crash on purpose (the report)
+    bool                     m_campaign = false;   ///< tests: the main path in order, what is gained carried on
+    std::string              m_playLog;            ///< tests: write the play log here
+    std::string              m_saveFile;           ///< tests: where a capsule's save goes (instead of save.txt)
+    std::string              m_loadFile;           ///< tests: a save to go on from
+    int                      m_colours = -1;       ///< tests: colour vision 0..2 (else the setting)
+    float                    m_zoom = 0.0f;        ///< with --shot: the camera's distance factor (0: as it is)
+    int                      m_loot = 0;           ///< tests: items scattered round the hero at the start
+    std::string              m_gear;       ///< tests: what the hero puts on at the start (--gear item.rail3,u12,s5)
+    int                      m_xp = 0;     ///< tests: experience given at the start
+    unsigned                 m_seed = 0;   ///< a generated level's seed (0: from the progress)
+    std::string              m_dumpGen;    ///< write the generated level's file here
     int                      m_heroLevel = 0;   ///< tests: the hero's level at the start
     float                    m_trace = 0.0f;    ///< tests: log the run's state every so many seconds
 };
@@ -178,6 +185,8 @@ Options parse( int argc, char **argv )
             o.m_menu = true;
         else if ( a == "--controls" )
             o.m_controls = true;
+        else if ( a == "--slots" )
+            o.m_slots = true;
         else if ( a == "--photo" )
             o.m_photo = next();
         else if ( a == "--bind" )
@@ -216,6 +225,12 @@ Options parse( int argc, char **argv )
             o.m_pad = next();
         else if ( a == "--cycle" )
             o.m_cycle = atoi( next().c_str() );
+        else if ( a == "--crash" )
+            o.m_crash = true;
+        else if ( a == "--campaign" )
+            o.m_campaign = true;
+        else if ( a == "--tier" )
+            o.m_tier = atoi( next().c_str() );
         else if ( a == "--playlog" )
             o.m_playLog = next();
         else if ( a == "--savefile" )
@@ -390,7 +405,10 @@ int runLookdev( const Options &o, Gfx &gfx )
     return 0;
 }
 
-/** @brief What the player set in the menus; kept in settings.txt beside the program. */
+constexpr int Slots = 4;    ///< places to save in
+int           g_slot = 1;   ///< the one played (1 .. Slots; the first is save.txt as before)
+
+/** @brief What the player set in the menus; kept in settings.txt in the player's folder. */
 struct Settings
 {
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
@@ -403,9 +421,22 @@ struct Settings
     int         m_colours = 0;                        ///< colour vision: 0 as it is, 1 red-green, 2 blue-yellow
     int         m_shake = 2;                          ///< the camera's shake: 0 off, 1 half, 2 full
     int         m_loot = 0;                           ///< the loot filter: 0 keep all, 1 salvage common, 2 and magic
+    int         m_slot = 1;                           ///< the save played last
+    int         m_display = 0;                        ///< 0 a window, 1 borderless over the whole screen
+    int         m_size = 1;                           ///< the window's size (WindowSizes)
+    int         m_vsync = 1;                          ///< the picture waits for the screen
+    int         m_fps = 1;                            ///< without that: at most so many frames (FpsSteps)
+    int         m_hud = 1;                            ///< the HUD's size (HudSteps)
+    int         m_rumble = 2;                         ///< the pad's motors: 0 still, 1 weak, 2 strong
+    int         m_minimap = 1;                        ///< the map round the hero in the HUD
     bool        m_nightmare = false;                  ///< Albtraum may be chosen (the game is through once)
     std::string m_language;                           ///< the texts' language
 };
+
+/** @brief The window's sizes to choose from (larger ones than the screen are passed over). */
+const int   WindowSizes[5][2] = { { 1280, 720 }, { 1600, 900 }, { 1920, 1080 }, { 2560, 1440 }, { 3840, 2160 } };
+const int   FpsSteps[5] = { 30, 60, 120, 144, 0 };   ///< 0: as fast as it goes
+const float HudSteps[4] = { 0.8f, 1.0f, 1.2f, 1.4f };
 
 /** @brief Whether the game runs on a Steam Deck (Steam sets SteamDeck=1 there). */
 bool steamDeck()
@@ -462,6 +493,22 @@ Settings loadSettings()
             s.m_shake = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
         else if ( !strcmp( key, "loot" ) )
             s.m_loot = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+        else if ( !strcmp( key, "display" ) )
+            s.m_display = atoi( value ) ? 1 : 0;
+        else if ( !strcmp( key, "size" ) )
+            s.m_size = (int)Clamp( (float)atoi( value ), 0.0f, 4.0f );
+        else if ( !strcmp( key, "vsync" ) )
+            s.m_vsync = atoi( value ) ? 1 : 0;
+        else if ( !strcmp( key, "fps" ) )
+            s.m_fps = (int)Clamp( (float)atoi( value ), 0.0f, 4.0f );
+        else if ( !strcmp( key, "minimap" ) )
+            s.m_minimap = atoi( value ) ? 1 : 0;
+        else if ( !strcmp( key, "rumble" ) )
+            s.m_rumble = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+        else if ( !strcmp( key, "hud" ) )
+            s.m_hud = (int)Clamp( (float)atoi( value ), 0.0f, 3.0f );
+        else if ( !strcmp( key, "slot" ) )
+            s.m_slot = (int)Clamp( (float)atoi( value ), 1.0f, (float)Slots );
         else if ( !strcmp( key, "nightmare" ) )
             s.m_nightmare = atoi( value ) != 0;
     }
@@ -470,9 +517,15 @@ Settings loadSettings()
 }
 
 /** @brief Where the game is saved (the start of the level to play). */
+/** @return a slot's save */
+std::string slotPath( int slot )
+{
+    return userDir() + ( slot <= 1 ? std::string( "save.txt" ) : TextFormat( "save%d.txt", slot ) );
+}
+
 std::string savePath()
 {
-    return userDir() + "save.txt";
+    return slotPath( g_slot );
 }
 
 /** @brief Reads the save; false if there is none. */
@@ -522,6 +575,8 @@ bool loadProgress( Progress &p, const std::string &path = savePath() )
             p.m_deaths = atoi( value );
         else if ( !strcmp( key, "cycle" ) )
             p.m_cycle = atoi( value );
+        else if ( !strcmp( key, "depths" ) )
+            sscanf( rest, "%d %d", &p.m_depthTier, &p.m_depthBest );
         else if ( !strcmp( key, "spot" ) )
             p.m_hasSpot = sscanf( rest, "%f %f %f", &p.m_spot.x, &p.m_spot.y, &p.m_spot.z ) == 3;
         else if ( !strcmp( key, "fired" ) )
@@ -556,6 +611,7 @@ void saveProgress( const Progress &p, const std::string &path = savePath() )
              p.m_scrap, p.m_stims, p.m_weapon, p.m_armor );
     fprintf( f, "xp %d\nherolevel %d\npoints %d\nseed %d\ndeaths %d\ncycle %d\n", p.m_xp, p.m_heroLevel, p.m_points,
              p.m_seed, p.m_deaths, p.m_cycle );
+    fprintf( f, "depths %d %d\n", p.m_depthTier, p.m_depthBest );
     if ( p.m_hasSpot )
     {
         fprintf( f, "spot %.2f %.2f %.2f\n", p.m_spot.x, p.m_spot.y, p.m_spot.z );
@@ -567,6 +623,7 @@ void saveProgress( const Progress &p, const std::string &path = savePath() )
         if ( p.m_worn[i] ) fprintf( f, "gear %d %s\n", i, saveItem( p.m_gear[i] ).c_str() );
     for ( const Item &it : p.m_bag ) fprintf( f, "bag %s\n", saveItem( it ).c_str() );
     for ( const std::string &flag : p.m_flags ) fprintf( f, "flag %s\n", flag.c_str() );
+    fprintf( f, "when %lld\n", (long long)time( nullptr ) );   // for the list of saves
     endWrite( f, path );
 }
 
@@ -578,8 +635,10 @@ void saveSettings( const Settings &s )
     fprintf( f, "difficulty %d\nbrightness %.2f\nlanguage %s\nmusic %.1f\nvoices %.1f\neffects %.1f\n",
              (int)s.m_difficulty, s.m_brightness, s.m_language.c_str(), s.m_music, s.m_voices, s.m_effects );
     if ( s.m_quality >= 0 ) fprintf( f, "graphics %d\n", s.m_quality );
-    fprintf( f, "subtitles %d\ncolours %d\nshake %d\nloot %d\nnightmare %d\n", s.m_subtitles, s.m_colours, s.m_shake,
-             s.m_loot, s.m_nightmare ? 1 : 0 );
+    fprintf( f, "subtitles %d\ncolours %d\nshake %d\nloot %d\nslot %d\nnightmare %d\n", s.m_subtitles, s.m_colours,
+             s.m_shake, s.m_loot, s.m_slot, s.m_nightmare ? 1 : 0 );
+    fprintf( f, "display %d\nsize %d\nvsync %d\nfps %d\nhud %d\nrumble %d\nminimap %d\n", s.m_display, s.m_size,
+             s.m_vsync, s.m_fps, s.m_hud, s.m_rumble, s.m_minimap );
     for ( int b = 0; b < (int)BindE::COUNT; ++b ) fprintf( f, "bind %s\n", bindingLine( (BindE)b ).c_str() );
     endWrite( f, settingsPath() );
 }
@@ -645,14 +704,15 @@ void drawMenu( const Font &font, const char *title, const char *subtitle, const 
     };
     text( title, h * 0.2f, 84, { 245, 236, 222, 255 } );
     text( subtitle, h * 0.2f + 96 * s, 28, { 255, 190, 120, 230 } );
+    float step = fminf( 46.0f, 520.0f / items.size() ), size = fminf( 34.0f, step * 0.86f );
     for ( size_t i = 0; i < items.size(); ++i )
     {
         bool  on = (int)i == chosen;
-        float y = h * 0.36f + i * fminf( 46.0f, 470.0f / items.size() ) * s;   // above the game's subtitles
+        float y = h * 0.36f + i * step * s;   // above the game's subtitles
         if ( on )
             DrawRectangle( (int)( w * 0.5f - 260 * s ), (int)( y - 6 * s ), (int)( 520 * s ), (int)( 44 * s ),
                            { 255, 170, 80, 40 } );
-        text( items[i].c_str(), y, 34, on ? Color{ 255, 205, 140, 255 } : Color{ 200, 200, 200, 220 } );
+        text( items[i].c_str(), y, size, on ? Color{ 255, 205, 140, 255 } : Color{ 200, 200, 200, 220 } );
     }
     text( tr( "menu.help" ), h - 70 * s, 20, { 150, 150, 150, 200 } );
 }
@@ -747,6 +807,15 @@ enum class RowE
     LOOT,
     CONTROLS,
     PHOTO,
+    LOAD,
+    DISPLAY,
+    WINDOW,
+    SIZE,
+    VSYNC,
+    FPS,
+    HUD,
+    RUMBLE,
+    MINIMAP,
     BACK
 };
 
@@ -759,17 +828,20 @@ enum class RowE
  * @param[in] plus   the save has the game through
  * @return the rows
  */
-std::vector<RowE> menuRows( int menu, bool saved, bool plus )
+std::vector<RowE> menuRows( int menu, bool saved, bool plus, bool any = false )
 {
     using R = RowE;
+    if ( menu == 3 ) return { R::WINDOW, R::SIZE, R::VSYNC, R::FPS, R::HUD, R::MINIMAP, R::BACK };
     if ( menu == 2 )
-        return { R::DIFFICULTY, R::BRIGHTNESS, R::GRAPHICS, R::MUSIC, R::VOICES,   R::EFFECTS, R::LANGUAGE,
-                 R::SUBTITLES,  R::COLOURS,    R::SHAKE,    R::LOOT,  R::CONTROLS, R::BACK };
+        return { R::DIFFICULTY, R::BRIGHTNESS, R::GRAPHICS, R::DISPLAY, R::MUSIC, R::VOICES,   R::EFFECTS, R::LANGUAGE,
+                 R::SUBTITLES,  R::COLOURS,    R::SHAKE,    R::RUMBLE,  R::LOOT,  R::CONTROLS, R::BACK };
     if ( menu == 1 ) return { R::RESUME, R::PHOTO, R::OPTIONS, R::RESTART, R::QUIT };
     std::vector<RowE> rows;
     if ( saved ) rows.push_back( R::CONTINUE );
     if ( plus ) rows.push_back( R::PLUS );
-    for ( R r : { R::START, R::OPTIONS, R::QUIT } ) rows.push_back( r );
+    rows.push_back( R::START );
+    if ( any ) rows.push_back( R::LOAD );
+    for ( R r : { R::OPTIONS, R::QUIT } ) rows.push_back( r );
     return rows;
 }
 
@@ -800,8 +872,68 @@ std::string rowText( RowE r, const Settings &s, int cycle )
     case RowE::LOOT: return pick( "menu.loot", "lootfilter." + std::to_string( s.m_loot ) );
     case RowE::CONTROLS: return tr( "menu.controls" );
     case RowE::PHOTO: return tr( "menu.photo" );
+    case RowE::LOAD: return tr( "menu.load" );
+    case RowE::DISPLAY: return tr( "menu.display" );
+    case RowE::RUMBLE: return pick( "menu.rumble", "rumble." + std::to_string( s.m_rumble ) );
+    case RowE::MINIMAP: return pick( "menu.minimap", s.m_minimap ? "on" : "off" );
+    case RowE::WINDOW: return pick( "menu.window", "window." + std::to_string( s.m_display ) );
+    case RowE::SIZE:
+        return std::string( tr( "menu.size" ) ) + "  " +
+               TextFormat( "%d x %d", WindowSizes[s.m_size][0], WindowSizes[s.m_size][1] );
+    case RowE::VSYNC: return pick( "menu.vsync", s.m_vsync ? "on" : "off" );
+    case RowE::FPS:
+        return std::string( tr( "menu.fps" ) ) + "  " +
+               ( FpsSteps[s.m_fps] ? std::to_string( FpsSteps[s.m_fps] ) : std::string( tr( "fps.free" ) ) );
+    case RowE::HUD:
+        return std::string( tr( "menu.hud" ) ) + "  " + std::to_string( (int)( HudSteps[s.m_hud] * 100 ) ) + " %";
     default: return tr( "menu.back" );
     }
+}
+
+/** @return the name of the place a save is at (its level's "name" key, read from the file) */
+std::string placeName( const std::string &level )
+{
+    char *text = LoadFileText( ( assetsDir() + "/levels/" + level ).c_str() );
+    if ( !text ) return level;
+    std::stringstream in( text );
+    UnloadFileText( text );
+    std::string line;
+    while ( std::getline( in, line ) )
+        if ( line.compare( 0, 5, "name " ) == 0 )
+        {
+            std::string key = line.substr( 5 );
+            key.erase( 0, key.find_first_not_of( " \t" ) );
+            while ( !key.empty() && ( key.back() == '\r' || key.back() == ' ' ) ) key.pop_back();
+            return tr( key );
+        }
+    return level;
+}
+
+/**
+ * @brief A slot as it reads in the list: who, how far, where, when; or that it is free.
+ * @param[in] slot  1 .. Slots
+ * @param[out] used whether there is a save
+ * @return the line
+ */
+std::string slotLine( int slot, bool &used )
+{
+    Progress p;
+    used = loadProgress( p, slotPath( slot ) );
+    if ( !used ) return TextFormat( "%d   %s", slot, tr( "slot.empty" ) );
+    long long when = 0;
+    if ( FILE *f = fopen( slotPath( slot ).c_str(), "r" ) )
+    {
+        char line[1024];
+        while ( fgets( line, sizeof( line ), f ) )
+            if ( sscanf( line, "when %lld", &when ) == 1 ) break;
+        fclose( f );
+    }
+    char   stamp[32] = "";
+    time_t t = (time_t)when;
+    if ( when > 0 ) strftime( stamp, sizeof( stamp ), "%d.%m. %H:%M", localtime( &t ) );
+    std::string line = TextFormat( tr( "slot.line" ), slot, tr( std::string( "hero." ) + heroKey( p.m_hero ) ),
+                                   p.m_heroLevel, placeName( p.m_level ).c_str() );
+    return when > 0 ? line + "  ·  " + stamp : line;
 }
 
 /** @brief The rows' texts. */
@@ -867,6 +999,7 @@ int runGame( const Options &o, Gfx &gfx )
 {
     bool     sound = ( !o.m_mute && o.m_shot.empty() ) || o.m_silent;
     Settings settings = loadSettings();
+    g_slot = settings.m_slot;
     for ( const std::string &line : o.m_binds ) readBinding( line );
     if ( !o.m_playLog.empty() ) playlog::open( o.m_playLog );
     // The journal (awards, the codex) only for a player: tests count in memory and keep nothing.
@@ -899,12 +1032,18 @@ int runGame( const Options &o, Gfx &gfx )
     game->m_heroKind = hero;
     if ( o.m_heroLevel > 1 ) progress.m_heroLevel = o.m_heroLevel, progress.m_points = o.m_heroLevel;
     progress.m_cycle = o.m_cycle;
+    if ( o.m_tier > 0 ) progress.m_depthTier = o.m_tier, progress.m_depthBest = o.m_tier - 1;
     if ( !o.m_loadFile.empty() && loadProgress( progress, o.m_loadFile ) )
         level = progress.m_level, hero = progress.m_hero, game->m_heroKind = hero;
     if ( o.m_colours >= 0 ) settings.m_colours = o.m_colours;
     if ( o.m_lootFilter >= 0 ) settings.m_loot = o.m_lootFilter;
     game->m_progress = progress;
     game->m_genSeed = o.m_seed;
+    if ( o.m_crash )
+    {
+        volatile int *nowhere = nullptr;
+        *nowhere = 1;   // the crash report's test
+    }
     if ( !game->load( gfx, assetsDir(), level, sound ) )
     {
         TraceLog( LOG_ERROR, "LEVEL: %s not found", level.c_str() );
@@ -931,6 +1070,8 @@ int runGame( const Options &o, Gfx &gfx )
         game->m_subtitleScale = settings.m_subtitles == 0 ? 0.8f : ( settings.m_subtitles == 2 ? 1.3f : 1.0f );
         game->m_shakeScale = settings.m_shake * 0.5f;
         game->m_lootFilter = settings.m_loot;
+        game->m_hudScale = HudSteps[settings.m_hud];
+        game->m_minimap = settings.m_minimap != 0;
         gfx.m_colourVision = settings.m_colours;
         // The shared stash: only for real play (tests keep theirs in memory).
         if ( o.m_shot.empty() && !o.m_autoplay && game->m_stashPath.empty() )
@@ -950,6 +1091,54 @@ int runGame( const Options &o, Gfx &gfx )
     if ( !o.m_film.empty() ) game->startFilm( o.m_film );
     auto draw = [&]( const RenderTexture2D *rt ) { game->render( gfx, rt ); };
 
+    if ( !o.m_shot.empty() && o.m_campaign )
+    {
+        // The campaign test: the story's fighting places in order from --level on, the autopilot playing each for at
+        // most --warm seconds; in between a player's ways (better gear on, the rest salvaged, stims and the
+        // workshop); a CAMPAIGN line per place in the log.
+        const char *const Path[] = { "gute_hoffnung.txt", "kuehlgedaerme.txt",  "knochenmarkt.txt", "aussenhaut.txt",
+                                     "ertrunken.txt",     "kernbank.txt",       "seren.txt",        "hesper.txt",
+                                     "halden.txt",        "arche.txt",          "tesh.txt",         "kael.txt",
+                                     "wanderer.txt",      "kuehltransport.txt", "anhoerung.txt",    "sterbegaerten.txt",
+                                     "werft.txt",         "rechenmond.txt",     "verlies.txt",      "velm2.txt",
+                                     "brannt.txt",        "erzstrom.txt",       "muehle.txt",       "leitwerk.txt",
+                                     "netz.txt" };
+        const int         count = (int)( sizeof( Path ) / sizeof( Path[0] ) );
+        int               first = 0;
+        for ( int k = 0; k < count; ++k )
+            if ( level == Path[k] ) first = k;
+        Progress carried = game->progress();
+        carried.m_hasSpot = false;
+        for ( int k = first; k < count; ++k )
+        {
+            if ( k > first )
+            {
+                game->shutdown();
+                game = std::make_unique<Game>();
+                game->m_heroKind = hero;
+                carried.m_level = Path[k];
+                game->m_progress = carried;
+                if ( !game->load( gfx, assetsDir(), Path[k], sound ) ) break;
+                apply();
+            }
+            game->m_autoplay = true;
+            game->campaignPrep();
+            const float dt = 1.0f / 60.0f;
+            for ( int i = 0; i < (int)( o.m_warm * 60.0f ) && !game->finished(); ++i )
+            {
+                GameInput in;
+                game->update( dt, in );
+                game->takeStings();
+            }
+            TraceLog( LOG_WARNING, "CAMPAIGN: %s", game->campaignLine().c_str() );
+            carried = game->progress();
+            carried.m_hasSpot = false;
+            carried.m_fired.clear();
+        }
+        game->shutdown();
+        score.shutdown();
+        return 0;
+    }
     if ( !o.m_shot.empty() )
     {
         const float dt = 1.0f / 60.0f;
@@ -990,6 +1179,22 @@ int runGame( const Options &o, Gfx &gfx )
                              game->render( gfx, rt );
                              BeginTextureMode( *rt );
                              game->drawPanel( rt->texture.width, rt->texture.height, o.m_panel, 0 );
+                             EndTextureMode();
+                         } );
+        else if ( o.m_slots )
+            savePicture( gfx, o.m_shot,
+                         [&]( const RenderTexture2D *rt )
+                         {
+                             game->render( gfx, rt );
+                             BeginTextureMode( *rt );
+                             std::vector<std::string> items;
+                             for ( int i = 1; i <= Slots; ++i )
+                             {
+                                 bool used = false;
+                                 items.push_back( slotLine( i, used ) );
+                             }
+                             items.push_back( tr( "menu.back" ) );
+                             drawMenu( game->font(), "DARK CONCORDANCE", tr( "menu.slots.load" ), items, 0 );
                              EndTextureMode();
                          } );
         else if ( o.m_controls )
@@ -1035,13 +1240,49 @@ int runGame( const Options &o, Gfx &gfx )
         PANEL,
         OPTIONS,
         CONTROLS,
-        PHOTO
+        PHOTO,
+        SLOTS,
+        SCREEN
     } mode = o.m_autoplay ? PLAY : TITLE;
-    bool        photoHelp = true;      ///< the photo mode's help shows
-    float       photoToast = 0.0f;     ///< a picture was saved: how long it is still said
-    std::string photoSaved;            ///< where
-    bool        waiting = false;       ///< the controls' page waits for a key or button
-    auto        optionsFrom = TITLE;   // where the options go back to
+    auto menuOf = [&]() { return mode == SCREEN ? 3 : mode == OPTIONS ? 2 : ( mode == TITLE ? 0 : 1 ); };
+    // The window as the settings have it (not for pictures, nor on a Deck): borderless over the screen or a window
+    // of a size, the wait for the screen or a cap on the frames; the renderer's targets follow.
+    auto applyDisplay = [&]()
+    {
+        if ( !o.m_shot.empty() ) return;
+        bool borderless = IsWindowState( FLAG_BORDERLESS_WINDOWED_MODE );
+        if ( settings.m_display == 1 && !borderless ) ToggleBorderlessWindowed();
+        if ( settings.m_display == 0 && !steamDeck() )
+        {
+            if ( borderless ) ToggleBorderlessWindowed();
+            int monitor = GetCurrentMonitor();
+            int w = WindowSizes[settings.m_size][0], h = WindowSizes[settings.m_size][1];
+            SetWindowSize( w, h );
+            SetWindowPosition( std::max( 0, ( GetMonitorWidth( monitor ) - w ) / 2 ),
+                               std::max( 0, ( GetMonitorHeight( monitor ) - h ) / 2 ) );
+        }
+        if ( settings.m_vsync )
+            SetWindowState( FLAG_VSYNC_HINT );
+        else
+            ClearWindowState( FLAG_VSYNC_HINT );
+        SetTargetFPS( settings.m_vsync ? 0 : FpsSteps[settings.m_fps] );
+        gfx.resize( GetScreenWidth(), GetScreenHeight() );
+    };
+    applyDisplay();
+    bool slotNew = false;   ///< the slots' list: for a new game (else to load one)
+    int  armed = -1;        ///< a used slot chosen for a new game once: confirmed again, it is overwritten
+    auto anySave = [&]()
+    {
+        bool used = false;
+        for ( int i = 1; i <= Slots && !used; ++i ) slotLine( i, used );
+        return o.m_shot.empty() && used;
+    };
+    bool        photoHelp = true;                                    ///< the photo mode's help shows
+    float       photoToast = 0.0f;                                   ///< a picture was saved: how long it is still said
+    std::string photoSaved;                                          ///< where
+    bool        waiting = false;                                     ///< the controls' page waits for a key or button
+    std::string crashed = o.m_shot.empty() ? crash::unseen() : "";   ///< a report from the time before
+    auto        optionsFrom = TITLE;                                 // where the options go back to
     int         chosen = 0;
     int         panelTab = 0, panelRow = 0;   ///< the inventory, character and map pages: which, and the chosen row
     bool        quit = false;
@@ -1061,6 +1302,12 @@ int runGame( const Options &o, Gfx &gfx )
     };
     while ( !WindowShouldClose() && !quit )
     {
+        // The pad's motors while it is played (still in the menus, the inventory, the photo mode).
+        {
+            float low = 0.0f, high = 0.0f, strength = settings.m_rumble * 0.5f;
+            if ( mode == PLAY && strength > 0.0f && IsGamepadAvailable( 0 ) ) game->rumbleNow( low, high );
+            rumble::set( low * strength, high * strength );
+        }
         // The buttons in the texts follow the device last used.
         updateBindings();
         if ( noteInput() ) game->refreshFont();
@@ -1163,8 +1410,8 @@ int runGame( const Options &o, Gfx &gfx )
             }
             if ( k.m_back )
             {
-                mode = TITLE;
-                chosen = 0;
+                mode = SLOTS;
+                chosen = g_slot - 1;
             }
             lastMouse = GetMousePosition();
         }
@@ -1225,6 +1472,45 @@ int runGame( const Options &o, Gfx &gfx )
                 mode = PLAY;
             }
         }
+        else if ( mode == SLOTS )
+        {
+            // The four saves and back. A new game in a free one at once, in a used one on a second confirm.
+            MenuKeys k = menuKeys( dt );
+            int      count = Slots + 1;
+            int      before = chosen;
+            chosen = ( chosen + k.m_move + count ) % count;
+            if ( chosen != before ) armed = -1;
+            if ( k.m_confirm && chosen == Slots )
+                k.m_back = true;
+            else if ( k.m_confirm )
+            {
+                bool used = false;
+                slotLine( chosen + 1, used );
+                if ( slotNew && ( !used || armed == chosen ) )
+                {
+                    g_slot = settings.m_slot = chosen + 1;
+                    saveSettings( settings );
+                    mode = CHOOSE;
+                    chosen = hero == HeroE::DORRA ? 0 : ( hero == HeroE::IONE ? 2 : 1 );
+                }
+                else if ( slotNew )
+                    armed = chosen;
+                else if ( used )
+                {
+                    g_slot = settings.m_slot = chosen + 1;
+                    saveSettings( settings );
+                    loadProgress( saved );
+                    hasSave = true;
+                    progress = saved;
+                    hero = saved.m_hero;
+                    level = saved.m_level;
+                    restart();
+                    mode = PLAY;
+                }
+            }
+            if ( k.m_back ) mode = TITLE, chosen = 0;
+            lastMouse = GetMousePosition();
+        }
         else if ( mode == CONTROLS )
         {
             // A row chosen and confirmed waits for the key or the button (Esc or Start: as it was).
@@ -1270,7 +1556,7 @@ int runGame( const Options &o, Gfx &gfx )
             // The title, the pause and the options: a list of rows; settings change left and right (or with A).
             MenuKeys          k = menuKeys( dt );
             bool              plus = hasSave && saved.m_flags.count( "gamedone" );
-            std::vector<RowE> rows = menuRows( mode == OPTIONS ? 2 : ( mode == TITLE ? 0 : 1 ), hasSave, plus );
+            std::vector<RowE> rows = menuRows( menuOf(), hasSave, plus, mode == TITLE && anySave() );
             int               count = (int)rows.size();
             chosen = ( chosen % count + k.m_move + count ) % count;
             RowE row = rows[chosen];
@@ -1328,6 +1614,39 @@ int runGame( const Options &o, Gfx &gfx )
             case RowE::LOOT:
                 if ( step ) cycle( settings.m_loot, 3 );
                 break;
+            case RowE::WINDOW:
+                if ( step ) cycle( settings.m_display, 2 ), applyDisplay();
+                break;
+            case RowE::SIZE:
+                if ( step )
+                {
+                    // Only sizes the screen holds.
+                    int monitor = GetCurrentMonitor();
+                    for ( int i = 0; i < 5; ++i )
+                    {
+                        cycle( settings.m_size, 5 );
+                        if ( WindowSizes[settings.m_size][0] <= GetMonitorWidth( monitor ) &&
+                             WindowSizes[settings.m_size][1] <= GetMonitorHeight( monitor ) )
+                            break;
+                    }
+                    applyDisplay();
+                }
+                break;
+            case RowE::VSYNC:
+                if ( step ) cycle( settings.m_vsync, 2 ), applyDisplay();
+                break;
+            case RowE::FPS:
+                if ( step ) cycle( settings.m_fps, 5 ), applyDisplay();
+                break;
+            case RowE::HUD:
+                if ( step ) cycle( settings.m_hud, 4 );
+                break;
+            case RowE::RUMBLE:
+                if ( step ) cycle( settings.m_rumble, 3 );
+                break;
+            case RowE::MINIMAP:
+                if ( step ) cycle( settings.m_minimap, 2 );
+                break;
             default: changed = false; break;
             }
             if ( changed && step )
@@ -1365,20 +1684,38 @@ int runGame( const Options &o, Gfx &gfx )
                     restart();
                     mode = PLAY;
                 }
-                else if ( row == RowE::START && o.m_hero.empty() )
-                    mode = CHOOSE, chosen = hero == HeroE::DORRA ? 0 : ( hero == HeroE::IONE ? 2 : 1 );
+                else if ( ( row == RowE::START || row == RowE::LOAD ) && o.m_hero.empty() )
+                {
+                    // Which slot: for a new game the first free one is offered, to load the one played last.
+                    slotNew = row == RowE::START;
+                    mode = SLOTS;
+                    armed = -1;
+                    chosen = g_slot - 1;
+                    bool used = false;
+                    if ( slotNew )
+                        for ( int i = 1; i <= Slots; ++i )
+                            if ( slotLine( i, used ), !used )
+                            {
+                                chosen = i - 1;
+                                break;
+                            }
+                }
                 else if ( row == RowE::START || row == RowE::RESUME )
                     mode = PLAY;
                 else if ( row == RowE::OPTIONS )
                     optionsFrom = mode, mode = OPTIONS, chosen = 0;
                 else if ( row == RowE::CONTROLS )
                     mode = CONTROLS, chosen = 0, waiting = false;
+                else if ( row == RowE::DISPLAY )
+                    mode = SCREEN, chosen = 0;
                 else if ( row == RowE::PHOTO )
                 {
                     game->startPhoto();
                     mode = PHOTO;
                     lastMouse = GetMousePosition();
                 }
+                else if ( row == RowE::BACK && mode == SCREEN )
+                    mode = OPTIONS, chosen = 3;
                 else if ( row == RowE::BACK )
                     mode = optionsFrom, chosen = 1;
                 else if ( row == RowE::RESTART )
@@ -1392,7 +1729,9 @@ int runGame( const Options &o, Gfx &gfx )
                 else if ( row == RowE::QUIT )
                     quit = true;
             }
-            if ( k.m_back && mode == OPTIONS )
+            if ( k.m_back && mode == SCREEN )
+                mode = OPTIONS, chosen = 3;
+            else if ( k.m_back && mode == OPTIONS )
                 mode = optionsFrom, chosen = 1;
             else if ( k.m_back && mode == PAUSE )
                 mode = PLAY;
@@ -1418,6 +1757,20 @@ int runGame( const Options &o, Gfx &gfx )
         }
         else if ( mode == CONTROLS )
             drawControls( game->font(), chosen, waiting );
+        else if ( mode == SLOTS )
+        {
+            std::vector<std::string> items;
+            for ( int i = 1; i <= Slots; ++i )
+            {
+                bool        used = false;
+                std::string line = slotLine( i, used );
+                if ( slotNew && used && armed == i - 1 ) line = TextFormat( tr( "slot.overwrite" ), i );
+                items.push_back( line );
+            }
+            items.push_back( tr( "menu.back" ) );
+            drawMenu( game->font(), "DARK CONCORDANCE", tr( slotNew ? "menu.slots.new" : "menu.slots.load" ), items,
+                      chosen );
+        }
         else if ( mode == PHOTO )
         {
             // Its help at the bottom (the picture saved is taken without it), what was saved.
@@ -1438,15 +1791,25 @@ int runGame( const Options &o, Gfx &gfx )
         {
             bool              plus = hasSave && saved.m_flags.count( "gamedone" );
             std::string       subtitle = mode == TITLE     ? game->title()
+                                         : mode == SCREEN  ? std::string( tr( "menu.display" ) )
                                          : mode == OPTIONS ? std::string( tr( "menu.options" ) )
                                                            : std::string( difficultyName( settings.m_difficulty ) );
-            std::vector<RowE> rows = menuRows( mode == OPTIONS ? 2 : ( mode == TITLE ? 0 : 1 ), hasSave, plus );
+            std::vector<RowE> rows = menuRows( menuOf(), hasSave, plus, mode == TITLE && anySave() );
             drawMenu( game->font(), mode == PAUSE ? tr( "menu.pause" ) : "DARK CONCORDANCE", subtitle.c_str(),
                       rowTexts( rows, settings, saved.m_cycle ), chosen % (int)rows.size() );
+            if ( mode == TITLE && !crashed.empty() )
+            {
+                const char *t = TextFormat( tr( "crash.before" ), crashed.c_str() );
+                float       s = GetScreenHeight() / 1080.0f;
+                Vector2     m = MeasureTextEx( game->font(), t, 20 * s, 1.0f );
+                DrawTextEx( game->font(), t, { GetScreenWidth() * 0.5f - m.x * 0.5f, GetScreenHeight() - 110 * s },
+                            20 * s, 1.0f, { 255, 170, 120, 220 } );
+            }
         }
         if ( showFps ) DrawFPS( 10, 10 );
         EndDrawing();
     }
+    rumble::stop();
     game->shutdown();
     score.shutdown();
     if ( IsAudioDeviceReady() ) CloseAudioDevice();
@@ -1460,6 +1823,7 @@ int main( int argc, char **argv )
     Options     o = parse( argc, argv );
     std::string logPath = std::string( GetApplicationDirectory() ) + "spaceopera.log";
     g_log = fopen( logPath.c_str(), "w" );
+    crash::install( userDir() + "crashes/", logPath );
     SetTraceLogCallback( logToFile );
     SetTraceLogLevel( LOG_WARNING );
 

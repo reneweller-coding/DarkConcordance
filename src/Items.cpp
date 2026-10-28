@@ -524,6 +524,83 @@ Item makeItem( int level, int hero, unsigned &seed, float luck, int slot )
     return it;
 }
 
+namespace
+{
+
+/** @brief An affix of a stat at an item's level, as makeItem rolls it. */
+Affix rollAffix( StatE s, const Item &it, unsigned &seed )
+{
+    const Range &g = Ranges[(int)s];
+    float        v =
+        Lerp( g.m_lo, g.m_hi, Clamp( ( it.m_level - 1 ) / 29.0f, 0.0f, 1.0f ) ) * ( 0.65f + 0.35f * roll( seed ) );
+    if ( it.m_rarity == RarityE::RARE ) v *= 1.15f;
+    if ( s == StatE::SKILLS ) v = 1.0f;
+    return { s, s == StatE::REGEN ? roundf( v * 10.0f ) / 10.0f : roundf( v ) };
+}
+
+/** @return the stats an item may still take (what fits its slot and hero, not yet on it; a rank on every skill only
+ *          from level 12) */
+std::vector<StatE> freeStats( const Item &it, int hero )
+{
+    std::vector<StatE> pool;
+    for ( StatE s : allowed( Bases[it.m_base].m_slot, Bases[it.m_base].m_hero >= 0 ? Bases[it.m_base].m_hero : hero ) )
+    {
+        bool taken = s == StatE::SKILLS && it.m_level < 12;
+        for ( const Affix &a : it.m_affixes ) taken = taken || a.m_stat == s;
+        if ( !taken ) pool.push_back( s );
+    }
+    return pool;
+}
+
+}   // namespace
+
+int craftPrice( const Item &it, bool upgrade )
+{
+    if ( it.m_rarity == RarityE::UNIQUE || it.m_rarity == RarityE::SET || Bases[it.m_base].m_slot == SlotE::MODULE )
+        return 0;
+    if ( upgrade )
+        return it.m_rarity == RarityE::COMMON  ? 60 + 8 * it.m_level
+               : it.m_rarity == RarityE::MAGIC ? 180 + 16 * it.m_level
+                                               : 0;
+    if ( it.m_affixes.empty() ) return 0;
+    return ( it.m_rarity == RarityE::RARE ? 70 : 40 ) + ( it.m_rarity == RarityE::RARE ? 9 : 6 ) * it.m_level;
+}
+
+bool craftItem( Item &it, int hero, unsigned &seed, bool upgrade )
+{
+    if ( craftPrice( it, upgrade ) <= 0 ) return false;
+    std::vector<StatE> pool = freeStats( it, hero );
+    if ( !upgrade )
+    {
+        // One affix (by chance) becomes another stat, rolled at the item's level.
+        if ( pool.empty() ) return false;
+        size_t at = (size_t)( roll( seed ) * it.m_affixes.size() ) % it.m_affixes.size();
+        StatE  s = pool[(size_t)( roll( seed ) * pool.size() ) % pool.size()];
+        it.m_affixes[at] = rollAffix( s, it, seed );
+        return true;
+    }
+    // Better: common to magic gains an affix; magic to rare gains a name, its affixes a sixth more, up to three.
+    if ( it.m_rarity == RarityE::COMMON )
+    {
+        if ( pool.empty() ) return false;
+        it.m_rarity = RarityE::MAGIC;
+        it.m_affixes.push_back( rollAffix( pool[(size_t)( roll( seed ) * pool.size() ) % pool.size()], it, seed ) );
+        return true;
+    }
+    it.m_rarity = RarityE::RARE;
+    it.m_name = (int)( roll( seed ) * RareNames ) % RareNames;
+    for ( Affix &a : it.m_affixes )
+        if ( a.m_stat != StatE::SKILLS )
+            a.m_value = a.m_stat == StatE::REGEN ? roundf( a.m_value * 11.5f ) / 10.0f : roundf( a.m_value * 1.15f );
+    while ( it.m_affixes.size() < 3 && !pool.empty() )
+    {
+        size_t k = (size_t)( roll( seed ) * pool.size() ) % pool.size();
+        it.m_affixes.push_back( rollAffix( pool[k], it, seed ) );
+        pool.erase( pool.begin() + (long)k );
+    }
+    return true;
+}
+
 Item makeModule( int level, unsigned &seed )
 {
     // A kind, and its worth by the level: half an affix's.

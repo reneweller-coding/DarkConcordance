@@ -427,6 +427,7 @@ public:
     std::string             m_name;              ///< key of the name shown at the start
     std::string             m_act;               ///< key of the act's name
     std::vector<int>        m_anomalies;         ///< a generated place's anomalies this time (anomalyDefs())
+    int                     m_anomalyMin = 0;    ///< at least so many (the Depths' tier; set before load)
     float                   m_gravity = 9.81f;   ///< m/s²
     Vector4                 m_fog = { 0.01f, 0.05f, 0.5f, 1.0f };                   ///< fog as in Lighting
     Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };                ///< the fog's own glow

@@ -293,6 +293,20 @@ Still to come, by first use:
    the hubs' people (shader patterns and garments on the bones, outfits by what they do); a locker shared by every
    game; a loot filter; every action's key and pad button bound freely; one to three anomalies per visit to the
    Depths with better finds; enemies that flank, wait for the others and take cover; a photo mode.
+8. Lengths and the third list — done (28.10.2026): every level measured (floor, foes at the start, the route) against
+   the autopilot's times; the outliers brought in (Velm in Act IV: at most eight squads; Brannt 15 rooms, 6 side ones;
+   the Sterbegärten 16 and 6; Seren a little thinner; level 1 a condensate cavern and a pump gallery). Against
+   *Dark Alliance*'s figures (300-600 m of way and 80-150 foes a level, 10-20 minutes, 9-12 hours) the routes
+   (380-690 m) and the foes (60-130 at the start) match; the levels are longer, as wanted for ~15 hours. Then four
+   saves, the display's options (window or borderless, sizes, vertical sync, frame cap, HUD size), the pad's
+   vibration, a minimap, Kiri rerolling and bettering items, ten tiers of the Depths, crash reports, the play log's
+   report page and the campaign test (the main path in one go). What the campaign test found: the gallery first
+   beside the north-east room stalled Dorra's fight at the press (moved to the cavern); Hesper's generator read past
+   the map's edge for the balloon guards on some seeds (a crash, now two cells from the edge); Velm's cutting platform
+   held Corvin some 800 s and Ione over 1,200 s (its parts 55 % weaker, Ione's swarm 1.6 times on a machine's parts:
+   Corvin 727 s for the whole level now, Ione still about 1,400 s). Open, the user's to decide: the heroes outgrow the places (hero
+   level about the area +5 at the end of Act I, +5 to +9 later; the autopilot died once or never in 25 places), and
+   scrap piles up (14,000-34,000 at the end) with little to spend it on.
 
 ## Open decisions (the user's)
 

@@ -6,6 +6,7 @@
  * @author Rene Weller
  */
 #include "Game.h"
+#include "PlayLog.h"
 #include "GameShared.h"
 
 #include "MeshBuilder.h"
@@ -481,6 +482,23 @@ void Game::buy( int item )
         ++m_progress.m_armor;
         m_hp = fminf( hpMax(), m_hp + 20.0f );
     }
+    // An affix rolled anew or the item made better, on the worn item chosen.
+    if ( m_menu == 2 && ( item == 4 || item == 5 ) && m_progress.m_worn[m_craftSlot] )
+    {
+        Item    &it = m_progress.m_gear[m_craftSlot];
+        bool     upgrade = item == 5;
+        int      price = craftPrice( it, upgrade );
+        unsigned seed = (unsigned)m_progress.m_seed;
+        Item     made = it;
+        if ( price > 0 && m_scrap >= price && craftItem( made, heroIndex(), seed, upgrade ) && pay( price ) )
+        {
+            it = made;
+            m_progress.m_seed = (int)( seed & 0x7fffffff );
+            playlog::line( "craft %s %s", upgrade ? "better" : "reroll", itemName( it ).c_str() );
+            refreshStats();
+            dressHero();
+        }
+    }
     // A socket drilled into the weapon or the suit (as many as the kind can take).
     if ( m_menu == 2 && ( item == 2 || item == 3 ) )
     {
@@ -490,6 +508,46 @@ void Game::buy( int item )
              it.m_rarity != RarityE::SET && pay( SocketPrice[it.m_sockets] ) )
             ++it.m_sockets;
     }
+}
+
+void Game::campaignPrep()
+{
+    // Better is what is worth more (Items' worth weighs level, rarity and affixes).
+    for ( bool again = true; again; )
+    {
+        again = false;
+        for ( int i = 0; i < (int)m_progress.m_bag.size() && !again; ++i )
+        {
+            const Item     &it = m_progress.m_bag[i];
+            const ItemBase &b = itemBases()[it.m_base];
+            int             slot = gearIndex( it );
+            if ( slot < 0 || ( b.m_hero >= 0 && b.m_hero != heroIndex() ) ) continue;
+            if ( !m_progress.m_worn[slot] || itemValue( it ) > itemValue( m_progress.m_gear[slot] ) )
+                equip( i ), again = true;
+        }
+    }
+    while ( !m_progress.m_bag.empty() ) salvage( (int)m_progress.m_bag.size() - 1 );
+    int menu = m_menu;
+    for ( int k = 0; k < 3; ++k )
+    {
+        m_menu = 2;
+        buy( 0 );
+        buy( 1 );
+    }
+    m_menu = 1;
+    for ( int k = 0; k < 8; ++k ) buy( 0 );
+    m_menu = menu;
+}
+
+std::string Game::campaignLine() const
+{
+    int worth = 0;
+    for ( int i = 0; i < EquipSlots; ++i ) worth += m_progress.m_worn[i] ? itemValue( m_progress.m_gear[i] ) : 0;
+    return TextFormat( "%s hero=%s herolevel=%d area=%d finished=%d time=%.0f deaths=%d kills=%d scrap=%d stims=%d "
+                       "gear=%d workshop=%d/%d",
+                       m_levelFile.c_str(), heroKey( m_heroKind ), m_progress.m_heroLevel, m_level.m_area,
+                       m_finished ? 1 : 0, m_time, m_deaths, m_kills, m_scrap, m_stims, worth, m_progress.m_weapon,
+                       m_progress.m_armor );
 }
 
 Vector3 Game::strollTo( const Person &q )
@@ -615,11 +673,30 @@ bool Game::updateHub( float dt, GameInput &in )
     if ( fabsf( m_rawMove.y ) > 0.5f && fabsf( m_navY ) <= 0.5f ) step = m_rawMove.y > 0.0f ? 1 : -1;
     if ( m_rawNav ) step = m_rawNav;
     m_navY = m_rawMove.y;
+    int side = 0;
+    if ( fabsf( m_rawMove.x ) > 0.5f && fabsf( m_navX ) <= 0.5f ) side = m_rawMove.x > 0.0f ? 1 : -1;
+    m_navX = m_rawMove.x;
     bool ok = in.m_jump || in.m_confirm || in.m_use;
     if ( m_menu )
     {
-        int count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 5 );
+        int count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 7 );
         m_menuChoice = ( m_menuChoice + step + count ) % count;
+        // At the lift, left and right choose the Depths' tier (up to one past the deepest done).
+        if ( m_menu == 3 && side != 0 && m_menuChoice < (int)m_liftChoices.size() &&
+             m_liftChoices[m_menuChoice] == "tiefen.txt" )
+            m_progress.m_depthTier =
+                std::clamp( m_progress.m_depthTier + side, 1, std::min( 10, m_progress.m_depthBest + 1 ) );
+        // In the workshop, left and right pick the worn item Kiri works on.
+        if ( m_menu == 2 && side != 0 )
+            for ( int k = 1; k <= EquipSlots; ++k )
+            {
+                int slot = ( m_craftSlot + side * k + EquipSlots * 2 ) % EquipSlots;
+                if ( m_progress.m_worn[slot] )
+                {
+                    m_craftSlot = slot;
+                    break;
+                }
+            }
         if ( ok && m_menuChoice == count - 1 )
             m_menu = 0;
         else if ( ok && m_menu == 3 )
@@ -884,7 +961,7 @@ void Game::drawHubHud( int w, int h, float s )
     {
         // Ottla's stims or Kiri's workshop: a panel in the middle, the scrap in hand, the items with their prices.
         float pw = 1000.0f * s, x0 = w * 0.5f - pw * 0.5f, y0 = h * 0.25f;
-        int   count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 5 );
+        int   count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 7 );
         float ph = ( 130.0f + 52.0f * count ) * s;
         DrawRectangle( (int)x0, (int)y0, (int)pw, (int)ph, { 8, 10, 12, 230 } );
         DrawRectangleLinesEx( { x0, y0, pw, ph }, 2.0f * s, { 255, 190, 120, 140 } );
@@ -900,12 +977,30 @@ void Game::drawHubHud( int w, int h, float s )
             std::string label, price;
             if ( i == count - 1 )
                 label = tr( "shop.back" );
+            else if ( m_menu == 3 && m_liftChoices[i] == "tiefen.txt" )
+                label = TextFormat( tr( "dest.tiers" ), std::clamp( m_progress.m_depthTier, 1, 10 ),
+                                    std::min( 10, m_progress.m_depthBest + 1 ) );
             else if ( m_menu == 3 )
                 label = tr( ( "dest." + m_liftChoices[i].substr( 0, m_liftChoices[i].find( '.' ) ) ).c_str() );
             else if ( m_menu == 1 )
             {
                 label = TextFormat( "%s  (%d/%d)", tr( "shop.stim" ), m_stims, maxStims() );
                 price = TextFormat( tr( "shop.price" ), StimPrice );
+            }
+            else if ( i >= 4 )
+            {
+                // An affix anew or the item better: the worn item chosen with left and right, what it costs.
+                bool        worn = m_progress.m_worn[m_craftSlot];
+                const Item &it = m_progress.m_gear[m_craftSlot];
+                bool        upgrade = i == 5;
+                int         cost = worn ? craftPrice( it, upgrade ) : 0;
+                label = TextFormat( tr( upgrade ? "workshop.better" : "workshop.reroll" ),
+                                    tr( TextFormat( "slot.%d", m_craftSlot ) ), worn ? itemName( it ).c_str() : "-" );
+                bool fixed = worn && ( it.m_rarity == RarityE::UNIQUE || it.m_rarity == RarityE::SET );
+                price = cost > 0                           ? TextFormat( tr( "shop.price" ), cost )
+                        : fixed                            ? tr( "workshop.fixed" )
+                        : !upgrade && it.m_affixes.empty() ? tr( "workshop.plain" )
+                                                           : tr( "workshop.max" );
             }
             else if ( i >= 2 )
             {

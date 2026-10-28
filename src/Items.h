@@ -199,6 +199,24 @@ Item taleItem( int hero, SlotE slot, int level );
 Item makeModule( int level, unsigned &seed );
 
 /**
+ * @brief Kiri's workshop: one of an item's affixes rolled anew (another stat), or the item made one rarity better
+ *        (common to magic: an affix; magic to rare: three, stronger, and a name). Not for uniques and set pieces.
+ * @param[in,out] it       the item
+ * @param[in]     hero     who it is for (the stats that fit)
+ * @param[in,out] seed     the random state
+ * @param[in]     upgrade  better (else an affix anew)
+ * @return whether anything was done
+ */
+bool craftItem( Item &it, int hero, unsigned &seed, bool upgrade );
+
+/**
+ * @param[in] it       the item
+ * @param[in] upgrade  making it better (else an affix anew)
+ * @return what Kiri asks for it in scrap (0: it cannot be done)
+ */
+int craftPrice( const Item &it, bool upgrade );
+
+/**
  * @brief A unique or a set's piece by its number (tests and pictures).
  * @param[in] n      its number from 1 ("u12" is unique.12)
  * @param[in] set    true for a set's piece

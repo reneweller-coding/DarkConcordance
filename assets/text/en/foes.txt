@@ -28,6 +28,7 @@ lift.title     = FREIGHT LIFT
 dest.kuehlgedaerme = The Cooling Guts
 dest.knochenmarkt  = The Marrow Market · farm drum
 dest.tiefen        = The Depths · maintenance levels (different every time)
+dest.tiers         = The Depths  ‹ tier %d ›   (open up to %d)
 
 # The places' creatures (three tiers per family), the twelve gifts, the leaders, kinds of damage.
 foe.crystal.0   = Crystal Warden

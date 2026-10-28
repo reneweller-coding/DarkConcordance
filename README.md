@@ -13,6 +13,9 @@ and are saved at each level's start („Fortsetzen“ in the title menu) in the 
 on Windows, `$XDG_DATA_HOME/SpaceOpera` or `~/.local/share/SpaceOpera` on Linux (the save, the settings, the journal,
 the stash and the play log; what lay beside the program before moves there once). Every file there is written whole
 or not at all (into a `.tmp`, then over the old one, which stays as `.bak` and is read if the file is broken).
+**Four saves:** „Neues Spiel“ asks where to save (the first free place is offered; a used one is overwritten only on a
+second confirm), „Spielstand laden“ lists them with hero, level, place and time; „Fortsetzen“ goes on with the one
+played last (the first is `save.txt`, the others `save2.txt` … `save4.txt`).
 
 **Steam Deck:** everything plays with the pad (the menus, the inventory, the conversations, the shops and the lift
 with the cross or the left stick, A to choose, B back). On the Deck (Steam sets `SteamDeck=1`) the window takes its
@@ -42,9 +45,18 @@ it for pictures.
 
 **Options** (the title's and the pause's menu): difficulty, brightness, graphics, music, voices, effects, language,
 the subtitles' size (small, normal, large), colour vision (red-green or blue-yellow: what the eye cannot tell apart is
-moved into colours it can, in the last pass), the camera's shake (off, half, full), the loot filter (keep everything;
-salvage common finds at once; common and magic ones – never what fills an empty slot, never a module) and the
-controls.
+moved into colours it can, in the last pass), the camera's shake (off, half, full), the pad's vibration (off, weak,
+strong), the loot filter (keep everything; salvage common finds at once; common and magic ones – never what fills an
+empty slot, never a module), the controls and the display: a window (1280x720 up to 3840x2160, only sizes the screen
+holds) or borderless over the whole screen, vertical sync on or off and then at most 30, 60, 120, 144 frames a second
+or no limit, the HUD's size (80 to 140 %) and the minimap. Long menus write smaller.
+
+**Vibration** (`src/Rumble.cpp`; raylib's desktop build has none): XInput on Windows (Xbox pads, the Steam Deck through
+Steam Input and Proton), evdev force feedback on Linux. The heavy motor goes with the camera's jolts (blasts, stomps),
+the light one with the hits the hero takes; still in menus, the inventory and the photo mode. Not tried on a pad yet.
+
+**Minimap:** the map's overlay round the hero (eleven cells each way, what has been seen, doors, lockers, people, the
+way out) in the HUD's top right corner; hidden while the big map, a conversation or a menu is open.
 
 **Controls** („Tastenbelegung“, `src/Bindings.cpp`): every action of play (the four ways to walk, fire, jump, the
 roll, the special, the two skills, the stim, use, keep facing, the map, the inventory, the character page, the
@@ -66,6 +78,13 @@ triggers); Enter or A saves the picture into `photos` in the player's folder, H 
 cycle, gear, the Depths' anomalies), where the hero is every ten seconds with health and the foes near, every death
 with its cause and who stood round, the boss fights, what was put on, salvaged and filtered, and at the end time,
 deaths, kills, scrap and the skills, rolls and stims used. Only real play writes it (`--playlog FILE` for tests).
+Each level's map goes beside it (`maps/<level>_<time>.txt`, the generated places differ every visit), and
+`python tools/playlog_report.py` turns log and maps into `playlog_report.html`: per level the time, the deaths per
+hour, their causes, who stood round; per visit the map with the way walked and a red cross where the hero died.
+
+**Crash reports** (`src/Crash.cpp`): a crash writes `crashes/crash_<time>.txt` in the player's folder (what was
+played, the game's log, the play log's last 48 lines, kept even when the log is not written) and on Windows a
+minidump beside it (`.dmp`, for a debugger), on Linux the call stack; the next start names it on the title.
 
 **Saving:** at the start of every level and at every rescue capsule that wakes (with what has happened in the level
 by then; the foes stand again, a boss too). „Fortsetzen“ goes on from there; „Neustart“ in the pause begins the level
@@ -129,7 +148,9 @@ so the hero goes without a helmet.
 - **Ysolde Varn**, who paid for the clinic: conversations with answers to choose, portraits beside the lines; she gives
   the first job (and 50 scrap down payment) and has new lines after level 1.
 - **Anand's Workshop** (Kiri): the hero's weapon (more damage, less heat; Dorra's bolts come back sooner) and armour
-  (+20 health) in three levels each, paid in scrap.
+  (+20 health) in three levels each, paid in scrap; sockets drilled; and on any worn item (left and right choose it)
+  an affix rolled anew as another stat, or the item made one rarity better (common to magic: an affix; magic to rare:
+  a name, the affixes a sixth stronger, up to three) – not on uniques and set pieces.
 - **HAUSMEISTER**, the station's voice at a terminal; the clinic; the freight lift to the axis, which opens once there
   is a job to go to.
 
@@ -159,7 +180,9 @@ flocks of birds wheel under the cavern's lights.
 
 **The Depths** ([assets/levels/tiefen.txt](assets/levels/tiefen.txt)): the maintenance levels under the drum, open
 from the hub's lift after level 1 and again and again, laid out anew on every visit, as strong as the hero, with a
-guardian champion before the lift. For experience and gear. Each visit brings one to three **anomalies**, named
+guardian champion before the lift. For experience and gear. **Tiers:** at the lift, left and right choose the tier
+(1 to 10; each one done opens the next): two areas deeper per tier, from the fourth at least two anomalies, from the
+seventh three, and a tenth better finds and more experience per tier. Each visit brings one to three **anomalies**, named
 under the place's name when it begins and on the character page: tough brood (more health), frenzy (quicker), outnumbered
 (more packs), champions (more of them), blackout (the light dimmed, the fog thicker), low gravity, the bursting dead
 (a short glow, then a blast that hurts the hero), thinned stims, merciless (harder blows), rich veins (twice the
@@ -455,8 +478,11 @@ her past is, she has lines of her own – on Kael above all, where the lance's c
 ## Level 1 „Die Kühlgedärme“
 
 Heat-exchanger tunnels near Velm's axis: little gravity, fog, rust-red emergency light. Corvin Aske with his Gauss rifle
-against rust lice and welder lice, across a cooling shaft, past the cold store with the empty bodies, to the drone
-press that builds new lice from scrap.
+against rust lice and welder lice: from the start through a condensate cavern (heat exchangers for cover, a raised
+shelf, droplet swarms, eleven lice and two welders; a pump gallery off its west side with more lice, scrap and a stim)
+up into the hall of exchangers, across a cooling shaft, past the cold store with the empty bodies, to the drone press
+that builds new lice from scrap. The cavern and the gallery came on 28.10.2026: the level had a third of level 2's floor
+and a quarter of its foes.
 
 - **Low gravity:** long jumps; every shot pushes Corvin back, on the ground a little, in the air a lot.
 - **Aiming:** the rifle takes the nearest target ahead (as in Brotherhood of Steel); on the gamepad that is all, since
@@ -580,6 +606,10 @@ sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the tr
 a generated level's layout, `--dumpgen FILE` writes the generated level file, `--herolevel n`, `--loot n` (items
 scattered round the hero) and `--xp n` set up a hero for tests, `--trace s` logs the run (and the music's piece and
 heat) every s seconds. `--silent` runs the sound (device, music, backgrounds) at volume 0, also with `--shot`;
+`--campaign` (with `--shot`, `--autoplay`, `--warm s` per place) plays the story's fighting places in order from
+`--level` on with what is gained carried on – between them better finds put on, the rest salvaged, stims and the
+workshop bought – and logs a `CAMPAIGN:` line per place (hero level, area, time, deaths, kills, scrap, the gear's
+worth); `--slots` shows the saves, `--tier n` the Depths' tier, `--crash` crashes on purpose (the report);
 `--playlog FILE` writes the play log there, `--lootfilter 0|1|2` sets the loot filter, `--stash n` puts the bag's
 first n items into the stash for the picture, `--bind "<name> <key> <pad>"` binds otherwise (as in the settings),
 `--controls` puts the controls' page over the picture, `--photo turn,tilt,zoom` takes it in the photo mode;

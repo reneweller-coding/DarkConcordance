@@ -4,6 +4,8 @@
  * @author Rene Weller
  */
 #include "Game.h"
+
+#include "Crash.h"
 #include "Glyphs.h"
 #include "GameShared.h"
 #include "Journal.h"
@@ -322,6 +324,8 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
 {
     m_assets = assets;
     m_levelFile = level;
+    crash::context( level + " hero " + heroKey( m_heroKind ) + " level " + std::to_string( m_progress.m_heroLevel ) +
+                    " cycle " + std::to_string( m_progress.m_cycle ) );
     // A generated level: the same seed builds the same layout (by default from the progress, so it differs per game).
     unsigned seed = m_genSeed;
     if ( seed == 0 )
@@ -329,11 +333,14 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
         seed = 2166136261u ^ (unsigned)m_progress.m_seed * 2654435761u;
         for ( char ch : level ) seed = ( seed ^ (unsigned char)ch ) * 16777619u;
     }
+    // The Depths' tier: from the fourth two anomalies at least, from the seventh three.
+    m_level.m_anomalyMin = level == "tiefen.txt" ? 1 + ( std::clamp( m_progress.m_depthTier, 1, 10 ) - 1 ) / 3 : 0;
     if ( !m_level.load( assets + "/levels/" + level, seed ) ) return false;
     loadTale();
     // "area 0": as deep as the hero is strong (the depths).
     if ( m_level.m_area <= 0 ) m_level.m_area = std::max( 2, ( m_progress.m_heroLevel + 4 ) / 2 );
-    m_level.m_area += 12 * m_progress.m_cycle;   // a new game+: every place that much further on
+    m_level.m_area += 12 * m_progress.m_cycle;                          // a new game+: every place that much further on
+    if ( depthTier() > 1 ) m_level.m_area += 2 * ( depthTier() - 1 );   // each tier of the Depths two areas deeper
     m_areaHit = 1.0f + 0.12f * ( m_level.m_area - 1 );
     applyAnomalies();
     loadSurfaces( gfx, assets );
@@ -1065,6 +1072,12 @@ bool Game::shielded( Vector3 from ) const
            ( d.x * sinf( m_yaw ) + d.z * cosf( m_yaw ) ) / len > ( m_heroKind == HeroE::IONE ? -0.1f : 0.35f );
 }
 
+void Game::rumbleNow( float &low, float &high ) const
+{
+    low = m_finished || m_photo ? 0.0f : Clamp( m_shake * 1.4f, 0.0f, 1.0f );
+    high = m_finished || m_photo ? 0.0f : Clamp( m_buzz, 0.0f, 1.0f );
+}
+
 void Game::hurtHero( float amount, Vector3 push, Vector3 from )
 {
     if ( m_dead || m_invuln > 0.0f || m_finished || m_liftGoing || m_scene > 0 ) return;
@@ -1103,6 +1116,7 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
                 hurtFoe( f, stat( StatE::THORNS ), len > 1e-3f ? Vector3Scale( d, 1.0f / len ) : Vector3{ 0, 0, 1 } );
         }
     m_sinceHurt = 0.0f;
+    m_buzz = fmaxf( m_buzz, Clamp( amount / 25.0f, 0.3f, 1.0f ) );
     m_hp -= amount;
     m_invuln = 0.45f;
     m_hurtFlash = 1.0f;
@@ -2708,6 +2722,7 @@ void Game::updateEffects( float dt )
         }
     }
     m_shake = fmaxf( 0.0f, m_shake - dt * 1.8f );
+    m_buzz = fmaxf( 0.0f, m_buzz - dt * 3.0f );
 }
 
 void Game::plan()
@@ -3818,7 +3833,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
 
 void Game::drawHud( int w, int h )
 {
-    float s = h / 1080.0f;
+    float s = h / 1080.0f * m_hudScale;
     auto  text = [&]( const char *t, float x, float y, float size, Color c, bool centre = false )
     {
         Vector2 m = MeasureTextEx( m_font, t, size * s, 1.0f );
@@ -4048,6 +4063,9 @@ void Game::drawHud( int w, int h )
     // The map over the game, when asked for.
     if ( m_showMap && !m_talk && !m_menu && m_reading.empty() && !m_finished )
         drawMap( { w * 0.16f, h * 0.1f, w * 0.68f, h * 0.72f }, 0.8f, s );
+    else if ( m_minimap && !m_talk && !m_menu && m_reading.empty() && !m_finished && m_intro <= 0.0f &&
+              !m_film.playing() )
+        drawMinimap( w, h, s );
     // The hub's people: the prompt, a conversation, Ottla's stims, Kiri's workshop; doors, lockers, terminals.
     drawHubHud( w, h, s );
     drawUseHud( w, h, s );
@@ -4139,8 +4157,16 @@ std::string Game::report() const
         m_vel.x, m_vel.y, m_vel.z, m_dash );
     // How the enemies fought together (foe-seconds): waiting, to cover, in cover, on a ledge, flanking.
     const int *t = m_tacticFrames;
-    return std::string( buf ) + TextFormat( " tactics=%d/%d/%d/%d/%d", t[1] / 60, t[2] / 60, t[3] / 60, t[4] / 60,
-                                            t[5] / 60 );
+    // The place's size: floor cells one can walk on, the route's length (m).
+    int cells = 0;
+    for ( int r = 0; r < m_level.rows(); ++r )
+        for ( int c = 0; c < m_level.cols(); ++c ) cells += m_level.walkable( r, c ) ? 1 : 0;
+    float route = 0.0f;
+    for ( size_t i = 1; i < m_level.m_route.size(); ++i )
+        route += CellSize * hypotf( (float)( m_level.m_route[i].first - m_level.m_route[i - 1].first ),
+                                    (float)( m_level.m_route[i].second - m_level.m_route[i - 1].second ) );
+    return std::string( buf ) + TextFormat( " tactics=%d/%d/%d/%d/%d cells=%d route=%.0f", t[1] / 60, t[2] / 60,
+                                            t[3] / 60, t[4] / 60, t[5] / 60, cells, route );
 }
 
 }   // namespace spaceopera

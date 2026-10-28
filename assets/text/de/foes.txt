@@ -33,6 +33,7 @@ lift.title     = LASTENAUFZUG
 dest.kuehlgedaerme = Die Kühlgedärme
 dest.knochenmarkt  = Der Knochenmarkt · Agrartrommel
 dest.tiefen        = Die Tiefen · Wartungsebenen (jedes Mal anders)
+dest.tiers         = Die Tiefen  ‹ Stufe %d ›   (offen bis %d)
 
 # Die Kreaturen der Orte (je Familie drei Stufen), die zwölf Gaben, die Anführer, Schadensarten.
 foe.crystal.0   = Kristallwächter

@@ -440,7 +440,7 @@ bool Level::load( const std::string &path, unsigned seed )
         h ^= h >> 15;
         h *= 0x2c1b3c6du;
         h ^= h >> 12;
-        int              count = std::min( most, 1 + ( h % 100 < 45 ? 1 : 0 ) + ( h % 100 < 15 ? 1 : 0 ) );
+        int count = std::min( most, std::max( m_anomalyMin, 1 + ( h % 100 < 45 ? 1 : 0 ) + ( h % 100 < 15 ? 1 : 0 ) ) );
         std::vector<int> pool;
         for ( int i = 0; i < (int)anomalyDefs().size(); ++i ) pool.push_back( i );
         std::string extra;
@@ -644,7 +644,7 @@ bool Level::loadText( const std::string &text )
                   key == "waterfalls" || key == "swarm" || key == "clock" || key == "zaps" || key == "crowd" ||
                   key == "pressureafter" || key == "ventlook" || key == "lava" || key == "duel" || key == "squad" ||
                   key == "shadow" || key == "teller" || key == "grade" || key == "rain" || key == "census" ||
-                  key == "bossname" || key == "film" || key == "endfilm" )
+                  key == "bossname" || key == "film" || key == "endfilm" || key == "pressuremax" )
         {
             std::string rest;
             std::getline( kv, rest );

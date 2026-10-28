@@ -180,9 +180,11 @@ void Game::loadMachine( const std::string &kind, float out, float tough )
         m_tugBridge = { 0.0f, 5.0f, -1.5f };
         const char *side = column ? "column.cutter" : "platform.clamp";
         const char *head = column ? "column.core" : "platform.head";
-        m_parts = { { side, { -4.0f, 2.2f, -1.0f }, 1.4f, 1150.0f * tough, 1150.0f * tough, {} },
-                    { head, { 0.0f, 4.0f, 1.5f }, 1.6f, 1500.0f * tough, 1500.0f * tough, {} },
-                    { side, { 4.0f, 2.2f, -1.0f }, 1.4f, 1150.0f * tough, 1150.0f * tough, {} } };
+        // The platform's fight runs long on its own (its lines keep the hero moving): its parts hold less.
+        float hold = column ? 1.0f : 0.45f;
+        m_parts = { { side, { -4.0f, 2.2f, -1.0f }, 1.4f, 1150.0f * hold * tough, 1150.0f * hold * tough, {} },
+                    { head, { 0.0f, 4.0f, 1.5f }, 1.6f, 1500.0f * hold * tough, 1500.0f * hold * tough, {} },
+                    { side, { 4.0f, 2.2f, -1.0f }, 1.4f, 1150.0f * hold * tough, 1150.0f * hold * tough, {} } };
         frameB.box( place( { 0.0f, 1.2f, 0.0f } ), { 6.0f, 0.5f, 4.0f } );
         for ( float x : { -5.0f, 5.0f } )
             for ( float z : { -3.0f, 3.0f } ) frameB.box( place( { x, 0.0f, z } ), { 0.4f, 1.2f, 0.4f } );
@@ -271,8 +273,10 @@ void Game::hitPart( int i, float damage, Vector3 at )
 {
     BossPart &p = m_parts[i];
     if ( p.m_hp <= 0.0f || !partsLive() ) return;
-    // A machine's parts: the gear's bonus against machines counts.
+    // A machine's parts: the gear's bonus against machines counts. Ione's swarm is made for crowds, not for plate: it
+    // gets more of its way on a machine's parts (as Dorra's bolts do).
     damage *= 1.0f + stat( StatE::VS_MACHINES ) / 100.0f;
+    if ( m_heroKind == HeroE::IONE ) damage *= 1.6f;
     p.m_hp -= damage;
     sparks( at, Vector3Normalize( Vector3Subtract( m_pos, at ) ), 8, { 255, 200, 130, 255 }, 3.0f );
     if ( p.m_hp > 0.0f ) return;

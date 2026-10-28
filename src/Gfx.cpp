@@ -246,6 +246,7 @@ void Gfx::setQuality( int quality, float ss )
                                      { 1.0f, 20, 8, 4096, 2048 },
                                      { 1.5f, 40, 12, 4096, 2048 } };
     m_quality = std::clamp( quality, 0, 2 );
+    m_scaleAsked = ss;
     const Level &q = Levels[m_quality];
     m_scale = ss > 0.0f ? ss : q.m_ss;
     m_fogSteps = q.m_fogSteps;
@@ -271,6 +272,14 @@ void Gfx::setQuality( int quality, float ss )
     m_spotSize = q.m_spotSize;
     m_sunMap = depthTarget( m_sunSize );
     m_spotMap = depthTarget( m_spotSize );
+}
+
+void Gfx::resize( int width, int height )
+{
+    if ( width == m_width && height == m_height ) return;
+    m_width = std::max( width, 1 );
+    m_height = std::max( height, 1 );
+    setQuality( m_quality, m_scaleAsked );
 }
 
 Surface Gfx::surface( Texture2D albedo, Texture2D orm, Texture2D normal, Texture2D emission )

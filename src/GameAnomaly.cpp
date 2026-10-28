@@ -41,8 +41,15 @@ void Game::applyAnomalies()
         m_burstDead = m_burstDead || a.m_burst;
         reward += a.m_reward;
     }
-    m_findScale = 1.0f + reward;
-    m_xpScale = 1.0f + reward * 0.67f;
+    // A deeper tier of the Depths: a tenth better finds and more experience per tier.
+    int tier = std::max( 1, depthTier() );
+    m_findScale = ( 1.0f + reward ) * ( 1.0f + 0.1f * ( tier - 1 ) );
+    m_xpScale = ( 1.0f + reward * 0.67f ) * ( 1.0f + 0.06f * ( tier - 1 ) );
+}
+
+int Game::depthTier() const
+{
+    return m_levelFile == "tiefen.txt" ? std::clamp( m_progress.m_depthTier, 1, 10 ) : 0;
 }
 
 std::string Game::anomalyNames() const
@@ -97,7 +104,9 @@ void Game::drawAnomalies( int w, int h, float y, unsigned char alpha )
                     { 0, 0, 0, (unsigned char)( alpha * 0.8f ) } );
         DrawTextEx( m_font, t.c_str(), { w * 0.5f - m.x * 0.5f, at }, size * s, 1.0f, c );
     };
-    line( TextFormat( tr( "hud.anomalies" ), anomalyNames().c_str() ), y, 26, { 200, 160, 255, alpha } );
+    std::string names = TextFormat( tr( "hud.anomalies" ), anomalyNames().c_str() );
+    if ( depthTier() > 0 ) names = std::string( TextFormat( tr( "hud.tier" ), depthTier() ) ) + "  ·  " + names;
+    line( names, y, 26, { 200, 160, 255, alpha } );
     line( TextFormat( tr( "hud.anomalyreward" ), (int)roundf( ( m_findScale - 1.0f ) * 100.0f ),
                       (int)roundf( ( m_xpScale - 1.0f ) * 100.0f ) ),
           y + 36 * s, 22, { 190, 185, 200, alpha } );

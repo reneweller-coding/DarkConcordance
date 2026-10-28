@@ -29,5 +29,16 @@ bool on();
  */
 void line( const char *format, ... );
 
+/**
+ * @brief The last lines (written or not), oldest first, for a crash report.
+ * @param[out] lines  room for `most` pointers (into a static buffer)
+ * @param[in]  most   how many at most
+ * @return how many
+ */
+int recent( const char **lines, int most );
+
+/** @return the folder the play log is written in, with a slash at its end ("" when it is not written) */
+std::string folder();
+
 }   // namespace playlog
 }   // namespace spaceopera

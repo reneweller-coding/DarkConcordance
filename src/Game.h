@@ -98,6 +98,8 @@ struct Progress
     int                   m_seed = 1;                ///< the random generator's state for items (and generated levels)
     int                   m_deaths = 0;              ///< deaths since the prologue (Ysolde knows the number)
     int                   m_cycle = 0;               ///< a new game+: how often the game has been begun again
+    int                   m_depthTier = 1;           ///< the Depths' tier chosen for the next visit (1 .. 10)
+    int                   m_depthBest = 0;           ///< the deepest tier done (the next one is open)
     bool                  m_hasSpot = false;         ///< saved at a rescue capsule in m_level (not at its start)
     Vector3               m_spot = { 0, 0, 0 };      ///< where: in front of the capsule
     std::set<std::string> m_fired;                   ///< what had happened in the level by then
@@ -194,7 +196,16 @@ public:
      * @param[in] effects  0..1 (the place's background too)
      */
     float m_subtitleScale = 1.0f;   ///< the spoken lines' subtitles: 0.8 small, 1 normal, 1.3 large
-    float m_shakeScale = 1.0f;      ///< how much the camera shakes (0 not at all)
+    float m_hudScale = 1.0f;        ///< the HUD's size (the options' "HUD-Größe")
+    bool  m_minimap = true;         ///< the map round the hero in the HUD
+    /**
+     * @brief What the pad's motors should do now: the heavy one with the camera's jolts (blasts, stomps), the light
+     *        one with the hits the hero takes.
+     * @param[out] low   the heavy motor 0..1
+     * @param[out] high  the light one 0..1
+     */
+    void rumbleNow( float &low, float &high ) const;
+    float m_shakeScale = 1.0f;   ///< how much the camera shakes (0 not at all)
 
     void setVolumes( float voices, float effects )
     {
@@ -281,6 +292,13 @@ public:
     };
     /** @brief Begins it from the camera as it is. */
     void startPhoto();
+
+    // The campaign test (--campaign): the main path played in order, what is gained carried on.
+    /** @brief A player's ways between two places, roughly: better finds put on, the rest salvaged, stims bought, the
+     *         workshop's weapon and armour paid for. */
+    void campaignPrep();
+    /** @return the place's line for the test: hero level, area, time, deaths, kills, scrap, the gear's worth */
+    std::string campaignLine() const;
     /** @brief Moves the camera. */
     void photo( float dt, const PhotoInput &in );
     /** @brief Ends it. */
@@ -807,6 +825,8 @@ private:
     std::vector<Burst> m_bursts;
     /** @brief The factors from the place's anomalies (before the enemies come). */
     void applyAnomalies();
+    /** @return the Depths' tier this place is played at (0: not the Depths) */
+    int depthTier() const;
     /** @return the anomalies' names in a line */
     std::string anomalyNames() const;
     /** @brief An enemy fell: where the dead burst, a fuse. */
@@ -972,6 +992,8 @@ private:
     float   m_gust = 0.0f, m_gustT = 0.0f, m_gustTimer = 0.0f;   ///< the wind's gust: strength now, its clock
     int     m_gustState = 0;                                     ///< 0 calm, 1 warning, 2 blowing
     float   m_pressureT = 0.0f, m_clock = 0.0f;         ///< the transport guard's next men; the time to the Mill
+    int     m_squads = 0;                               ///< squads sent so far ("pressuremax": how many at most)
+    float   m_buzz = 0.0f;                              ///< a hit taken: the pad's light motor, fading
     float   m_lightning = 0.0f;                         ///< the screen's flash from the clouds
     float   m_whiteT = 0.0f;                            ///< the act's end: seconds since it began
     float   m_collegiumT = 0.0f;                        ///< ... seconds since the boss fell
@@ -1146,6 +1168,8 @@ private:
     void loadPanel();
     void updateMap( float dt );
     void drawMap( Rectangle area, float alpha, float s );
+    /** @brief The map round the hero in the HUD's top right corner (what has been seen, eleven cells each way). */
+    void drawMinimap( int w, int h, float s );
     std::vector<PanelRow> inventory() const;
     std::vector<uint8_t> m_seen;   ///< cells the hero has seen
     float                m_seenTimer = 0.0f;
@@ -1449,6 +1473,8 @@ private:
     int                              m_talkNpc = -1, m_choice = 0;
     int                              m_menu = 0, m_menuChoice = 0;   ///< 1 Ottla's stims, 2 Kiri's workshop, 3 the lift
     float                            m_navY = 0.0f;                  ///< the stick's last up and down (menus)
+    float                            m_navX = 0.0f;                  ///< and its last left and right
+    int                              m_craftSlot = 0;                ///< the worn item Kiri works on (reroll, better)
     std::map<std::string, Texture2D> m_portraits;
     Texture2D                        m_boardTex = {};
     int                              m_boardSurface = -1;

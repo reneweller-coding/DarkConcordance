@@ -100,6 +100,13 @@ public:
     void setQuality( int quality, float ss = -1.0f );
 
     /**
+     * @brief A new picture size (the window changed): the targets anew, the quality as it is.
+     * @param[in] width   the picture's width
+     * @param[in] height  its height
+     */
+    void resize( int width, int height );
+
+    /**
      * @brief Makes a surface with the lit shader.
      * @param[in] albedo    albedo map
      * @param[in] orm       occlusion, roughness, metallic map
@@ -196,6 +203,7 @@ public:
     int     m_height = 0;                             ///< picture height
     int     m_quality = 2;                            ///< 0 low, 1 middle, 2 high
     float   m_scale = 1.5f;                           ///< the scene's size against the picture's
+    float   m_scaleAsked = -1.0f;                     ///< the scale asked for (negative: the quality's)
 
 private:
     /** @brief Uniform locations every lit shader shares. */

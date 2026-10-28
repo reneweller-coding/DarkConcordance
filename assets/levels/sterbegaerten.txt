@@ -29,8 +29,8 @@ ambience arena
 music    sterbegaerten
 bossmusic boss3
 
-genrooms      19
-genside       7
+genrooms      16
+genside       6
 gensize       12 18 10 15
 gentheme      park park arena park
 genoutdoor    park arena

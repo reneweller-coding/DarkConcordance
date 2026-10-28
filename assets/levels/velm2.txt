@@ -20,6 +20,7 @@ planet   mill 0.9
 star     900 -2600 -3200 1700
 faction  concession
 pressure 80
+pressuremax 8
 area     22
 next     unzu4.txt
 gate     bossdead

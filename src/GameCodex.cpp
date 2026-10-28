@@ -12,6 +12,9 @@
 
 #include <raymath.h>
 
+#include <ctime>
+#include <filesystem>
+
 #include <algorithm>
 #include <cstring>
 #include <iterator>
@@ -114,8 +117,25 @@ void Game::updateJournal( float dt )
         std::string gear;
         for ( int i = 0; i < EquipSlots; ++i )
             if ( m_progress.m_worn[i] ) gear += " | " + itemName( m_progress.m_gear[i] );
-        playlog::line( "level %s hero %s level %d difficulty %d cycle %d%s", m_levelFile.c_str(), heroKey( m_heroKind ),
-                       m_progress.m_heroLevel, (int)m_difficulty, m_progress.m_cycle, gear.c_str() );
+        std::string     map = TextFormat( "maps/%s_%lld.txt", m_levelFile.substr( 0, m_levelFile.size() - 4 ).c_str(),
+                                          (long long)time( nullptr ) );
+        std::error_code e;
+        std::filesystem::create_directories( playlog::folder() + "maps", e );
+        std::string text = m_level.m_generated;
+        if ( text.empty() )
+            if ( char *file = LoadFileText( ( m_assets + "/levels/" + m_levelFile ).c_str() ) )
+            {
+                text = file;
+                UnloadFileText( file );
+            }
+        if ( FILE *f = fopen( ( playlog::folder() + map ).c_str(), "w" ) )
+        {
+            fputs( text.c_str(), f );
+            fclose( f );
+        }
+        playlog::line( "level %s hero %s level %d difficulty %d cycle %d map %s%s", m_levelFile.c_str(),
+                       heroKey( m_heroKind ), m_progress.m_heroLevel, (int)m_difficulty, m_progress.m_cycle,
+                       map.c_str(), gear.c_str() );
         if ( !m_level.m_anomalies.empty() )
         {
             std::string keys;
@@ -142,6 +162,7 @@ void Game::updateJournal( float dt )
     if ( m_finished && !m_doneCounted )
     {
         m_doneCounted = true;
+        if ( depthTier() > m_progress.m_depthBest && m_fired.count( "bossdead" ) ) m_progress.m_depthBest = depthTier();
         if ( m_tale && journal::meet( "tale:" + m_levelFile ) ) journal::count( "tales" );
         if ( !m_level.m_peaceful && !m_tale && m_deaths == 0 && m_kills > 0 ) journal::count( "flawless" );
         if ( !m_level.m_peaceful && m_difficulty == DifficultyE::NIGHTMARE ) journal::win( "nightmare_level" );

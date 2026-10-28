@@ -477,7 +477,9 @@ void Game::updateElements( float dt )
     }
 
     // The guard keeps sending men while the hero is on board.
-    if ( m_level.m_pressure > 0.0f && !m_finished && !m_dead && !bossFight() && !m_fired.count( "bossdead" ) )
+    int most = (int)m_level.num( "pressuremax", 0, 0.0f );
+    if ( m_level.m_pressure > 0.0f && !m_finished && !m_dead && !bossFight() && !m_fired.count( "bossdead" ) &&
+         ( most <= 0 || m_squads < most ) )
     {
         m_pressureT += dt;
         m_clock = fmaxf( 0.0f, m_clock - dt );
@@ -501,8 +503,10 @@ void Game::updateElements( float dt )
                         m_summons.push_back( { FoeE::DRONE, Vector3Add( p, { ( rnd() - 0.5f ) * 2.0f, 1.8f,
                                                                              ( rnd() - 0.5f ) * 2.0f } ) } );
                     fire( "reinforce" );
+                    ++m_squads;
                     break;
                 }
+                ++m_squads;
                 for ( int k = 0; k < n; ++k )
                     m_summons.push_back(
                         { k == 0 ? FoeE::SHIELD : ( k % 2 ? FoeE::GUNNER : FoeE::BATON ),

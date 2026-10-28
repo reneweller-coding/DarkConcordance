@@ -192,6 +192,24 @@ void Game::drawMap( Rectangle area, float alpha, float s )
     DrawTriangle( tip, r, l, fade( { 255, 170, 60, 255 } ) );
 }
 
+void Game::drawMinimap( int w, int h, float s )
+{
+    // The overlay's map with its window round the hero, clipped to a square in the corner.
+    const int reach = 11;
+    int       r, c;
+    m_level.cellOf( m_pos, r, c );
+    int keep[4] = { m_mapR0, m_mapR1, m_mapC0, m_mapC1 };
+    m_mapR0 = r - reach, m_mapR1 = r + reach, m_mapC0 = c - reach, m_mapC1 = c + reach;
+    float     size = 230.0f * s;
+    Rectangle area = { w - size - 30.0f * s, 30.0f * s, size, size };
+    BeginScissorMode( (int)( area.x - 12.0f * s ), (int)( area.y - 12.0f * s ), (int)( size + 24.0f * s ),
+                      (int)( size + 24.0f * s ) );
+    drawMap( area, 0.85f, s );
+    EndScissorMode();
+    m_mapR0 = keep[0], m_mapR1 = keep[1], m_mapC0 = keep[2], m_mapC1 = keep[3];
+    (void)h;
+}
+
 std::vector<Game::PanelRow> Game::inventory() const
 {
     std::vector<PanelRow> rows;

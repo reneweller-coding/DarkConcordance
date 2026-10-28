@@ -1202,7 +1202,8 @@ private:
                     for ( int t = 0; t < 40; ++t )
                     {
                         int y = m_rng.range( r.m_r0 - 3, r.m_r1 + 3 ), x = m_rng.range( r.m_c0 - 3, r.m_c1 + 3 );
-                        if ( y < 1 || x < 1 || y >= m_rows - 1 || x >= m_cols - 1 || m_g[y][x] != '~' ) continue;
+                        // Two cells to every side are looked at below: so far from the edge at least.
+                        if ( y < 2 || x < 2 || y >= m_rows - 2 || x >= m_cols - 2 || m_g[y][x] != '~' ) continue;
                         bool beside = false;
                         for ( int dy = -2; dy <= 2; ++dy )
                             for ( int dx = -2; dx <= 2; ++dx ) beside = beside || m_g[y + dy][x + dx] == '.';
