@@ -25,10 +25,11 @@ using namespace play;
 namespace
 {
 
-constexpr float TalkReach = 2.4f;                   ///< how near one has to be to talk
-constexpr int   StimPrice = 15;                     ///< Ottla's price
-const int       WeaponPrice[3] = { 40, 80, 120 };   ///< Kiri's prices, by level
-const int       ArmorPrice[3] = { 30, 60, 90 };
+constexpr float TalkReach = 2.4f;      ///< how near one has to be to talk
+constexpr int   StimPrice = 15;        ///< Ottla's price
+constexpr int   WorkshopLevels = 10;   ///< how far Kiri takes the weapon and the armour
+const int       WeaponPrice[WorkshopLevels] = { 40, 80, 120, 300, 500, 800, 1200, 1700, 2300, 3000 };   ///< by level
+const int       ArmorPrice[WorkshopLevels] = { 30, 60, 90, 250, 420, 650, 950, 1350, 1800, 2400 };
 const int       SocketPrice[3] = { 120, 260, 480 };   ///< Kiri drills a socket: the first, the second, the third
 constexpr float DrumRadius = 280.0f;                  ///< our drum: its axis this high above the floor
 
@@ -475,9 +476,21 @@ void Game::buy( int item )
         return true;
     };
     if ( m_menu == 1 && item == 0 && m_stims < maxStims() && pay( StimPrice ) ) ++m_stims;
-    if ( m_menu == 2 && item == 0 && m_progress.m_weapon < 3 && pay( WeaponPrice[m_progress.m_weapon] ) )
+    // A sealed crate: an item for the slot chosen, at the place's level, the rare ones a little more often.
+    if ( m_menu == 1 && item == 1 && (int)m_progress.m_bag.size() < BagSize && pay( cratePrice() ) )
+    {
+        unsigned seed = (unsigned)m_progress.m_seed;
+        Item     it = makeItem( std::max( 1, areaLevel() ), heroIndex(), seed, 1.6f, m_crateSlot );
+        m_progress.m_seed = (int)( seed & 0x7fffffff );
+        m_progress.m_bag.push_back( it );
+        m_toast = itemName( it );
+        m_toastColor = rarityColor( it.m_rarity );
+        m_toastTimer = 2.5f;
+        playlog::line( "crate %s rarity %d level %d", itemName( it ).c_str(), (int)it.m_rarity, it.m_level );
+    }
+    if ( m_menu == 2 && item == 0 && m_progress.m_weapon < WorkshopLevels && pay( WeaponPrice[m_progress.m_weapon] ) )
         ++m_progress.m_weapon;
-    if ( m_menu == 2 && item == 1 && m_progress.m_armor < 3 && pay( ArmorPrice[m_progress.m_armor] ) )
+    if ( m_menu == 2 && item == 1 && m_progress.m_armor < WorkshopLevels && pay( ArmorPrice[m_progress.m_armor] ) )
     {
         ++m_progress.m_armor;
         m_hp = fminf( hpMax(), m_hp + 20.0f );
@@ -510,32 +523,74 @@ void Game::buy( int item )
     }
 }
 
+int Game::cratePrice() const
+{
+    return 40 + 14 * std::max( 1, areaLevel() );
+}
+
 void Game::campaignPrep()
 {
-    // Better is what is worth more (Items' worth weighs level, rarity and affixes).
-    for ( bool again = true; again; )
+    // Better is what is worth more (Items' worth weighs level, rarity and affixes); the rest salvaged.
+    auto sort = [&]()
     {
-        again = false;
-        for ( int i = 0; i < (int)m_progress.m_bag.size() && !again; ++i )
+        for ( bool again = true; again; )
         {
-            const Item     &it = m_progress.m_bag[i];
-            const ItemBase &b = itemBases()[it.m_base];
-            int             slot = gearIndex( it );
-            if ( slot < 0 || ( b.m_hero >= 0 && b.m_hero != heroIndex() ) ) continue;
-            if ( !m_progress.m_worn[slot] || itemValue( it ) > itemValue( m_progress.m_gear[slot] ) )
-                equip( i ), again = true;
+            again = false;
+            for ( int i = 0; i < (int)m_progress.m_bag.size() && !again; ++i )
+            {
+                const Item     &it = m_progress.m_bag[i];
+                const ItemBase &b = itemBases()[it.m_base];
+                int             slot = gearIndex( it );
+                if ( slot < 0 || ( b.m_hero >= 0 && b.m_hero != heroIndex() ) ) continue;
+                if ( !m_progress.m_worn[slot] || itemValue( it ) > itemValue( m_progress.m_gear[slot] ) )
+                    equip( i ), again = true;
+            }
         }
-    }
-    while ( !m_progress.m_bag.empty() ) salvage( (int)m_progress.m_bag.size() - 1 );
+        while ( !m_progress.m_bag.empty() ) salvage( (int)m_progress.m_bag.size() - 1 );
+    };
+    sort();
     int menu = m_menu;
-    for ( int k = 0; k < 3; ++k )
-    {
-        m_menu = 2;
-        buy( 0 );
-        buy( 1 );
-    }
+    // Stims first, then the workshop (the cheaper of weapon and armour), then the worn items made better, then
+    // crates for the weakest slot while a good deal of scrap is left.
     m_menu = 1;
     for ( int k = 0; k < 8; ++k ) buy( 0 );
+    m_menu = 2;
+    for ( int k = 0; k < 20; ++k )
+    {
+        int before = m_scrap;
+        buy( m_progress.m_weapon <= m_progress.m_armor ? 0 : 1 );
+        if ( m_scrap == before ) buy( m_progress.m_weapon <= m_progress.m_armor ? 1 : 0 );
+        if ( m_scrap == before ) break;
+    }
+    for ( int slot = 0; slot < EquipSlots; ++slot )
+        if ( m_progress.m_worn[slot] )
+        {
+            m_craftSlot = slot;
+            while ( craftPrice( m_progress.m_gear[slot], true ) > 0 &&
+                    m_scrap >= craftPrice( m_progress.m_gear[slot], true ) * 2 )
+            {
+                int before = m_scrap;
+                buy( 5 );
+                if ( m_scrap == before ) break;
+            }
+        }
+    m_menu = 1;
+    for ( int k = 0; k < 6 && m_scrap > cratePrice() * 3; ++k )
+    {
+        int weakest = 0, worth = 1 << 30;
+        for ( int slot = 0; slot < (int)SlotE::MODULE; ++slot )
+        {
+            int at = slot == (int)SlotE::HARNESS   ? 7
+                     : slot == (int)SlotE::EMITTER ? 8
+                     : slot == (int)SlotE::CELL    ? 9
+                                                   : slot;
+            int v = m_progress.m_worn[at] ? itemValue( m_progress.m_gear[at] ) : 0;
+            if ( v < worth ) worth = v, weakest = slot;
+        }
+        m_crateSlot = weakest;
+        buy( 1 );
+        sort();
+    }
     m_menu = menu;
 }
 
@@ -679,7 +734,9 @@ bool Game::updateHub( float dt, GameInput &in )
     bool ok = in.m_jump || in.m_confirm || in.m_use;
     if ( m_menu )
     {
-        int count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 7 );
+        int count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 3 : 7 );
+        // At the trader, left and right choose the crate's slot.
+        if ( m_menu == 1 && side != 0 ) m_crateSlot = ( m_crateSlot + side + (int)SlotE::MODULE ) % (int)SlotE::MODULE;
         m_menuChoice = ( m_menuChoice + step + count ) % count;
         // At the lift, left and right choose the Depths' tier (up to one past the deepest done).
         if ( m_menu == 3 && side != 0 && m_menuChoice < (int)m_liftChoices.size() &&
@@ -961,7 +1018,7 @@ void Game::drawHubHud( int w, int h, float s )
     {
         // Ottla's stims or Kiri's workshop: a panel in the middle, the scrap in hand, the items with their prices.
         float pw = 1000.0f * s, x0 = w * 0.5f - pw * 0.5f, y0 = h * 0.25f;
-        int   count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 2 : 7 );
+        int   count = m_menu == 3 ? (int)m_liftChoices.size() + 1 : ( m_menu == 1 ? 3 : 7 );
         float ph = ( 130.0f + 52.0f * count ) * s;
         DrawRectangle( (int)x0, (int)y0, (int)pw, (int)ph, { 8, 10, 12, 230 } );
         DrawRectangleLinesEx( { x0, y0, pw, ph }, 2.0f * s, { 255, 190, 120, 140 } );
@@ -982,6 +1039,11 @@ void Game::drawHubHud( int w, int h, float s )
                                     std::min( 10, m_progress.m_depthBest + 1 ) );
             else if ( m_menu == 3 )
                 label = tr( ( "dest." + m_liftChoices[i].substr( 0, m_liftChoices[i].find( '.' ) ) ).c_str() );
+            else if ( m_menu == 1 && i == 1 )
+            {
+                label = TextFormat( tr( "shop.crate" ), tr( TextFormat( "slotkind.%d", m_crateSlot ) ) );
+                price = TextFormat( tr( "shop.price" ), cratePrice() );
+            }
             else if ( m_menu == 1 )
             {
                 label = TextFormat( "%s  (%d/%d)", tr( "shop.stim" ), m_stims, maxStims() );
@@ -1023,9 +1085,10 @@ void Game::drawHubHud( int w, int h, float s )
                                       : ( m_heroKind == HeroE::DORRA
                                               ? "workshop.hammer"
                                               : ( m_heroKind == HeroE::IONE ? "workshop.swarm" : "workshop.rifle" ) );
-                label = TextFormat( tr( key ), level < 3 ? level + 1 : 3 );
-                price = level < 3 ? TextFormat( tr( "shop.price" ), ( i == 0 ? WeaponPrice : ArmorPrice )[level] )
-                                  : tr( "workshop.max" );
+                label = TextFormat( tr( key ), level < WorkshopLevels ? level + 1 : WorkshopLevels );
+                price = level < WorkshopLevels
+                            ? TextFormat( tr( "shop.price" ), ( i == 0 ? WeaponPrice : ArmorPrice )[level] )
+                            : tr( "workshop.max" );
             }
             if ( on )
                 DrawRectangle( (int)( x0 + 16 * s ), (int)( y - 6 * s ), (int)( pw - 32 * s ), (int)( 42 * s ),

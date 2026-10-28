@@ -339,7 +339,7 @@ std::string Game::itemDetail( const Item &it ) const
     if ( !lore.empty() ) d += lore + " | ";
     d += b.m_slot == SlotE::MODULE ? tr( "module.about" ) : tr( std::string( b.m_key ) + ".about" );
     if ( b.m_hero >= 0 && b.m_hero != heroIndex() ) d += std::string( " | " ) + tr( "loot.wrong" );
-    d += std::string( " | " ) + TextFormat( tr( "item.value" ), std::max( 1, itemValue( it ) / 3 ) );
+    d += std::string( " | " ) + TextFormat( tr( "item.value" ), std::max( 1, itemValue( it ) / 5 ) );
     return d;
 }
 

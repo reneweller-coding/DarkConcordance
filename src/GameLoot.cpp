@@ -90,7 +90,7 @@ void Game::refreshStats()
     s.m_damage = itemDamage( weapon ) * weaponBoost() * ( 1.0f + s.m_add[(int)StatE::DAMAGE] / 100.0f ) * level;
     s.m_interval = b.m_interval / ( 1.0f + s.m_add[(int)StatE::RATE] / 100.0f );
     s.m_heat = b.m_heat * ( 1.0f - fminf( 0.7f, s.m_add[(int)StatE::HEAT] / 100.0f ) ) *
-               ( 1.0f - 0.12f * m_progress.m_weapon );
+               ( 1.0f - 0.12f * std::min( m_progress.m_weapon, 3 ) - 0.03f * std::max( 0, m_progress.m_weapon - 3 ) );
     s.m_pellets = b.m_pellets;
     s.m_spread = b.m_spread;
     s.m_pierce = b.m_pierce;
@@ -99,9 +99,9 @@ void Game::refreshStats()
     s.m_chain = b.m_chain;
     if ( m_power[(int)PowerE::PIERCE] ) s.m_pierce += 2;
     s.m_splash *= 1.0f + s.m_add[(int)StatE::AREA] / 100.0f;
-    s.m_armor += s.m_add[(int)StatE::ARMOR] + 5.0f * m_progress.m_armor;
+    s.m_armor += s.m_add[(int)StatE::ARMOR] + 5.0f * armorWork();
     s.m_health = ( hero == 1 ? DorraHp : ( hero == 2 ? 95.0f : ( hero == 3 ? 120.0f : 100.0f ) ) ) +
-                 20.0f * m_progress.m_armor + ( m_progress.m_heroLevel - 1 ) * ( hero == 1 ? 10.0f : 8.0f ) +
+                 20.0f * armorWork() + ( m_progress.m_heroLevel - 1 ) * ( hero == 1 ? 10.0f : 8.0f ) +
                  s.m_add[(int)StatE::HEALTH];
     m_stats = s;
 }
@@ -248,7 +248,7 @@ void Game::updateLoot( float dt )
         if ( !fills && into >= 0 && (int)l.m_item.m_rarity < m_lootFilter )
         {
             l.m_alive = false;
-            int scrap = std::max( 1, itemValue( l.m_item ) / 3 );
+            int scrap = std::max( 1, itemValue( l.m_item ) / 5 );
             m_scrap += scrap;
             journal::count( "finds" );
             playlog::line( "autosalvage %s rarity %d level %d", itemName( l.m_item ).c_str(), (int)l.m_item.m_rarity,
@@ -489,7 +489,7 @@ void Game::salvage( int i )
     if ( i < 0 || i >= (int)m_progress.m_bag.size() ) return;
     playlog::line( "salvage %s rarity %d level %d", itemName( m_progress.m_bag[i] ).c_str(),
                    (int)m_progress.m_bag[i].m_rarity, m_progress.m_bag[i].m_level );
-    int scrap = std::max( 1, itemValue( m_progress.m_bag[i] ) / 3 );
+    int scrap = std::max( 1, itemValue( m_progress.m_bag[i] ) / 5 );
     m_scrap += scrap;
     m_progress.m_bag.erase( m_progress.m_bag.begin() + i );
     m_toast = TextFormat( tr( "loot.salvaged" ), scrap );

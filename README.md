@@ -92,7 +92,19 @@ anew.
 
 **After the game:** a New Game+ (the title menu, once the game is through) begins the story again with the hero as
 they are – level, gear, skills, scrap, the notes read – and every place twelve areas further on (tougher foes, finds
-of higher levels); the HUD shows the cycle. „Albtraum“ then may be chosen as a difficulty: foes 1.9 times as tough,
+of higher levels); the HUD shows the cycle. A run with the hero through may also be carried into a new save: after
+the hero is chosen for a new game, „Wie beginnen?“ offers to begin anew or with that hero as they are (from each
+save whose run with them is through), the difficulty chosen on the same page – the first run on Leicht, say, the next
+on Normal with everything gained.
+
+**The places keep up with the hero:** a place is never more than a step or two below the hero's level – Leicht three,
+Normal one, Schwer and Albtraum none; in the first act of a first run one more – so foes, their blows and the finds grow with a hero who has outgrown the story's
+pace (the campaign test had the hero five to nine levels above the places, and nobody died). From the ninth area on
+foes also grow faster than a straight line – 10 % more health and 5 % more harm for each further area,
+since a hero's gear grows that way too; the bosses, guardians, leaders and machines keep the straight line (their
+fights are long as it is), and a blow that takes a share of the
+hero's health (the cutting platform's line) is no longer multiplied by the place's depth. Salvaging brings a fifth
+of an item's worth (it was a third); the workshop's ten levels, Kiri's work on items and Ottla's crates take it. „Albtraum“ then may be chosen as a difficulty: foes 1.9 times as tough,
 hitting 1.7 times as hard, finds four levels higher and the rare ones more often.
 
 **Codex and awards** (the inventory's fifth and sixth pages, kept in `journal.txt` in the player's folder across all
@@ -140,7 +152,8 @@ so the hero goes without a helmet.
 - **People:** standing together at the stalls and the counter, sitting by the walls, strolling about (children among
   them); passing by, one hears what they say about the Harvest, the prices, the Marrow Market (24 lines, in turn).
 
-- **The bar „Zur Letzten Schicht“** with Ottla behind the counter (she sells stims), guests on the stools at the counter
+- **The bar „Zur Letzten Schicht“** with Ottla behind the counter (she sells stims, and sealed crates: an item for the
+  slot chosen with left and right, at the place's level, the rare ones more often than in a find), guests on the stools at the counter
   and at the tables (a pendant lamp over each), bottles on the shelves behind the bar, the harvest
   board on the north wall (61 settlements the Mill has taken, the newest in red, chalked in the game's own font) and a
   window in the floor: beneath it Velm turns past, the cavern's work lights, girders, the other two drums with their
@@ -148,7 +161,8 @@ so the hero goes without a helmet.
 - **Ysolde Varn**, who paid for the clinic: conversations with answers to choose, portraits beside the lines; she gives
   the first job (and 50 scrap down payment) and has new lines after level 1.
 - **Anand's Workshop** (Kiri): the hero's weapon (more damage, less heat; Dorra's bolts come back sooner) and armour
-  (+20 health) in three levels each, paid in scrap; sockets drilled; and on any worn item (left and right choose it)
+  (+20 health) in ten levels each, paid in scrap (40 to 3,000 a level; the first three count fully, the later ones
+  less: a weapon at level 10 does twice the damage, an armour has +49 armour and +195 health); sockets drilled; and on any worn item (left and right choose it)
   an affix rolled anew as another stat, or the item made one rarity better (common to magic: an affix; magic to rare:
   a name, the affixes a sixth stronger, up to three) – not on uniques and set pieces.
 - **HAUSMEISTER**, the station's voice at a terminal; the clinic; the freight lift to the axis, which opens once there
@@ -607,8 +621,9 @@ a generated level's layout, `--dumpgen FILE` writes the generated level file, `-
 scattered round the hero) and `--xp n` set up a hero for tests, `--trace s` logs the run (and the music's piece and
 heat) every s seconds. `--silent` runs the sound (device, music, backgrounds) at volume 0, also with `--shot`;
 `--campaign` (with `--shot`, `--autoplay`, `--warm s` per place) plays the story's fighting places in order from
-`--level` on with what is gained carried on – between them better finds put on, the rest salvaged, stims and the
-workshop bought – and logs a `CAMPAIGN:` line per place (hero level, area, time, deaths, kills, scrap, the gear's
+`--level` on with what is gained carried on – between them better finds put on, the rest salvaged, stims, the
+workshop, Kiri's work and crates bought – and logs a `CAMPAIGN:` line per place; `--savefile FILE` keeps the hero at
+the end, `--loadfile FILE --plus` begins a run with them carried over, `--difficulty leicht|normal|schwer|albtraum` (hero level, area, time, deaths, kills, scrap, the gear's
 worth); `--slots` shows the saves, `--tier n` the Depths' tier, `--crash` crashes on purpose (the report);
 `--playlog FILE` writes the play log there, `--lootfilter 0|1|2` sets the loot filter, `--stash n` puts the bag's
 first n items into the stash for the picture, `--bind "<name> <key> <pad>"` binds otherwise (as in the settings),

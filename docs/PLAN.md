@@ -307,6 +307,15 @@ Still to come, by first use:
    Corvin 727 s for the whole level now, Ione still about 1,400 s). Open, the user's to decide: the heroes outgrow the places (hero
    level about the area +5 at the end of Act I, +5 to +9 later; the autopilot died once or never in 25 places), and
    scrap piles up (14,000-34,000 at the end) with little to spend it on.
+9. Balance and economy — done (28.10.2026, the user's wish): the places keep up with the hero (at most three levels
+   below on Leicht, one on Normal, none above), foes grow faster from the ninth area (health +10 %, harm +5 % per
+   area on top; bosses, guardians, leaders and machines not), the cutting line no longer multiplied by the depth (Corvin died 25 times there at area
+   28); salvaging a fifth of the worth instead of a third, the workshop to ten levels (40 to 3,000), Ottla's sealed
+   crates; a finished hero carried into a new save with the difficulty chosen („Wie beginnen?“). Campaign test on
+   Normal afterwards (deaths per act I/II/III/IV): Corvin 9/1/0/0, Dorra 2/0/13/1, Ione 13/0/1/0, 2.4-4.7 h of
+   autopilot; scrap at the end 360-2,000 (was 14,000-34,000), the workshop at 9-10. Acts II-IV stay easier than
+   act I for the autopilot; a play test should tell. Open: the autopilot (not the game) stalls now and then when a
+   level ends with someone to talk to it cannot reach (Dorra in Halden and the Arche, Ione in the Erzstrom).
 
 ## Open decisions (the user's)
 

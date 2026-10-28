@@ -339,9 +339,16 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     loadTale();
     // "area 0": as deep as the hero is strong (the depths).
     if ( m_level.m_area <= 0 ) m_level.m_area = std::max( 2, ( m_progress.m_heroLevel + 4 ) / 2 );
-    m_level.m_area += 12 * m_progress.m_cycle;                          // a new game+: every place that much further on
+    m_level.m_area += 12 * m_progress.m_cycle;   // a new game+: every place that much further on
+    // The places keep up with the hero: a place is never more than a step or two below the hero's level (Leicht three,
+    // Normal one, Schwer and Albtraum none; in the first act of a first run one more, while the game is learnt), so
+    // whoever has grown strong meets foes that have too, and finds to match.
+    const int behind[(int)DifficultyE::COUNT] = { 3, 1, 0, 0 };
+    int       learning = m_progress.m_cycle == 0 && m_level.m_area < 10 ? 1 : 0;
+    m_level.m_area = std::max( m_level.m_area, m_progress.m_heroLevel - behind[(int)m_difficulty] - learning );
     if ( depthTier() > 1 ) m_level.m_area += 2 * ( depthTier() - 1 );   // each tier of the Depths two areas deeper
-    m_areaHit = 1.0f + 0.12f * ( m_level.m_area - 1 );
+    // What foes do more in a deeper place: an eighth each area, from the ninth a twentieth on top for each further one.
+    m_areaHit = ( 1.0f + 0.12f * ( m_level.m_area - 1 ) ) * ( 1.0f + 0.05f * std::max( 0, m_level.m_area - 8 ) );
     applyAnomalies();
     loadSurfaces( gfx, assets );
     // The lift's cell is part of its well.
@@ -948,7 +955,8 @@ void Game::spawnFoe( FoeE kind, Vector3 pos, bool awake )
     f.m_pos = pos;
     const float hp[12] = { LouseHp, WelderHp, BatonHp,  GunnerHp,  ShieldHp, HeavyHp,
                            DroneHp, SawHp,    BomberHp, TaxatorHp, ShellHp,  60.0f };
-    f.m_hp = hp[(int)kind] * toughness( m_difficulty ) * ( 1.0f + 0.25f * ( m_level.m_area - 1 ) ) * m_foeHp;
+    f.m_hp = hp[(int)kind] * toughness( m_difficulty ) * areaTough() * m_foeHp;
+    if ( kind == FoeE::TAXATOR ) f.m_hp /= areaSteep();   // a boss keeps the straight line (its fight is long anyway)
     f.m_home = f.m_safe = pos;
     f.m_hpMax = f.m_hp;
     if ( kind == FoeE::DRONE ) f.m_rush.y = pos.y - 1.75f;

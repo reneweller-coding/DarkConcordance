@@ -27,6 +27,7 @@
 #include <raylib.h>
 #include <raymath.h>
 
+#include <algorithm>
 #include <map>
 #include <set>
 #include <string>
@@ -1060,6 +1061,18 @@ private:
     float stat( StatE s ) const { return m_stats.m_add[(int)s]; }
     float armorCut() const;
     int areaLevel() const { return m_level.m_area; }
+    /**
+     * @return how much more health a foe has here than in the first area: a quarter more each area, and from the ninth
+     *         a tenth on top for each further one (the hero's gear grows faster than a straight line; the machines
+     *         keep the straight line)
+     */
+    float areaTough() const
+    {
+        int a = m_level.m_area;
+        return ( 1.0f + 0.25f * ( a - 1 ) ) * areaSteep();
+    }
+    /** @return the steeper part of areaTough() alone (the bosses, guardians and leaders keep the straight line) */
+    float areaSteep() const { return 1.0f + 0.1f * std::max( 0, m_level.m_area - 8 ); }
     void dealHit( Foe &f, float damage, Vector3 dir, Vector3 at );
     void gainXp( int xp );
     int xpFor( const Foe &f ) const;
@@ -1201,7 +1214,16 @@ private:
     void drawHubHud( int w, int h, float s );
     /** @return where the hub's lift may go now (the flag set, not done yet unless it may be done again) */
     std::vector<std::string> openExits( bool &promised ) const;
-    float weaponBoost() const { return 1.0f + 0.2f * m_progress.m_weapon; }
+    /** @return the workshop's work on the weapon: a fifth more damage for each of the first three levels, then less */
+    float weaponBoost() const
+    {
+        return 1.0f + 0.2f * std::min( m_progress.m_weapon, 3 ) + 0.06f * std::max( 0, m_progress.m_weapon - 3 );
+    }
+    /** @return the workshop's work on the armour as levels that count fully (the first three; then three quarters) */
+    float armorWork() const
+    {
+        return (float)std::min( m_progress.m_armor, 3 ) + 0.75f * std::max( 0, m_progress.m_armor - 3 );
+    }
 
     // GameSwarm.cpp: a boss of many fed by hives (see there).
     void loadSwarm();
@@ -1461,20 +1483,23 @@ private:
     void updateTale( float dt );
     void gradeFor( Gfx &gfx ) const;
     void drawTaleHud( int w, int h, float s );
-    std::set<size_t>                 m_counted;                    ///< people Unzu has counted
-    bool                             m_tale = false;               ///< this level is a companion's tale
-    HeroE                            m_realHero = HeroE::CORVIN;   ///< who is really played (outside the tale)
-    Progress                         m_realProgress;               ///< what they carry, waiting
-    int                              m_taleXp = 0;                 ///< experience gained in the tale
-    float                            m_rainT = 0.0f;               ///< rain drops owed
-    std::map<std::string, int>       m_companionSeat;              ///< a companion's stool (m_level.m_seats)
-    Mesh                             m_unzuBody = {}, m_unzuEye = {}, m_unzuBlades = {};
-    const TalkNode                  *m_talk = nullptr;   ///< the conversation's step on screen
-    int                              m_talkNpc = -1, m_choice = 0;
-    int                              m_menu = 0, m_menuChoice = 0;   ///< 1 Ottla's stims, 2 Kiri's workshop, 3 the lift
-    float                            m_navY = 0.0f;                  ///< the stick's last up and down (menus)
-    float                            m_navX = 0.0f;                  ///< and its last left and right
-    int                              m_craftSlot = 0;                ///< the worn item Kiri works on (reroll, better)
+    std::set<size_t>           m_counted;                    ///< people Unzu has counted
+    bool                       m_tale = false;               ///< this level is a companion's tale
+    HeroE                      m_realHero = HeroE::CORVIN;   ///< who is really played (outside the tale)
+    Progress                   m_realProgress;               ///< what they carry, waiting
+    int                        m_taleXp = 0;                 ///< experience gained in the tale
+    float                      m_rainT = 0.0f;               ///< rain drops owed
+    std::map<std::string, int> m_companionSeat;              ///< a companion's stool (m_level.m_seats)
+    Mesh                       m_unzuBody = {}, m_unzuEye = {}, m_unzuBlades = {};
+    const TalkNode            *m_talk = nullptr;   ///< the conversation's step on screen
+    int                        m_talkNpc = -1, m_choice = 0;
+    int                        m_menu = 0, m_menuChoice = 0;   ///< 1 Ottla's stims, 2 Kiri's workshop, 3 the lift
+    float                      m_navY = 0.0f;                  ///< the stick's last up and down (menus)
+    float                      m_navX = 0.0f;                  ///< and its last left and right
+    int                        m_craftSlot = 0;                ///< the worn item Kiri works on (reroll, better)
+    int                        m_crateSlot = 0;                ///< the slot a sealed crate is bought for (SlotE)
+    /** @return what a sealed crate costs here (by the place's level) */
+    int cratePrice() const;
     std::map<std::string, Texture2D> m_portraits;
     Texture2D                        m_boardTex = {};
     int                              m_boardSurface = -1;

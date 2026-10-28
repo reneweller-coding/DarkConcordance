@@ -127,8 +127,10 @@ void Game::updateMelee( float dt, const GameInput &in, Vector2 move )
         // Bolzenmeisterin: harder bolts, sooner again.
         int r = rank( activeSkill( 1, 1 ) );
         throwBolt( BoltDamage * weaponBoost() * ( 1.0f + 0.15f * r ) * skillPower() );
-        m_boltTimer = BoltCooldown * ( 1.0f - 0.1f * m_progress.m_weapon ) * ( 1.0f - 0.08f * r ) *
-                      ( 1.0f - fminf( 0.6f, stat( StatE::COOLDOWN ) / 100.0f ) );
+        m_boltTimer =
+            BoltCooldown *
+            ( 1.0f - 0.1f * std::min( m_progress.m_weapon, 3 ) - 0.025f * std::max( 0, m_progress.m_weapon - 3 ) ) *
+            ( 1.0f - 0.08f * r ) * ( 1.0f - fminf( 0.6f, stat( StatE::COOLDOWN ) / 100.0f ) );
     }
 }
 

@@ -125,7 +125,8 @@ void Game::makeElite( Foe &f, int elite )
             f.m_affix2 = (int)( rnd() * 12.0f ) % 12;
         while ( f.m_affix2 == f.m_affix );
     float more = elite == 2 ? 7.0f : ( elite == 3 ? 5.0f : 3.2f );
-    if ( hasGift( f, 1 ) ) more *= 0.75f;   // it halves what hits it anyway
+    if ( elite >= 2 ) more /= areaSteep();   // guardians and leaders keep the straight line, as the bosses do
+    if ( hasGift( f, 1 ) ) more *= 0.75f;    // it halves what hits it anyway
     f.m_hp *= more;
     f.m_hpMax = f.m_hp;
     if ( hasGift( f, 7 ) ) f.m_ward = f.m_hpMax * 0.35f;   // shielded

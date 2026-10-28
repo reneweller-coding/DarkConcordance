@@ -529,7 +529,8 @@ void Game::updateAct34( float dt, GameInput &in )
                 if ( cr == r && cc == c && m_pos.y < 2.5f && !m_dead )
                 {
                     m_hurtBy = "laser";
-                    hurtHero( hpMax() * 0.24f, { 0.0f, 3.0f, 0.0f }, p );
+                    // A share of the hero's health: the place's depth must not multiply it again.
+                    hurtHero( hpMax() * 0.24f / m_areaHit, { 0.0f, 3.0f, 0.0f }, p );
                 }
                 for ( Foe &f : m_foes )
                 {

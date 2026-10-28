@@ -653,7 +653,7 @@ void Game::spawnNative( int family, Vector3 p, int tier )
     Foe &f = m_foes.back();
     f.m_family = family;
     f.m_tier = tier;
-    f.m_hp = d.m_hp * TierHp[tier] * toughness( m_difficulty ) * ( 1.0f + 0.25f * ( m_level.m_area - 1 ) ) * m_foeHp;
+    f.m_hp = d.m_hp * TierHp[tier] * toughness( m_difficulty ) * areaTough() * m_foeHp;
     f.m_hpMax = f.m_hp;
     f.m_timer = 1.0f + rnd();
 }

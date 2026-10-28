@@ -99,6 +99,7 @@ struct Options
     int                      m_tier = 0;           ///< tests: the Depths' tier (0: as saved)
     bool                     m_crash = false;      ///< tests: crash on purpose (the report)
     bool                     m_campaign = false;   ///< tests: the main path in order, what is gained carried on
+    bool                     m_plus = false;       ///< tests: the hero of --loadfile carried into a new run
     std::string              m_playLog;            ///< tests: write the play log here
     std::string              m_saveFile;           ///< tests: where a capsule's save goes (instead of save.txt)
     std::string              m_loadFile;           ///< tests: a save to go on from
@@ -229,6 +230,8 @@ Options parse( int argc, char **argv )
             o.m_crash = true;
         else if ( a == "--campaign" )
             o.m_campaign = true;
+        else if ( a == "--plus" )
+            o.m_plus = true;
         else if ( a == "--tier" )
             o.m_tier = atoi( next().c_str() );
         else if ( a == "--playlog" )
@@ -890,6 +893,28 @@ std::string rowText( RowE r, const Settings &s, int cycle )
     }
 }
 
+/**
+ * @brief A hero carried into a new run: as they are (level, gear, skills, scrap, the workshop, the Depths), the story
+ *        from its start, the notes read still read, the cycle one further.
+ * @param[in] done   the finished run's save
+ * @param[in] start  where the story starts
+ * @return the new run's start
+ */
+Progress carriedFrom( const Progress &done, const std::string &start )
+{
+    Progress p = done;
+    p.m_cycle += 1;
+    std::set<std::string> kept;
+    for ( const std::string &f : p.m_flags )
+        if ( f.compare( 0, 5, "note:" ) == 0 || f == "gamedone" ) kept.insert( f );
+    p.m_flags = kept;
+    p.m_deaths = 0;
+    p.m_hasSpot = false;
+    p.m_fired.clear();
+    p.m_level = start;
+    return p;
+}
+
 /** @return the name of the place a save is at (its level's "name" key, read from the file) */
 std::string placeName( const std::string &level )
 {
@@ -1035,6 +1060,7 @@ int runGame( const Options &o, Gfx &gfx )
     if ( o.m_tier > 0 ) progress.m_depthTier = o.m_tier, progress.m_depthBest = o.m_tier - 1;
     if ( !o.m_loadFile.empty() && loadProgress( progress, o.m_loadFile ) )
         level = progress.m_level, hero = progress.m_hero, game->m_heroKind = hero;
+    if ( o.m_plus && !o.m_loadFile.empty() ) progress = carriedFrom( progress, level = o.m_level );
     if ( o.m_colours >= 0 ) settings.m_colours = o.m_colours;
     if ( o.m_lootFilter >= 0 ) settings.m_loot = o.m_lootFilter;
     game->m_progress = progress;
@@ -1044,6 +1070,12 @@ int runGame( const Options &o, Gfx &gfx )
         volatile int *nowhere = nullptr;
         *nowhere = 1;   // the crash report's test
     }
+    if ( !o.m_difficulty.empty() )
+        settings.m_difficulty = o.m_difficulty == "leicht" ? DifficultyE::EASY
+                                                           : ( o.m_difficulty == "schwer"     ? DifficultyE::HARD
+                                                               : o.m_difficulty == "albtraum" ? DifficultyE::NIGHTMARE
+                                                                                              : DifficultyE::NORMAL );
+    game->setDifficulty( settings.m_difficulty );   // before the load: the places keep up by it
     if ( !game->load( gfx, assetsDir(), level, sound ) )
     {
         TraceLog( LOG_ERROR, "LEVEL: %s not found", level.c_str() );
@@ -1057,10 +1089,6 @@ int runGame( const Options &o, Gfx &gfx )
     if ( o.m_silent ) SetMasterVolume( 0.0f );
     if ( !o.m_dumpGen.empty() && !game->generated().empty() )
         SaveFileText( o.m_dumpGen.c_str(), const_cast<char *>( game->generated().c_str() ) );
-    if ( !o.m_difficulty.empty() )
-        settings.m_difficulty = o.m_difficulty == "leicht"
-                                    ? DifficultyE::EASY
-                                    : ( o.m_difficulty == "schwer" ? DifficultyE::HARD : DifficultyE::NORMAL );
     // What the settings ask of a game and the renderer.
     auto apply = [&]()
     {
@@ -1118,6 +1146,7 @@ int runGame( const Options &o, Gfx &gfx )
                 game->m_heroKind = hero;
                 carried.m_level = Path[k];
                 game->m_progress = carried;
+                game->setDifficulty( settings.m_difficulty );
                 if ( !game->load( gfx, assetsDir(), Path[k], sound ) ) break;
                 apply();
             }
@@ -1129,12 +1158,17 @@ int runGame( const Options &o, Gfx &gfx )
                 GameInput in;
                 game->update( dt, in );
                 game->takeStings();
+                if ( o.m_trace > 0.0f && i % std::max( 1, (int)( o.m_trace * 60.0f ) ) == 0 )
+                    TraceLog( LOG_WARNING, "TRACE: %s %s", Path[k], game->report().c_str() );
             }
             TraceLog( LOG_WARNING, "CAMPAIGN: %s", game->campaignLine().c_str() );
             carried = game->progress();
             carried.m_hasSpot = false;
             carried.m_fired.clear();
         }
+        // The hero at the end, for a run after it (--loadfile with --plus).
+        carried.m_flags.insert( "gamedone" );
+        if ( !o.m_saveFile.empty() ) saveProgress( carried, o.m_saveFile );
         game->shutdown();
         score.shutdown();
         return 0;
@@ -1242,9 +1276,11 @@ int runGame( const Options &o, Gfx &gfx )
         CONTROLS,
         PHOTO,
         SLOTS,
-        SCREEN
+        SCREEN,
+        CARRY
     } mode = o.m_autoplay ? PLAY : TITLE;
-    auto menuOf = [&]() { return mode == SCREEN ? 3 : mode == OPTIONS ? 2 : ( mode == TITLE ? 0 : 1 ); };
+    std::vector<int> finished;   ///< for a new game: the slots whose run with this hero is through (CARRY)
+    auto             menuOf = [&]() { return mode == SCREEN ? 3 : mode == OPTIONS ? 2 : ( mode == TITLE ? 0 : 1 ); };
     // The window as the settings have it (not for pictures, nor on a Deck): borderless over the screen or a window
     // of a size, the wait for the screen or a cap on the frames; the renderer's targets follow.
     auto applyDisplay = [&]()
@@ -1293,6 +1329,7 @@ int runGame( const Options &o, Gfx &gfx )
         game = std::make_unique<Game>();
         game->m_heroKind = hero;
         game->m_progress = progress;
+        game->setDifficulty( settings.m_difficulty );
         game->load( gfx, assetsDir(), level, sound );
         apply();
         game->m_autoplay = o.m_autoplay;
@@ -1397,8 +1434,24 @@ int runGame( const Options &o, Gfx &gfx )
             chosen = ( chosen + k.m_move + 3 ) % 3;
             if ( k.m_confirm )
             {
-                // A new game: from the prologue, with nothing.
                 hero = chosen == 0 ? HeroE::DORRA : ( chosen == 1 ? HeroE::CORVIN : HeroE::IONE );
+                // A run with this hero through somewhere: begin anew, or carry the hero over (CARRY asks).
+                finished.clear();
+                for ( int i = 1; i <= Slots; ++i )
+                {
+                    Progress p;
+                    if ( loadProgress( p, slotPath( i ) ) && p.m_hero == hero && p.m_flags.count( "gamedone" ) )
+                        finished.push_back( i );
+                }
+                k.m_confirm = false;
+                if ( !finished.empty() )
+                    mode = CARRY, chosen = 0;
+                else
+                    k.m_confirm = true;
+            }
+            if ( k.m_confirm )
+            {
+                // A new game: from the prologue, with nothing.
                 level = o.m_level;
                 progress = Progress();
                 progress.m_hero = hero;
@@ -1413,6 +1466,48 @@ int runGame( const Options &o, Gfx &gfx )
                 mode = SLOTS;
                 chosen = g_slot - 1;
             }
+            lastMouse = GetMousePosition();
+        }
+        else if ( mode == CARRY )
+        {
+            // Anew, or with a hero whose run is through (as they are, the story from its start); the difficulty with
+            // left and right on its row.
+            MenuKeys k = menuKeys( dt );
+            int      count = (int)finished.size() + 3, difficulty = (int)finished.size() + 1;
+            chosen = ( chosen + k.m_move + count ) % count;
+            int step = chosen == difficulty ? ( k.m_change != 0 ? k.m_change : ( k.m_confirm ? 1 : 0 ) ) : 0;
+            if ( step )
+            {
+                int n = settings.m_nightmare ? 4 : 3;
+                settings.m_difficulty = (DifficultyE)( ( (int)settings.m_difficulty + step + n ) % n );
+                saveSettings( settings );
+                apply();
+            }
+            else if ( k.m_confirm && chosen == count - 1 )
+                k.m_back = true;
+            else if ( k.m_confirm )
+            {
+                level = o.m_level;
+                if ( chosen == 0 )
+                {
+                    progress = Progress();
+                    progress.m_hero = hero;
+                    progress.m_level = level;
+                }
+                else
+                {
+                    Progress done;
+                    loadProgress( done, slotPath( finished[chosen - 1] ) );
+                    progress = carriedFrom( done, level );
+                    journal::win( "plus" );
+                }
+                saveProgress( progress );
+                saved = progress;
+                hasSave = true;
+                restart();
+                mode = PLAY;
+            }
+            if ( k.m_back ) mode = CHOOSE, chosen = hero == HeroE::DORRA ? 0 : ( hero == HeroE::IONE ? 2 : 1 );
             lastMouse = GetMousePosition();
         }
         else if ( mode == PHOTO )
@@ -1669,15 +1764,9 @@ int runGame( const Options &o, Gfx &gfx )
                 {
                     // A new game+: the hero as they are (level, gear, skills, scrap), the story from the prologue,
                     // every place twelve areas further on. The notes read stay read.
-                    progress = saved;
-                    progress.m_cycle += 1;
-                    std::set<std::string> kept;
-                    for ( const std::string &f : progress.m_flags )
-                        if ( f.compare( 0, 5, "note:" ) == 0 || f == "gamedone" ) kept.insert( f );
-                    progress.m_flags = kept;
-                    progress.m_deaths = 0;
+                    progress = carriedFrom( saved, o.m_level );
                     journal::win( "plus" );
-                    progress.m_level = level = o.m_level;
+                    level = o.m_level;
                     hero = progress.m_hero;
                     saveProgress( progress );
                     saved = progress;
@@ -1757,6 +1846,20 @@ int runGame( const Options &o, Gfx &gfx )
         }
         else if ( mode == CONTROLS )
             drawControls( game->font(), chosen, waiting );
+        else if ( mode == CARRY )
+        {
+            std::vector<std::string> items = { tr( "carry.fresh" ) };
+            for ( int slot : finished )
+            {
+                Progress p;
+                loadProgress( p, slotPath( slot ) );
+                items.push_back( TextFormat( tr( "carry.hero" ), tr( std::string( "hero." ) + heroKey( p.m_hero ) ),
+                                             p.m_heroLevel, slot, p.m_cycle + 1 ) );
+            }
+            items.push_back( TextFormat( tr( "carry.difficulty" ), difficultyName( settings.m_difficulty ) ) );
+            items.push_back( tr( "menu.back" ) );
+            drawMenu( game->font(), "DARK CONCORDANCE", tr( "carry.title" ), items, chosen );
+        }
         else if ( mode == SLOTS )
         {
             std::vector<std::string> items;
