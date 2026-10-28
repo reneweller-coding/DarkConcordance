@@ -42,7 +42,7 @@ void writeText( const char *path, const char *what )
 {
     FILE *f = fopen( path, "w" );
     if ( !f ) return;
-    fprintf( f, "DARK CONCORDANCE crashed: %s\n", what );
+    fprintf( f, "DARK CONCORDANCE " SPACEOPERA_VERSION " crashed: %s\n", what );
     fprintf( f, "playing: %s\n", g_context );
     fprintf( f, "the game's log: %s\n\nthe last lines of the play log:\n", g_log );
     const char *lines[48];

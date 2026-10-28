@@ -1,0 +1,212 @@
+# Welcome
+
+The Fringe: nine poor stars at the edge of the Concordance. Whoever dies here stays dead – unless someone harvested what was in them first. DARK CONCORDANCE is an action role-playing game seen from three quarters above: with one of three heroes you fight your way through a prologue and four acts, talk to the people in the stations between them, gather gear, rise in rank and decide in the end how the story goes. There are three endings.
+
+Every place has its own wonder and its own danger: vacuum under the outer hull, water in the drowned quarter, heat and frost on a world that does not turn, a centrifuge that flings you outward. Most places are put together anew on every visit. Whoever wants to play on after the credits finds level after level in the Depths, the story once more with everything gained in New Game+, and the hardest difficulty in Nightmare.
+
+This manual explains the controls, the screen, the heroes, the gear and the stations. It gives nothing of the story away. The pictures are taken by the game itself.
+
+[shot hub] Velm, the Third Drum: the first station, where between missions you buy and improve gear and talk to the people.
+
+# Getting started
+
+## Installing
+
+- **Windows**: unpack `DarkConcordance-<version>-windows-x64.zip` anywhere and start `DarkConcordance.exe`. On the first start Windows warns ("Windows protected your PC") because the game is not signed: "More info", then "Run anyway".
+- **Linux**: unpack `DarkConcordance-<version>-linux-x86_64.tar.gz` and start `./DarkConcordance`. Everything it needs comes along, the library for the films too.
+- **Steam Deck**: copy the Linux version onto the Deck and add it to Steam as a non-Steam game. On the Deck the window takes the whole screen and the graphics start at "Low".
+
+The `assets` folder must stay beside the program. The game needs OpenGL 3.3 and a graphics card of the last ten years; on Linux glibc 2.35 or newer (Ubuntu 22.04, SteamOS).
+
+## The title menu
+
+[shot title] The title menu. "Continue" goes on where you last saved.
+
+| Entry | What it does |
+|---|---|
+| Continue | Go on with the save played last |
+| New game | Choose a hero and begin from the start |
+| Load game | Load one of the four save slots |
+| New Game+ | Appears once a save is through: the story again, with everything gained |
+| Options | Difficulty, graphics, sound, language, controls, display |
+| Quit | Leave the game |
+
+## Choosing a hero
+
+A new game first asks who you are: **Dorra Vask** (melee), **Corvin Aske** (ranged) or **Ione Sarrath** (drones). If you have finished a game with that hero before, the game then asks "How to begin?": anew at level 1, or with the finished hero and their level, gear and skills. The difficulty is chosen on the same page – play on Easy first, say, and then go on with everything gained on Normal.
+
+## Saving
+
+The game saves by itself, at the start of every place and at every rescue capsule you wake. There are four save slots: "New game" asks where to save, "Load game" shows them with hero, place and time. A slot in use is overwritten only after a second confirmation.
+
+[shot slots] The four save slots.
+
+Saves, settings, the journal (codex and awards), the locker and your photos are in the player's folder: `%APPDATA%\DarkConcordance` on Windows, `~/.local/share/DarkConcordance` on Linux.
+
+# Controls
+
+The game plays with keyboard and mouse or with a gamepad; on the Steam Deck everything goes with the Deck's buttons. The texts in the game show the button of the device you are using. Under "Options > Controls" every action can be rebound; "As they came" brings everything back.
+
+[table controls]
+
+In the menus the arrows, Enter and Esc work too, on a gamepad the d-pad, A and B. The game does the aiming: Corvin's rifle and Ione's swarm pick the nearest target in the direction you face; on a PC you can aim yourself with the mouse.
+
+[shot controls] The controls: choose a row, press the new button.
+
+# The heroes
+
+## Corvin Aske – ranged
+
+Once a harvester himself, now an escort for hire. Corvin fights from afar with the Gauss rifle. Held too long, the trigger runs the gun hot and it has to cool down; the bar under his health shows the heat. His skills are **Overcharge** (stronger shots for a while), the **Frag grenade** and the **Evasive roll**. 100 health, quick.
+
+[shot corvin] Corvin in his grey hardsuit.
+
+## Dorra Vask – melee
+
+Short and broad, grown up at almost twice Earth's gravity, in the plates of her old mining suit. The trigger strikes; held, forehand, backhand and the overhead slam follow, whose blast bolt goes off in a ring. The facing button raises the **shield**: shots and blows from the front glance off. Skill 1 throws a **blast bolt** in an arc – for gunners far off and whatever the hammer cannot reach – and then there are the **Earthquake** and the **Charge**. 140 health, a little slower than Corvin.
+
+[shot dorra] Dorra with ram hammer and shield.
+
+## Ione Sarrath – drones
+
+A maintenance technician of the Concession until a core asked her for help over the maintenance line. Forty micro-drones circle her. The trigger sends the swarm at the target; it cuts as long as you hold it. The facing button couples the drones into a **screen** that catches hits from the front and the sides – it tires the swarm (the bar under her health), and a spent swarm neither cuts nor screens until it has recovered. Skill 1, **Maintenance Access**, takes over a machine, which fights for you for a while; then there are **First Aid** and the **Cutting Storm**. 95 health.
+
+[shot ione] Ione and her cloud of drones.
+
+## Levels and skills
+
+Experience brings levels up to 40 and a skill point with each. Every hero has five passive skills and three active ones; the "Skills" page of the inventory shows what a rank brings.
+
+[shot skills] The skills.
+
+# The screen
+
+[shot hud] In the middle of a fight: bottom left health, shield and the hero's bar, bottom right the three skills, top right the minimap.
+
+- **Health and shield**: the energy shield (from a shield emitter) takes hits before the health and fills again after three quiet seconds.
+- **The hero's bar**: Corvin's heat, Ione's swarm.
+- **Stims and scrap**: a stim heals at once. Scrap is the Fringe's money: for stims, the workshop and crates.
+- **Level and experience** along the bottom edge, the skill points beside them.
+- **Skills** bottom right with their buttons and their cooldown.
+- **Minimap** top right: what you have seen, doors, lockers, people and the way out. `M` opens the big map.
+- **The place's meters**: where air, warmth or shade run short, a meter of its own appears. When it runs empty the hero loses health until they reach an air post, a hut or cover.
+
+# Combat
+
+Foes come in families: the places' own creatures, machines, the troops of the Concession, of the Collegium and others. Every family has three grades; then there are champions with a gift of their own, leaders, guardians and at the end of many places a boss.
+
+[shot fight] Corvin under the outer hull, in vacuum.
+
+- **Dodge roll**: a moment untouchable, every one and a half seconds.
+- **Cover**: crates and pillars stop shots; many foes take cover themselves or come from the side.
+- **Stims**: inject them in time, they heal at once.
+- **Death**: the hero gets up again at the last rescue capsule or at the place's start; what they found they keep.
+
+## Difficulty
+
+The difficulty can be changed in the options at any time. The places keep up with the hero: a place lies at most as far below your level as the table says, so that foes and finds do not fall behind you. In the first act of a first run it lies one level lower, while you get to know the game.
+
+[table difficulty]
+
+# Gear
+
+Felled foes, lockers and bosses drop gear, with a beam of light and a label in the colour of its rarity: common, magic, rare, set and unique. Walking over it picks it up; if its slot is empty the hero puts it on at once.
+
+## Ten slots
+
+Weapon, suit, helmet, gloves, boots, two implants and three things of the Fringe: a **utility harness** (more stims, air, better finds), a **shield emitter** (the energy shield) and a **power cell** (shorter cooldowns, stronger skills). Every hero has six weapon families in three tiers; the weapon and the suit show on the hero.
+
+- **Unique** items have a power of their own – a second life per place, exploding hits, a companion drone and many more.
+- **Sets** of four pieces give bonuses for two, three and four pieces worn.
+- **Sockets** take modules; modules drop on their own and go into a free socket from the inventory.
+- **Salvaging** gives scrap for a fifth of the worth. The **loot filter** in the options can salvage common (and magic) finds at once – never what would fill an empty slot, never a module.
+
+[shot inventory] The inventory: on the left the slots worn, on the right the bag, below the comparison with what you wear.
+
+[shot character] The character page: every value at a glance.
+
+# The stations
+
+Between missions you are in a station: Velm in the first act, later aboard a ship, on a ring and on the way back. Nobody there is your enemy.
+
+## Conversations
+
+`E` or `A` speaks to people. Answers are chosen with the arrows or the d-pad. Some conversations change what happens later; some things you only learn if you ask.
+
+[shot talk] Ysolde Varn, who awaits you in Velm.
+
+## Ottla's bar
+
+Ottla sells **stims** and **sealed crates**: an item for the slot you choose with left and right, at the place's level and rare more often than a common find.
+
+[shot trader] Ottla's counter.
+
+## Kiri's workshop
+
+Kiri improves the weapon and the suit in ten levels (the first three count fully, the later ones a little less), rolls one property of a worn item anew, raises an item one level and drills sockets into weapon and suit. Everything costs scrap.
+
+[shot workshop] The workshop.
+
+## The lift and the locker
+
+The lift takes you to every place that is open, and into the Depths. The **locker** in a station's inventory has sixty places and is the same in every save: what Corvin leaves there, Dorra finds in her own game.
+
+[shot lift] The lift.
+
+# On the way
+
+- **Map**: `M` shows everything you have seen; the minimap shows the surroundings.
+- **Rescue capsules** save when you wake them, and are where you get up again.
+- **Lockers and terminals**: `E` searches lockers and reads terminals; notes go into the codex.
+- **Doors** open with `E`; some only once power flows somewhere else.
+- **The places' dangers**: vacuum, water, radiation storms, cold, heat, centrifuges, molten metal. The meter on the screen tells you when it gets tight.
+
+[shot map] The map shows what you have seen.
+
+## The Depths
+
+The lift also goes down into the Depths: places made anew on every visit, with anomalies that change the rules (more foes, bursting dead, weaker shields …) and bring more and better finds for it. Left and right in the lift choose the Depths' tier, from 1 to 10; each tier is harder and richer than the one before. The game remembers the deepest tier reached.
+
+[shot depths] Ione in the Depths.
+
+# After the credits
+
+- **New Game+**: the story once more, with level, gear, skills and scrap; every place lies twelve areas further on, with tougher foes and better finds.
+- **Nightmare**: the hardest difficulty, to be chosen once a game is through.
+- **Carrying the hero over**: see "Choosing a hero" – a finished hero can begin a new save on another difficulty.
+- **Codex and awards**: the inventory's last two pages gather, across all games, every creature, every foe and boss, every note read and 42 awards.
+
+# Options
+
+| Option | What it does |
+|---|---|
+| Difficulty | Easy, Normal, Hard, Nightmare (see "Combat") |
+| Brightness, graphics | Graphics in three steps: Low (Steam Deck), Medium, High |
+| Music, voices, effects | The volumes |
+| Language | German or English: menus, subtitles, signs and voices |
+| Subtitles | Small, normal, large |
+| Colour vision | For red-green or blue-yellow weakness: what the eye cannot tell apart is moved into colours it can |
+| Camera shake | Off, half, full |
+| Vibration | Off, weak, strong |
+| Loot filter | Keep everything, salvage common finds, salvage common and magic ones |
+| Controls | Rebind every action (see "Controls") |
+| Display | Window or borderless, window size, vertical sync, frame rate cap, size of the HUD (80 to 140 %), minimap |
+
+# Photo mode
+
+`P` (or "Photo mode" in the pause) holds the game and hides the HUD. The camera pans with WASD or the left stick, turns with Q and E, the right stick or the right mouse button, tilts with R and F and moves in and out with the mouse wheel or the triggers. Enter or A saves the picture into `photos` in the player's folder; H or Y hides the help.
+
+[shot photo] A photo from Velm.
+
+# Help and files
+
+- **Player's folder**: `%APPDATA%\DarkConcordance` (Windows), `~/.local/share/DarkConcordance` (Linux). Saves (`save.txt`, `save2.txt` …), settings, journal, locker, photos.
+- **Crash**: if the game crashes it writes a report into `crashes` in the player's folder; the title says so on the next start. Whoever reports a bug adds this report.
+- **Play log**: `playlog.txt` in the player's folder records where you were, what killed you and what you found – useful when you want to tell someone where it was too hard.
+- **Performance**: if it stutters, set the graphics a step lower or cap the frame rate under "Display".
+
+# Credits and licence
+
+DARK CONCORDANCE is by Rene Weller. The game is free software under the GNU Affero General Public License 3.0 (`LICENSE`): you may use it, change it and pass it on, with the source of what you change.
+
+It builds on the work of many who give it away: raylib, dav1d, the Barlow font, the people of MakeHuman and MPFB, Quaternius' characters and animations. What is made with what and under which licence is in `CREDITS.txt` beside the game. All persons, places and companies of the story are fictional.

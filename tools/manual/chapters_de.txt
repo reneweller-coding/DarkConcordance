@@ -1,0 +1,212 @@
+# Willkommen
+
+Der Saum: neun arme Sterne am Rand der Konkordanz. Wer hier stirbt, bleibt tot – es sei denn, jemand hat vorher abgeschöpft, was in ihm war. DARK CONCORDANCE ist ein Action-Rollenspiel aus der Dreiviertelsicht: Du kämpfst dich mit einem von drei Helden durch einen Prolog und vier Akte, sprichst mit den Menschen in den Stationen dazwischen, sammelst Ausrüstung, steigst im Rang auf und entscheidest am Ende, wie die Geschichte ausgeht. Es gibt drei Enden.
+
+Jeder Ort hat sein eigenes Wunder und seine eigene Gefahr: Vakuum unter der Außenhaut, Wasser im ertrunkenen Viertel, Hitze und Frost auf einer Welt, die sich nicht dreht, eine Zentrifuge, die dich nach außen schleudert. Die meisten Orte werden bei jedem Besuch neu zusammengesetzt. Wer nach dem Abspann weiterspielen will, findet in den Tiefen Ebene um Ebene, im Neuen Spiel+ die Geschichte noch einmal mit allem Erreichten und im Albtraum die härteste Schwierigkeit.
+
+Dieses Handbuch erklärt die Steuerung, den Bildschirm, die Helden, die Ausrüstung und die Stationen. Es verrät nichts von der Geschichte. Die Bilder hat das Spiel selbst aufgenommen.
+
+[shot hub] Velm, die Dritte Trommel: die erste Station, in der du zwischen den Einsätzen Ausrüstung kaufst, verbesserst und mit den Leuten redest.
+
+# Erste Schritte
+
+## Installieren
+
+- **Windows**: `DarkConcordance-<Version>-windows-x64.zip` irgendwohin entpacken und `DarkConcordance.exe` starten. Beim ersten Start warnt Windows („Der Computer wurde durch Windows geschützt“), weil das Spiel nicht signiert ist: „Weitere Informationen“, dann „Trotzdem ausführen“.
+- **Linux**: `DarkConcordance-<Version>-linux-x86_64.tar.gz` entpacken und `./DarkConcordance` starten. Alles Nötige liegt bei, auch die Bibliothek für die Filme.
+- **Steam Deck**: die Linux-Fassung auf das Deck kopieren und in Steam als Nicht-Steam-Spiel hinzufügen. Auf dem Deck nimmt das Fenster den ganzen Bildschirm ein und die Grafik beginnt auf „Niedrig“.
+
+Der Ordner `assets` muss neben dem Programm bleiben. Das Spiel braucht OpenGL 3.3 und eine Grafikkarte der letzten zehn Jahre; unter Linux glibc 2.35 oder neuer (Ubuntu 22.04, SteamOS).
+
+## Das Titelmenü
+
+[shot title] Das Titelmenü. „Fortsetzen“ macht dort weiter, wo du zuletzt gespeichert hast.
+
+| Eintrag | Was er tut |
+|---|---|
+| Fortsetzen | Weiter mit dem zuletzt gespielten Spielstand |
+| Neues Spiel | Einen Helden wählen und von vorn beginnen |
+| Spielstand laden | Einen der vier Speicherplätze laden |
+| Neues Spiel+ | Erscheint, wenn ein Spielstand durchgespielt ist: die Geschichte noch einmal, mit allem Erreichten |
+| Optionen | Schwierigkeit, Grafik, Ton, Sprache, Tastenbelegung, Anzeige |
+| Beenden | Das Spiel beenden |
+
+## Einen Helden wählen
+
+Ein neues Spiel fragt zuerst, wer du bist: **Dorra Vask** (Nahkampf), **Corvin Aske** (Fernkampf) oder **Ione Sarrath** (Drohnen). Hast du mit diesem Helden schon einmal ein Spiel beendet, fragt das Spiel danach „Wie beginnen?“: neu auf Stufe 1, oder mit dem fertigen Helden samt Stufe, Ausrüstung und Fähigkeiten. Auf derselben Seite wählst du die Schwierigkeit – so kannst du zum Beispiel zuerst auf Leicht spielen und dann auf Normal mit allem weitermachen, was du gewonnen hast.
+
+## Speichern
+
+Das Spiel speichert von selbst, am Anfang jedes Ortes und an jeder Rettungskapsel, die du weckst. Es gibt vier Speicherplätze: „Neues Spiel“ fragt, wo gespeichert werden soll, „Spielstand laden“ zeigt sie mit Held, Ort und Zeit. Ein belegter Platz wird erst nach einer zweiten Bestätigung überschrieben.
+
+[shot slots] Die vier Speicherplätze.
+
+Spielstände, Einstellungen, das Tagebuch (Kodex und Auszeichnungen), der Spind und deine Fotos liegen im Spielerordner: `%APPDATA%\DarkConcordance` unter Windows, `~/.local/share/DarkConcordance` unter Linux.
+
+# Steuerung
+
+Das Spiel spielt sich mit Tastatur und Maus oder mit einem Gamepad; auf dem Steam Deck geht alles mit den Tasten des Decks. Die Texte im Spiel zeigen die Taste des Geräts, das du gerade benutzt. Unter „Optionen > Tastenbelegung“ kannst du jede Aktion umbelegen; „Wie ab Werk“ stellt alles zurück.
+
+[table controls]
+
+In den Menüs gehen auch die Pfeiltasten, Enter und Esc, auf dem Gamepad das Steuerkreuz, A und B. Das Zielen übernimmt das Spiel: Corvins Gewehr und Iones Schwarm suchen sich das nächste Ziel in Blickrichtung; mit der Maus kannst du am PC selbst zielen.
+
+[shot controls] Die Tastenbelegung: eine Zeile wählen, die neue Taste drücken.
+
+# Die Helden
+
+## Corvin Aske – Fernkampf
+
+Früher selbst ein Abschöpfer, heute Begleitschutz. Corvin kämpft mit dem Gaußgewehr aus der Distanz. Hält er den Abzug zu lange, läuft die Waffe heiß und muss abkühlen; die Leiste unter der Gesundheit zeigt die Hitze. Seine Fähigkeiten sind die **Überladung** (stärkere Schüsse für kurze Zeit), die **Splittergranate** und die **Ausweichrolle**. 100 Gesundheit, schnell.
+
+[shot corvin] Corvin im grauen Hartanzug.
+
+## Dorra Vask – Nahkampf
+
+Klein und breit, aufgewachsen bei fast doppelter Erdschwere, in den Platten ihres alten Grubenanzugs. Der Abzug schlägt zu; gehalten, folgen Vorhand, Rückhand und der Überkopfschlag, dessen Sprengbolzen im Ring hochgeht. Die Ausrichtungstaste hebt den **Schild**: Schüsse und Schläge von vorn prallen ab. Fähigkeit 1 wirft einen **Sprengbolzen** im Bogen – für Schützen in der Ferne und alles, was der Hammer nicht erreicht –, dazu kommen der **Erdstoß** und der **Sturmangriff**. 140 Gesundheit, etwas langsamer als Corvin.
+
+[shot dorra] Dorra mit Rammhammer und Schild.
+
+## Ione Sarrath – Drohnen
+
+Wartungstechnikerin der Konzession, bis ein Kern sie über die Wartungsleitung um Hilfe bat. Um sie kreisen vierzig Mikrodrohnen. Der Abzug schickt den Schwarm auf das Ziel; er schneidet, solange du hältst. Die Ausrichtungstaste koppelt die Drohnen zu einem **Schirm**, der Treffer von vorn und von der Seite abfängt – das ermüdet den Schwarm (die Leiste unter der Gesundheit), und ein erschöpfter Schwarm schneidet und schirmt erst wieder, wenn er sich erholt hat. Fähigkeit 1, der **Wartungszugang**, übernimmt eine Maschine, die eine Weile für dich kämpft; dazu kommen **Erste Hilfe** und der **Schneidsturm**. 95 Gesundheit.
+
+[shot ione] Ione und ihre Drohnenwolke.
+
+## Stufen und Fähigkeiten
+
+Erfahrung bringt Stufen bis 40 und mit jeder Stufe einen Fähigkeitspunkt. Jeder Held hat fünf passive Fähigkeiten und drei aktive; die Seite „Fähigkeiten“ im Inventar zeigt, was ein Rang bringt.
+
+[shot skills] Die Fähigkeiten.
+
+# Der Bildschirm
+
+[shot hud] Mitten im Kampf: links unten Gesundheit, Schild und die Leiste des Helden, rechts unten die drei Fähigkeiten, oben rechts die Minikarte.
+
+- **Gesundheit und Schild**: Der Energieschild (aus einem Schildemitter) fängt Treffer vor der Gesundheit ab und lädt sich nach drei ruhigen Sekunden wieder auf.
+- **Die Leiste des Helden**: Corvins Hitze, Iones Schwarm.
+- **Stims und Schrott**: Ein Stim heilt sofort. Schrott ist das Geld des Saums: für Stims, Werkstatt und Kisten.
+- **Stufe und Erfahrung** am unteren Rand, die Fähigkeitspunkte daneben.
+- **Fähigkeiten** rechts unten mit ihren Tasten und der Abklingzeit.
+- **Minikarte** oben rechts: was du schon gesehen hast, Türen, Spinde, Menschen und der Weg hinaus. Die große Karte öffnet `M`.
+- **Anzeigen des Ortes**: wo die Luft, die Wärme oder der Schatten knapp werden, erscheint eine eigene Anzeige. Läuft sie leer, verliert der Held Gesundheit, bis er eine Luftsäule, eine Hütte oder Deckung erreicht.
+
+# Kampf
+
+Die Gegner kommen in Familien: Bewohner der Orte, Maschinen, Truppen der Konzession, des Kollegiums und anderer. Jede Familie hat drei Stufen; dazu kommen Champions mit eigener Gabe, Anführer, Wächter und am Ende vieler Orte ein Boss.
+
+[shot fight] Corvin unter der Außenhaut, im Vakuum.
+
+- **Ausweichrolle**: einen Augenblick unverwundbar, alle anderthalb Sekunden.
+- **Deckung**: Kisten und Pfeiler halten Schüsse auf; viele Gegner suchen selbst Deckung oder kommen von der Seite.
+- **Stims**: rechtzeitig spritzen, sie heilen sofort.
+- **Tod**: Der Held steht an der letzten Rettungskapsel oder am Anfang des Ortes wieder auf; was er gefunden hat, behält er.
+
+## Schwierigkeit
+
+Die Schwierigkeit lässt sich jederzeit in den Optionen ändern. Die Orte wachsen mit dem Helden mit: Ein Ort liegt höchstens so weit unter deiner Stufe, wie die Tabelle sagt, damit Gegner und Funde nicht hinter dir zurückbleiben. Im ersten Akt eines ersten Durchlaufs liegt er eine Stufe tiefer, solange du das Spiel kennenlernst.
+
+[table difficulty]
+
+# Ausrüstung
+
+Besiegte Gegner, Spinde und Bosse lassen Ausrüstung fallen, mit einem Lichtstrahl und einem Schild in der Farbe ihrer Seltenheit: gewöhnlich, magisch, selten, Set und einzigartig. Darüberlaufen hebt sie auf; ist der Platz leer, legt der Held sie gleich an.
+
+## Zehn Plätze
+
+Waffe, Anzug, Helm, Handschuhe, Stiefel, zwei Implantate und drei Dinge des Saums: ein **Werkzeuggeschirr** (mehr Stims, Luft, bessere Funde), ein **Schildemitter** (der Energieschild) und eine **Energiezelle** (kürzere Abklingzeiten, stärkere Fähigkeiten). Jeder Held hat sechs Waffenfamilien in drei Stufen; die Waffe und der Anzug zeigen sich am Helden.
+
+- **Einzigartige** Gegenstände haben eine eigene Kraft – ein zweites Leben pro Ort, explodierende Treffer, eine Begleitdrohne und vieles mehr.
+- **Sets** aus vier Teilen geben Boni für zwei, drei und vier getragene Teile.
+- **Sockel** nehmen Module auf; Module fallen für sich allein und kommen im Inventar in einen freien Sockel.
+- **Zerlegen** gibt Schrott für ein Fünftel des Werts. Der **Beutefilter** in den Optionen kann gewöhnliche (und magische) Funde gleich zerlegen – nie, was einen leeren Platz füllen würde, und nie ein Modul.
+
+[shot inventory] Das Inventar: links die getragenen Plätze, rechts die Tasche, unten der Vergleich mit dem, was du trägst.
+
+[shot character] Die Charakterseite: alle Werte auf einen Blick.
+
+# Die Stationen
+
+Zwischen den Einsätzen bist du in einer Station: Velm im ersten Akt, später an Bord eines Schiffs, auf einem Ring und auf dem Weg zurück. Dort ist niemand dein Feind.
+
+## Gespräche
+
+`E` oder `A` spricht die Leute an. Antworten wählst du mit den Pfeilen oder dem Steuerkreuz. Manche Gespräche ändern, was später geschieht; manches erfährst du nur, wenn du nachfragst.
+
+[shot talk] Ysolde Varn, die dich in Velm erwartet.
+
+## Ottlas Bar
+
+Ottla verkauft **Stims** und **versiegelte Kisten**: einen Gegenstand für den Platz, den du mit links und rechts wählst, auf der Stufe des Ortes und öfter selten als ein gewöhnlicher Fund.
+
+[shot trader] Ottlas Theke.
+
+## Kiris Werkstatt
+
+Kiri verbessert die Waffe und den Anzug in zehn Stufen (die ersten drei wirken voll, die späteren etwas weniger), würfelt eine Eigenschaft eines getragenen Gegenstands neu, hebt einen Gegenstand eine Stufe höher und bohrt Sockel in Waffe und Anzug. Alles kostet Schrott.
+
+[shot workshop] Die Werkstatt.
+
+## Der Aufzug und der Spind
+
+Der Aufzug bringt dich zu jedem Ort, der offen ist, und in die Tiefen. Der **Spind** im Inventar einer Station hat sechzig Plätze und ist in allen Spielständen derselbe: Was Corvin dort ablegt, findet Dorra in ihrem eigenen Spiel.
+
+[shot lift] Der Aufzug.
+
+# Unterwegs
+
+- **Karte**: `M` zeigt alles, was du gesehen hast; die Minikarte zeigt die Umgebung.
+- **Rettungskapseln** speichern, wenn du sie weckst, und sind der Ort, an dem du wieder aufstehst.
+- **Spinde und Terminals**: `E` durchsucht Spinde und liest Terminals; Notizen kommen in den Kodex.
+- **Türen** öffnen sich mit `E`; manche erst, wenn anderswo Strom fließt.
+- **Gefahren des Ortes**: Vakuum, Wasser, Strahlungsstürme, Kälte, Hitze, Zentrifugen, flüssiges Metall. Die Anzeige am Bildschirm sagt, wann es eng wird.
+
+[shot map] Die Karte zeigt, was du gesehen hast.
+
+## Die Tiefen
+
+Der Aufzug führt auch hinab in die Tiefen: Orte, die bei jedem Besuch neu entstehen, mit Anomalien, die die Regeln verändern (mehr Gegner, platzende Tote, schwächere Schilde …) und dafür mehr und bessere Funde bringen. Mit links und rechts wählst du im Aufzug die Stufe der Tiefen, von 1 bis 10; jede Stufe ist härter und lohnender als die vorige. Die tiefste erreichte Stufe merkt sich das Spiel.
+
+[shot depths] Ione in den Tiefen.
+
+# Nach dem Abspann
+
+- **Neues Spiel+**: die Geschichte noch einmal, mit Stufe, Ausrüstung, Fähigkeiten und Schrott; jeder Ort liegt zwölf Gebiete weiter, mit härteren Gegnern und besseren Funden.
+- **Albtraum**: die härteste Schwierigkeit, wählbar, sobald ein Spiel durchgespielt ist.
+- **Den Helden mitnehmen**: siehe „Einen Helden wählen“ – ein fertiger Held kann einen neuen Spielstand auf einer anderen Schwierigkeit beginnen.
+- **Kodex und Auszeichnungen**: die beiden letzten Seiten des Inventars sammeln über alle Spiele hinweg jede Kreatur, jeden Gegner und Boss, jede gelesene Notiz und 42 Auszeichnungen.
+
+# Optionen
+
+| Option | Was sie tut |
+|---|---|
+| Schwierigkeit | Leicht, Normal, Schwer, Albtraum (siehe „Kampf“) |
+| Helligkeit, Grafik | Grafik in drei Stufen: Niedrig (Steam Deck), Mittel, Hoch |
+| Musik, Stimmen, Effekte | Die Lautstärken |
+| Sprache | Deutsch oder Englisch: Menüs, Untertitel, Schilder und Stimmen |
+| Untertitel | Klein, normal, groß |
+| Farbsehen | Für Rot-Grün- oder Blau-Gelb-Schwäche: was das Auge nicht unterscheidet, wird in Farben verschoben, die es kann |
+| Kamerawackeln | Aus, halb, voll |
+| Vibration | Aus, schwach, stark |
+| Beutefilter | Alles behalten, gewöhnliche Funde zerlegen, gewöhnliche und magische zerlegen |
+| Tastenbelegung | Jede Aktion umbelegen (siehe „Steuerung“) |
+| Anzeige | Fenster oder randlos, Fenstergröße, vertikale Synchronisation, Bildratenbegrenzung, Größe der Anzeigen (80 bis 140 %), Minikarte |
+
+# Fotomodus
+
+`P` (oder „Fotomodus“ in der Pause) hält das Spiel an und blendet die Anzeigen aus. Die Kamera schwenkt mit WASD oder dem linken Stick, dreht sich mit Q und E, dem rechten Stick oder der rechten Maustaste, neigt sich mit R und F und fährt mit dem Mausrad oder den Triggern heran. Enter oder A speichert das Bild im Ordner `photos` des Spielerordners; H oder Y blendet die Hilfe aus.
+
+[shot photo] Ein Foto aus Velm.
+
+# Hilfe und Dateien
+
+- **Spielerordner**: `%APPDATA%\DarkConcordance` (Windows), `~/.local/share/DarkConcordance` (Linux). Spielstände (`save.txt`, `save2.txt` …), Einstellungen, Tagebuch, Spind, Fotos.
+- **Absturz**: Stürzt das Spiel ab, schreibt es einen Bericht nach `crashes` im Spielerordner; der Titel weist beim nächsten Start darauf hin. Wer einen Fehler meldet, legt diesen Bericht bei.
+- **Spielprotokoll**: `playlog.txt` im Spielerordner hält fest, wo du warst, woran du gestorben bist und was du gefunden hast – nützlich, wenn du jemandem schildern willst, wo es zu schwer war.
+- **Leistung**: Ruckelt es, stelle die Grafik eine Stufe niedriger oder begrenze die Bildrate unter „Anzeige“.
+
+# Mitwirkende und Lizenz
+
+DARK CONCORDANCE ist von Rene Weller. Das Spiel ist freie Software unter der GNU Affero General Public License 3.0 (`LICENSE`): Du darfst es benutzen, verändern und weitergeben, mit dem Quelltext dessen, was du änderst.
+
+Es baut auf der Arbeit vieler auf, die sie verschenken: raylib, dav1d, die Schrift Barlow, die Menschen aus MakeHuman und MPFB, die Animationen und Figuren von Quaternius. Was womit gemacht ist und unter welcher Lizenz, steht in `CREDITS.txt` neben dem Spiel. Alle Personen, Orte und Firmen der Geschichte sind erfunden.

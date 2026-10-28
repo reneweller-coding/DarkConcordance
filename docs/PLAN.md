@@ -346,6 +346,17 @@ Still to come, by first use:
    resort. Campaign on Normal afterwards: all 75 places finished, deaths per act I/II/III/IV Corvin 12/0/1/0, Dorra
    4/0/0/0, Ione 7/2/8/0 (the Rechenmond's falls, since learnt), 1.6-3.8 h; one stall (that gap). Packages
    rebuilt (zip and tar.gz 1.3 GB each), both started muted from the package (the Linux one in the hub).
+12. Release polish — done (28.10.2026, the user's wish): the version in the title's corner and in crash reports;
+   the player's folder by the game's name (`DarkConcordance`, the working name's folder copied over once); the
+   SmartScreen hint in the player's readme; the hubs measured with the people's whole bodies against Quaternius'
+   (Velm 6.3 against 6.1 ms a frame at 1600x900 high, 1.7 against 1.7 ms at 1280x800 low on the RTX 5090: no
+   measurable cost); a manual in German and English (`tools/manual`, 22 pictures per language taken by the game,
+   PDF through Edge), packed beside the game. The icon (`tools/make_icon.py`: an eclipse and nine stars) in the exe,
+   the window, the Linux package and on the manual's cover. The menus clicked through in a real window with the new
+   menu test (`--menutest`): the display options all take and go back (borderless filled the 7680x2160 screen),
+   the saves, the hero's choice, „Wie beginnen?“ with a finished Ione and the difficulty row; found and fixed: a
+   save's line wider than the window (now set smaller), a hero's long description (now two lines), the campaign
+   test's end save kept the ending's marker in its level (play strips it; the test now does too).
 
 ## Open decisions (the user's)
 

@@ -1,0 +1,22 @@
+# The manual's pictures: NAME | the game's command line. tools/manual/make_shots.py takes each into
+# docs/manual/shots/<de|en>/NAME.png (muted, 1600 x 900, in the language's texts).
+cover       | --level kuehlgedaerme.txt --hero corvin --warm 7 --photo 2.0,-0.6,-0.7
+title       | --level velm.txt --hero corvin --warm 9 --menu
+slots       | --level velm.txt --hero corvin --warm 9 --slots
+corvin      | --level kuehlgedaerme.txt --hero corvin --warm 7 --photo 2.6,-0.5,-0.6
+dorra       | --level kuehlgedaerme.txt --hero dorra --warm 7 --photo 2.6,-0.5,-0.6
+ione        | --level kuehlgedaerme.txt --hero ione --warm 7 --photo 2.6,-0.5,-0.6
+hud         | --level knochenmarkt.txt --hero dorra --herolevel 5 --autoplay --warm 45
+fight       | --level aussenhaut.txt --hero corvin --herolevel 7 --autoplay --warm 70
+inventory   | --level velm.txt --hero corvin --herolevel 9 --loot 14 --warm 3 --panel 0
+skills      | --level velm.txt --hero corvin --herolevel 9 --warm 3 --panel 1
+character   | --level velm.txt --hero corvin --herolevel 9 --loot 14 --warm 3 --panel 2
+map         | --level knochenmarkt.txt --hero corvin --herolevel 5 --autoplay --warm 120 --panel 3
+hub         | --level velm.txt --hero dorra --warm 8 --photo 1.2,-0.7,-0.3
+talk        | --level velm.txt --hero dorra --warm 9 --talk ysolde
+trader      | --level velm.txt --hero corvin --warm 9 --shop 1
+workshop    | --level velm.txt --hero corvin --herolevel 9 --loot 14 --warm 9 --shop 2
+lift        | --level velm.txt --hero corvin --warm 9 --flags job1,job2,job3,done.kuehlgedaerme --shop 3
+depths      | --level tiefen.txt --hero ione --herolevel 12 --tier 3 --autoplay --warm 40
+controls    | --level velm.txt --hero corvin --warm 9 --controls
+photo       | --level velm.txt --hero ione --warm 8 --photo 0.6,-0.8,-0.5

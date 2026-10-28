@@ -7,8 +7,8 @@
     .\Deploy\build_release.ps1 [-NoBuild] [-NoLinux]
 
     Builds the Release (build.ps1), stages the game as DarkConcordance.exe with its assets (without assets\raw, the
-    sources the textures were made from), the player's readme, the licence and the credits in work\release and zips
-    them into dist. The Linux archive comes from Deploy/build_linux.sh in WSL (GCC 12, glibc 2.35 and newer, the
+    sources the textures were made from), the player's readme, the manual (Handbuch.pdf, Manual.pdf), the licence
+    and the credits in work\release and zips them into dist. The Linux archive comes from Deploy/build_linux.sh in WSL (GCC 12, glibc 2.35 and newer, the
     Steam Deck included; dav1d travels along in lib/); without WSL it is skipped.
 
     -NoBuild   pack what bin\msvc holds
@@ -41,6 +41,11 @@ Copy-Item (Join-Path $root "bin\msvc\SpaceOpera.exe") (Join-Path $stage "DarkCon
 if ($LASTEXITCODE -ge 8) { throw "copying the assets failed" }
 Copy-Item (Join-Path $root "docs\README-player.txt") (Join-Path $stage "README.txt")
 foreach ($doc in "LICENSE", "docs\CREDITS.txt") { Copy-Item (Join-Path $root $doc) $stage }
+# The manual in both languages (tools/manual/make_manual.py), where it is made.
+foreach ($pair in @(@("DarkConcordance-Handbuch.pdf", "Handbuch.pdf"), @("DarkConcordance-Manual.pdf", "Manual.pdf"))) {
+    $pdf = Join-Path $root "docs\manual\$($pair[0])"
+    if (Test-Path $pdf) { Copy-Item $pdf (Join-Path $stage $pair[1]) }
+}
 $dist = Join-Path $root "dist"
 New-Item -ItemType Directory -Force $dist | Out-Null
 $zip = Join-Path $dist "$name.zip"

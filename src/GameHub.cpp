@@ -398,6 +398,9 @@ void Game::openForPicture( const std::string &who, int menu )
     for ( size_t i = 0; i < m_npcs.size(); ++i )
         if ( m_level.m_npcs[m_npcs[i].m_def].m_id == who ) openTalk( (int)i );
     m_menu = menu;
+    // The lift with the places open (as stepping on it does).
+    bool promised = false;
+    if ( menu == 3 ) m_liftChoices = openExits( promised );
 }
 
 void Game::enterNode( const TalkNode *node )

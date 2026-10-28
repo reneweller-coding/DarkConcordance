@@ -52,7 +52,21 @@ std::string userDir()
     std::string root = xdg && *xdg ? xdg : ( home && *home ? std::string( home ) + "/.local/share" : beside );
 #endif
     std::error_code e;
-    dir = root + "/SpaceOpera/";
+    dir = root + "/DarkConcordance/";
+    // The folder of the working name (SpaceOpera) comes over whole, once: saves, settings, journal, stash, photos.
+    std::string old = root + "/SpaceOpera/";
+    if ( !fs::exists( fs::path( dir ), e ) && fs::is_directory( fs::path( old ), e ) )
+        for ( const auto &entry : fs::recursive_directory_iterator( fs::path( old ), e ) )
+        {
+            fs::path to = fs::path( dir ) / fs::relative( entry.path(), fs::path( old ), e );
+            if ( entry.is_directory( e ) )
+                fs::create_directories( to, e );
+            else
+            {
+                fs::create_directories( to.parent_path(), e );
+                copyFile( entry.path().string(), to.string() );
+            }
+        }
     fs::create_directories( fs::path( dir ), e );
     if ( e ) return dir = beside;
     // What the game kept beside itself before moves here once (the old copies stay where they were).

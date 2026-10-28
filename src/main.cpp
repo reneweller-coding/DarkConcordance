@@ -24,12 +24,14 @@
 #include "PlayLog.h"
 #include "Rumble.h"
 #include "Gfx.h"
+#include "IconPng.h"
 #include "Scene.h"
 #include "Score.h"
 #include "Text.h"
 
 #include <raylib.h>
 #include <raymath.h>
+#include <rlgl.h>
 
 #include <algorithm>
 #include <cstdarg>
@@ -37,6 +39,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ctime>
+#include <deque>
 #include <sstream>
 #include <functional>
 #include <memory>
@@ -100,6 +103,8 @@ struct Options
     bool                     m_crash = false;      ///< tests: crash on purpose (the report)
     bool                     m_campaign = false;   ///< tests: the main path in order, what is gained carried on
     std::string              m_keep;               ///< tests: the campaign keeps the hero before each place here
+    std::string              m_menuTest;           ///< tests: menu keys from a script (comma-separated), a real window
+    std::string              m_menuDir;            ///< tests: where the script's shots go
     int                      m_places = 0;         ///< tests: the campaign stops after so many places (0: all)
     bool                     m_plus = false;       ///< tests: the hero of --loadfile carried into a new run
     std::string              m_playLog;            ///< tests: write the play log here
@@ -234,6 +239,10 @@ Options parse( int argc, char **argv )
             o.m_campaign = true;
         else if ( a == "--keep" )
             o.m_keep = next();
+        else if ( a == "--menutest" )
+            o.m_menuTest = next();
+        else if ( a == "--menudir" )
+            o.m_menuDir = next();
         else if ( a == "--places" )
             o.m_places = atoi( next().c_str() );
         else if ( a == "--plus" )
@@ -652,6 +661,15 @@ void saveSettings( const Settings &s )
     endWrite( f, settingsPath() );
 }
 
+/**
+ * @brief Tests (--menutest): the menu keys played from a script, a step every few frames, in a real window -- up,
+ *        down, left, right, ok, back, waitN (frames), shot:NAME (the whole window into --menudir), quit.
+ */
+std::deque<std::string> g_script;
+std::string             g_scriptShot, g_scriptDir;
+int                     g_scriptWait = 0;
+bool                    g_scriptQuit = false;
+
 /** @brief Navigation in a menu: up, down, left, right, confirm, back (keyboard, gamepad, left stick). */
 struct MenuKeys
 {
@@ -666,6 +684,26 @@ MenuKeys menuKeys( float dt )
 {
     static float repeat = 0.0f;
     MenuKeys     k;
+    if ( !g_script.empty() || g_scriptWait > 0 )
+    {
+        // The test's script instead of the keys.
+        if ( g_scriptWait > 0 )
+        {
+            --g_scriptWait;
+            return k;
+        }
+        std::string t = g_script.front();
+        g_script.pop_front();
+        k.m_move = t == "up" ? -1 : t == "down" ? 1 : 0;
+        k.m_change = t == "left" ? -1 : t == "right" ? 1 : 0;
+        k.m_confirm = t == "ok";
+        k.m_back = t == "back";
+        if ( t.rfind( "wait", 0 ) == 0 ) g_scriptWait = atoi( t.c_str() + 4 );
+        if ( t.rfind( "shot:", 0 ) == 0 ) g_scriptShot = t.substr( 5 );
+        g_scriptQuit = g_scriptQuit || t == "quit";
+        g_scriptWait = std::max( g_scriptWait, 8 );
+        return k;
+    }
     if ( IsKeyPressed( KEY_UP ) || IsKeyPressed( KEY_W ) ) k.m_move = -1;
     if ( IsKeyPressed( KEY_DOWN ) || IsKeyPressed( KEY_S ) ) k.m_move = 1;
     if ( IsKeyPressed( KEY_LEFT ) || IsKeyPressed( KEY_A ) ) k.m_change = -1;
@@ -708,11 +746,24 @@ void drawMenu( const Font &font, const char *title, const char *subtitle, const 
     auto text = [&]( const char *t, float y, float size, Color c )
     {
         Vector2 m = MeasureTextEx( font, t, size * s, 1.0f );
+        // A line wider than the window (a save's long place name) is set smaller until it fits.
+        if ( m.x > w * 0.94f ) size *= w * 0.94f / m.x, m = MeasureTextEx( font, t, size * s, 1.0f );
         DrawTextEx( font, t, { w * 0.5f - m.x * 0.5f + 2 * s, y + 2 * s }, size * s, 1.0f, { 0, 0, 0, 200 } );
         DrawTextEx( font, t, { w * 0.5f - m.x * 0.5f, y }, size * s, 1.0f, c );
     };
     text( title, h * 0.2f, 84, { 245, 236, 222, 255 } );
-    text( subtitle, h * 0.2f + 96 * s, 28, { 255, 190, 120, 230 } );
+    // A long subtitle (a hero's description) in two lines, broken at the space nearest its middle.
+    std::string sub = subtitle;
+    if ( MeasureTextEx( font, subtitle, 28 * s, 1.0f ).x > w * 0.8f && sub.find( ' ' ) != std::string::npos )
+    {
+        size_t mid = sub.size() / 2, cut = sub.rfind( ' ', mid );
+        size_t after = sub.find( ' ', mid );
+        if ( cut == std::string::npos || ( after != std::string::npos && after - mid < mid - cut ) ) cut = after;
+        text( sub.substr( 0, cut ).c_str(), h * 0.2f + 92 * s, 28, { 255, 190, 120, 230 } );
+        text( sub.substr( cut + 1 ).c_str(), h * 0.2f + 124 * s, 28, { 255, 190, 120, 230 } );
+    }
+    else
+        text( subtitle, h * 0.2f + 96 * s, 28, { 255, 190, 120, 230 } );
     float step = fminf( 46.0f, 520.0f / items.size() ), size = fminf( 34.0f, step * 0.86f );
     for ( size_t i = 0; i < items.size(); ++i )
     {
@@ -1184,6 +1235,8 @@ int runGame( const Options &o, Gfx &gfx )
         }
         // The hero at the end, for a run after it (--loadfile with --plus).
         carried.m_flags.insert( "gamedone" );
+        if ( carried.m_level.compare( 0, 4, "end " ) == 0 )
+            carried.m_level = carried.m_level.substr( 4 );   // as play does
         if ( !o.m_saveFile.empty() ) saveProgress( carried, o.m_saveFile );
         game->shutdown();
         score.shutdown();
@@ -1353,7 +1406,7 @@ int runGame( const Options &o, Gfx &gfx )
         score.keep( game->musicPieces() );
         if ( o.m_silent ) SetMasterVolume( 0.0f );
     };
-    while ( !WindowShouldClose() && !quit )
+    while ( !WindowShouldClose() && !quit && !g_scriptQuit )
     {
         // The pad's motors while it is played (still in the menus, the inventory, the photo mode).
         {
@@ -1924,8 +1977,28 @@ int runGame( const Options &o, Gfx &gfx )
                 DrawTextEx( game->font(), t, { GetScreenWidth() * 0.5f - m.x * 0.5f, GetScreenHeight() - 110 * s },
                             20 * s, 1.0f, { 255, 170, 120, 220 } );
             }
+            if ( mode == TITLE )
+            {
+                // The version, small in the corner.
+                float   s = GetScreenHeight() / 1080.0f;
+                Vector2 m = MeasureTextEx( game->font(), SPACEOPERA_VERSION, 18 * s, 1.0f );
+                DrawTextEx( game->font(), SPACEOPERA_VERSION,
+                            { GetScreenWidth() - m.x - 28 * s, GetScreenHeight() - 44 * s }, 18 * s, 1.0f,
+                            { 200, 190, 175, 140 } );
+            }
         }
         if ( showFps ) DrawFPS( 10, 10 );
+        if ( !g_scriptShot.empty() )
+        {
+            // The menu test's picture: the whole window, menus and all.
+            rlDrawRenderBatchActive();   // what is batched (menus, HUD) into the window first
+            rlDisableFramebuffer();
+            int   w = GetRenderWidth(), h = GetRenderHeight();
+            Image img = { rlReadScreenPixels( w, h ), w, h, 1, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 };
+            ExportImage( img, ( g_scriptDir + g_scriptShot + ".png" ).c_str() );
+            UnloadImage( img );
+            g_scriptShot.clear();
+        }
         EndDrawing();
     }
     rumble::stop();
@@ -1956,8 +2029,21 @@ int main( int argc, char **argv )
 
     unsigned flags = FLAG_VSYNC_HINT;
     if ( !o.m_shot.empty() ) flags |= FLAG_WINDOW_HIDDEN;
+    // The menu test: its script, in a real window that does not take the focus.
+    if ( !o.m_menuTest.empty() )
+    {
+        flags |= FLAG_WINDOW_UNFOCUSED;
+        std::stringstream steps( o.m_menuTest );
+        for ( std::string step; std::getline( steps, step, ',' ); )
+            if ( !step.empty() ) g_script.push_back( step );
+        g_scriptDir = o.m_menuDir.empty() ? std::string( GetApplicationDirectory() ) : o.m_menuDir + "/";
+    }
     SetConfigFlags( flags );
     InitWindow( o.m_width, o.m_height, "DARK CONCORDANCE" );
+    // The window's icon (tools/make_icon.py), on every platform.
+    Image icon = LoadImageFromMemory( ".png", IconPng, (int)sizeof( IconPng ) );
+    if ( icon.data ) SetWindowIcon( icon );
+    UnloadImage( icon );
     if ( !o.m_pad.empty() )
         setDevice( o.m_pad == "xbox"   ? DeviceE::XBOX
                    : o.m_pad == "ps"   ? DeviceE::PLAYSTATION

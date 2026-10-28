@@ -7,3 +7,5 @@ work/
 # dist/ the release packages (Deploy/build_release.ps1).
 dist/
 __pycache__/
+# The manual's pictures (tools/manual/make_shots.py takes them again; the HTML and the PDFs carry them).
+docs/manual/shots/

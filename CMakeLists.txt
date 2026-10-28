@@ -43,8 +43,11 @@ else()
     target_link_libraries( SpaceOpera PRIVATE PkgConfig::DAV1D )
 endif()
 # The textures are read from assets/ beside the program, else from the source tree.
-target_compile_definitions( SpaceOpera PRIVATE SPACEOPERA_ASSETS="${CMAKE_SOURCE_DIR}/assets" )
+target_compile_definitions( SpaceOpera PRIVATE SPACEOPERA_ASSETS="${CMAKE_SOURCE_DIR}/assets"
+                                                  SPACEOPERA_VERSION="${PROJECT_VERSION}" )
 if( MSVC )
+    # The program's icon in Explorer and on the taskbar (tools/make_icon.py draws it).
+    target_sources( SpaceOpera PRIVATE ${CMAKE_SOURCE_DIR}/res/darkconcordance.rc )
     target_compile_options( SpaceOpera PRIVATE /W4 /permissive- /utf-8 /wd4244 /wd4267 /wd4305 )
     target_compile_definitions( SpaceOpera PRIVATE _CRT_SECURE_NO_WARNINGS )
     # A window program without a console that still starts in main().

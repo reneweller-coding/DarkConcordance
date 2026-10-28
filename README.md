@@ -9,8 +9,9 @@ the repository keeps the working name SpaceOpera. The production plan is in [doc
 „Spiel starten“ asks who you are: **Dorra Vask** (melee: ram hammer, shield, blast bolts) or **Corvin Aske**
 (ranged: the Gauss rifle); Ione follows later. The game begins with the prologue, wakes up on Station Velm (the hub)
 and goes down to level 1 from there, back to Velm after it; hero, scrap, stims, upgrades and what has happened go along
-and are saved at each level's start („Fortsetzen“ in the title menu) in the player's folder: `%APPDATA%\SpaceOpera`
-on Windows, `$XDG_DATA_HOME/SpaceOpera` or `~/.local/share/SpaceOpera` on Linux (the save, the settings, the journal,
+and are saved at each level's start („Fortsetzen“ in the title menu) in the player's folder: `%APPDATA%\DarkConcordance`
+on Windows, `$XDG_DATA_HOME/DarkConcordance` or `~/.local/share/DarkConcordance` on Linux (what the working name's
+folder `SpaceOpera` held comes over once, whole; the save, the settings, the journal,
 the stash and the play log; what lay beside the program before moves there once). Every file there is written whole
 or not at all (into a `.tmp`, then over the old one, which stays as `.bak` and is read if the file is broken).
 **Four saves:** „Neues Spiel“ asks where to save (the first free place is offered; a used one is overwritten only on a
@@ -616,9 +617,32 @@ house fronts before). The Windows build also runs under Wine 6 (Proton's ground)
 hand, not with `std::filesystem::copy_file` (Wine lacks the `CopyFile2` it calls), and Barlow stands in for the
 missing Bahnschrift.
 
+**The manual** (`docs/manual/DarkConcordance-Handbuch.pdf` and `DarkConcordance-Manual.pdf`, German and English):
+the prose in `tools/manual/chapters_de.txt` and `chapters_en.txt` (Sunstreak's small markup: chapters, sections,
+lists, tables, `[shot NAME]` pictures, `[table NAME]` tables made from the sources – the controls from
+`src/Bindings.cpp`, the difficulties from `src/GameShared.h` and `Game.cpp`), the pictures taken by the game itself in
+each language (`tools/manual/shots.txt`, muted, three at a time), printed to PDF by Edge in headless mode. It tells
+nothing of the story.
+
+    py -3 tools/manual/make_shots.py      # docs/manual/shots/<de|en>/*.png
+    py -3 tools/manual/make_manual.py     # the HTML and PDF of both
+
+The title menu shows the version (CMake's `PROJECT_VERSION`) in its corner, and a crash report names it.
+
+**The icon** (`python tools/make_icon.py`): a dark sun in eclipse with an amber corona and the Fringe's nine stars on
+an arc under it, drawn in code; `res/darkconcordance.ico` (16 to 256 px) is the Windows program's icon
+(`res/darkconcordance.rc`), `src/IconPng.h` (128 px) the window's on every platform, `res/darkconcordance.png`
+(512 px) goes into the Linux package and onto the manual's cover.
+
+**Menu test** (`--menutest "wait300,down,ok,shot:NAME,…,quit" --menudir DIR`): the menus' keys played from a script
+in a real window that does not take the focus (up, down, left, right, ok, back, waitN frames, shot:NAME takes the
+whole window, menus and all, quit); for the display options (window and borderless, sizes, vsync, the frame cap,
+the HUD, the minimap), the saves, the hero's choice and „Wie beginnen?“. A script that starts a game stops there
+(play reads no menu keys), so it ends before.
+
 **Release packages:** `.\Deploy\build_release.ps1` builds and packs `dist\DarkConcordance-<version>-windows-x64.zip`
 (the exe renamed DarkConcordance.exe, the assets without `assets/raw`, `README.txt` from `docs/README-player.txt`,
-`LICENSE`, `docs/CREDITS.txt`) and, through WSL, `Deploy/build_linux.sh` packs
+`LICENSE`, `docs/CREDITS.txt`, the manual as `Handbuch.pdf` and `Manual.pdf`) and, through WSL, `Deploy/build_linux.sh` packs
 `dist/DarkConcordance-<version>-linux-x86_64.tar.gz` the same way with the system's dav1d in `lib/` (the program's
 rpath `$ORIGIN/lib` finds it there first, so the Steam Deck needs no dav1d of its own). The version is CMake's
 (`project( SpaceOpera VERSION … )`).
