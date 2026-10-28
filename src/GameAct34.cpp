@@ -529,7 +529,7 @@ void Game::updateAct34( float dt, GameInput &in )
                 if ( cr == r && cc == c && m_pos.y < 2.5f && !m_dead )
                 {
                     m_hurtBy = "laser";
-                    hurtHero( hpMax() * 0.28f, { 0.0f, 3.0f, 0.0f }, p );
+                    hurtHero( hpMax() * 0.24f, { 0.0f, 3.0f, 0.0f }, p );
                 }
                 for ( Foe &f : m_foes )
                 {

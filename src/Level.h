@@ -609,10 +609,27 @@ private:
      */
     void showPiece( int group, unsigned h, Vector3 at, DressKit &kit );
 
-    int                   m_rows = 0;
-    int                   m_cols = 0;
-    std::vector<Cell>     m_cells;
-    std::vector<FaceSlot> m_faces;   ///< wall faces free for decals (during build)
+    /**
+     * @brief Plans the rooms' shapes before they are built: which outer corners of the walls are cut off, which inner
+     *        corners filled, which wall cells stand back as a niche, where galleries run along the walls of the halls.
+     */
+    void planShapes();
+    /**
+     * @brief The kind of place a theme is (LevelDress.cpp's groups: 0 industrial, 1 street, 2 clean, 3 cold, 4 outdoor,
+     *        5 alien, 6 garden).
+     * @param[in] t  the theme
+     * @return its group
+     */
+    static int dressGroup( ThemeE t );
+
+    int                        m_rows = 0;
+    int                        m_cols = 0;
+    std::vector<Cell>          m_cells;
+    std::vector<FaceSlot>      m_faces;     ///< wall faces free for decals (during build)
+    std::vector<unsigned char> m_cut;       ///< per wall cell: its outer corners cut off (bit k: NW, NE, SE, SW)
+    std::vector<unsigned char> m_fill;      ///< per floor cell: its inner corners filled (bits as m_cut)
+    std::vector<signed char>   m_niche;     ///< per wall cell: the side its niche opens to (-1: none)
+    std::vector<unsigned char> m_gallery;   ///< per floor cell: the walls a gallery runs along (bit d)
 };
 
 }   // namespace spaceopera

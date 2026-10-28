@@ -190,8 +190,19 @@ columns): wall fittings per kind of place, wall tops with copings, pipe runs, tr
 break (seven kinds, with pieces and drops), the finds on the floor as models; per level now about 60 kinds of wall
 and top pieces, 15-35 kinds of clutter, 2-4 kinds of breakables, 14 loot models, 146 decals.
 
-Open: skinned heroes and enemies with the animation packs' combat clips; the user's play
-(balance, the music's choices and levels). Co-op is set aside for now (the user, 27.10.2026).
+Figures and rooms (28.10.2026, the user: animated heroes, enemies and NPCs, the architecture, the balance): every
+figure built of plates now rides on a skinned body moved by the animation libraries' clips (walk, run, sprint,
+aim and shot, three blows, block, jump, sitting, huddling, death), its plates on the bones; the rooms lose their
+square corners (cut outer corners, filled inner ones, niches) and the halls get galleries on brackets. Balance by
+the autopilot's deaths: in Erzstrom Ione did not fail at the containers but at the catcher's clock (a machine of
+about 26 000 points in 240 s), because the autopilot stopped 26 m from it, out of her swarm's reach (19-21 m); it now
+stops where a part is within its weapon's reach. The gear's bonus against machines now counts on the bosses' machine
+parts too, and every part destroyed starts the catcher's clock again. In Brannt the deaths were the column's cutting
+lines and the falls through the crust they crack, and a trap: a capsule or the last safe spot on cut crust dropped
+the hero back in every eight seconds; cut crust now closes at once where the hero is put back. The column cuts less
+often (every 3.6 s and 5 s instead of 3 s and 4.4 s), a cut costs 24 % of the health instead of 28 %.
+
+Open: the user's play (balance, the music's choices and levels). Co-op is set aside for now (the user, 27.10.2026).
 
 Still to come, by first use:
 
@@ -265,7 +276,11 @@ Still to come, by first use:
 4. Act II with the ship as hub and the first choices — done (27.10.2026: the ship, levels 6–13 with Tesh as a detour,
    the wreck field; the epilogue cards still to come); co-op for two.
 5. Acts III and IV, endings, epilogue cards — done (27.10.2026); the companions' tales — done (27.10.2026).
-6. Steam Deck: half-resolution fog, no supersampling, gamepad everywhere.
+6. Steam Deck — done (28.10.2026): frustum culling for the scene and both shadow maps (the busiest levels from
+   22-30 ms to 5-6 ms on the RTX 5090), three graphics steps in the menu (low on the Deck: the scene at 3/4 size,
+   8 fog steps, 4 shadow samples, smaller shadow maps; instead of a separate half-resolution fog pass, since the fog is
+   drawn within each surface's shader), the window at 1280x800 there, the pad's cross in the game's own menus. Not
+   tried on a Deck yet; reckoned at 30-50 frames a second.
 
 ## Open decisions (the user's)
 

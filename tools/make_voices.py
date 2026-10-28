@@ -1,5 +1,6 @@
 """Speaks the game's lines with Qwen3-TTS (local, G:\\Tools\\VoiceLab): every line of [lines] and [talk] in
-assets/levels/*.txt and of the films (tools/films.json), per language, in the voice of its speaker (tools/voices.json).
+assets/levels/*.txt, of the films (tools/films.json) and the epilogue's cards, per language, in the voice of its
+speaker (tools/voices.json).
 
     design   a voice per figure and language from its description (VoiceDesign 1.7B), spoken on a few of its own
              lines -> tools/voices/<figure>_<language>.flac and .txt (kept, so the figures keep their voices for lines
@@ -79,13 +80,11 @@ def inventory(voices):
     words = {lang: texts(lang) for lang in LANGS}
     out, owner = {}, {}
 
-    def add(key, who, place):
+    def add(key, who):
         if owner.setdefault(key, who) != who:
             print("warning: %s is said by %s and %s" % (key, owner[key], who))
         heroic = who == "hero" or voices.get(who, {}).get("voice") == "hero"
         voice = voices.get(who, {}).get("voice", who)
-        # A figure may sound different in one place ("in": {level: voice}): Ilka grown up in the net.
-        voice = voices.get(who, {}).get("in", {}).get(place, voice)
         for lang in LANGS:
             own, de = words[lang], words["de"]
             said = []
@@ -115,12 +114,16 @@ def inventory(voices):
                 continue
             f = [x.strip() for x in t.split("|")]
             if len(f) >= (3 if section == "[lines]" else 2):
-                add(f[0], f[2] if section == "[lines]" else f[1], os.path.basename(path)[:-4])
+                add(f[0], f[2] if section == "[lines]" else f[1])
+    # The epilogue's cards (GameStory.cpp), read by the narrator (their titles and the headings stay unspoken).
+    for key in sorted(words["de"]):
+        if key.startswith("epi.") and not key.startswith("epi.t.") and key not in ("epi.head", "epi.ending", "epi.fin"):
+            add(key, "narrator")
     # The films' lines (tools/films.json), spoken as a level's are.
     for name, film in json.load(open(os.path.join(ROOT, "tools", "films.json"), encoding="utf-8")).items():
         for shot in film.get("shots", []) if isinstance(film, dict) else []:
             for who, key in shot.get("say", []):
-                add(key, who, "film_" + name)
+                add(key, who)
     return out
 
 

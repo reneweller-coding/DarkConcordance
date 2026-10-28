@@ -1,13 +1,16 @@
 /**
  * @file Figure.h
- * @brief A person built from rounded boxes and moved procedurally (walk cycle, arms with two-bone IK, lean, sway):
- *        Corvin with his rifle, Dorra with hammer and shield, the boarders, and people without a suit (Ilka, the
- *        refugees) who sit or lie. A lamp on the right shoulder of a suit lights the way.
+ * @brief A person built from rounded boxes: Corvin with his rifle, Dorra with hammer and shield, the boarders, and
+ *        people without a suit (Ilka, the refugees) who sit or lie. A lamp on the right shoulder of a suit lights the
+ *        way. Given a skinned body, the plates ride on its bones and the clips of the animation libraries move it
+ *        (walking into a jog, the rifle aimed, the blows, the shield, jumps, death); else it moves procedurally (walk
+ *        cycle, arms with two-bone IK, lean, sway).
  * @author Rene Weller
  */
 #pragma once
 
 #include "Gfx.h"
+#include "Skin.h"
 
 #include <raylib.h>
 
@@ -66,6 +69,19 @@ struct FigureSurfaces
     Vector4 m_trim = { -1.0f, 0.0f, 0.0f, 0.0f };    ///< a glowing line on chest and weapon (the gear's rarity)
 };
 
+/** @brief A skinned body under the figure's plates (Quaternius' base body, CC0, dressed by the shader). */
+struct FigureBody
+{
+    const SkinModel *m_model = nullptr;                   ///< the body (nullptr: the boxes alone)
+    std::vector<int> m_surfaces;                          ///< per mesh of the body
+    int              m_hair = -1;                         ///< the hair (the model's hair; -1: none)
+    int              m_hairSurface = -1;                  ///< its surface
+    int              m_brows = -1;                        ///< the brows (the model's hair)
+    int              m_browSurface = -1;                  ///< their surface
+    Vector3          m_cloth = { 0.12f, 0.12f, 0.14f };   ///< below the neck: the suit's or the clothes' colour
+    bool             m_shown = true;                      ///< drawn (false: a frame's plates move with no man inside)
+};
+
 /** @brief Everything a pose depends on, so one built figure can draw many people. */
 struct FigurePose
 {
@@ -114,6 +130,25 @@ public:
      * @param[in] time  seconds since start
      */
     void animate( float dt, Vector3 pos, Vector2 vel, float yaw, bool air, float down, float time );
+
+    /**
+     * @brief Puts the figure on a skinned body (kept when it is built again) and lines its plates up with the bones.
+     * @param[in] body  the body and its looks (no model: the boxes alone again)
+     */
+    void body( const FigureBody &body );
+
+    /** @return whether a skinned body moves the figure */
+    bool skinned() const { return m_body.m_model != nullptr; }
+
+    /**
+     * @brief Adds only the plates and the weapon in a given pose (what flies apart when a suit bursts).
+     * @param[in]     p    the pose
+     * @param[in,out] out  the list to add to
+     */
+    void plates( const FigurePose &p, std::vector<Drawable> &out );
+
+    /** @brief A new frame: the bone matrices handed out in the last one may be used again. */
+    static void frame();
 
     /**
      * @brief Advances a walk cycle (for figures drawn from a FigurePose).
@@ -174,6 +209,18 @@ private:
     /** @brief Computes the bones' frames for a pose. */
     void solve( const FigurePose &p );
 
+    /** @brief Computes the bones' frames from the skinned body's clips (and the body's pose in m_skinPose). */
+    void solveSkin( const FigurePose &p );
+
+    /** @brief The lamp and the muzzle from the bones. */
+    void finish( const FigurePose &p );
+
+    /** @brief Lines the plates up with the body's bones (its first idle frame against the boxes' rest pose). */
+    void calibrate();
+
+    /** @brief Adds the parts (and the body) in the solved pose. */
+    void emit( Vector4 glow, bool body, std::vector<Drawable> &out );
+
     /** @brief The weapon's frame in the root's space: carried, or along the blow. */
     Matrix weaponFrame( const FigurePose &p, float amp, float bob, float ph ) const;
 
@@ -186,6 +233,15 @@ private:
     Vector3           m_lampPos = { 0.0f, 0.0f, 0.0f };
     Vector3           m_lampDir = { 0.0f, 0.0f, 1.0f };
     Vector3           m_muzzle = { 0.0f, 0.0f, 0.0f };
+
+    FigureBody             m_body;                          ///< the skinned body, if any
+    float                  m_bodyScale = 1.0f;              ///< the body's size to the boxes' (hips at the same height)
+    Matrix                 m_offset[(int)BoneE::COUNT];     ///< each part's bone against the body's bone
+    int                    m_map[(int)BoneE::COUNT] = {};   ///< the body's bone for each of the figure's
+    Matrix                 m_grip = {};                     ///< the weapon against the right forearm
+    std::vector<int>       m_clips;                         ///< the clips the figure plays (see Figure.cpp)
+    std::vector<Transform> m_skinPose;                      ///< the body's pose this time
+    Matrix                 m_place = {};                    ///< the body's place in the world
 };
 
 }   // namespace spaceopera

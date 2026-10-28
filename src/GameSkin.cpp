@@ -41,7 +41,10 @@ const char *const Clips1[] = { "Idle_Loop",
                                "Roll",
                                "Dance_Loop",
                                "Spell_Simple_Shoot",
-                               "PickUp_Table" };
+                               "PickUp_Table",
+                               "Jump_Loop",
+                               "Pistol_Aim_Neutral",
+                               "Sword_Idle" };
 const char *const Clips2[] = { "Idle_FoldArms_Loop",
                                "Idle_TalkingPhone_Loop",
                                "Sword_Regular_A",
@@ -131,6 +134,45 @@ void Game::loadSkins( Gfx &gfx )
     for ( const auto &list : { one, two } )
         for ( const std::string &name : list ) m_clip[name] = m_body[0].clip( name );
     m_skins = m_clip["Idle_Loop"] >= 0 && m_clip["Walk_Loop"] >= 0;
+}
+
+void Game::bodyFigures()
+{
+    if ( !m_skins ) return;
+    // A body, its skin, its hair and the clothes' colour below the neck (the plates cover the rest of a suit).
+    auto put = [&]( Figure &f, int body, int tone, int hair, int colour, Vector3 cloth, bool shown )
+    {
+        FigureBody b;
+        b.m_model = &m_body[body];
+        b.m_surfaces = m_bodySurface[body][tone];
+        b.m_hair = hair;
+        b.m_hairSurface = hair >= 0 ? m_hairSurface[body][colour][hair] : -1;
+        b.m_brows = HairStyles;
+        b.m_browSurface = m_hairSurface[body][colour][HairStyles];
+        b.m_cloth = cloth;
+        b.m_shown = shown;
+        f.body( b );
+    };
+    const Vector3 suit = { 0.1f, 0.1f, 0.115f };
+    // The heroes as their portraits: Corvin's short dark hair, Dorra's red bun, Ione's black crop.
+    if ( m_heroKind == HeroE::DORRA )
+        put( m_hero, 1, 1, 1, 3, { 0.16f, 0.11f, 0.08f }, true );
+    else if ( m_heroKind == HeroE::IONE )
+        put( m_hero, 1, 1, 2, 0, suit, true );
+    else
+        put( m_hero, 0, 1, 0, 0, suit, true );
+    // Men in suits; the frames twice a man's height move as men do, but nobody is seen inside their plates.
+    for ( Figure *f : { &m_boarderBaton, &m_boarderGun, &m_guardFigure, &m_heavyFigure } )
+        put( *f, 0, 0, 1, 0, suit, true );
+    for ( Figure *f : { &m_taxatorFigure, &m_hydraFigure, &m_okaforFigure, &m_leaderFigure, &m_salvagerFigure,
+                        &m_lammFigure, &m_chiefFigure, &m_foremanFigure, &m_varnFigure } )
+        put( *f, 0, 0, -1, 0, suit, false );
+    // People in clothes: the worn ones, Ilka (a girl), Ysolde (grey), Kiri (black), the crowd's, the child.
+    const int body[FolkCount] = { 0, 1, 0, 1, 1, 1, 0, 1, 0 };
+    const int hair[FolkCount] = { 1, 0, 0, 0, 1, 2, 2, 1, 1 };
+    const int colour[FolkCount] = { 1, 2, 0, 3, 4, 0, 3, 1, 2 };
+    for ( int i = 0; i < FolkCount; ++i )
+        put( m_folk[i], body[i], i % 2, hair[i], colour[i], Cloth[std::min( i, (int)std::size( Cloth ) - 1 )], true );
 }
 
 void Game::dressPerson( Person &q, unsigned seed )
@@ -236,6 +278,55 @@ void Game::poseSkin( Person &q, std::vector<Drawable> &out )
             out.push_back( d );
         }
     }
+}
+
+void Game::figureLineup( int page )
+{
+    // A row in front of the hero, facing the camera.
+    std::vector<std::pair<Figure *, FigurePose>> row;
+    auto                                         add = [&]( Figure &f, auto set )
+    {
+        FigurePose p;
+        p.m_time = 1.3f;
+        set( p );
+        row.push_back( { &f, p } );
+    };
+    if ( page == 0 )
+    {
+        add( m_hero, []( FigurePose & ) {} );
+        add( m_hero, []( FigurePose &p ) { p.m_vel = { 0.0f, 1.2f }, p.m_phase = 1.2f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_vel = { 0.0f, 4.6f }, p.m_phase = 2.0f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_recoil = 0.6f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_swing = 0, p.m_swingT = 0.3f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_swing = 2, p.m_swingT = 0.55f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_block = 1.0f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_air = true; } );
+        add( m_hero, []( FigurePose &p ) { p.m_down = 0.5f; } );
+    }
+    else
+    {
+        add( m_boarderBaton, []( FigurePose & ) {} );
+        add( m_boarderGun, []( FigurePose &p ) { p.m_vel = { 0.0f, 1.2f }, p.m_phase = 0.6f; } );
+        add( m_guardFigure, []( FigurePose &p ) { p.m_block = 1.0f; } );
+        add( m_heavyFigure, []( FigurePose &p ) { p.m_recoil = 0.6f; } );
+        add( m_folk[0], []( FigurePose &p ) { p.m_vel = { 0.0f, 1.2f }, p.m_phase = 2.5f; } );
+        add( m_folk[3], []( FigurePose & ) {} );
+        add( m_folk[4], []( FigurePose & ) {} );
+        add( m_folk[5], []( FigurePose &p ) { p.m_sit = 1.0f; } );
+        add( m_folk[8], []( FigurePose & ) {} );
+        add( m_taxatorFigure, []( FigurePose & ) {} );
+    }
+    float gap = page == 0 ? 1.4f : 1.7f;
+    for ( size_t i = 0; i < row.size(); ++i )
+    {
+        FigurePose &p = row[i].second;
+        p.m_pos = { m_pos.x + ( i - ( row.size() - 1 ) * 0.5f ) * gap, m_pos.y, m_pos.z + 2.0f };
+        p.m_yaw = 0.0f;
+        if ( Vector2Length( p.m_vel ) > 0.0f )
+            p.m_yaw = PI * 0.15f,
+            p.m_vel = { sinf( p.m_yaw ) * Vector2Length( p.m_vel ), cosf( p.m_yaw ) * Vector2Length( p.m_vel ) };
+    }
+    m_lined = row;
 }
 
 void Game::lineup()

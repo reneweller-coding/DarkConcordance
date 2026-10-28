@@ -11,6 +11,23 @@ ranged combat aimed as in *Fallout: Brotherhood of Steel*, pools of light in the
 and goes down to level 1 from there, back to Velm after it; hero, scrap, stims, upgrades and what has happened go along
 and are saved in `save.txt` beside the program at each level's start („Fortsetzen“ in the title menu).
 
+**Steam Deck:** everything plays with the pad (the menus, the inventory, the conversations, the shops and the lift
+with the cross or the left stick, A to choose, B back). On the Deck (Steam sets `SteamDeck=1`) the window takes its
+1280x800 screen and the graphics start at „Niedrig“; „Grafik“ in the menus switches at once between three steps:
+
+| Grafik | Scene drawn at | Fog steps | Shadow samples | Shadow maps (sun, lamp) |
+|---|---|---|---|---|
+| Niedrig (Steam Deck) | 3/4 of the picture | 8 | 4 | 2048, 1024 |
+| Mittel | the picture's size | 20 | 8 | 4096, 2048 |
+| Hoch (the PC's) | 1.5 times (supersampled) | 40 | 12 | 4096, 2048 |
+
+What lies outside the camera's view, the sun's shadow map or the lamp's is not drawn (each mesh's bounding sphere
+against the frustum): the busiest levels had 2000-5000 things to draw three times a frame and took 22-30 ms on the
+RTX 5090; now 5-6 ms at 1600x900 high and 1.5-3 ms at 1280x800 low, with pictures identical to the pixel. Measured
+on the 5090 at 3840x2400, „Niedrig“ costs less than half as much per pixel as „Hoch“ and draws a quarter of its
+pixels; reckoned onto the Deck's GPU (fifty to sixty-five times slower) that is 20-30 ms a frame, 30-50 frames a
+second. Not tried on a Deck yet.
+
 ## Prologue: the lighter „Gute Hoffnung“
 
 A refugee transport braking into the Velm system, 3,000 people in cargo containers. You were paid to take nine-year-old
@@ -402,7 +419,7 @@ Move with WASD, the arrows or the left stick; turn the camera with the right sti
 jump with Space or A; shoot (Dorra: strike) with the left mouse button, the right trigger or X; hold the facing
 (Dorra: the shield) with the left trigger or Shift; B or F throws Dorra's blast bolt; Q or Y injects a stim; the mouse
 wheel, the shoulder buttons or the right stick's up and down zoom; Esc or Start pauses (difficulty, brightness,
-language, restart, quit); F1 frame rate, F12 picture. E (or A, where something is within reach) opens doors, searches
+graphics, music, voices, effects, language, restart, quit); F1 frame rate, F12 picture. E (or A, where something is within reach) opens doors, searches
 lockers, reads terminals and talks; M, Tab or the pad's up shows the map of what the hero has seen over the game; I or
 C (the pad's View button) open the inventory (gear, supplies, jobs, notes read) and the character page (portrait,
 health, damage, upgrades), with the full map as a third page.
@@ -415,6 +432,22 @@ triggers; their words are in [assets/text/de/kuehlgedaerme.txt](assets/text/de/k
 ![The shaft](docs/screenshots/l1_jump.jpg)
 ![The condensate swarm](docs/screenshots/l1_drops.jpg)
 ![The drone press](docs/screenshots/l1_press.jpg)
+
+## How the figures move
+
+The heroes, the men in suits and frames and the people in clothes move with the clips of Quaternius' two animation
+libraries (CC0, `assets/models/quaternius`) on a skinned base body; the plates the figures are built of (helmets,
+chest plates, pauldrons, arm and leg plates, boots, backpack and lamp, the weapon, Dorra's shield) ride on its bones
+(`Figure::body`, `Figure::solveSkin`). The legs blend standing, walking, a run and a sprint by the speed, their
+cycle as long as the clip's planted foot slides, so the feet keep still; the upper body is laid over them: the rifle
+aimed (the pistol's two-handed aim) with its kick on a shot, the hammer and the baton ready, the three blows
+(forehand, backhand, overhead, timed so the clip's hit lands with the game's), the shield raised, Ione's swarm cast;
+jumps, sitting at a table, huddling on the floor, falling dead. Each limb's plates turn about the body's own joint
+and lie along its bone. With the helmet off (in the hubs) the body's own face shows, with the hero's hair as in the
+portraits: Corvin's short dark hair, Dorra's red bun, Ione's black crop. The frames twice a man's height (the
+Taxator, Okafor's walker, the foreman's crane walker …) move as men do, but no body shows inside their plates.
+`--figures 0|1` with `--shot` lines figures up in their poses in front of the hero (the hero; the men and the
+people), best in `--level ../../tools/figures.txt` (`figures_hub.txt`: helmets off).
 
 ## Look test (`--lookdev`)
 
@@ -438,7 +471,8 @@ Tests and pictures without a window (always silent):
     bin\msvc\SpaceOpera.exe --shot work\t.png --level tiefen.txt --seed 1 --dumpgen work\tiefen_1.txt --warm 1
 
 `--report` writes the run (finished, time, deaths, kills, shots) into `spaceopera.log` beside the program; `--bench n`
-renders n frames first and logs the time per frame. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
+renders n frames first and logs the time per frame; `--quality low|middle|high` picks the graphics (pictures are drawn
+high otherwise), `--w`/`--h` the size (1600x900, on a Steam Deck 1280x800), `--ss` the scene's scale. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
 `--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
 language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue; `--flags a,b`
 sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture;
@@ -458,8 +492,9 @@ the calm piece comes back. Boss fights have their own piece (Mother Sevenfold he
 the boss's second half: the press's tanks gone, the tug casting off, the masts down. Pieces cross-fade; a stinger
 marks a boss beaten or the hero down; the prologue's end and the end of Act I have pieces of their own; the title
 menu has the main theme. Each piece has two takes, which take turns every second time round. A level's pieces are
-decoded when it loads, so a fight's music is there when the fight begins. „Musik“ in the menus sets the volume
-(`settings.txt`).
+decoded when it loads, so a fight's music is there when the fight begins. „Musik“, „Stimmen“ and „Effekte“ in the
+menus set the volumes of the music, the voices and the effects with the places' backgrounds (`settings.txt`); they
+apply at once, to a line being spoken too.
 
 | Piece | Where | Layers |
 |---|---|---|
@@ -507,7 +542,8 @@ conversations (Ysolde, Unzu, Ottla, Kiri, Hale, Ilka …) and the machines (HAUS
 the cores). Each hero has their own take of every line they say, so Corvin, Dorra and Ione sound like themselves
 whoever is played. Conversations speak each step as it opens and fall silent when they close; the heroes' answers are
 read, not spoken. Stage directions in brackets stay on screen only. A line without a voice in the chosen language
-plays the German one, a line without any is shown for as long as it takes to read.
+plays the German one, a line without any is shown for as long as it takes to read. A narrator reads the epilogue's
+cards (an old chronicler's voice), each as it shows, the first after the ending's film; turning a card stops him.
 
 **How it is made** (`tools/make_voices.py`, Qwen3-TTS 1.7B, Apache 2.0, local on the GPU from
 `G:\Tools\VoiceLab`): every figure gets a voice per language, designed from a description in
@@ -581,7 +617,8 @@ construction plating, veined stone, hoarfrost, scorched plates, regolith, slag, 
 grid and its walls of memories; for the tales rain-dark brick and wet cobbles, a workshop's tool walls, ochre rock
 and mine floors with rails, a farm yard's soil. A level may choose others for a theme (`walltex theme texture`, `floortex theme
 texture`; the drowned quarter has algae and wet floors). The speakers have portrait paintings
-(`tools/make_portraits.py`).
+(`tools/make_portraits.py`); Ilka has two, the child of the prologue and Velm (painted locally with FLUX.2) and the
+woman of thirty-nine she is in the Net (`ilka39`).
 
     G:\Tools\ImageGenerationenv\Scripts\python.exe tools\make_dress.py [--local] [--part k/n] [--force NAME ...] [--list]
 
@@ -627,3 +664,14 @@ or a find. The autopilot's report counts them (`broke=n/m`).
 gauntlet, Unzu's blade module), a chest plate, a helmet with its visor, gloves and boots in pairs, an implant's
 capsule, a harness with pouches, a shield emitter, a power cell, a module's board; a beam of light over the better
 ones shows their rarity.
+
+**The rooms' shapes** (28.10.2026; no columns): the walls stand on a grid of 2 m cells, so from above every room was a
+set of square corners. Now three of four outer corners of the walls are cut off at 45° (bulkheads light the bevel
+with a line in their place's colour), more than half of the rooms' inner corners are filled with a slanted block,
+now and then a cell of a straight wall stands back 35 cm as a niche (a dark floor plate, two strips of light in
+bulkheads), and along the straight walls of the larger halls of works, clean halls and the cold, where the walls are
+high enough to walk beneath, galleries run on brackets: a walkway of slats, a railing, a ladder up the wall at one
+end, lights beneath on the floor below (six at most a level; they dissolve like the walls when they hide the hero).
+Per level 20-170 cut corners, 10-80 filled ones, up to 110 niches and two to six galleries (`Level::planShapes`).
+Only the look changes: the cells the hero walks are the same. `--level ../../tools/hall.txt` is a hall with all of
+it.

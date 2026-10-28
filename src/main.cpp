@@ -41,9 +41,10 @@ namespace
 /** @brief The command line. */
 struct Options
 {
-    int         m_width = 1600;                  ///< picture width
-    int         m_height = 900;                  ///< picture height
-    float       m_ss = 1.5f;                     ///< supersampling
+    int         m_width = 0;                     ///< picture width (0: 1600, on a Steam Deck 1280)
+    int         m_height = 0;                    ///< picture height (0: 900, on a Steam Deck 800)
+    float       m_ss = -1.0f;                    ///< supersampling (negative: the quality's)
+    int         m_quality = -1;                  ///< 0 low, 1 middle, 2 high (negative: the setting's)
     std::string m_shot;                          ///< render this picture and exit
     std::string m_level = "gute_hoffnung.txt";   ///< the level (the prologue starts the game)
     bool        m_hasAt = false;                 ///< --at was given
@@ -77,6 +78,7 @@ struct Options
     bool        m_map = false;             ///< with --shot: the map over the game
     bool        m_lineup = false;          ///< with --shot: a row of people in their animations before the hero
     int         m_creatures = -1;          ///< with --shot: the creatures in front of the hero (page 0 or 1)
+    int         m_figures = -1;            ///< with --shot: figures in their poses in front of the hero (page 0, 1)
     float       m_zoom = 0.0f;             ///< with --shot: the camera's distance factor (0: as it is)
     int         m_loot = 0;                ///< tests: items scattered round the hero at the start
     std::string m_gear;                    ///< tests: what the hero puts on at the start (--gear item.rail3,u12,s5)
@@ -116,6 +118,11 @@ Options parse( int argc, char **argv )
             o.m_height = atoi( next().c_str() );
         else if ( a == "--ss" )
             o.m_ss = (float)atof( next().c_str() );
+        else if ( a == "--quality" )
+        {
+            std::string q = next();
+            o.m_quality = q == "low" ? 0 : ( q == "middle" ? 1 : ( q == "high" ? 2 : atoi( q.c_str() ) ) );
+        }
         else if ( a == "--at" )
             o.m_hasAt = sscanf( next().c_str(), "%f,%f", &o.m_x, &o.m_z ) == 2;
         else if ( a == "--face" )
@@ -176,6 +183,8 @@ Options parse( int argc, char **argv )
             o.m_lineup = true;
         else if ( a == "--creatures" )
             o.m_creatures = atoi( next().c_str() );
+        else if ( a == "--figures" )
+            o.m_figures = atoi( next().c_str() );
         else if ( a == "--zoom" )
             o.m_zoom = (float)atof( next().c_str() );
         else if ( a == "--loot" )
@@ -223,8 +232,8 @@ void bench( Gfx &gfx, int frames, const Options &o, const std::function<void( co
     double          start = GetTime();
     for ( int i = 0; i < frames; ++i ) draw( &rt );
     Image img = LoadImageFromTexture( rt.texture );
-    TraceLog( LOG_WARNING, "BENCH: %dx%d ss %.2f: %.2f ms per frame", o.m_width, o.m_height, o.m_ss,
-              ( GetTime() - start ) * 1000.0 / frames );
+    TraceLog( LOG_WARNING, "BENCH: %dx%d quality %d ss %.2f: %.2f ms per frame", o.m_width, o.m_height, gfx.m_quality,
+              gfx.m_scale, ( GetTime() - start ) * 1000.0 / frames );
     UnloadImage( img );
     UnloadRenderTexture( rt );
 }
@@ -278,6 +287,9 @@ GameInput readInput( Vector2 &lastMouse, float dt )
         in.m_special = in.m_special || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT );
         in.m_confirm = in.m_confirm || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT );
         in.m_map = in.m_map || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_UP );
+        // The cross's up and down also step through the game's own menus (talks, shops, the lift).
+        if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_UP ) ) in.m_navStep = -1;
+        if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_DOWN ) ) in.m_navStep = 1;
         in.m_skill2 = in.m_skill2 || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_TRIGGER_1 );
         in.m_skill3 = in.m_skill3 || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 );
     }
@@ -353,8 +365,24 @@ struct Settings
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
     float       m_brightness = 1.0f;                  ///< exposure factor
     float       m_music = 0.7f;                       ///< music volume 0..1
+    float       m_voices = 0.9f;                      ///< voices' volume 0..1
+    float       m_effects = 0.8f;                     ///< effects' and backgrounds' volume 0..1
+    int         m_quality = -1;                       ///< the graphics: 0 low, 1 middle, 2 high (-1: not chosen yet)
     std::string m_language;                           ///< the texts' language
 };
+
+/** @brief Whether the game runs on a Steam Deck (Steam sets SteamDeck=1 there). */
+bool steamDeck()
+{
+    const char *deck = getenv( "SteamDeck" );
+    return deck && atoi( deck ) == 1;
+}
+
+/** @brief The graphics' quality to start with: the chosen one, else low on a Steam Deck and high elsewhere. */
+int qualityOf( const Settings &s )
+{
+    return s.m_quality >= 0 ? s.m_quality : ( steamDeck() ? 0 : 2 );
+}
 
 /** @brief Where the settings live. */
 std::string settingsPath()
@@ -380,6 +408,12 @@ Settings loadSettings()
             s.m_language = value;
         else if ( !strcmp( key, "music" ) )
             s.m_music = Clamp( (float)atof( value ), 0.0f, 1.0f );
+        else if ( !strcmp( key, "voices" ) )
+            s.m_voices = Clamp( (float)atof( value ), 0.0f, 1.0f );
+        else if ( !strcmp( key, "effects" ) )
+            s.m_effects = Clamp( (float)atof( value ), 0.0f, 1.0f );
+        else if ( !strcmp( key, "graphics" ) )
+            s.m_quality = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
     }
     fclose( f );
     return s;
@@ -477,8 +511,9 @@ void saveSettings( const Settings &s )
 {
     FILE *f = fopen( settingsPath().c_str(), "w" );
     if ( !f ) return;
-    fprintf( f, "difficulty %d\nbrightness %.2f\nlanguage %s\nmusic %.1f\n", (int)s.m_difficulty, s.m_brightness,
-             s.m_language.c_str(), s.m_music );
+    fprintf( f, "difficulty %d\nbrightness %.2f\nlanguage %s\nmusic %.1f\nvoices %.1f\neffects %.1f\n",
+             (int)s.m_difficulty, s.m_brightness, s.m_language.c_str(), s.m_music, s.m_voices, s.m_effects );
+    if ( s.m_quality >= 0 ) fprintf( f, "graphics %d\n", s.m_quality );
     fclose( f );
 }
 
@@ -546,9 +581,9 @@ void drawMenu( const Font &font, const char *title, const char *subtitle, const 
     for ( size_t i = 0; i < items.size(); ++i )
     {
         bool  on = (int)i == chosen;
-        float y = h * 0.46f + i * 58 * s;
+        float y = h * 0.36f + i * 46 * s;   // ten rows fit above the game's subtitles
         if ( on )
-            DrawRectangle( (int)( w * 0.5f - 260 * s ), (int)( y - 8 * s ), (int)( 520 * s ), (int)( 50 * s ),
+            DrawRectangle( (int)( w * 0.5f - 260 * s ), (int)( y - 6 * s ), (int)( 520 * s ), (int)( 44 * s ),
                            { 255, 170, 80, 40 } );
         text( items[i].c_str(), y, 34, on ? Color{ 255, 205, 140, 255 } : Color{ 200, 200, 200, 220 } );
     }
@@ -564,18 +599,18 @@ std::string brightnessBar( float b )
     return bar;
 }
 
-/** @brief The music volume as a bar. */
-std::string musicBar( float v )
+/** @brief A volume as a bar (music, voices, effects). */
+std::string volumeBar( const char *key, float v )
 {
     int         n = (int)roundf( v * 10.0f );
-    std::string bar = std::string( tr( "menu.music" ) ) + "  ";
+    std::string bar = std::string( tr( key ) ) + "  ";
     for ( int i = 1; i <= 10; ++i ) bar += i <= n ? "|" : ".";
     return bar;
 }
 
 /**
- * @brief The menu's items. Title: start, difficulty, brightness, music, language, quit. Pause: resume, difficulty,
- *        brightness, music, language, restart, quit.
+ * @brief The menu's items. Title: start, difficulty, brightness, graphics, music, voices, effects, language, quit.
+ *        Pause: resume, difficulty, brightness, graphics, music, voices, effects, language, restart, quit.
  */
 std::vector<std::string> menuItems( bool title, const Settings &s, bool saved )
 {
@@ -584,7 +619,11 @@ std::vector<std::string> menuItems( bool title, const Settings &s, bool saved )
     items.push_back( tr( title ? "menu.start" : "menu.resume" ) );
     items.push_back( std::string( tr( "menu.difficulty" ) ) + "  " + difficultyName( s.m_difficulty ) );
     items.push_back( brightnessBar( s.m_brightness ) );
-    items.push_back( musicBar( s.m_music ) );
+    items.push_back( std::string( tr( "menu.graphics" ) ) + "  " +
+                     tr( "graphics." + std::to_string( qualityOf( s ) ) ) );
+    items.push_back( volumeBar( "menu.music", s.m_music ) );
+    items.push_back( volumeBar( "menu.voices", s.m_voices ) );
+    items.push_back( volumeBar( "menu.effects", s.m_effects ) );
     items.push_back( std::string( tr( "menu.language" ) ) + "  " + tr( "language.name" ) );
     if ( !title ) items.push_back( tr( "menu.restart" ) );
     items.push_back( tr( "menu.quit" ) );
@@ -690,11 +729,13 @@ int runGame( const Options &o, Gfx &gfx )
                                     : ( o.m_difficulty == "schwer" ? DifficultyE::HARD : DifficultyE::NORMAL );
     game->setDifficulty( settings.m_difficulty );
     game->m_brightness = settings.m_brightness;
+    game->setVolumes( settings.m_voices, settings.m_effects );
     game->m_autoplay = o.m_autoplay;
     game->m_camYaw = o.m_camYaw * DEG2RAD;
     if ( o.m_hasAt ) game->putHero( o.m_x, o.m_z, o.m_face );
     if ( o.m_lineup ) game->lineup();
     if ( o.m_creatures >= 0 ) game->creatureLineup( o.m_creatures );
+    if ( o.m_figures >= 0 ) game->figureLineup( o.m_figures );
     if ( o.m_zoom > 0.0f ) game->m_zoom = o.m_zoom;
     if ( o.m_loot > 0 || o.m_xp > 0 ) game->testGifts( o.m_loot, o.m_xp );
     if ( !o.m_gear.empty() ) game->testGear( o.m_gear );
@@ -777,6 +818,7 @@ int runGame( const Options &o, Gfx &gfx )
         game->load( gfx, assetsDir(), level, sound );
         game->setDifficulty( settings.m_difficulty );
         game->m_brightness = settings.m_brightness;
+        game->setVolumes( settings.m_voices, settings.m_effects );
         game->m_autoplay = o.m_autoplay;
         game->m_zoom = zoom;
         score.keep( game->musicPieces() );
@@ -880,10 +922,18 @@ int runGame( const Options &o, Gfx &gfx )
             // The items as menuItems lists them (the title's "continue" first when there is a save).
             MenuKeys k = menuKeys( dt );
             int      base = mode == TITLE && hasSave ? 1 : 0;
-            int      count = ( mode == TITLE ? 6 : 7 ) + base;
+            int      count = ( mode == TITLE ? 9 : 10 ) + base;
             chosen = ( chosen + k.m_move + count ) % count;
-            int  diffItem = 1 + base, brightItem = 2 + base, musicItem = 3 + base, langItem = 4 + base;
-            int  restartItem = mode == PAUSE ? 5 : -1;
+            int  diffItem = 1 + base, brightItem = 2 + base, gfxItem = 3 + base, musicItem = 4 + base,
+                 voiceItem = 5 + base, fxItem = 6 + base, langItem = 7 + base;
+            int  restartItem = mode == PAUSE ? 8 : -1;
+            auto nextQuality = [&]( int step )
+            {
+                settings.m_quality = ( qualityOf( settings ) + step + 3 ) % 3;
+                gfx.setQuality( settings.m_quality );
+                saveSettings( settings );
+            };
+            if ( chosen == gfxItem && k.m_change ) nextQuality( k.m_change );
             auto nextLanguage = [&]( int step )
             {
                 std::vector<std::string> all = languages( assetsDir() );
@@ -914,6 +964,13 @@ int runGame( const Options &o, Gfx &gfx )
                 score.m_volume = settings.m_music;
                 saveSettings( settings );
             }
+            if ( ( chosen == voiceItem || chosen == fxItem ) && k.m_change )
+            {
+                float &v = chosen == voiceItem ? settings.m_voices : settings.m_effects;
+                v = Clamp( roundf( v * 10.0f + k.m_change ) / 10.0f, 0.0f, 1.0f );
+                game->setVolumes( settings.m_voices, settings.m_effects );
+                saveSettings( settings );
+            }
             if ( k.m_confirm )
             {
                 if ( chosen == 0 && base == 1 && loadProgress( saved ) )
@@ -937,6 +994,8 @@ int runGame( const Options &o, Gfx &gfx )
                 }
                 else if ( chosen == langItem )
                     nextLanguage( 1 );
+                else if ( chosen == gfxItem )
+                    nextQuality( 1 );
                 else if ( chosen == restartItem )
                 {
                     restart();
@@ -991,6 +1050,12 @@ int main( int argc, char **argv )
     SetTraceLogCallback( logToFile );
     SetTraceLogLevel( LOG_WARNING );
 
+    // On a Steam Deck the window fills its screen (gamescope shows it whole) and the graphics start low.
+    if ( o.m_width <= 0 ) o.m_width = steamDeck() ? 1280 : 1600;
+    if ( o.m_height <= 0 ) o.m_height = steamDeck() ? 800 : 900;
+    // Pictures for the tests are drawn high unless asked otherwise, whatever the player chose.
+    int quality = o.m_quality >= 0 ? o.m_quality : ( o.m_shot.empty() ? qualityOf( loadSettings() ) : 2 );
+
     unsigned flags = FLAG_VSYNC_HINT;
     if ( !o.m_shot.empty() ) flags |= FLAG_WINDOW_HIDDEN;
     SetConfigFlags( flags );
@@ -998,7 +1063,7 @@ int main( int argc, char **argv )
     SetExitKey( KEY_NULL );   // Esc pauses; the menu quits
 
     Gfx gfx;
-    gfx.init( o.m_width, o.m_height, o.m_ss );
+    gfx.init( o.m_width, o.m_height, quality, o.m_ss );
     if ( o.m_exposure > 0.0f ) gfx.m_exposure = o.m_exposure;
     if ( !o.m_scoreTest.empty() )
     {

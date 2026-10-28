@@ -610,9 +610,10 @@ bool Game::updateHub( float dt, GameInput &in )
         float   want = Vector2Length( { d.x, d.z } ) < 6.0f ? atan2f( d.x, d.z ) : 0.0f;
         n.m_yaw += Clamp( angleTo( n.m_yaw, want ), -3.0f * dt, 3.0f * dt );
     }
-    // Menus: the stick's or the arrows' up and down in steps.
+    // Menus: the stick's, the cross's or the arrows' up and down in steps.
     int step = 0;
     if ( fabsf( m_rawMove.y ) > 0.5f && fabsf( m_navY ) <= 0.5f ) step = m_rawMove.y > 0.0f ? 1 : -1;
+    if ( m_rawNav ) step = m_rawNav;
     m_navY = m_rawMove.y;
     bool ok = in.m_jump || in.m_confirm || in.m_use;
     if ( m_menu )
@@ -704,6 +705,7 @@ bool Game::updateFightTalk( GameInput &in )
     if ( m_npcs.empty() ) return false;
     int step = 0;
     if ( fabsf( m_rawMove.y ) > 0.5f && fabsf( m_navY ) <= 0.5f ) step = m_rawMove.y > 0.0f ? 1 : -1;
+    if ( m_rawNav ) step = m_rawNav;
     m_navY = m_rawMove.y;
     if ( m_talk ) return talkStep( step, in.m_jump || in.m_confirm || in.m_use, in.m_special );
     int near = nearNpc();
@@ -849,11 +851,10 @@ void Game::drawHubHud( int w, int h, float s )
         DrawRectangleLinesEx( { x0, y0, x1 - x0, ph }, 2.0f * s, { 255, 190, 120, 120 } );
         const Npc &def = m_level.m_npcs[m_npcs[m_talkNpc].m_def];
         float      tx = x0 + 24.0f * s;
-        auto       portrait = m_portraits.find( m_talk->m_speaker );
-        if ( portrait != m_portraits.end() )
+        if ( const Texture2D *face = portrait( m_talk->m_speaker ) )
         {
             float     size = ph - 40.0f * s;
-            Texture2D t = portrait->second;
+            Texture2D t = *face;
             DrawTexturePro( t, { 0, 0, (float)t.width, (float)t.height },
                             { x0 + 20.0f * s, y0 + 20.0f * s, size, size }, { 0, 0 }, 0.0f, WHITE );
             tx = x0 + size + 44.0f * s;

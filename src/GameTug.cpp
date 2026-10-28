@@ -271,11 +271,15 @@ void Game::hitPart( int i, float damage, Vector3 at )
 {
     BossPart &p = m_parts[i];
     if ( p.m_hp <= 0.0f || !partsLive() ) return;
+    // A machine's parts: the gear's bonus against machines counts.
+    damage *= 1.0f + stat( StatE::VS_MACHINES ) / 100.0f;
     p.m_hp -= damage;
     sparks( at, Vector3Normalize( Vector3Subtract( m_pos, at ) ), 8, { 255, 200, 130, 255 }, 3.0f );
     if ( p.m_hp > 0.0f ) return;
-    // A weak point gone: a blast, a line, the hint for the next.
+    // A weak point gone: a blast, a line, the hint for the next; the catcher's clock starts again (who gets on with it
+    // gets the time for the next part).
     explode( p.m_pos, 2.0f );
+    if ( m_grabClock > 0.0f ) m_grabT = m_grabClock;
     m_shake = fmaxf( m_shake, 0.6f );
     fire( std::string( p.m_key ) + "down" );
     // Mother Sevenfold feels a mast go: all seven bodies stumble at once.
@@ -370,7 +374,7 @@ void Game::updateTug( float dt )
         m_cuts.push_back( cut );
         m_flashes.push_back( { m_parts[1].m_pos, { 30.0f, 10.0f, 4.0f }, 8.0f, 0.3f, 0.3f } );
         fire( "cutwarn" );
-        m_tugGun = m_tugStage ? 3.0f : 4.4f;
+        m_tugGun = m_tugStage ? 3.6f : 5.0f;
     }
     if ( !laser && m_parts[1].m_hp > 0.0f && m_tugGun <= 0.0f && d < 40.0f )
     {

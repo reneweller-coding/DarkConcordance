@@ -547,7 +547,7 @@ void Audio::play( SfxE s, Vector3 at, Vector3 listener, float volume )
     int    i = (int)s;
     Sound &snd = m_sounds[i][m_next[i]];
     m_next[i] = ( m_next[i] + 1 ) % Voices;
-    SetSoundVolume( snd, Clamp( v, 0.0f, 1.0f ) );
+    SetSoundVolume( snd, Clamp( v * m_effectVolume, 0.0f, 1.0f ) );
     SetSoundPitch( snd, 0.94f + 0.12f * ( rand() % 100 ) / 100.0f );
     float right = d.x * cosf( m_yaw ) - d.z * sinf( m_yaw );
     SetSoundPan( snd, Clamp( 0.5f - right / 30.0f, 0.15f, 0.85f ) );
@@ -557,10 +557,18 @@ void Audio::play( SfxE s, Vector3 at, Vector3 listener, float volume )
 void Audio::update()
 {
     if ( !m_on ) return;
+    // The sliders apply at once, to the background and a line being spoken too.
+    if ( m_hasVoice ) SetSoundVolume( m_voice, m_voiceVolume );
     if ( m_hasBed )
+    {
+        SetMusicVolume( m_bed, 0.55f * m_effectVolume );
         UpdateMusicStream( m_bed );
-    else if ( !IsSoundPlaying( m_ambience ) )
-        PlaySound( m_ambience );
+    }
+    else
+    {
+        SetSoundVolume( m_ambience, 0.55f * m_effectVolume );
+        if ( !IsSoundPlaying( m_ambience ) ) PlaySound( m_ambience );
+    }
 }
 
 float Audio::voice( const std::string &path )
@@ -576,6 +584,7 @@ float Audio::voice( const std::string &path )
         m_voice = LoadSoundFromWave( w );
         UnloadWave( w );
         m_hasVoice = true;
+        SetSoundVolume( m_voice, m_voiceVolume );
         PlaySound( m_voice );
         return len;
     }

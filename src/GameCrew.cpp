@@ -502,7 +502,7 @@ void Game::burst( const Foe &f )
     p.m_yaw = f.m_yaw;
     p.m_phase = f.m_phase;
     p.m_time = m_time + f.m_id;
-    foeFigure( f ).pose( p, { 0.25f, 0.02f, 0.01f, 0.0f }, parts );
+    foeFigure( f ).plates( p, parts );
     Vector3 chest = Vector3Add( f.m_pos, { 0.0f, foeTall( f ) * 0.6f, 0.0f } );
     Vector3 away = { f.m_pos.x - m_pos.x, 0.0f, f.m_pos.z - m_pos.z };
     away = Vector3Length( away ) > 1e-3f ? Vector3Normalize( away ) : Vector3{ 0.0f, 0.0f, 1.0f };

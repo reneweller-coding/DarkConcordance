@@ -70,6 +70,8 @@ Gfx::CommonLocs Gfx::locate( Shader s )
     l.m_roomMax = GetShaderLocation( s, "roomMax" );
     l.m_waterCount = GetShaderLocation( s, "waterCount" );
     l.m_waterBalls = GetShaderLocation( s, "waterBalls" );
+    l.m_fogSteps = GetShaderLocation( s, "fogSteps" );
+    l.m_shadowTaps = GetShaderLocation( s, "shadowTaps" );
     int unit = SunUnit;
     SetShaderValue( s, l.m_sunShadow, &unit, SHADER_UNIFORM_INT );
     unit = SpotUnit;
@@ -135,6 +137,8 @@ void Gfx::upload( Shader s, const CommonLocs &l )
     int water = (int)std::min( L.m_water.size(), (size_t)8 );
     SetShaderValue( s, l.m_waterCount, &water, SHADER_UNIFORM_INT );
     if ( water > 0 ) SetShaderValueV( s, l.m_waterBalls, L.m_water.data(), SHADER_UNIFORM_VEC4, water );
+    SetShaderValue( s, l.m_fogSteps, &m_fogSteps, SHADER_UNIFORM_INT );
+    SetShaderValue( s, l.m_shadowTaps, &m_shadowTaps, SHADER_UNIFORM_INT );
 }
 
 RenderTexture2D Gfx::hdrTarget( int w, int h, bool depth )
@@ -183,14 +187,12 @@ RenderTexture2D Gfx::depthTarget( int size )
     return t;
 }
 
-void Gfx::init( int width, int height, float ss )
+void Gfx::init( int width, int height, int quality, float ss )
 {
     m_width = width;
     m_height = height;
     // Both sides everywhere: the fullscreen quads are wound backwards, and shadows must not leak through a face.
     rlDisableBackfaceCulling();
-    int         w = (int)( width * ss );
-    int         h = (int)( height * ss );
     std::string common = CommonFs;
     m_lit = load( LitVs, ( common + LitFs ).c_str() );
     m_glassShader = load( LitVs, ( common + GlassFs ).c_str() );
@@ -229,7 +231,34 @@ void Gfx::init( int width, int height, float ss )
     m_waterMat.shader = m_waterShader;
     m_planetMat = LoadMaterialDefault();
     m_planetMat.shader = m_planet;
+    setQuality( quality, ss );
+}
 
+void Gfx::setQuality( int quality, float ss )
+{
+    struct Level
+    {
+        float m_ss;
+        int   m_fogSteps, m_shadowTaps, m_sunSize, m_spotSize;
+    };
+    static const Level Levels[3] = { { 0.75f, 8, 4, 2048, 1024 },
+                                     { 1.0f, 20, 8, 4096, 2048 },
+                                     { 1.5f, 40, 12, 4096, 2048 } };
+    m_quality = std::clamp( quality, 0, 2 );
+    const Level &q = Levels[m_quality];
+    m_scale = ss > 0.0f ? ss : q.m_ss;
+    m_fogSteps = q.m_fogSteps;
+    m_shadowTaps = q.m_shadowTaps;
+    if ( m_hdr.id > 0 )
+    {
+        UnloadRenderTexture( m_hdr );
+        for ( RenderTexture2D &t : m_bloomLevels ) UnloadRenderTexture( t );
+        UnloadRenderTexture( m_sunMap );
+        UnloadRenderTexture( m_spotMap );
+        m_bloomLevels.clear();
+    }
+    int w = std::max( (int)( m_width * m_scale ), 1 );
+    int h = std::max( (int)( m_height * m_scale ), 1 );
     m_hdr = hdrTarget( w, h, true );
     for ( int i = 0; i < BloomLevels; ++i )
     {
@@ -237,6 +266,8 @@ void Gfx::init( int width, int height, float ss )
         h = std::max( h / 2, 1 );
         m_bloomLevels.push_back( hdrTarget( w, h, false ) );
     }
+    m_sunSize = q.m_sunSize;
+    m_spotSize = q.m_spotSize;
     m_sunMap = depthTarget( m_sunSize );
     m_spotMap = depthTarget( m_spotSize );
 }
@@ -268,6 +299,46 @@ void Gfx::bindShadows( bool on )
     rlActiveTextureSlot( 0 );
 }
 
+Gfx::Frustum Gfx::frustum( const Matrix &vp )
+{
+    // Gribb and Hartmann: the planes are sums and differences of the matrix's rows.
+    Vector4 r0 = { vp.m0, vp.m4, vp.m8, vp.m12 }, r1 = { vp.m1, vp.m5, vp.m9, vp.m13 };
+    Vector4 r2 = { vp.m2, vp.m6, vp.m10, vp.m14 }, r3 = { vp.m3, vp.m7, vp.m11, vp.m15 };
+    Frustum f = { { Vector4Add( r3, r0 ), Vector4Subtract( r3, r0 ), Vector4Add( r3, r1 ), Vector4Subtract( r3, r1 ),
+                    Vector4Add( r3, r2 ), Vector4Subtract( r3, r2 ) } };
+    for ( Vector4 &p : f.m_planes )
+        p = Vector4Scale( p, 1.0f / std::max( sqrtf( p.x * p.x + p.y * p.y + p.z * p.z ), 1e-6f ) );
+    return f;
+}
+
+bool Gfx::inside( const Frustum &f, const Drawable &d )
+{
+    const Mesh   &m = d.m_mesh;
+    std::uint64_t key = (std::uint64_t)(std::uintptr_t)m.vertices * 31u + m.vaoId;
+    Sphere       &s = m_spheres[key];
+    if ( s.m_count != m.vertexCount || s.m_sphere.w == 0.0f )
+    {
+        // Measured once per mesh: the middle and half the diagonal of its box.
+        s = { { 0.0f, 0.0f, 0.0f, -1.0f }, m.vertexCount };
+        if ( m.vertices && m.vertexCount > 0 )
+        {
+            BoundingBox b = GetMeshBoundingBox( m );
+            Vector3     mid = Vector3Scale( Vector3Add( b.min, b.max ), 0.5f );
+            s.m_sphere = { mid.x, mid.y, mid.z, std::max( Vector3Distance( b.min, b.max ) * 0.5f, 0.01f ) };
+        }
+    }
+    if ( s.m_sphere.w < 0.0f ) return true;
+    const Matrix &t = d.m_transform;
+    Vector3       c = Vector3Transform( { s.m_sphere.x, s.m_sphere.y, s.m_sphere.z }, t );
+    float scale = sqrtf( std::max( { t.m0 * t.m0 + t.m1 * t.m1 + t.m2 * t.m2, t.m4 * t.m4 + t.m5 * t.m5 + t.m6 * t.m6,
+                                     t.m8 * t.m8 + t.m9 * t.m9 + t.m10 * t.m10 } ) );
+    // A skinned figure's limbs reach past its rest pose.
+    float r = s.m_sphere.w * scale * ( d.m_bones ? 1.6f : 1.0f );
+    for ( const Vector4 &p : f.m_planes )
+        if ( p.x * c.x + p.y * c.y + p.z * c.z + p.w < -r ) return false;
+    return true;
+}
+
 void Gfx::shadows( const Lighting &lights, Vector3 centre, const std::vector<const std::vector<Drawable> *> &lists )
 {
     bindShadows( false );
@@ -284,9 +355,11 @@ void Gfx::shadows( const Lighting &lights, Vector3 centre, const std::vector<con
     rlSetClipPlanes( 1.0, 160.0 );
     BeginMode3D( sun );
     m_sunVP = MatrixMultiply( rlGetMatrixModelview(), rlGetMatrixProjection() );
-    // A skinned figure casts the shadow of its pose, not of its rest pose.
+    Frustum cull = frustum( m_sunVP );
+    // A skinned figure casts the shadow of its pose, not of its rest pose. What lies outside the map is left out.
     auto depth = [&]( const Drawable &d )
     {
+        if ( !inside( cull, d ) ) return;
         if ( !d.m_bones )
         {
             DrawMesh( d.m_mesh, m_depthMat, d.m_transform );
@@ -316,6 +389,7 @@ void Gfx::shadows( const Lighting &lights, Vector3 centre, const std::vector<con
     rlSetClipPlanes( m_spotNF.x, m_spotNF.y );
     BeginMode3D( spot );
     m_spotVP = MatrixMultiply( rlGetMatrixModelview(), rlGetMatrixProjection() );
+    cull = frustum( m_spotVP );
     for ( const auto *list : lists )
         for ( const Drawable &d : *list )
             if ( d.m_spotShadow ) depth( d );
@@ -360,6 +434,7 @@ void Gfx::beginScene( const Camera3D &cam, const Lighting &lights, float time, T
     Matrix view = MatrixLookAt( cam.position, cam.target, cam.up );
     Matrix proj = MatrixPerspective( cam.fovy * DEG2RAD, (double)w / h, 0.5, 30000.0 );
     Matrix inv = MatrixInvert( MatrixMultiply( view, proj ) );
+    m_view = frustum( MatrixMultiply( view, proj ) );
     SetShaderValueMatrix( m_sky, GetShaderLocation( m_sky, "invViewProj" ), inv );
     float nebula = 0.8f;
     SetShaderValue( m_sky, GetShaderLocation( m_sky, "nebula" ), &nebula, SHADER_UNIFORM_FLOAT );
@@ -377,7 +452,7 @@ void Gfx::draw( const std::vector<Drawable> &list, const std::vector<Surface> &s
 {
     for ( const Drawable &d : list )
     {
-        if ( !d.m_visible ) continue;
+        if ( !d.m_visible || !inside( m_view, d ) ) continue;
         const Surface  &s = surfaces[d.m_surface];
         bool            skin = d.m_bones != nullptr;
         Shader          shader = skin ? m_litSkin : m_lit;

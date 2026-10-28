@@ -612,6 +612,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     spawnNatives();
     assignEscorts();
     loadSkins( gfx );
+    bodyFigures();
     loadShip( gfx, assets );
     loadHub( gfx, assets );
     loadUsables();
@@ -1574,6 +1575,7 @@ void Game::updateHero( float dt, const GameInput &in )
             m_heat = 0.0f;
             m_overheat = false;
             m_pos = m_respawn;
+            closeCrust( m_pos, 3.2f );
             m_vel = { 0, 0, 0 };
             m_invuln = 1.5f;
             m_path.clear();   // the autopilot's way from where it fell no longer starts here
@@ -2677,9 +2679,13 @@ void Game::plan()
     }
     else if ( tugFighting() )
     {
-        // At the tug: Dorra from the deck's edge by it; Corvin from where he stands once it is in sight.
-        if ( m_heroKind != HeroE::DORRA && Vector3Distance( m_tugPos, m_pos ) < 26.0f &&
-             los( Vector3Add( m_pos, { 0, 1.3f, 0 } ), m_parts[1].m_pos ) )
+        // At the tug: Dorra from the deck's edge by it; Corvin and Ione from where they stand once it is in sight and a
+        // part of it within their weapon's reach (Ione's swarm reaches less far than Corvin's rifle).
+        bool reached = false;
+        for ( const BossPart &q : m_parts )
+            reached = reached ||
+                      ( q.m_hp > 0.0f && Vector3Distance( q.m_pos, m_pos ) < fminf( 26.0f, m_stats.m_range - 1.5f ) );
+        if ( m_heroKind != HeroE::DORRA && reached && los( Vector3Add( m_pos, { 0, 1.3f, 0 } ), m_parts[1].m_pos ) )
         {
             m_path.clear();
             return;
@@ -3154,6 +3160,7 @@ void Game::update( float dt, const GameInput &inRaw )
 {
     GameInput in = inRaw;
     m_rawMove = inRaw.m_move;
+    m_rawNav = inRaw.m_navStep;
     m_hurtBy = "";
     // A level may open with a film, once per game; nothing moves while one plays.
     if ( !m_filmChecked )
@@ -3192,7 +3199,7 @@ void Game::update( float dt, const GameInput &inRaw )
         Vector2 m = in.m_move;
         in.m_move = { m.x * c + m.y * s, -m.x * s + m.y * c };
     }
-    if ( inRaw.m_map ) m_showMap = !m_showMap;
+    if ( inRaw.m_map && !m_talk && !m_menu ) m_showMap = !m_showMap;   // in a talk the cross's up steps instead
     updateMap( dt );
     updateScene( dt, in );
     if ( updateUse( dt, in ) ) in = GameInput();
@@ -3559,10 +3566,12 @@ void Game::drawParticles( Gfx &gfx )
 void Game::render( Gfx &gfx, const RenderTexture2D *out )
 {
     m_dynamic.clear();
+    Figure::frame();
     if ( m_heroKind == HeroE::UNZU )
         poseUnzu( m_dynamic );
     else
         m_hero.pose( m_dynamic );
+    for ( auto &[figure, pose] : m_lined ) figure->pose( pose, { -1.0f, 0.0f, 0.0f, 0.0f }, m_dynamic );
     poseCrew( m_dynamic );
     poseShip( m_dynamic );
     poseHub( m_dynamic );
@@ -3921,19 +3930,11 @@ void Game::drawHud( int w, int h )
         for ( char &ch : who ) ch = (char)toupper( (unsigned char)ch );
         float ly = h - 190.0f * s;
         // The speaker's face beside the line, where there is one.
-        const std::string face = m_assets + "/textures/portrait_" + speaker + ".png";
-        if ( !m_portraits.count( speaker ) && FileExists( face.c_str() ) )
-        {
-            m_portraits[speaker] = LoadTexture( face.c_str() );
-            SetTextureFilter( m_portraits[speaker], TEXTURE_FILTER_BILINEAR );
-        }
-        auto pt = m_portraits.find( speaker );
-        if ( pt != m_portraits.end() )
+        if ( const Texture2D *face = portrait( speaker ) )
         {
             float size = 92.0f * s, px = w * 0.5f - w * 0.275f - size - 18.0f * s;
-            DrawTexturePro( pt->second, { 0, 0, (float)pt->second.width, (float)pt->second.height },
-                            { px, ly - 4.0f * s, size, size }, { 0, 0 }, 0.0f,
-                            { 255, 255, 255, (unsigned char)( 255 * a ) } );
+            DrawTexturePro( *face, { 0, 0, (float)face->width, (float)face->height }, { px, ly - 4.0f * s, size, size },
+                            { 0, 0 }, 0.0f, { 255, 255, 255, (unsigned char)( 255 * a ) } );
             DrawRectangleLinesEx( { px, ly - 4.0f * s, size, size }, 2.0f * s,
                                   { 255, 180, 100, (unsigned char)( 120 * a ) } );
         }

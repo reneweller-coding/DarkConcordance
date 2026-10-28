@@ -181,6 +181,27 @@ void Game::rebuildGlass()
     m_glassMesh = glass.build().front();
 }
 
+void Game::closeCrust( Vector3 p, float radius )
+{
+    // Else a capsule or the last safe spot on cut crust drops the hero back in, again and again.
+    bool closed = false;
+    for ( auto it = m_regrow.begin(); it != m_regrow.end(); )
+    {
+        Vector3 q = m_level.centre( it->m_r, it->m_c );
+        if ( Vector2Distance( { p.x, p.z }, { q.x, q.z } ) > radius )
+        {
+            ++it;
+            continue;
+        }
+        m_level.setGlass( it->m_r, it->m_c );
+        m_level.m_glass.push_back( { it->m_r, it->m_c } );
+        m_iceHp[it->m_r * 1000 + it->m_c] = 2.0f;
+        it = m_regrow.erase( it );
+        closed = true;
+    }
+    if ( closed ) rebuildGlass();
+}
+
 void Game::crackIce( Vector3 p, float radius, float amount )
 {
     if ( !m_level.m_ice || p.y > 2.5f ) return;
@@ -363,6 +384,7 @@ void Game::updateElements( float dt )
             drainHero( hpMax() * DunkHarm );
             m_oxygen *= 0.6f;
             m_pos = m_safeSpot;
+            closeCrust( m_pos, 3.2f );
             m_vel = { 0.0f, 0.0f, 0.0f };
             m_invuln = fmaxf( m_invuln, 1.2f );
             m_path.clear();

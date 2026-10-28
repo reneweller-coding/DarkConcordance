@@ -104,6 +104,18 @@ std::string Game::spoken( const std::string &key ) const
     return t;
 }
 
+const Texture2D *Game::portrait( const std::string &who )
+{
+    // A speaker's face (assets/textures/portrait_<who>.png), loaded the first time it is wanted.
+    auto at = m_portraits.find( who );
+    if ( at != m_portraits.end() ) return &at->second;
+    const std::string face = m_assets + "/textures/portrait_" + who + ".png";
+    if ( !FileExists( face.c_str() ) ) return nullptr;
+    Texture2D t = LoadTexture( face.c_str() );
+    SetTextureFilter( t, TEXTURE_FILTER_BILINEAR );
+    return &( m_portraits[who] = t );
+}
+
 float Game::speak( const std::string &key )
 {
     // The voice in the chosen language, else the German one (under the chosen language's subtitles). Each hero has
@@ -210,12 +222,19 @@ bool Game::updateEpilogue( float dt, GameInput &in )
         startFilm( "end_" + m_ending );   // the ending's film first, the cards after it
     }
     if ( m_finished ) return true;
+    // Each card is read out as it shows (the first one after the ending's film).
+    if ( m_card != m_cardSpoken && m_card < (int)m_cards.size() && !m_film.playing() )
+    {
+        m_cardSpoken = m_card;
+        speak( m_cards[m_card].second );
+    }
     m_cardT += dt;
     bool turn = ( in.m_confirm || in.m_jump || in.m_use || in.m_fire ) && m_cardT > CardMin;
     if ( m_autoplay && m_cardT > CardAuto ) turn = true;
     if ( turn )
     {
         m_cardT = 0.0f;
+        m_audio.stopVoice();
         if ( ++m_card >= (int)m_cards.size() )
         {
             runEvent( "gamedone" );

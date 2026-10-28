@@ -50,6 +50,7 @@ struct GameInput
     bool    m_mouseAim = false;         ///< the mouse aims (it moved or a button is held)
     bool    m_strafe = false;           ///< keep facing where the hero looks (left trigger, Shift; Dorra: shield up)
     bool    m_cameraReset = false;      ///< camera back behind the start's view (right stick click)
+    int     m_navStep = 0;              ///< the pad's cross up (-1) or down (1) pressed: a step in the game's menus
     float   m_cameraTurn = 0.0f;        ///< camera turn this frame (radians; right stick, right mouse button)
     Vector2 m_mouse = { 0.0f, 0.0f };   ///< mouse position (window pixels)
     Vector2 m_stick = { 0.0f, 0.0f };   ///< aim direction in the world (the autopilot's; players aim automatically)
@@ -180,6 +181,17 @@ public:
      */
     bool startFilm( const std::string &name );
 
+    /**
+     * @brief Sets the voices' and the effects' volume (the menus' sliders; the music is the score's).
+     * @param[in] voices   0..1
+     * @param[in] effects  0..1 (the place's background too)
+     */
+    void setVolumes( float voices, float effects )
+    {
+        m_audio.m_voiceVolume = voices;
+        m_audio.m_effectVolume = effects;
+    }
+
     /** @return a generated level's file ("" for a written one) */
     const std::string &generated() const { return m_level.m_generated; }
 
@@ -238,6 +250,12 @@ public:
 
     /** @brief Pictures: a row of people in front of the hero, each in another animation. */
     void lineup();
+    /**
+     * @brief Pictures: figures in front of the hero, each in another pose (held still).
+     * @param[in] page  0 the hero standing, walking, running, shooting, striking, blocking, jumping, falling; 1 the
+     *                  men in suits and frames and the people in clothes
+     */
+    void figureLineup( int page );
     /**
      * @brief Pictures: the places' creatures in front of the hero, a column per family, a row per tier (held still).
      * @param[in] page  0 the first seven families, 1 the others
@@ -804,6 +822,7 @@ private:
     void drawElementsHud( int w, int h, float s );
     void rebuildGlass();
     void crackIce( Vector3 p, float radius, float amount );
+    void closeCrust( Vector3 p, float radius );   // cut crust under where the hero is put back closes at once
     Vector3 drift( Vector3 p, Vector3 v ) const;
     bool heroLit() const;
     float sightRange() const;
@@ -1077,7 +1096,8 @@ private:
     // counted since the prologue, the night shift's trust, the act's end card, the endings and the epilogue.
     void loadStory();
     std::string spoken( const std::string &key ) const;
-    float speak( const std::string &key );   // a line's voice; its length in seconds, 0 if it has none
+    float speak( const std::string &key );                 // a line's voice; its length in seconds, 0 if it has none
+    const Texture2D *portrait( const std::string &who );   // a speaker's face, nullptr if there is none
     // Films (Film.h): before a level ("film"), at an act's end in the white ("endfilm"), before the epilogue.
     bool updateFilm( float dt, const GameInput &in );
     void drawFilm( int w, int h, float s );
@@ -1093,6 +1113,7 @@ private:
     TalkNode                                         m_shown;       ///< the step on screen, its answers as they apply
     std::vector<std::pair<std::string, std::string>> m_cards;       ///< the epilogue's cards: title, text
     int                                              m_card = -1;   ///< the card on screen (-1 none yet)
+    int                                              m_cardSpoken = -1;   ///< the card last read out
     float                                            m_cardT = 0.0f;
     std::string                                      m_ending;         ///< a, b or c once chosen
     float                                            m_markT = 0.0f;   ///< the Collegium's mark after a respawn
@@ -1110,6 +1131,8 @@ private:
 
     // GameSkin.cpp: people as skinned figures with real animations (Quaternius' bodies and animation libraries).
     void loadSkins( Gfx &gfx );
+    void bodyFigures();   // the heroes, the men in suits and frames, the people in clothes onto skinned bodies
+    std::vector<std::pair<Figure *, FigurePose>> m_lined;   ///< figures held still for a picture (figureLineup)
     void dressPerson( Person &q, unsigned seed );
     void updateSkins( float dt );
     void poseSkin( Person &q, std::vector<Drawable> &out );
@@ -1284,6 +1307,7 @@ private:
     Mesh                             m_terminalMesh = {}, m_screenMesh = {}, m_padMesh = {};
     Vector3                          m_axis = { 0, 0, 0 };   ///< a point on our drum's axis (it runs east-west)
     Vector2                          m_rawMove = { 0, 0 };   ///< the stick before the camera's turn (menus)
+    int                              m_rawNav = 0;           ///< the pad's cross this frame (menus)
     Vector3                          m_exit = { 0, 0, 0 };
     bool                             m_hasExit = false;
     bool                             m_padArmed = true;   ///< the lift's plate reacts (again once one has stepped off)

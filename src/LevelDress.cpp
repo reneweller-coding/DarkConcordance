@@ -1293,6 +1293,11 @@ void Level::showPiece( int group, unsigned h, Vector3 at, DressKit &kit )
         b->m_color = WHITE;
 }
 
+int Level::dressGroup( ThemeE t )
+{
+    return dressOf( t );
+}
+
 void Level::wallKit( int r, int c, int d, Vector3 face, Vector3 n, float base, int walls, bool decal, DressKit &kit )
 {
     // Its own frame: x along the face, y up, z out of the wall into the cell.

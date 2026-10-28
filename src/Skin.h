@@ -94,6 +94,49 @@ public:
      */
     void pose( const SkinState &s, std::vector<Matrix> &bones ) const;
 
+    /**
+     * @brief A clip's pose at a time: each bone's place in the model's space (interpolated between frames).
+     * @param[in]  clip  the clip
+     * @param[in]  time  seconds into it (a loop wraps, else it holds its ends)
+     * @param[out] out   one per bone
+     */
+    void sample( int clip, float time, std::vector<Transform> &out ) const;
+
+    /**
+     * @brief The skin matrices of a pose given bone by bone.
+     * @param[in]  pose   each bone's place in the model's space
+     * @param[out] bones  one per bone (rest pose to posed)
+     */
+    void skin( const std::vector<Transform> &pose, std::vector<Matrix> &bones ) const;
+
+    /**
+     * @brief Mixes a second pose into a first, bone by bone.
+     * @param[in,out] a  the pose
+     * @param[in]     b  the other
+     * @param[in]     w  its share 0..1
+     */
+    static void mix( std::vector<Transform> &a, const std::vector<Transform> &b, float w );
+
+    /**
+     * @brief Lays the upper body of a second pose (the spine and all on it: arms, head) over a first, moved onto the
+     *        first's hips, so the legs walk on while the arms aim or strike.
+     * @param[in,out] a       the pose (its hips and legs stay)
+     * @param[in]     b       the upper body's pose
+     * @param[in]     w       its share 0..1
+     * @param[in]     follow  how far the upper body turns with the first's hips (0: it keeps its own facing)
+     */
+    void layer( std::vector<Transform> &a, const std::vector<Transform> &b, float w, float follow ) const;
+
+    /**
+     * @brief A bone by its name.
+     * @param[in] name  the name
+     * @return its index, or -1
+     */
+    int bone( const std::string &name ) const;
+
+    /** @return a bone's place in the model's space as a matrix */
+    static Matrix matrix( const Transform &t );
+
     /** @return the head bone's index */
     int head() const { return m_head; }
     /** @return how many bones */
@@ -108,15 +151,14 @@ public:
     std::vector<bool>  m_skinned;     ///< per mesh of the body: skinned (else rigid on the head)
 
 private:
-    /** @brief A clip's pose at a time (interpolated between frames). */
-    void sample( int clip, float time, std::vector<Transform> &out ) const;
-
     std::vector<std::string> m_names;
     std::vector<int>         m_parent;
     std::vector<Transform>   m_bind;   ///< rest pose, model space
     std::vector<Transform>   m_ref;    ///< the T-pose, model space
     std::vector<SkinClip>    m_clips;
+    std::vector<bool>        m_upper;   ///< the upper body's bones (spine_01 and all on it)
     int                      m_head = 0;
+    int                      m_pelvis = -1;
 };
 
 }   // namespace spaceopera

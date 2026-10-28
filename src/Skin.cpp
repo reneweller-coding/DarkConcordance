@@ -90,7 +90,18 @@ bool SkinModel::load( const std::string &body, const std::string &tpose )
         m_names[i] = m_body.bones[i].name;
         m_parent[i] = m_body.bones[i].parent;
         if ( m_names[i] == "Head" || m_names[i] == "DEF-head" ) m_head = i;
+        if ( m_names[i] == "pelvis" || m_names[i] == "DEF-hips" ) m_pelvis = i;
     }
+    // The upper body: the first spine bone and every bone that hangs on it.
+    int spine = std::max( bone( "spine_01" ), bone( "DEF-spine.001" ) );
+    m_upper.assign( n, false );
+    for ( int i = 0; i < n && spine >= 0; ++i )
+        for ( int b = i; b >= 0; b = m_parent[b] )
+            if ( b == spine )
+            {
+                m_upper[i] = true;
+                break;
+            }
     for ( int i = 0; i < m_body.meshCount; ++i ) m_skinned.push_back( m_body.meshes[i].boneWeights != nullptr );
     // The reference: the T-pose on this rig (else the rest pose).
     m_ref = m_bind;
@@ -280,6 +291,42 @@ void SkinModel::sample( int clip, float time, std::vector<Transform> &out ) cons
     for ( int b = 0; b < n; ++b ) out[b] = blend( k.m_poses[(size_t)f0 * n + b], k.m_poses[(size_t)f1 * n + b], w );
 }
 
+int SkinModel::bone( const std::string &name ) const
+{
+    for ( size_t i = 0; i < m_names.size(); ++i )
+        if ( m_names[i] == name ) return (int)i;
+    return -1;
+}
+
+Matrix SkinModel::matrix( const Transform &t )
+{
+    return MatrixMultiply( QuaternionToMatrix( t.rotation ),
+                           MatrixTranslate( t.translation.x, t.translation.y, t.translation.z ) );
+}
+
+void SkinModel::mix( std::vector<Transform> &a, const std::vector<Transform> &b, float w )
+{
+    if ( w <= 0.0f ) return;
+    for ( size_t i = 0; i < a.size() && i < b.size(); ++i ) a[i] = w >= 1.0f ? b[i] : blend( a[i], b[i], w );
+}
+
+void SkinModel::layer( std::vector<Transform> &a, const std::vector<Transform> &b, float w, float follow ) const
+{
+    if ( w <= 0.0f || m_pelvis < 0 ) return;
+    const Transform pa = a[m_pelvis], pb = b[m_pelvis];
+    Quaternion turn = QuaternionSlerp( QuaternionIdentity(),
+                                       QuaternionMultiply( pa.rotation, QuaternionInvert( pb.rotation ) ), follow );
+    for ( int i = 0; i < bones(); ++i )
+    {
+        if ( !m_upper[i] ) continue;
+        Transform t = b[i];
+        t.rotation = QuaternionMultiply( turn, b[i].rotation );
+        t.translation = Vector3Add(
+            pa.translation, Vector3RotateByQuaternion( Vector3Subtract( b[i].translation, pb.translation ), turn ) );
+        a[i] = w >= 1.0f ? t : blend( a[i], t, w );
+    }
+}
+
 void SkinModel::pose( const SkinState &s, std::vector<Matrix> &bones ) const
 {
     static thread_local std::vector<Transform> a, b;
@@ -290,7 +337,13 @@ void SkinModel::pose( const SkinState &s, std::vector<Matrix> &bones ) const
         sample( s.m_prev, s.m_prevTime, b );
         for ( int i = 0; i < n; ++i ) a[i] = blend( b[i], a[i], s.m_fade );
     }
+    skin( a, bones );
+}
+
+void SkinModel::skin( const std::vector<Transform> &a, std::vector<Matrix> &bones ) const
+{
     // As raylib's UpdateModelAnimationBones: from the rest pose to the pose, in the model's space.
+    int n = this->bones();
     bones.resize( n );
     for ( int i = 0; i < n; ++i )
     {

@@ -96,9 +96,11 @@ public:
     /** @brief Stops the spoken line (a conversation closed or moved on). */
     void stopVoice();
 
-    bool  m_on = false;      ///< sound is running
-    float m_muffle = 1.0f;   ///< what reaches the ears (out in a vacuum only what the suit carries)
-    float m_yaw = 0.0f;      ///< the camera's turn (radians), so left and right follow the screen
+    bool  m_on = false;            ///< sound is running
+    float m_muffle = 1.0f;         ///< what reaches the ears (out in a vacuum only what the suit carries)
+    float m_yaw = 0.0f;            ///< the camera's turn (radians), so left and right follow the screen
+    float m_voiceVolume = 1.0f;    ///< the voices' share (the menu's slider)
+    float m_effectVolume = 1.0f;   ///< the effects' and the background's share
 
 private:
     static constexpr int Voices = 6;   ///< copies of each effect that can play at once

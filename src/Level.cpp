@@ -55,6 +55,12 @@ std::vector<std::string> fields( const std::string &s )
 
 const int DR[4] = { -1, 0, 1, 0 };   ///< north, east, south, west
 const int DC[4] = { 0, 1, 0, -1 };
+const int CR[4] = { -1, -1, 1, 1 };   ///< a cell's corners: north-west, north-east, south-east, south-west
+const int CC[4] = { -1, 1, 1, -1 };
+
+constexpr float CutSize = 0.75f;      ///< an outer corner cut off this far along both its edges
+constexpr float FillSize = 0.55f;     ///< an inner corner filled this far
+constexpr float NicheDepth = 0.35f;   ///< how far a niche stands back
 
 /** @brief How a theme dresses its cells. */
 struct Look
@@ -1034,6 +1040,97 @@ bool Level::raycast( Vector3 from, Vector3 to, Vector3 &hit, Vector3 &normal ) c
     return false;
 }
 
+void Level::planShapes()
+{
+    size_t cells = (size_t)m_rows * m_cols;
+    m_cut.assign( cells, 0 );
+    m_fill.assign( cells, 0 );
+    m_niche.assign( cells, -1 );
+    m_gallery.assign( cells, 0 );
+    auto kind = [&]( int r, int c ) { return cell( r, c ).m_kind; };
+    auto at = [&]( int r, int c ) { return (size_t)r * m_cols + c; };
+    // Rock and bulkheads take shapes; stacked containers and house fronts stay square.
+    auto shaped = [&]( int r, int c )
+    {
+        int walls = Looks[(int)theme( r, c )].m_walls;
+        return walls == 0 || walls == 2;
+    };
+    for ( int r = 1; r + 1 < m_rows; ++r )
+        for ( int c = 1; c + 1 < m_cols; ++c )
+            for ( int k = 0; k < 4; ++k )
+            {
+                // An outer corner of a wall (floor on both sides of it and beyond it): most are cut off. An inner
+                // corner of a room (walls on both sides and beyond): more than half are filled.
+                CellE side1 = kind( r + CR[k], c ), side2 = kind( r, c + CC[k] ), beyond = kind( r + CR[k], c + CC[k] );
+                if ( kind( r, c ) == CellE::ROCK && shaped( r, c ) && side1 == CellE::FLOOR && side2 == CellE::FLOOR &&
+                     beyond == CellE::FLOOR && hash01( r, c, 300 + k ) < 0.75f )
+                    m_cut[at( r, c )] |= (unsigned char)( 1 << k );
+                if ( kind( r, c ) == CellE::FLOOR && shaped( r, c ) && side1 == CellE::ROCK && side2 == CellE::ROCK &&
+                     beyond == CellE::ROCK && shaped( r + CR[k], c ) && shaped( r, c + CC[k] ) &&
+                     hash01( r, c, 310 + k ) < 0.6f )
+                    m_fill[at( r, c )] |= (unsigned char)( 1 << k );
+            }
+    // Niches: now and then a cell of a straight wall stands back (never two side by side, never by a cut corner).
+    for ( int r = 1; r + 1 < m_rows; ++r )
+        for ( int c = 1; c + 1 < m_cols; ++c )
+        {
+            if ( kind( r, c ) != CellE::ROCK || !shaped( r, c ) || m_cut[at( r, c )] ) continue;
+            int side = -1, opens = 0;
+            for ( int d = 0; d < 4; ++d )
+                if ( kind( r + DR[d], c + DC[d] ) != CellE::ROCK ) ++opens, side = d;
+            if ( opens != 1 || kind( r + DR[side], c + DC[side] ) != CellE::FLOOR ) continue;
+            bool straight = true;
+            for ( int s : { -1, 1 } )
+            {
+                int ar = r + s * DC[side], ac = c + s * DR[side];   // along the wall
+                if ( ar < 0 || ac < 0 || ar >= m_rows || ac >= m_cols || kind( ar, ac ) != CellE::ROCK ||
+                     kind( ar + DR[side], ac + DC[side] ) != CellE::FLOOR || m_cut[at( ar, ac )] ||
+                     m_niche[at( ar, ac )] >= 0 )
+                    straight = false;
+            }
+            if ( straight && hash01( r, c, 320 ) < 0.14f ) m_niche[at( r, c )] = (signed char)side;
+        }
+    // Galleries along the straight walls of the halls (four cells of floor in front of them), where the walls are
+    // high enough to walk beneath one: in works, clean halls and the cold, six at most.
+    if ( m_wallHeight < 4.2f ) return;
+    int built = 0;
+    for ( int d = 0; d < 4; ++d )
+    {
+        auto good = [&]( int r, int c )
+        {
+            int group = dressGroup( theme( r, c ) );
+            if ( kind( r, c ) != CellE::FLOOR || cell( r, c ).m_height != 0.0f || !shaped( r, c ) ||
+                 ( group != 0 && group != 2 && group != 3 ) )
+                return false;
+            int wr = r + DR[d], wc = c + DC[d], e = ( d + 2 ) % 4;
+            if ( kind( wr, wc ) != CellE::ROCK || wr < 0 || wc < 0 || wr >= m_rows || wc >= m_cols ||
+                 m_niche[at( wr, wc )] >= 0 || ( m_cut[at( wr, wc )] & ( ( 1 << e ) | ( 1 << ( ( e + 1 ) % 4 ) ) ) ) )
+                return false;
+            for ( int k = 1; k <= 4; ++k )
+                if ( kind( r - k * DR[d], c - k * DC[d] ) != CellE::FLOOR ) return false;
+            return true;
+        };
+        // Runs along the wall: along the rows for north and south walls, the columns for east and west ones.
+        int  lines = DR[d] != 0 ? m_rows : m_cols, length = DR[d] != 0 ? m_cols : m_rows;
+        auto rc = [&]( int i, int j )
+        { return DR[d] != 0 ? std::pair<int, int>{ i, j } : std::pair<int, int>{ j, i }; };
+        for ( int i = 0; i < lines; ++i )
+            for ( int j = 0; j < length; )
+            {
+                int run = 0;
+                while ( j + run < length && good( rc( i, j + run ).first, rc( i, j + run ).second ) ) ++run;
+                auto [r0, c0] = rc( i, j );
+                if ( run >= 4 && built < 6 && hash01( r0, c0, 330 + d ) < 0.5f )
+                {
+                    for ( int k = 0; k < std::min( run, 10 ); ++k )
+                        m_gallery[at( rc( i, j + k ).first, rc( i, j + k ).second )] |= (unsigned char)( 1 << d );
+                    ++built;
+                }
+                j += std::max( run, 1 );
+            }
+    }
+}
+
 void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
 {
     MeshBuilder rock, floor, grate, metal, hazard, rust, foil, fins, crate, box, hull, cloth, drape, ground, plate;
@@ -1045,6 +1142,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     std::vector<Glow> glows;
     DressKit          kit{ metal, rust, crate, box, cloth, hazard, grate, rock, hull, drape, glows };
     m_faces.clear();
+    planShapes();
     // A wall's or a floor's variants as a patchwork: floors in ragged patches of a few cells, walls in short runs; the
     // plain one is laid most.
     auto variant = [&]( int surface, int r, int c, bool wall ) -> int
@@ -1252,6 +1350,39 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             {
                 bool border = false;
                 for ( int d = 0; d < 4; ++d ) border = border || open( r + DR[d], c + DC[d] );
+                // Its outline from above: outer corners cut off, or the side of its niche moved in.
+                unsigned char        cut = m_cut[(size_t)r * m_cols + c];
+                int                  niche = m_niche[(size_t)r * m_cols + c];
+                std::vector<Vector2> outline;
+                {
+                    float ax = x0, bx = x0 + CellSize, az = z0, bz = z0 + CellSize;
+                    if ( niche == 0 ) az += NicheDepth;
+                    if ( niche == 1 ) bx -= NicheDepth;
+                    if ( niche == 2 ) bz -= NicheDepth;
+                    if ( niche == 3 ) ax += NicheDepth;
+                    const Vector2 corner[4] = { { ax, az }, { bx, az }, { bx, bz }, { ax, bz } };
+                    for ( int q = 0; q < 4; ++q )
+                        if ( cut & ( 1 << q ) )
+                        {
+                            outline.push_back( Vector2MoveTowards( corner[q], corner[( q + 3 ) % 4], CutSize ) );
+                            outline.push_back( Vector2MoveTowards( corner[q], corner[( q + 1 ) % 4], CutSize ) );
+                        }
+                        else
+                            outline.push_back( corner[q] );
+                }
+                // A block of the wall between two heights: a box, or a prism of the outline.
+                auto shape = [&]( MeshBuilder &b, float y0, float y1 )
+                {
+                    if ( !cut && niche < 0 )
+                    {
+                        b.box( place( { mid.x, ( y0 + y1 ) * 0.5f, mid.z } ),
+                               { CellSize * 0.5f, ( y1 - y0 ) * 0.5f, CellSize * 0.5f } );
+                        return;
+                    }
+                    std::vector<Vector3> low, high;
+                    for ( Vector2 p : outline ) low.push_back( { p.x, y0, p.y } ), high.push_back( { p.x, y1, p.y } );
+                    b.prism( MatrixIdentity(), { low, high } );
+                };
                 // Every wall cell gets a lid (seen from above) of what the wall is made of: rock, the containers' roofs,
                 // a ship's plating, a house's flat roof with its clutter; the ones by an open cell a full block.
                 Vector3 lid = { CellSize * 0.5f, 0.01f, CellSize * 0.5f };
@@ -1260,7 +1391,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     rock.m_color = { (unsigned char)( look.m_rock.r * 0.3f ), (unsigned char)( look.m_rock.g * 0.3f ),
                                      (unsigned char)( look.m_rock.b * 0.3f ), 255 };
                     if ( theme( r, c ) < ThemeE::PARK ) rock.m_color = { 70, 66, 64, 255 };
-                    rock.box( place( { mid.x, m_wallHeight + 0.01f, mid.z } ), lid );
+                    shape( rock, m_wallHeight, m_wallHeight + 0.02f );
                     rock.m_color = look.m_rock;
                 }
                 else if ( look.m_walls == 1 && border )
@@ -1292,11 +1423,14 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 else
                 {
                     hull.m_color = { 92, 96, 104, 255 };
-                    hull.box( place( { mid.x, m_wallHeight + 0.01f, mid.z } ), lid );
+                    shape( hull, m_wallHeight, m_wallHeight + 0.02f );
                     hull.m_color = WHITE;
                 }
                 if ( !border ) continue;
-                crownKit( r, c, look.m_walls, mid, kit );
+                // A cut corner keeps its top plain; a niche's crown stands back with it.
+                Vector3 back = niche >= 0 ? Vector3{ DC[niche] * NicheDepth, 0.0f, DR[niche] * NicheDepth }
+                                          : Vector3{ 0.0f, 0.0f, 0.0f };
+                if ( !cut ) crownKit( r, c, look.m_walls, Vector3Subtract( mid, back ), kit );
                 if ( look.m_walls == 1 )
                 {
                     // A hold: containers stacked two high, each its own paint, steel rails where they meet.
@@ -1330,9 +1464,64 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 float        bottom = nearVoid( r, c ) && !m_space ? -PitDepth : -0.5f;
                 MeshBuilder &wall = look.m_walls >= 2 ? hull : rock;
                 wall.m_color = look.m_walls == 3 ? FrontPaint[hashCell( r / 4, c / 4, 98 ) % 5] : look.m_rock;
-                wall.box( place( { mid.x, ( bottom + m_wallHeight ) * 0.5f, mid.z } ),
-                          { CellSize * 0.5f, ( m_wallHeight - bottom ) * 0.5f, CellSize * 0.5f } );
+                shape( wall, bottom, m_wallHeight );
                 wall.m_color = WHITE;
+                // Where a corner is cut off, the floor in front goes on into it.
+                for ( int q = 0; q < 4 && cut; ++q )
+                {
+                    if ( !( cut & ( 1 << q ) ) ) continue;
+                    ThemeE       th = theme( r + CR[q], c + CC[q] );
+                    bool         natural = th == ThemeE::DUSK || th == ThemeE::SNOW || th == ThemeE::ICE ||
+                                           th == ThemeE::ALIEN || th == ThemeE::PARK || th == ThemeE::ARENA ||
+                                           th == ThemeE::MOON || th == ThemeE::HALL;
+                    bool         plated = th == ThemeE::DECK || th == ThemeE::STATION || th == ThemeE::YARD ||
+                                          th == ThemeE::CONTAINER || th == ThemeE::FURNACE || th == ThemeE::PRISON;
+                    MeshBuilder &fb = natural ? ground : ( plated ? plate : floor );
+                    float        h = cell( r + CR[q], c + CC[q] ).m_height;
+                    Vector2      corner = { mid.x + CC[q] * CellSize * 0.5f, mid.z + CR[q] * CellSize * 0.5f };
+                    Vector2      a = { corner.x - CC[q] * ( CutSize + 0.02f ), corner.y };
+                    Vector2      b = { corner.x, corner.y - CR[q] * ( CutSize + 0.02f ) };
+                    fb.m_color = Looks[(int)th].m_floor;
+                    fb.prism( MatrixIdentity(),
+                              { { { corner.x, -0.5f, corner.y }, { a.x, -0.5f, a.y }, { b.x, -0.5f, b.y } },
+                                { { corner.x, h, corner.y }, { a.x, h, a.y }, { b.x, h, b.y } } } );
+                    fb.m_color = WHITE;
+                }
+                // Bulkheads light their cut corners (a line up the middle of the bevel) and the floor of a niche.
+                int     group = dressGroup( theme( r, c ) );
+                Vector4 line = group == 0   ? Vector4{ 2.6f, 1.4f, 0.3f, 0.0f }
+                               : group == 2 ? Vector4{ 1.4f, 1.8f, 2.4f, 0.0f }
+                               : group == 3 ? Vector4{ 1.2f, 1.7f, 2.2f, 0.0f }
+                                            : Vector4{ -1.0f, 0.0f, 0.0f, 0.0f };
+                for ( int q = 0; q < 4 && look.m_walls == 2 && line.x >= 0.0f; ++q )
+                {
+                    if ( !( cut & ( 1 << q ) ) ) continue;
+                    Vector2 at = { mid.x + CC[q] * ( CellSize * 0.5f - CutSize * 0.5f ) + CC[q] * 0.012f,
+                                   mid.z + CR[q] * ( CellSize * 0.5f - CutSize * 0.5f ) + CR[q] * 0.012f };
+                    glows.push_back( { { at.x, m_wallHeight * 0.5f, at.y },
+                                       { 0.02f, m_wallHeight * 0.5f - 0.35f, 0.02f },
+                                       line,
+                                       true } );
+                }
+                if ( niche >= 0 )
+                {
+                    // The niche's floor: a dark plate as high as the floor in front of it.
+                    float   h = cell( r + DR[niche], c + DC[niche] ).m_height;
+                    Vector3 dir = { (float)DC[niche], 0.0f, (float)DR[niche] };
+                    Vector3 p = Vector3Add( mid, Vector3Scale( dir, CellSize * 0.5f - NicheDepth * 0.5f ) );
+                    Vector3 half = { DC[niche] ? NicheDepth * 0.5f : CellSize * 0.5f, ( h + 0.5f ) * 0.5f,
+                                     DR[niche] ? NicheDepth * 0.5f : CellSize * 0.5f };
+                    metal.m_color = { 58, 60, 64, 255 };
+                    metal.box( place( { p.x, ( h - 0.5f ) * 0.5f, p.z } ), half );
+                    metal.m_color = WHITE;
+                    if ( look.m_walls == 2 && line.x >= 0.0f )
+                    {
+                        Vector3 b = Vector3Add( mid, Vector3Scale( dir, CellSize * 0.5f - NicheDepth + 0.02f ) );
+                        Vector3 strip = { DC[niche] ? 0.012f : 0.85f, 0.012f, DR[niche] ? 0.012f : 0.85f };
+                        glows.push_back( { { b.x, h + 0.12f, b.z }, strip, line, true } );
+                        glows.push_back( { { b.x, fminf( 2.7f, m_wallHeight - 0.4f ), b.z }, strip, line, true } );
+                    }
+                }
                 continue;
             }
             if ( k.m_kind == CellE::DOOR )
@@ -1610,6 +1799,33 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 rock.box( place( { mid.x, ( -PitDepth - 0.5f ) * 0.5f, mid.z } ),
                           { CellSize * 0.5f, ( PitDepth - 0.5f ) * 0.5f, CellSize * 0.5f } );
 
+            // A room's inner corners filled with a slanted block of its walls (seen from above the rooms lose their
+            // square corners).
+            unsigned char fill = k.m_kind == CellE::FLOOR ? m_fill[(size_t)r * m_cols + c] : 0;
+            for ( int q = 0; q < 4 && fill; ++q )
+            {
+                if ( !( fill & ( 1 << q ) ) ) continue;
+                MeshBuilder &wall = look.m_walls >= 2 ? hull : rock;
+                Vector2      corner = { mid.x + CC[q] * CellSize * 0.5f, mid.z + CR[q] * CellSize * 0.5f };
+                Vector2 a = { corner.x - CC[q] * FillSize, corner.y }, b = { corner.x, corner.y - CR[q] * FillSize };
+                float   bottom = nearVoid( r, c ) && !m_space ? -PitDepth : -0.5f;
+                auto    wedge = [&]( float y0, float y1 )
+                {
+                    wall.prism( MatrixIdentity(),
+                                { { { corner.x, y0, corner.y }, { a.x, y0, a.y }, { b.x, y0, b.y } },
+                                  { { corner.x, y1, corner.y }, { a.x, y1, a.y }, { b.x, y1, b.y } } } );
+                };
+                wall.m_color = look.m_rock;
+                wedge( bottom, m_wallHeight );
+                wall.m_color = look.m_walls == 2              ? Color{ 92, 96, 104, 255 }
+                               : theme( r, c ) < ThemeE::PARK ? Color{ 70, 66, 64, 255 }
+                                                              : Color{ (unsigned char)( look.m_rock.r * 0.3f ),
+                                                                       (unsigned char)( look.m_rock.g * 0.3f ),
+                                                                       (unsigned char)( look.m_rock.b * 0.3f ), 255 };
+                wedge( m_wallHeight, m_wallHeight + 0.02f );
+                wall.m_color = WHITE;
+            }
+
             float base = k.m_kind == CellE::FLOOR ? k.m_height : 0.0f;
             for ( int d = 0; d < 4; ++d )
             {
@@ -1623,11 +1839,19 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                                 { DC[d] ? 0.18f : CellSize * 0.5f, 0.008f, DR[d] ? 0.18f : CellSize * 0.5f } );
                 }
                 if ( open( nr, nc ) ) continue;
-                // A wall face: lining, ribs, pipes (as the zone's theme has them).
+                // A wall face: lining, ribs, pipes (as the zone's theme has them). A face whose end is cut off stays
+                // plain; a niche's face stands back with it.
                 Vector3 n = { (float)-DC[d], 0.0f, (float)-DR[d] };   // into this cell
                 Vector3 face = { mid.x + DC[d] * CellSize * 0.5f, 0.0f, mid.z + DR[d] * CellSize * 0.5f };
-                float   yaw = DC[d] != 0 ? PI * 0.5f : 0.0f;   // a box's x along the face
-                float   y0 = k.m_kind == CellE::VOID ? -PitDepth + 2.0f : base;
+                if ( nr >= 0 && nc >= 0 && nr < m_rows && nc < m_cols )
+                {
+                    size_t wallAt = (size_t)nr * m_cols + nc;
+                    int    e = ( d + 2 ) % 4;
+                    if ( m_cut[wallAt] & ( ( 1 << e ) | ( 1 << ( ( e + 1 ) % 4 ) ) ) ) continue;
+                    if ( m_niche[wallAt] == e ) face = Vector3Subtract( face, Vector3Scale( n, NicheDepth ) );
+                }
+                float yaw = DC[d] != 0 ? PI * 0.5f : 0.0f;   // a box's x along the face
+                float y0 = k.m_kind == CellE::VOID ? -PitDepth + 2.0f : base;
                 if ( theme( r, c ) == ThemeE::STREET && k.m_kind != CellE::VOID )
                 {
                     front( r, c, d, face, n, yaw, base );
@@ -1696,7 +1920,8 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 rust.m_color = WHITE;
                 // Its fittings: what a wall of this place carries (none of it stands in the way).
                 if ( k.m_kind == CellE::FLOOR && !shelved && !board )
-                    wallKit( r, c, d, face, n, base, look.m_walls, ( r + c ) % 2 != 0, kit );
+                    if ( !( m_gallery[(size_t)r * m_cols + c] & ( 1 << d ) ) )
+                        wallKit( r, c, d, face, n, base, look.m_walls, ( r + c ) % 2 != 0, kit );
             }
 
             // Across a street, every third column: a string of bulbs from house to house, now and then washing.
@@ -2384,6 +2609,72 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     }
 
 #pragma warning( pop )
+    // Galleries along the walls of the halls: a walkway of slats on brackets, a railing at its edge, lights beneath it
+    // (they dissolve with the walls). A ladder up the wall at one end.
+    for ( int r = 0; r < m_rows; ++r )
+        for ( int c = 0; c < m_cols; ++c )
+            for ( int d = 0; d < 4; ++d )
+            {
+                if ( !( m_gallery[(size_t)r * m_cols + c] & ( 1 << d ) ) ) continue;
+                Vector3 n = { (float)-DC[d], 0.0f, (float)-DR[d] };
+                Vector3 a = { DR[d] != 0 ? 1.0f : 0.0f, 0.0f, DC[d] != 0 ? 1.0f : 0.0f };   // along the wall
+                Vector3 mid = { ( c + 0.5f ) * CellSize, 0.0f, ( r + 0.5f ) * CellSize };
+                Vector3 face = { mid.x + DC[d] * CellSize * 0.5f, 0.0f, mid.z + DR[d] * CellSize * 0.5f };
+                float yaw = DC[d] != 0 ? PI * 0.5f : 0.0f, gh = Clamp( m_wallHeight - 1.5f, 2.7f, 3.4f ), depth = 1.3f;
+                auto  at = [&]( float u, float y, float z )
+                { return Vector3Add( Vector3Add( face, Vector3Scale( a, u ) ), { n.x * z, y, n.z * z } ); };
+                auto has = [&]( int s )
+                {
+                    int ar = r + s * (int)a.z, ac = c + s * (int)a.x;
+                    return ar >= 0 && ac >= 0 && ar < m_rows && ac < m_cols &&
+                           ( m_gallery[(size_t)ar * m_cols + ac] & ( 1 << d ) );
+                };
+                metal.m_color = { 70, 74, 80, 255 };
+                metal.box( place( at( 0.0f, gh, depth * 0.5f ), { 0.0f, yaw, 0.0f } ),
+                           { CellSize * 0.5f, 0.06f, depth * 0.5f } );
+                metal.m_color = { 46, 48, 52, 255 };
+                for ( float u = -0.85f; u < 0.9f; u += 0.34f )
+                    metal.box( place( at( u, gh + 0.065f, depth * 0.5f ), { 0.0f, yaw, 0.0f } ),
+                               { 0.05f, 0.008f, depth * 0.5f - 0.05f } );
+                metal.m_color = { 92, 96, 102, 255 };
+                metal.box( place( at( 0.0f, gh + 0.12f, depth - 0.03f ), { 0.0f, yaw, 0.0f } ),
+                           { CellSize * 0.5f, 0.06f, 0.012f } );
+                for ( float y : { 0.55f, 0.98f } )
+                    metal.box( place( at( 0.0f, gh + y, depth - 0.03f ), { 0.0f, yaw, 0.0f } ),
+                               { CellSize * 0.5f, 0.02f, 0.02f } );
+                for ( float u : { -0.5f, 0.5f } )
+                    metal.box( place( at( u, gh + 0.5f, depth - 0.03f ) ), { 0.022f, 0.44f, 0.022f } );
+                // A bracket from the wall under the edge, its plate on the wall.
+                rod( metal, at( 0.0f, gh - 1.0f, 0.05f ), at( 0.0f, gh - 0.07f, depth - 0.15f ), 0.04f );
+                metal.box( place( at( 0.0f, gh - 0.5f, 0.03f ), { 0.0f, yaw, 0.0f } ), { 0.07f, 0.52f, 0.03f } );
+                // The ends: a railing across; at the first a ladder up the wall beside it.
+                for ( int end : { -1, 1 } )
+                {
+                    if ( has( end ) ) continue;
+                    float u = end * ( CellSize * 0.5f - 0.03f );
+                    for ( float y : { 0.55f, 0.98f } )
+                        rod( metal, at( u, gh + y, 0.05f ), at( u, gh + y, depth - 0.03f ), 0.02f );
+                    metal.box( place( at( u, gh + 0.5f, depth - 0.03f ) ), { 0.022f, 0.44f, 0.022f } );
+                    if ( end < 0 )
+                    {
+                        float lu = u - 0.45f;
+                        for ( float w : { -0.22f, 0.22f } )
+                            rod( metal, at( lu + w, 0.0f, 0.12f ), at( lu + w, gh + 1.0f, 0.12f ), 0.025f );
+                        for ( float y = 0.3f; y < gh + 0.9f; y += 0.3f )
+                            rod( metal, at( lu - 0.22f, y, 0.12f ), at( lu + 0.22f, y, 0.12f ), 0.015f );
+                    }
+                }
+                metal.m_color = WHITE;
+                // Light beneath it on the floor below.
+                int     group = dressGroup( theme( r, c ) );
+                Vector3 colour = group == 2   ? Vector3{ 1.6f, 1.9f, 2.3f }
+                                 : group == 3 ? Vector3{ 1.4f, 1.8f, 2.2f }
+                                              : Vector3{ 2.4f, 1.6f, 0.8f };
+                Vector3 strip = { DR[d] ? 0.8f : 0.03f, 0.01f, DC[d] ? 0.8f : 0.03f };
+                glows.push_back(
+                    { at( 0.0f, gh - 0.075f, 0.6f ), strip, { colour.x, colour.y, colour.z, 0.0f }, true } );
+                if ( ( r + c ) % 2 == 0 ) m_lights.push_back( { at( 0.0f, gh - 0.3f, 0.7f ), colour, 4.5f, 0.0f } );
+            }
     dress( s, kit );
     auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f } )
     {

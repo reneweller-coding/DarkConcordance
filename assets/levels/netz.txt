@@ -56,23 +56,23 @@ gennote       note.canteen25 note.class25 note.kitchen25 note.clock25 note.names
 ilka | -1 -1 | ilka | i25a
 
 [talk]
-i25a | ilka | -              | i25a_a>i25b
-i25b | ilka | -              | i25b_a>i25c
-i25c | ilka | -              | i25c_a>i25d i25c_b>i25e i25c_c>i25f?trust i25c_d>i25g?!trust
-i25g | ilka | -              | i25c_a>i25d i25c_b>i25e
-i25d | ilka | end.a,ending   |
-i25e | ilka | end.b,ending   |
-i25f | ilka | end.c,ending   |
+i25a | ilka39 | -              | i25a_a>i25b
+i25b | ilka39 | -              | i25b_a>i25c
+i25c | ilka39 | -              | i25c_a>i25d i25c_b>i25e i25c_c>i25f?trust i25c_d>i25g?!trust
+i25g | ilka39 | -              | i25c_a>i25d i25c_b>i25e
+i25d | ilka39 | end.a,ending   |
+i25e | ilka39 | end.b,ending   |
+i25f | ilka39 | end.c,ending   |
 
 [lines]
 l25_start    | a           | hero
 l25_flicker  | b           | hero
 l25_known    | c           | hero
 l25_delete   | d           | hero
-l25_night    | nightshift  | ilka
+l25_night    | nightshift  | ilka39
 l25_boss     | swarm       | sorge
 l25_end      | bossdead    | sorge
-l25_ilka     | appear.ilka | ilka
+l25_ilka     | appear.ilka | ilka39
 
 [hints]
 h_net        | a

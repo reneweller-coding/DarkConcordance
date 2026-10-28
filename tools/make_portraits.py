@@ -65,7 +65,8 @@ PORTRAITS = {
                 "tilted as if uncertain, dust and laser scars, flat front view, full bleed, no border, no white frame. " + STYLE,
     "vorarbeiter": "A foreman who is a stolen mind in a machine: a heavy industrial crane cab with a single red eye "
                    "light behind grimy glass, rust, warning paint, flat front view. " + STYLE,
-    "ilka": "Ilka, a woman who looks about forty though she was a nine-year-old girl once, short dark hair, tired "
+    # Ilka grown up (the net); the child of the prologue (portrait_ilka) was painted locally with FLUX.2 from this one.
+    "ilka39": "Ilka, a woman who looks about forty though she was a nine-year-old girl once, short dark hair, tired "
             "fierce eyes, simple grey work clothes, a faint digital shimmer at her edges as if she were not quite "
             "real. " + STYLE,
     # The tales.

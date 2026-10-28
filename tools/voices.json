@@ -1,5 +1,5 @@
 {
-  "_": "Who speaks how (tools/make_voices.py): a description for Qwen3-TTS VoiceDesign (once per figure and language, then cloned for every line), effects after the voice (radio, machine, pa), a pitch range in Hz for figures whose description alone lands off (several takes, the nearest kept), for a figure that speaks with someone else's voice, that one's name (hero: the hero played), and \"in\" for a voice of its own in one place (level: voice).",
+  "_": "Who speaks how (tools/make_voices.py): a description for Qwen3-TTS VoiceDesign (once per figure and language, then cloned for every line), effects after the voice (radio, machine, pa), a pitch range in Hz for figures whose description alone lands off (several takes, the nearest kept), for a figure that speaks with someone else's voice, that one's name (hero: the hero played).",
   "corvin": {
     "describe": "A man in his mid-forties with a low, slightly husky baritone. Tired and world-weary, dry understated humour, speaks calmly and quietly, a faint rasp from years on space stations."
   },
@@ -34,8 +34,7 @@
     "fx": ["radio", "machine"]
   },
   "ilka": {
-    "describe": "A nine-year-old girl. A small, quiet and slightly hoarse child's voice, shy and anxious, hesitant, speaks softly.",
-    "in": {"netz": "ilka39"}
+    "describe": "A nine-year-old girl. A small, quiet and slightly hoarse child's voice, shy and anxious, hesitant, speaks softly."
   },
   "ilka39": {
     "describe": "A woman around forty who has led two thousand people for thirty years. Low, clear and calm voice, tired authority, measured and unsentimental, a faint trace of the shy child she once was.",
@@ -171,5 +170,9 @@
     "describe": "The commander of a cleaning squad, a cold male-sounding synthetic voice. Flat and precise, regretful in words only.",
     "fx": ["radio", "machine"]
   },
-  "zuender": { "voice": "hero" }
+  "zuender": { "voice": "hero" },
+  "narrator": {
+    "describe": "A man in his sixties with a deep, warm and calm voice, a chronicler reading the last pages of a long story aloud: measured, unhurried, quietly moved, never dramatic.",
+    "pitch": [80, 140]
+  }
 }

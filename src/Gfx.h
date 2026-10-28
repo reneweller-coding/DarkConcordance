@@ -8,7 +8,9 @@
 
 #include <raylib.h>
 
+#include <cstdint>
 #include <functional>
+#include <unordered_map>
 #include <vector>
 
 namespace spaceopera
@@ -80,11 +82,21 @@ class Gfx
 public:
     /**
      * @brief Loads the shaders and makes the targets.
-     * @param[in] width   picture width (pixels)
-     * @param[in] height  picture height
-     * @param[in] ss      supersampling (the scene is drawn this much larger)
+     * @param[in] width    picture width (pixels)
+     * @param[in] height   picture height
+     * @param[in] quality  0 low (the Steam Deck), 1 middle, 2 high
+     * @param[in] ss       supersampling: the scene is drawn this much larger (negative: the quality's)
      */
-    void init( int width, int height, float ss );
+    void init( int width, int height, int quality, float ss = -1.0f );
+
+    /**
+     * @brief Sets how much the renderer does and makes its targets anew. Low (the Steam Deck): the scene at 3/4 of the
+     *        picture, 8 fog steps, 4 shadow samples, shadow maps of 2048 and 1024; middle: the scene as large as the
+     *        picture, 20 steps, 8 samples; high: supersampled 1.5 times, 40 steps, 12 samples, maps of 4096 and 2048.
+     * @param[in] quality  0..2
+     * @param[in] ss       supersampling (negative: the quality's)
+     */
+    void setQuality( int quality, float ss = -1.0f );
 
     /**
      * @brief Makes a surface with the lit shader.
@@ -180,6 +192,8 @@ public:
     float   m_cutRadius = 2.2f;                       ///< radius of that hole at the hero's distance (m)
     int     m_width = 0;                              ///< picture width
     int     m_height = 0;                             ///< picture height
+    int     m_quality = 2;                            ///< 0 low, 1 middle, 2 high
+    float   m_scale = 1.5f;                           ///< the scene's size against the picture's
 
 private:
     /** @brief Uniform locations every lit shader shares. */
@@ -188,7 +202,7 @@ private:
         int m_viewPos, m_time, m_frame, m_sunDir, m_sunColor, m_sunVP, m_sunShadow, m_sunTexel;
         int m_spotPos, m_spotDir, m_spotColor, m_spotCos, m_spotRange, m_spotVP, m_spotShadow, m_spotNF;
         int m_lightCount, m_lightPos, m_lightColor, m_ambUp, m_ambDown, m_fogParams, m_fogColor, m_roomMin, m_roomMax;
-        int m_waterCount, m_waterBalls;
+        int m_waterCount, m_waterBalls, m_fogSteps, m_shadowTaps;
     };
 
     /** @brief Loads a shader from vertex and fragment source. */
@@ -214,6 +228,25 @@ private:
     /** @brief Finds them. */
     DrawLocs drawLocs( Shader s );
 
+    /** @brief The six planes of a frustum (a point is inside where all of them are >= 0). */
+    struct Frustum
+    {
+        Vector4 m_planes[6];
+    };
+    /** @brief The frustum of a view-projection matrix (raylib's order: the view, then the projection). */
+    static Frustum frustum( const Matrix &vp );
+    /** @brief Whether a drawable can show in a frustum (its mesh's sphere, moved by its transform). */
+    bool inside( const Frustum &f, const Drawable &d );
+
+    /** @brief A mesh's bounding sphere in its own space. */
+    struct Sphere
+    {
+        Vector4 m_sphere;   ///< middle, radius (radius < 0: unknown, never culled)
+        int     m_count;    ///< the vertex count it was measured with
+    };
+    std::unordered_map<std::uint64_t, Sphere> m_spheres;   ///< by the meshes' vertex arrays
+    Frustum                                   m_view;      ///< this frame's camera
+
     Shader     m_lit, m_glassShader, m_sky, m_planet, m_particle, m_depth, m_prefilter, m_down, m_up, m_final;
     Shader     m_litSkin, m_depthSkin;   ///< the same for skinned figures
     CommonLocs m_litLocs, m_glassLocs, m_skyLocs, m_planetLocs, m_particleLocs, m_litSkinLocs;
@@ -225,12 +258,14 @@ private:
     CommonLocs m_waterLocs;
     Material   m_planetMat;
 
-    RenderTexture2D              m_hdr;
+    RenderTexture2D              m_hdr = {};
     std::vector<RenderTexture2D> m_bloomLevels;
-    RenderTexture2D              m_sunMap;
-    RenderTexture2D              m_spotMap;
+    RenderTexture2D              m_sunMap = {};
+    RenderTexture2D              m_spotMap = {};
     int                          m_sunSize = 4096;
     int                          m_spotSize = 2048;
+    int                          m_fogSteps = 40;     ///< the fog's steps along a ray
+    int                          m_shadowTaps = 12;   ///< a soft shadow's samples
     float                        m_sunExtent = 46.0f;
     Matrix                       m_sunVP;
     Matrix                       m_spotVP;

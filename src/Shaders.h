@@ -129,6 +129,8 @@ uniform vec3 roomMax;
 #define MAX_WATER 8
 uniform int waterCount;
 uniform vec4 waterBalls[MAX_WATER];
+uniform int fogSteps;     // the fog's steps along a ray (the quality's: 8, 20, 40)
+uniform int shadowTaps;   // a soft shadow's samples (4, 8, 12)
 
 const vec2 Poisson[12] = vec2[]( vec2( -0.326, -0.406 ), vec2( -0.840, -0.074 ), vec2( -0.696, 0.457 ),
     vec2( -0.203, 0.621 ), vec2( 0.962, -0.195 ), vec2( 0.473, -0.480 ), vec2( 0.519, 0.767 ), vec2( 0.185, -0.893 ),
@@ -196,10 +198,11 @@ float sunShadowAt( vec3 wp, vec3 n, float ndl, int taps )
     if( taps <= 1 ) return q.z - bias <= texture( sunShadow, q.xy ).r ? 1.0 : 0.0;
     float a = ign( gl_FragCoord.xy ) * 6.2831853;
     mat2 R = mat2( cos( a ), sin( a ), -sin( a ), cos( a ) );
+    int count = clamp( taps, 2, 12 ), stride = 12 / count;
     float s = 0.0;
-    for( int i = 0; i < 12; i++ )
-        s += q.z - bias <= texture( sunShadow, q.xy + R * Poisson[i] * sunTexel * 1.6 ).r ? 1.0 : 0.0;
-    return s / 12.0;
+    for( int i = 0; i < count; i++ )
+        s += q.z - bias <= texture( sunShadow, q.xy + R * Poisson[i * stride] * sunTexel * 1.6 ).r ? 1.0 : 0.0;
+    return s / float( count );
 }
 
 float spotLinear( float d )
@@ -216,10 +219,11 @@ float spotShadowAt( vec3 wp, vec3 n, int taps )
     if( q.x <= 0.0 || q.x >= 1.0 || q.y <= 0.0 || q.y >= 1.0 ) return 0.0;
     float dist = spotLinear( q.z );
     if( taps <= 1 ) return dist - 0.06 <= spotLinear( texture( spotShadow, q.xy ).r ) ? 1.0 : 0.0;
+    int count = clamp( taps, 2, 12 ), stride = 12 / count;
     float s = 0.0;
-    for( int i = 0; i < 12; i++ )
-        s += dist - 0.04 <= spotLinear( texture( spotShadow, q.xy + Poisson[i] * 0.0016 ).r ) ? 1.0 : 0.0;
-    return s / 12.0;
+    for( int i = 0; i < count; i++ )
+        s += dist - 0.04 <= spotLinear( texture( spotShadow, q.xy + Poisson[i * stride] * 0.0016 ).r ) ? 1.0 : 0.0;
+    return s / float( count );
 }
 
 vec3 spotLight( vec3 wp, out vec3 L )
@@ -265,7 +269,7 @@ vec4 volumetric( vec3 from, vec3 to )
     float tn = max( max( tmin.x, tmin.y ), max( tmin.z, 0.0 ) );
     float tf = min( min( tmax.x, tmax.y ), min( tmax.z, len ) );
     if( tf <= tn ) return vec4( 0.0, 0.0, 0.0, 1.0 );
-    const int Steps = 40;
+    int Steps = max( fogSteps, 4 );
     float dt = ( tf - tn ) / float( Steps );
     float jitter = ign( gl_FragCoord.xy );
     // Two lobes: forward scattering towards the sun and some back to it (the camera looks away from the sun).
@@ -437,10 +441,10 @@ void main()
 
     float ndl = max( dot( Ng, -sunDir ), 0.0 );
     if( dot( N, -sunDir ) > 0.0 )
-        col += brdf( N, V, -sunDir, albedo, rough, metal ) * sunColor * sunShadowAt( fragPos, Ng, ndl, 12 );
+        col += brdf( N, V, -sunDir, albedo, rough, metal ) * sunColor * sunShadowAt( fragPos, Ng, ndl, shadowTaps );
     vec3 L;
     vec3 sc = spotLight( fragPos, L );
-    if( sc.r + sc.g + sc.b > 0.0 ) col += brdf( N, V, L, albedo, rough, metal ) * sc * spotShadowAt( fragPos, Ng, 12 );
+    if( sc.r + sc.g + sc.b > 0.0 ) col += brdf( N, V, L, albedo, rough, metal ) * sc * spotShadowAt( fragPos, Ng, shadowTaps );
     for( int i = 0; i < lightCount; i++ )
     {
         vec3 lv = lightPos[i].xyz - fragPos;
@@ -519,14 +523,14 @@ void main()
 
     vec3 diff = mix( ambDown, ambUp, 0.8 );
     vec3 spec = vec3( 0.0 );
-    float sh = sunShadowAt( fragPos, N, max( -sunDir.y, 0.0 ), 12 );
+    float sh = sunShadowAt( fragPos, N, max( -sunDir.y, 0.0 ), shadowTaps );
     diff += sunColor * max( -sunDir.y, 0.0 ) * sh;
     spec += ggx( N, V, -sunDir, rough ) * sunColor * sh;
     vec3 L;
     vec3 sc = spotLight( fragPos, L );
     if( sc.r + sc.g + sc.b > 0.0 )
     {
-        float ss = spotShadowAt( fragPos, N, 12 );
+        float ss = spotShadowAt( fragPos, N, shadowTaps );
         diff += sc * max( L.y, 0.0 ) * ss;
         spec += ggx( N, V, L, rough ) * sc * ss;
     }
