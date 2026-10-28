@@ -1,17 +1,17 @@
 # Hinweise zur Steuerung, die jedes Level zeigen kann (Deutsch, die Quelle).
 # "<schlüssel>.dorra": so gilt es für Dorra; "-" heißt: für sie nichts.
 
-h_fire          = Schießen: rechter Trigger oder linke Maustaste. Das Gewehr nimmt das nächste Ziel vor dir.
-h_fire.dorra    = Zuschlagen: rechter Trigger oder linke Maustaste. Halten schlägt die ganze Folge bis zum Überkopfschlag.
-h_strafe        = Linker Trigger / Umschalt hält die Blickrichtung: zurückweichen und weiterfeuern.
-h_strafe.dorra  = Linker Trigger / Umschalt: Schild hoch. Er hält Schüsse und Schläge von vorn ab.
+h_fire          = Schießen: {fire}. Das Gewehr nimmt das nächste Ziel vor dir.
+h_fire.dorra    = Zuschlagen: {fire}. Halten schlägt die ganze Folge bis zum Überkopfschlag.
+h_strafe        = {strafe} hält die Blickrichtung: zurückweichen und weiterfeuern.
+h_strafe.dorra  = {strafe}: Schild hoch. Er hält Schüsse und Schläge von vorn ab.
 h_bolt          = -
-h_bolt.dorra    = B / F: Sprengbolzen werfen – für alles, was der Hammer nicht erreicht.
-h_stim          = Q / Y: Stim injizieren (+40 Leben).
+h_bolt.dorra    = {special}: Sprengbolzen werfen – für alles, was der Hammer nicht erreicht.
+h_stim          = {stim}: Stim injizieren (+40 Leben).
 h_heat          = Das Gewehr ist überhitzt. Kurz absetzen.
 h_heat.dorra    = -
 
-h_fire.ione   = Schwarm losschicken: rechter Trigger oder linke Maustaste. Die Drohnen nehmen das nächste Ziel vor dir und bleiben dran, solange du hältst.
-h_strafe.ione = Linker Trigger / Umschalt: die Drohnen zum Schirm koppeln. Er hält von vorn und von der Seite, aber er erschöpft den Schwarm.
-h_bolt.ione   = B / F: Übernahme. Eine Maschine kämpft eine Weile für dich und brennt dann aus; einen Menschen stört es kurz.
+h_fire.ione   = Schwarm losschicken: {fire}. Die Drohnen nehmen das nächste Ziel vor dir und bleiben dran, solange du hältst.
+h_strafe.ione = {strafe}: die Drohnen zum Schirm koppeln. Er hält von vorn und von der Seite, aber er erschöpft den Schwarm.
+h_bolt.ione   = {special}: Übernahme. Eine Maschine kämpft eine Weile für dich und brennt dann aus; einen Menschen stört es kurz.
 h_heat.ione   = Der Schwarm ist erschöpft. Kurz warten, dann hält er wieder.

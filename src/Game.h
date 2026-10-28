@@ -50,6 +50,7 @@ struct GameInput
     bool    m_mouseAim = false;         ///< the mouse aims (it moved or a button is held)
     bool    m_strafe = false;           ///< keep facing where the hero looks (left trigger, Shift; Dorra: shield up)
     bool    m_cameraReset = false;      ///< camera back behind the start's view (right stick click)
+    bool    m_dodge = false;            ///< a dodge roll (left stick click, Ctrl) pressed this frame
     int     m_navStep = 0;              ///< the pad's cross up (-1) or down (1) pressed: a step in the game's menus
     float   m_cameraTurn = 0.0f;        ///< camera turn this frame (radians; right stick, right mouse button)
     Vector2 m_mouse = { 0.0f, 0.0f };   ///< mouse position (window pixels)
@@ -59,10 +60,11 @@ struct GameInput
 /** @brief How hard the game is. */
 enum class DifficultyE : int
 {
-    EASY,     ///< less damage, weaker enemies, health returns slowly
-    NORMAL,   ///< as designed
-    HARD,     ///< more damage, tougher enemies
-    COUNT     ///< number of levels
+    EASY,        ///< less damage, weaker enemies, health returns slowly
+    NORMAL,      ///< as designed
+    HARD,        ///< more damage, tougher enemies
+    NIGHTMARE,   ///< after the game is through once: much tougher enemies, better finds
+    COUNT        ///< number of levels
 };
 
 /** @brief Who is played. */
@@ -94,6 +96,10 @@ struct Progress
     bool                  m_worn[EquipSlots] = {};   ///< whether a slot holds something
     int                   m_seed = 1;                ///< the random generator's state for items (and generated levels)
     int                   m_deaths = 0;              ///< deaths since the prologue (Ysolde knows the number)
+    int                   m_cycle = 0;               ///< a new game+: how often the game has been begun again
+    bool                  m_hasSpot = false;         ///< saved at a rescue capsule in m_level (not at its start)
+    Vector3               m_spot = { 0, 0, 0 };      ///< where: in front of the capsule
+    std::set<std::string> m_fired;                   ///< what had happened in the level by then
 };
 
 /**
@@ -186,6 +192,9 @@ public:
      * @param[in] voices   0..1
      * @param[in] effects  0..1 (the place's background too)
      */
+    float m_subtitleScale = 1.0f;   ///< the spoken lines' subtitles: 0.8 small, 1 normal, 1.3 large
+    float m_shakeScale = 1.0f;      ///< how much the camera shakes (0 not at all)
+
     void setVolumes( float voices, float effects )
     {
         m_audio.m_voiceVolume = voices;
@@ -206,6 +215,19 @@ public:
 
     /** @return the HUD's font (the menus use it too) */
     const Font &font() const { return m_font; }
+    static constexpr int PanelTabs = 6;   ///< the inventory's pages: inventory, skills, character, map, codex, awards
+    /** @brief Builds the font anew (its buttons show the device now in hand). */
+    void refreshFont() { loadFont(); }
+
+    /** @return true once after a rescue capsule has woken (the game is saved there) */
+    bool takeCheckpoint()
+    {
+        bool c = m_checkpoint;
+        m_checkpoint = false;
+        return c;
+    }
+    /** @return the progress as it stands at the capsule: this level, the place in front of it, what has happened */
+    Progress checkpoint() const;
 
     /** @brief Takes the language just loaded (loadTexts): the signs' pictures and the font's characters. */
     void setLanguage();
@@ -327,6 +349,7 @@ private:
         bool      m_alive = true;
         bool      m_ground = true;
         float     m_flash = 0.0f;
+        float     m_knock = 0.0f;   ///< thrown back by a heavy blow (1 .. 0)
         float     m_losTimer = 0.0f;
         bool      m_los = false;
         float     m_spit = 2.0f;
@@ -974,6 +997,9 @@ private:
     float         m_cool[4] = {};        ///< the active skills' cooldowns, by button
     float         m_overcharge = 0.0f;   ///< Corvin's overcharge still running
     float         m_dash = 0.0f;         ///< a roll or a charge still running
+    float         m_dashLen = 0.3f;      ///< how long it runs in all
+    float         m_dodgeCool = 0.0f;    ///< until the next dodge roll
+    float         m_knockT = 0.0f;       ///< thrown back by a heavy blow (1 .. 0)
     Vector3       m_dashDir = { 0, 0, 1 };
     std::set<int> m_dashHit;        ///< who the charge has struck already
     int           m_dashKind = 0;   ///< 0 a roll, 1 a charge
@@ -994,6 +1020,23 @@ private:
         Color       m_color = { 210, 205, 195, 230 };   ///< the value's colour
     };
     std::vector<PanelRow> skillRows() const;
+    std::vector<PanelRow> rowsOf( int tab ) const;   // a page's rows: inventory, skills, codex, awards
+
+    // GameCodex.cpp: the codex and the awards (journal.txt across all games).
+    std::vector<PanelRow> codexRows() const;
+    std::vector<PanelRow> awardRows() const;
+    void meetFoe( const Foe &f );
+    void countKill( const Foe &f );                    // a foe felled: met, counted
+    const char *bossTitle( const std::string &key );   // a boss's name, met when its bar shows
+    void checkCodex();
+    void updateJournal( float dt );
+    void drawAward( int w, int h, float s );
+    float                    m_journalT = 0.0f, m_flushT = 10.0f;   ///< meeting the foes near, writing the journal
+    bool                     m_doneCounted = false;                 ///< the level's end has been counted
+    std::vector<std::string> m_awardQueue;                          ///< awards still to show
+    std::string              m_awardShown;                          ///< the one showing
+    float                    m_awardT = 0.0f;                       ///< how long it still shows
+    bool                     m_checkpoint = false;                  ///< a capsule woke: save
     std::string itemDetail( const Item &it ) const;
     void loadPanel();
     void updateMap( float dt );

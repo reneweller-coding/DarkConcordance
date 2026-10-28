@@ -27,7 +27,7 @@ h_oxygen       = Draußen ist keine Luft: der Sauerstoff (blauer Balken) reicht 
 h_flare        = Strahlungssturm: in eine Hütte oder dicht an etwas Hohes (Gehäuse, Kühler). Im Freien brennt die Strahlung – auch die Gegner.
 h_lowair       = Wenig Sauerstoff: zurück in eine Hütte oder einen blauen Kanister suchen.
 h_tug          = Der Schlepper: das Deckgeschütz oben, die Triebwerke hinten. Rote Ringe zeigen, wo seine Granaten einschlagen – raus da.
-h_tug.dorra    = Der Schlepper: das nahe Triebwerk erreichst du vom Rand aus mit dem Hammer, Geschütz und fernes Triebwerk mit Sprengbolzen (B / F). Raus aus den roten Ringen.
+h_tug.dorra    = Der Schlepper: das nahe Triebwerk erreichst du vom Rand aus mit dem Hammer, Geschütz und fernes Triebwerk mit Sprengbolzen ({special}). Raus aus den roten Ringen.
 
 hud.oxygen     = SAUERSTOFF
 hud.air        = (Luft)

@@ -187,6 +187,7 @@ public:
     Vector4 m_grade = { 1.0f, 1.0f, 0.0f, 0.0f };     ///< colour, contrast, extra grain, extra vignette
     Vector3 m_gradeTint = { 1.0f, 1.0f, 1.0f };       ///< the picture's tint after the grade
     float   m_bloom = 0.08f;                          ///< how much bloom is mixed in
+    int     m_colourVision = 0;                       ///< 1 red-green, 2 blue-yellow (the colours moved apart)
     bool    m_sunShadows = true;                      ///< render the sun's shadow map (off where there is no sun)
     Vector3 m_cutCentre = { 0.0f, -1000.0f, 0.0f };   ///< the hero, whom walls in front of dissolve around
     float   m_cutRadius = 2.2f;                       ///< radius of that hole at the hero's distance (m)

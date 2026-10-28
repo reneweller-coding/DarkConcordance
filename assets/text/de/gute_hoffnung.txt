@@ -51,10 +51,10 @@ p_hero5         = Das Mädchen. Ilka.
 p_doc3          = Es tut mir leid. Man hat sie mit dem Leichter hergebracht. Leer.
 p_doc4          = Ihre Behandlung ist übrigens bezahlt. Von einer Frau namens Ysolde Varn. Sie würde Sie gern sprechen.
 
-h_move          = Laufen: linker Stick / WASD. Kamera drehen: rechter Stick oder rechte Maustaste ziehen.
+h_move          = Laufen: {move}. Kamera drehen: {camera}. Ausweichrolle: {dodge}.
 h_thrust        = Schubstoß: Die Schwerkraft kippt in Pfeilrichtung. Gegenhalten – und auf lose Fracht achten.
 h_east          = Das Schott Ost ist offen. Zu Frachtraum vier.
-h_use           = A / E öffnet Türen, durchsucht Spinde, liest Terminals.
+h_use           = {use} öffnet Türen, durchsucht Spinde, liest Terminals.
 
 note.crewlog.title = Bordbuch, Leichter „Gute Hoffnung“
 note.crewlog    = Tag 41. Noch zwei Tage bis Velm. Die Wasseraufbereitung schafft nicht mehr als zwei Liter pro Kopf; ich habe den Leuten in den Containern drei versprochen. | Tag 42. Auf dem Langstreckenscanner zwei kleine Kontakte ohne Kennung, sie halten Abstand. Ich habe Velm gemeldet, was wir an Bord haben. Vielleicht war das ein Fehler. – Reyes

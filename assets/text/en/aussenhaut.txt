@@ -27,7 +27,7 @@ h_oxygen       = There is no air outside: your oxygen (the blue bar) lasts a goo
 h_flare        = Radiation storm: get into a hut or close to something tall (a housing, a radiator). Out in the open the radiation burns – the enemies too.
 h_lowair       = Oxygen low: back into a hut or find a blue canister.
 h_tug          = The tug: the deck gun on top, the engines at the back. Red rings show where its shells land – get out of them.
-h_tug.dorra    = The tug: from the edge your hammer reaches the near engine; the gun and the far engine take blast bolts (B / F). Get out of the red rings.
+h_tug.dorra    = The tug: from the edge your hammer reaches the near engine; the gun and the far engine take blast bolts ({special}). Get out of the red rings.
 
 hud.oxygen     = OXYGEN
 hud.air        = (air)

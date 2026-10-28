@@ -8,6 +8,7 @@
  */
 #include "Game.h"
 #include "GameShared.h"
+#include "Journal.h"
 
 #include "Text.h"
 
@@ -238,6 +239,12 @@ bool Game::updateEpilogue( float dt, GameInput &in )
         if ( ++m_card >= (int)m_cards.size() )
         {
             runEvent( "gamedone" );
+            m_progress.m_flags.insert( "gamedone" );   // a new game+ and Albtraum open in the title menu
+            journal::win( "act4" );
+            journal::win( "ending_" + m_ending );
+            journal::win( std::string( "hero_" ) + heroKey( m_heroKind ) );
+            if ( journal::won( "ending_a" ) && journal::won( "ending_b" ) && journal::won( "ending_c" ) )
+                journal::win( "all_endings" );
             m_finished = true;
         }
     }

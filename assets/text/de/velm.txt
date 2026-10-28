@@ -97,7 +97,7 @@ hm1_c           = Was ist unter der Trommel?
 hm2             = Nein. Ich zähle. Das Denken überlasse ich dem Stationsrat. Der Stationsrat ist sich darüber noch nicht einig.
 hm3             = Wartungsebenen. Gesperrt seit vierzehn Jahren. Bewohner: unbekannt. Die Gänge stimmen nicht mit dem Plan überein. Der Lastenaufzug fährt trotzdem hin.
 
-h_talk          = A / E: sprechen
+h_talk          = {use}: sprechen
 h_exitlocked    = Der Lastenaufzug fährt zur Achse. Erst mit Ysolde Varn reden – in der Letzten Schicht.
 h_exitlater     = Ysolde hat noch keinen neuen Auftrag: Fortsetzung folgt.
 h_window        = Unter dem Boden dreht sich Velm vorbei: die Höhle im Asteroiden, die anderen beiden Trommeln.
@@ -116,7 +116,7 @@ workshop.max    = (ausgebaut)
 shop.price      = %d Schrott
 shop.back       = Zurück
 shop.have       = Schrott: %d
-talk.next       = A / Enter: weiter
+talk.next       = {confirm}: weiter
 
 board.title     = DIE ERNTE
 board.sub       = Was sie bisher geschluckt hat

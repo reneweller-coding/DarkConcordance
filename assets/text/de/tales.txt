@@ -23,7 +23,7 @@ item.blades.about = Zwei Klingen an kurzen Armen, für Proben aus Fels und Eis. 
 h_tale           = Eine Erzählung: Was hier geschieht, ist schon geschehen. Was du findest, bleibt in der Erinnerung; mitnehmen kannst du nichts.
 h_ally_union     = Die Barrikadengeschütze der Gewerkschaft schießen auf die Räumtrupps. Bleib in ihrer Nähe.
 h_census         = Flieg nah an den Leuten vorbei: Unzu zählt sie. Wer gezählt ist, leuchtet kurz auf.
-h_jam            = B / F: Störsender. Alles nah um die Drohne steht für einen Moment still.
+h_jam            = {special}: Störsender. Alles nah um die Drohne steht für einen Moment still.
 
 # Corvin: ein Geständnis
 tale.corvin.name  = Ein Geständnis

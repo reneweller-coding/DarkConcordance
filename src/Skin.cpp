@@ -304,6 +304,46 @@ Matrix SkinModel::matrix( const Transform &t )
                            MatrixTranslate( t.translation.x, t.translation.y, t.translation.z ) );
 }
 
+void SkinModel::turn( std::vector<Transform> &pose, int bone, Quaternion q, Vector3 pivot ) const
+{
+    for ( int i = 0; i < bones(); ++i )
+    {
+        int b = i;
+        while ( b >= 0 && b != bone ) b = m_parent[b];
+        if ( b < 0 ) continue;
+        pose[i].translation =
+            Vector3Add( pivot, Vector3RotateByQuaternion( Vector3Subtract( pose[i].translation, pivot ), q ) );
+        pose[i].rotation = QuaternionMultiply( q, pose[i].rotation );
+    }
+}
+
+void SkinModel::reach( std::vector<Transform> &pose, int upper, int lower, int end, Vector3 target ) const
+{
+    Vector3 a = pose[upper].translation, b = pose[lower].translation, c = pose[end].translation;
+    Vector3 to = Vector3Subtract( target, a );
+    float   la = Vector3Distance( a, b ), lb = Vector3Distance( b, c ), len = Vector3Length( to );
+    if ( la < 1e-4f || lb < 1e-4f || len < 1e-4f ) return;
+    float   d = Clamp( len, fabsf( la - lb ) + 1e-3f, la + lb - 1e-3f );
+    Vector3 u = Vector3Scale( to, 1.0f / len );
+    // The joint where the two lengths meet, on the side of the line it is on now.
+    Vector3 side = Vector3Subtract( b, a );
+    side = Vector3Subtract( side, Vector3Scale( u, Vector3DotProduct( side, u ) ) );
+    if ( Vector3Length( side ) < 1e-4f ) return;
+    Vector3 v = Vector3Normalize( side );
+    float   cosA = Clamp( ( la * la + d * d - lb * lb ) / ( 2.0f * la * d ), -1.0f, 1.0f );
+    Vector3 joint = Vector3Add(
+        a, Vector3Add( Vector3Scale( u, la * cosA ), Vector3Scale( v, la * sqrtf( 1.0f - cosA * cosA ) ) ) );
+    turn( pose, upper,
+          QuaternionFromVector3ToVector3( Vector3Normalize( Vector3Subtract( b, a ) ),
+                                          Vector3Normalize( Vector3Subtract( joint, a ) ) ),
+          a );
+    Vector3 nb = pose[lower].translation, nc = pose[end].translation, goal = Vector3Add( a, Vector3Scale( u, d ) );
+    turn( pose, lower,
+          QuaternionFromVector3ToVector3( Vector3Normalize( Vector3Subtract( nc, nb ) ),
+                                          Vector3Normalize( Vector3Subtract( goal, nb ) ) ),
+          nb );
+}
+
 void SkinModel::mix( std::vector<Transform> &a, const std::vector<Transform> &b, float w )
 {
     if ( w <= 0.0f ) return;

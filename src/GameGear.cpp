@@ -8,6 +8,7 @@
  */
 #include "Game.h"
 #include "GameShared.h"
+#include "Journal.h"
 
 #include "Items.h"
 #include "Skills.h"
@@ -76,6 +77,7 @@ void Game::gearStats( HeroStats &s, int &skillBonus )
     for ( size_t k = 0; k < sets.size() && k < 16; ++k )
     {
         m_setPieces[k] = pieces[k];
+        if ( pieces[k] >= 4 ) journal::win( "set_full" );
         if ( pieces[k] >= 2 )
             for ( const Affix &a : sets[k].m_two ) s.m_add[(int)a.m_stat] += a.m_value;
         if ( pieces[k] >= 3 )
@@ -362,6 +364,7 @@ bool Game::insertModule( int bagIndex )
         Item &it = m_progress.m_gear[slot];
         if ( (int)it.m_mods.size() >= it.m_sockets ) continue;
         it.m_mods.push_back( mod.m_affixes[0] );
+        journal::win( "module" );
         m_toast = TextFormat( tr( "module.set" ), itemName( mod ).c_str(), itemName( it ).c_str() );
         m_toastColor = { 140, 230, 255, 255 };
         m_toastTimer = 2.5f;

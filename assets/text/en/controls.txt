@@ -1,17 +1,17 @@
 # Control hints any level can show (English).
 # "<key>.dorra": how it applies to Dorra; "-" means nothing for her.
 
-h_fire          = Shoot: right trigger or left mouse button. The rifle takes the nearest target ahead of you.
-h_fire.dorra    = Strike: right trigger or left mouse button. Hold it for the whole chain, up to the overhead blow.
-h_strafe        = Left trigger / Shift holds your facing: back off and keep firing.
-h_strafe.dorra  = Left trigger / Shift: shield up. It stops shots and blows from the front.
+h_fire          = Shoot: {fire}. The rifle takes the nearest target ahead of you.
+h_fire.dorra    = Strike: {fire}. Hold it for the whole chain, up to the overhead blow.
+h_strafe        = {strafe} holds your facing: back off and keep firing.
+h_strafe.dorra  = {strafe}: shield up. It stops shots and blows from the front.
 h_bolt          = -
-h_bolt.dorra    = B / F: throw a blast bolt – for whatever the hammer can't reach.
-h_stim          = Q / Y: inject a stim (+40 health).
+h_bolt.dorra    = {special}: throw a blast bolt – for whatever the hammer can't reach.
+h_stim          = {stim}: inject a stim (+40 health).
 h_heat          = The rifle has overheated. Ease off for a moment.
 h_heat.dorra    = -
 
-h_fire.ione   = Send the swarm: right trigger or left mouse button. The drones take the nearest target ahead and stay on it while you hold.
-h_strafe.ione = Left trigger / Shift: couple the drones into a screen. It holds from the front and the sides, but it tires the swarm.
-h_bolt.ione   = B / F: takeover. A machine fights for you for a while, then burns out; a person is only jammed for a moment.
+h_fire.ione   = Send the swarm: {fire}. The drones take the nearest target ahead and stay on it while you hold.
+h_strafe.ione = {strafe}: couple the drones into a screen. It holds from the front and the sides, but it tires the swarm.
+h_bolt.ione   = {special}: takeover. A machine fights for you for a while, then burns out; a person is only jammed for a moment.
 h_heat.ione   = The swarm is spent. Wait a moment, then it holds again.

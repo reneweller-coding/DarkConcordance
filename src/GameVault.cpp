@@ -321,7 +321,7 @@ void Game::drawVaultHud( int w, int h, float s )
     // Seven segments for her seven bodies; below them the relays that hold the link, a marker over each.
     float pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s, gap = 6.0f * s;
     float part = ( pw - 6.0f * gap ) / 7.0f;
-    text( tr( "boss.mother" ), w * 0.5f, py - 4.0f * s, 24, { 255, 210, 150, 240 } );
+    text( bossTitle( "boss.mother" ), w * 0.5f, py - 4.0f * s, 24, { 255, 210, 150, 240 } );
     int k = 0;
     for ( const Foe &f : m_foes )
     {

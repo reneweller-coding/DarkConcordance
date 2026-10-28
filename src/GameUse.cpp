@@ -6,6 +6,7 @@
  */
 #include "Game.h"
 #include "GameShared.h"
+#include "Journal.h"
 
 #include "MeshBuilder.h"
 #include "Text.h"
@@ -178,6 +179,7 @@ bool Game::updateUse( float dt, GameInput &in )
         // A terminal: its text, kept among the notes.
         m_reading = u.m_key.empty() ? "note.none" : u.m_key;
         if ( !u.m_key.empty() ) m_progress.m_flags.insert( "note:" + u.m_key );
+        if ( !u.m_key.empty() && journal::meet( "note:" + u.m_key ) ) journal::count( "notes" );
     }
     return false;
 }

@@ -338,10 +338,15 @@ std::vector<Game::PanelRow> Game::skillRows() const
 
 int Game::panelRows( int tab ) const
 {
-    if ( tab != 0 && tab != 1 ) return 0;
+    if ( tab != 0 && tab != 1 && tab != 4 && tab != 5 ) return 0;
     int n = 0;
-    for ( const PanelRow &row : tab == 0 ? inventory() : skillRows() ) n += row.m_header ? 0 : 1;
+    for ( const PanelRow &row : rowsOf( tab ) ) n += row.m_header ? 0 : 1;
     return n;
+}
+
+std::vector<Game::PanelRow> Game::rowsOf( int tab ) const
+{
+    return tab == 0 ? inventory() : tab == 1 ? skillRows() : tab == 4 ? codexRows() : awardRows();
 }
 
 void Game::panelAction( int tab, int row, int action )
@@ -379,12 +384,13 @@ void Game::drawPanel( int w, int h, int tab, int sel )
     const Font &font = m_font;
     DrawRectangle( 0, 0, w, h, { 3, 5, 8, 248 } );
     // The tabs, the help line.
-    const char *tabs[4] = { "panel.inventory", "panel.skills", "panel.character", "panel.map" };
-    for ( int i = 0; i < 4; ++i )
+    const char *tabs[PanelTabs] = { "panel.inventory", "panel.skills", "panel.character",
+                                    "panel.map",       "panel.codex",  "panel.awards" };
+    for ( int i = 0; i < PanelTabs; ++i )
     {
-        float x = w * 0.5f + ( i - 1.5f ) * 300.0f * s;
+        float x = w * 0.5f + ( i - ( PanelTabs - 1 ) * 0.5f ) * 290.0f * s;
         bool  on = i == tab;
-        label( font, tr( tabs[i] ), x, 48.0f * s, 34.0f * s,
+        label( font, tr( tabs[i] ), x, 48.0f * s, 30.0f * s,
                on ? Color{ 255, 200, 130, 255 } : Color{ 150, 150, 150, 220 }, 1 );
         if ( on )
             DrawRectangle( (int)( x - 90.0f * s ), (int)( 92.0f * s ), (int)( 180.0f * s ), (int)( 3.0f * s ),
@@ -397,10 +403,10 @@ void Game::drawPanel( int w, int h, int tab, int sel )
            w * 0.5f, h - 56.0f * s, 20.0f * s, { 150, 150, 150, 220 }, 1 );
     float left = w * 0.08f, right = w * 0.92f, top = 140.0f * s;
 
-    if ( tab == 0 || tab == 1 )
+    if ( tab == 0 || tab == 1 || tab == 4 || tab == 5 )
     {
         // The list on the left (scrolled so the chosen row shows), what it is on the right.
-        std::vector<PanelRow> rows = tab == 0 ? inventory() : skillRows();
+        std::vector<PanelRow> rows = rowsOf( tab );
         float                 listW = w * 0.4f, rowH = 38.0f * s, bottom = h - 100.0f * s;
         // Where the chosen row would sit, to scroll.
         float y = 0.0f, chosenY = 0.0f;

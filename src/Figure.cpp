@@ -47,25 +47,42 @@ enum ClipE
     C_CHAIR,
     C_CROUCH,
     C_CAST,
+    C_HIT,
+    C_KNOCK,
+    C_ROLL,
     C_COUNT
 };
-const char *const ClipNames[C_COUNT] = {
-    "Idle_Loop",   "Walk_Loop",         "Jog_Fwd_Loop",       "Sprint_Loop",
-    "Jump_Loop",   "Death01",           "Pistol_Aim_Neutral", "Pistol_Shoot",
-    "Sword_Idle",  "Sword_Regular_A",   "Sword_Regular_B",    "Sword_Regular_C",
-    "Sword_Block", "Sitting_Idle_Loop", "Crouch_Idle_Loop",   "Spell_Simple_Shoot"
-};
+const char *const ClipNames[C_COUNT] = { "Idle_Loop",
+                                         "Walk_Loop",
+                                         "Jog_Fwd_Loop",
+                                         "Sprint_Loop",
+                                         "Jump_Loop",
+                                         "Death01",
+                                         "Pistol_Aim_Neutral",
+                                         "Pistol_Shoot",
+                                         "Sword_Idle",
+                                         "Sword_Regular_A",
+                                         "Sword_Regular_B",
+                                         "Sword_Regular_C",
+                                         "Sword_Block",
+                                         "Sitting_Idle_Loop",
+                                         "Crouch_Idle_Loop",
+                                         "Spell_Simple_Shoot",
+                                         "Hit_Chest",
+                                         "Hit_Knockback",
+                                         "Roll" };
 /** @brief The body's bone for each of the figure's (the weapon rides on the right forearm). */
 const char *const BodyBones[(int)BoneE::COUNT] = { "pelvis",     "spine_03",   "Head",       "lowerarm_r", "upperarm_l",
                                                    "lowerarm_l", "upperarm_r", "lowerarm_r", "thigh_l",    "calf_l",
                                                    "foot_l",     "thigh_r",    "calf_r",     "foot_r" };
 
 /** @brief Skin matrices handed out this frame (they must live until drawn; a deque keeps them in place). */
-std::deque<std::vector<Matrix>> g_bonePool;
-size_t                          g_boneUsed = 0;
-float                           g_walkCycle = Stride;     ///< metres a walk cycle covers (the body's walk clip)
-float                           g_jogCycle = Stride;      ///< metres a jog cycle covers
-float                           g_sprintCycle = Stride;   ///< metres a sprint cycle covers
+std::function<float( float, float )> g_ground;   ///< the floor's height (feet on steps)
+std::deque<std::vector<Matrix>>      g_bonePool;
+size_t                               g_boneUsed = 0;
+float                                g_walkCycle = Stride;     ///< metres a walk cycle covers (the body's walk clip)
+float                                g_jogCycle = Stride;      ///< metres a jog cycle covers
+float                                g_sprintCycle = Stride;   ///< metres a sprint cycle covers
 
 /** @brief How far the run has gone from a walk into a jog (x) and from a jog into a sprint (y), by the speed. */
 Vector2 gaits( float speed )
@@ -491,6 +508,9 @@ FigurePose Figure::own() const
     p.m_swing = m_swing;
     p.m_swingT = m_swingT;
     p.m_block = m_block;
+    p.m_hit = m_hit;
+    p.m_knock = m_knock;
+    p.m_roll = m_roll;
     return p;
 }
 
@@ -696,6 +716,11 @@ void Figure::frame()
     g_boneUsed = 0;
 }
 
+void Figure::ground( std::function<float( float, float )> ground )
+{
+    g_ground = std::move( ground );
+}
+
 void Figure::body( const FigureBody &body )
 {
     m_body = body;
@@ -709,6 +734,7 @@ void Figure::calibrate()
     for ( int c = 0; c < C_COUNT; ++c )
         if ( m.clip( ClipNames[c] ) >= 0 ) m_clips[c] = m.clip( ClipNames[c] );
     for ( int b = 0; b < (int)BoneE::COUNT; ++b ) m_map[b] = m.bone( BodyBones[b] );
+    m_handL = m.bone( "hand_l" );
     for ( int b = 0; b < (int)BoneE::COUNT; ++b )
         if ( m_map[b] < 0 || m_clips[C_IDLE] < 0 )
         {
@@ -829,9 +855,21 @@ void Figure::solveSkin( const FigurePose &p )
         at( C_CROUCH, p.m_time, other );
         SkinModel::mix( m_skinPose, other, p.m_sit );
     }
+    // A dodge roll takes the whole body; a heavy blow throws it back.
+    if ( p.m_roll > 0.0f )
+    {
+        at( C_ROLL, p.m_roll * len( C_ROLL ), other );
+        SkinModel::mix( m_skinPose, other, 1.0f );
+    }
+    if ( p.m_knock > 0.0f )
+    {
+        at( C_KNOCK, ( 1.0f - p.m_knock ) * len( C_KNOCK ), other );
+        SkinModel::mix( m_skinPose, other, Clamp( p.m_knock * 3.0f, 0.0f, 1.0f ) );
+    }
     // The arms: the rifle aimed and its kick; the hammer or the baton ready, the blows, the shield up; empty hands
     // cast (Ione's swarm) or swing as they walk.
-    float upright = ( 1.0f - p.m_chair ) * ( 1.0f - p.m_sit ) * ( 1.0f - p.m_down );
+    float upright = ( 1.0f - p.m_chair ) * ( 1.0f - p.m_sit ) * ( 1.0f - p.m_down ) *
+                    ( p.m_roll > 0.0f ? 0.0f : 1.0f ) * ( 1.0f - Clamp( p.m_knock * 3.0f, 0.0f, 1.0f ) );
     bool  hand = m_look.m_weapon == WeaponE::HAMMER || m_look.m_weapon == WeaponE::BATON;
     if ( m_look.m_suit && m_look.m_weapon == WeaponE::RIFLE )
     {
@@ -866,18 +904,61 @@ void Figure::solveSkin( const FigurePose &p )
         at( C_BLOCK, len( C_BLOCK ) * 0.5f, other );
         m.layer( m_skinPose, other, upright * p.m_block, 1.0f );
     }
+    // A hit: the chest flinches.
+    if ( p.m_hit > 0.0f )
+    {
+        at( C_HIT, ( 1.0f - p.m_hit ) * fminf( len( C_HIT ), 0.5f ), other );
+        m.layer( m_skinPose, other, upright * p.m_hit * 0.8f, 1.0f );
+    }
     if ( p.m_down > 0.0f )
     {
         at( C_DEATH, p.m_down * len( C_DEATH ), other );
         SkinModel::mix( m_skinPose, other, Clamp( p.m_down * 5.0f, 0.0f, 1.0f ) );
     }
 
-    // Where the body stands (on a chair its hips on the seat), then the plates on its bones.
+    // Where the body stands (on a chair its hips on the seat).
     Vector3 sc = m_look.m_scale;
     float   k = m_bodyScale, y = p.m_pos.y;
     if ( p.m_chair > 0.0f ) y = Lerp( y, p.m_seat + 0.1f - m.hipHeight( m_clips[C_CHAIR] ) * k * sc.y, p.m_chair );
     m_place = MatrixMultiply( MatrixMultiply( MatrixScale( k * sc.x, k * sc.y, k * sc.z ), MatrixRotateY( p.m_yaw ) ),
                               MatrixTranslate( p.m_pos.x, y, p.m_pos.z ) );
+    Matrix toBody = MatrixInvert( m_place );
+    // The left hand on the rifle's fore end (the clips hold a pistol).
+    if ( m_look.m_suit && m_look.m_weapon == WeaponE::RIFLE && upright > 0.5f && m_handL >= 0 )
+    {
+        Matrix weapon = MatrixMultiply(
+            MatrixMultiply( m_grip, SkinModel::matrix( m_skinPose[m_map[(int)BoneE::FORE_R]] ) ), m_place );
+        Vector3 grip = Vector3Transform( Vector3Transform( { 0.0f, -0.05f, 0.2f }, weapon ), toBody );
+        m.reach( m_skinPose, m_map[(int)BoneE::UPPER_L], m_map[(int)BoneE::FORE_L], m_handL, grip );
+    }
+    // Feet on steps and edges: the body sinks to the lower floor, the leg on the higher one bends.
+    if ( g_ground && !p.m_air && p.m_down <= 0.0f && p.m_chair <= 0.0f && p.m_roll <= 0.0f )
+    {
+        const BoneE thighs[2] = { BoneE::THIGH_L, BoneE::THIGH_R }, shins[2] = { BoneE::SHIN_L, BoneE::SHIN_R },
+                    feet[2] = { BoneE::FOOT_L, BoneE::FOOT_R };
+        float       rise[2] = { 0.0f, 0.0f };
+        for ( int i = 0; i < 2; ++i )
+        {
+            Vector3 foot = Vector3Transform( m_skinPose[m_map[(int)feet[i]]].translation, m_place );
+            float   g = g_ground( foot.x, foot.z );
+            if ( g > -100.0f && fabsf( g - p.m_pos.y ) < 0.6f ) rise[i] = g - p.m_pos.y;
+        }
+        if ( fabsf( rise[0] ) > 0.03f || fabsf( rise[1] ) > 0.03f )
+        {
+            float   sink = fminf( 0.0f, fminf( rise[0], rise[1] ) );
+            Vector3 down = Vector3Subtract( Vector3Transform( { 0.0f, sink, 0.0f }, toBody ),
+                                            Vector3Transform( { 0.0f, 0.0f, 0.0f }, toBody ) );
+            for ( Transform &t : m_skinPose ) t.translation = Vector3Add( t.translation, down );
+            for ( int i = 0; i < 2; ++i )
+            {
+                float lift = rise[i] - sink;
+                if ( lift < 0.03f ) continue;
+                Vector3 foot = Vector3Transform( m_skinPose[m_map[(int)feet[i]]].translation, m_place );
+                Vector3 goal = Vector3Transform( { foot.x, foot.y + lift, foot.z }, toBody );
+                m.reach( m_skinPose, m_map[(int)thighs[i]], m_map[(int)shins[i]], m_map[(int)feet[i]], goal );
+            }
+        }
+    }
     for ( int b = 0; b < (int)BoneE::COUNT; ++b )
         m_bones[b] =
             MatrixMultiply( MatrixMultiply( m_offset[b], SkinModel::matrix( m_skinPose[m_map[b]] ) ), m_place );

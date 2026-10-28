@@ -596,6 +596,7 @@ void Gfx::post( const RenderTexture2D *out )
     SetShaderValue( m_final, GetShaderLocation( m_final, "bloom" ), &m_bloom, SHADER_UNIFORM_FLOAT );
     SetShaderValue( m_final, GetShaderLocation( m_final, "time" ), &m_time, SHADER_UNIFORM_FLOAT );
     SetShaderValue( m_final, GetShaderLocation( m_final, "resolution" ), &res, SHADER_UNIFORM_VEC2 );
+    SetShaderValue( m_final, GetShaderLocation( m_final, "colourVision" ), &m_colourVision, SHADER_UNIFORM_INT );
     fullscreen( m_final, src, w, h, m_bloomLevels[0].texture, GetShaderLocation( m_final, "bloomTex" ) );
     if ( out ) EndTextureMode();
 }

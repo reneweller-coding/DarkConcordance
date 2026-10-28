@@ -254,7 +254,7 @@ void Game::drawSwarmHud( int w, int, float s )
                      ? 1
                      : 0;
     std::string name =
-        tr( m_level.word( "bossname" ).empty() ? "boss.swarm." + m_swarmKind : m_level.word( "bossname" ) );
+        bossTitle( m_level.word( "bossname" ).empty() ? "boss.swarm." + m_swarmKind : m_level.word( "bossname" ) );
     float   pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s;
     Vector2 m = MeasureTextEx( m_font, name.c_str(), 24 * s, 1.0f );
     DrawTextEx( m_font, name.c_str(), { w * 0.5f - m.x * 0.5f, py - 4.0f * s }, 24 * s, 1.0f, { 255, 210, 150, 240 } );

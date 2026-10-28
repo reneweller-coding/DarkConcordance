@@ -28,6 +28,34 @@ on the 5090 at 3840x2400, „Niedrig“ costs less than half as much per pixel a
 pixels; reckoned onto the Deck's GPU (fifty to sixty-five times slower) that is 20-30 ms a frame, 30-50 frames a
 second. Not tried on a Deck yet.
 
+Where Windows' fonts are missing (Proton on the Deck, Linux) the game writes in Barlow, which comes with it
+(`assets/fonts`, SIL Open Font License); on Windows it keeps Bahnschrift.
+
+**Buttons as pictures:** the texts name actions (`{use}`, `{special}`, `{dodge}` … in `assets/text`), and the font
+draws each as the button of the device used last: the Steam Deck's, an Xbox pad's, a PlayStation pad's (cross,
+circle, square, triangle; L1/R1/L2/R2), or the key or mouse button (`src/Glyphs.cpp`; the font's atlas holds the
+letters white and the buttons in their colours, built anew when the device changes). `--pad keys|xbox|ps|deck` fixes
+it for pictures.
+
+**Options** (the title's and the pause's menu): difficulty, brightness, graphics, music, voices, effects, language,
+the subtitles' size (small, normal, large), colour vision (red-green or blue-yellow: what the eye cannot tell apart is
+moved into colours it can, in the last pass) and the camera's shake (off, half, full).
+
+**Saving:** at the start of every level and at every rescue capsule that wakes (with what has happened in the level
+by then; the foes stand again, a boss too). „Fortsetzen“ goes on from there; „Neustart“ in the pause begins the level
+anew.
+
+**After the game:** a New Game+ (the title menu, once the game is through) begins the story again with the hero as
+they are – level, gear, skills, scrap, the notes read – and every place twelve areas further on (tougher foes, finds
+of higher levels); the HUD shows the cycle. „Albtraum“ then may be chosen as a difficulty: foes 1.9 times as tough,
+hitting 1.7 times as hard, finds four levels higher and the rare ones more often.
+
+**Codex and awards** (the inventory's fifth and sixth pages, kept in `journal.txt` beside the program across all
+games): every creature family (with its three grades), every foe and boss met, with what is known of it and how many
+were felled, and every note read; 42 awards (kills, bosses, the acts, the three endings, each hero through, flawless
+levels, finds, uniques and sets, the codex, the notes, a fall into molten metal, the Catcher's grip, New Game+,
+Albtraum …), each shown as a banner when won. Tests (`--shot`, the autopilot) keep nothing there.
+
 ## Prologue: the lighter „Gute Hoffnung“
 
 A refugee transport braking into the Velm system, 3,000 people in cargo containers. You were paid to take nine-year-old
@@ -418,8 +446,9 @@ press that builds new lice from scrap.
 Move with WASD, the arrows or the left stick; turn the camera with the right stick or the right mouse button held;
 jump with Space or A; shoot (Dorra: strike) with the left mouse button, the right trigger or X; hold the facing
 (Dorra: the shield) with the left trigger or Shift; B or F throws Dorra's blast bolt; Q or Y injects a stim; the mouse
-wheel, the shoulder buttons or the right stick's up and down zoom; Esc or Start pauses (difficulty, brightness,
-graphics, music, voices, effects, language, restart, quit); F1 frame rate, F12 picture. E (or A, where something is within reach) opens doors, searches
+wheel, the shoulder buttons or the right stick's up and down zoom; a click of the left stick or Ctrl rolls out of the
+way (a moment untouchable, every 1.4 seconds); Esc or Start pauses (resume, options, restart, quit); F1 frame rate,
+F12 picture. E (or A, where something is within reach) opens doors, searches
 lockers, reads terminals and talks; M, Tab or the pad's up shows the map of what the hero has seen over the game; I or
 C (the pad's View button) open the inventory (gear, supplies, jobs, notes read) and the character page (portrait,
 health, damage, upgrades), with the full map as a third page.
@@ -446,8 +475,12 @@ jumps, sitting at a table, huddling on the floor, falling dead. Each limb's plat
 and lie along its bone. With the helmet off (in the hubs) the body's own face shows, with the hero's hair as in the
 portraits: Corvin's short dark hair, Dorra's red bun, Ione's black crop. The frames twice a man's height (the
 Taxator, Okafor's walker, the foreman's crane walker …) move as men do, but no body shows inside their plates.
-`--figures 0|1` with `--shot` lines figures up in their poses in front of the hero (the hero; the men and the
-people), best in `--level ../../tools/figures.txt` (`figures_hub.txt`: helmets off).
+A hit makes the chest flinch, a heavy blow throws a man back; every hero rolls out of the way (the clip's roll); a
+rifle is held with the left hand on its fore end (two-bone IK, the clips hold a pistol); on steps and edges the body
+sinks to the lower floor and the leg on the higher one bends.
+`--figures 0|1|2` with `--shot` lines figures up in their poses in front of the hero (the hero; the men and the
+people; hits, a heavy blow and the roll), best in `--level ../../tools/figures.txt` (`figures_hub.txt`: helmets
+off).
 
 ## Look test (`--lookdev`)
 
@@ -472,7 +505,9 @@ Tests and pictures without a window (always silent):
 
 `--report` writes the run (finished, time, deaths, kills, shots) into `spaceopera.log` beside the program; `--bench n`
 renders n frames first and logs the time per frame; `--quality low|middle|high` picks the graphics (pictures are drawn
-high otherwise), `--w`/`--h` the size (1600x900, on a Steam Deck 1280x800), `--ss` the scene's scale. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
+high otherwise), `--w`/`--h` the size (1600x900, on a Steam Deck 1280x800), `--ss` the scene's scale; `--pad
+keys|xbox|ps|deck` the buttons in the texts, `--colours 0|1|2` colour vision, `--cycle n` a New Game+'s cycle,
+`--savefile FILE` writes the save a capsule makes, `--loadfile FILE` goes on from a save. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
 `--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
 language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue; `--flags a,b`
 sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture;
@@ -675,3 +710,8 @@ end, lights beneath on the floor below (six at most a level; they dissolve like 
 Per level 20-170 cut corners, 10-80 filled ones, up to 110 niches and two to six galleries (`Level::planShapes`).
 Only the look changes: the cells the hero walks are the same. `--level ../../tools/hall.txt` is a hall with all of
 it.
+
+**Heights to fight on:** in nearly half of the larger rooms indoors a walkway runs along a long wall, a metre and a half
+up with two steps at one end, and at the other end stands one who shoots from up there (the level's own shooters;
+`raise r c h` in a level file raises a marker's cell, since the map holds one character a cell). Every edge that drops
+more than 0.9 m has a railing. Heroes, foes and the autopilot take the steps; the drop is a jump down.

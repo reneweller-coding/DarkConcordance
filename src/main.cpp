@@ -16,6 +16,8 @@
  * @author Rene Weller
  */
 #include "Game.h"
+#include "Glyphs.h"
+#include "Journal.h"
 #include "Gfx.h"
 #include "Scene.h"
 #include "Score.h"
@@ -79,14 +81,19 @@ struct Options
     bool        m_lineup = false;          ///< with --shot: a row of people in their animations before the hero
     int         m_creatures = -1;          ///< with --shot: the creatures in front of the hero (page 0 or 1)
     int         m_figures = -1;            ///< with --shot: figures in their poses in front of the hero (page 0, 1)
-    float       m_zoom = 0.0f;             ///< with --shot: the camera's distance factor (0: as it is)
-    int         m_loot = 0;                ///< tests: items scattered round the hero at the start
-    std::string m_gear;                    ///< tests: what the hero puts on at the start (--gear item.rail3,u12,s5)
-    int         m_xp = 0;                  ///< tests: experience given at the start
-    unsigned    m_seed = 0;                ///< a generated level's seed (0: from the progress)
-    std::string m_dumpGen;                 ///< write the generated level's file here
-    int         m_heroLevel = 0;           ///< tests: the hero's level at the start
-    float       m_trace = 0.0f;            ///< tests: log the run's state every so many seconds
+    std::string m_pad;             ///< keys, xbox, ps, deck: the buttons shown in the texts (else the device used)
+    int         m_cycle = 0;       ///< tests: a new game+'s cycle
+    std::string m_saveFile;        ///< tests: where a capsule's save goes (instead of save.txt)
+    std::string m_loadFile;        ///< tests: a save to go on from
+    int         m_colours = -1;    ///< tests: colour vision 0..2 (else the setting)
+    float       m_zoom = 0.0f;     ///< with --shot: the camera's distance factor (0: as it is)
+    int         m_loot = 0;        ///< tests: items scattered round the hero at the start
+    std::string m_gear;            ///< tests: what the hero puts on at the start (--gear item.rail3,u12,s5)
+    int         m_xp = 0;          ///< tests: experience given at the start
+    unsigned    m_seed = 0;        ///< a generated level's seed (0: from the progress)
+    std::string m_dumpGen;         ///< write the generated level's file here
+    int         m_heroLevel = 0;   ///< tests: the hero's level at the start
+    float       m_trace = 0.0f;    ///< tests: log the run's state every so many seconds
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -185,6 +192,16 @@ Options parse( int argc, char **argv )
             o.m_creatures = atoi( next().c_str() );
         else if ( a == "--figures" )
             o.m_figures = atoi( next().c_str() );
+        else if ( a == "--pad" )
+            o.m_pad = next();
+        else if ( a == "--cycle" )
+            o.m_cycle = atoi( next().c_str() );
+        else if ( a == "--savefile" )
+            o.m_saveFile = next();
+        else if ( a == "--loadfile" )
+            o.m_loadFile = next();
+        else if ( a == "--colours" )
+            o.m_colours = atoi( next().c_str() );
         else if ( a == "--zoom" )
             o.m_zoom = (float)atof( next().c_str() );
         else if ( a == "--loot" )
@@ -260,6 +277,7 @@ GameInput readInput( Vector2 &lastMouse, float dt )
     in.m_confirm = IsKeyPressed( KEY_ENTER );
     in.m_strafe = IsKeyDown( KEY_LEFT_SHIFT ) || IsKeyDown( KEY_RIGHT_SHIFT );
     in.m_cameraReset = IsKeyPressed( KEY_BACKSPACE );
+    in.m_dodge = IsKeyPressed( KEY_LEFT_CONTROL ) || IsKeyPressed( KEY_RIGHT_CONTROL );
     Vector2 mouse = GetMousePosition();
     in.m_mouse = mouse;
     if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) )
@@ -279,6 +297,7 @@ GameInput readInput( Vector2 &lastMouse, float dt )
         float turn = GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_X );
         if ( fabsf( turn ) > 0.2f ) in.m_cameraTurn += ( turn - copysignf( 0.2f, turn ) ) / 0.8f * 2.4f * dt;
         in.m_cameraReset = in.m_cameraReset || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_THUMB );
+        in.m_dodge = in.m_dodge || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_THUMB );
         in.m_strafe = in.m_strafe || GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_TRIGGER ) > 0.3f;
         in.m_fire = in.m_fire || GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_TRIGGER ) > 0.3f ||
                     IsGamepadButtonDown( 0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT );
@@ -368,6 +387,10 @@ struct Settings
     float       m_voices = 0.9f;                      ///< voices' volume 0..1
     float       m_effects = 0.8f;                     ///< effects' and backgrounds' volume 0..1
     int         m_quality = -1;                       ///< the graphics: 0 low, 1 middle, 2 high (-1: not chosen yet)
+    int         m_subtitles = 1;                      ///< 0 small, 1 normal, 2 large
+    int         m_colours = 0;                        ///< colour vision: 0 as it is, 1 red-green, 2 blue-yellow
+    int         m_shake = 2;                          ///< the camera's shake: 0 off, 1 half, 2 full
+    bool        m_nightmare = false;                  ///< Albtraum may be chosen (the game is through once)
     std::string m_language;                           ///< the texts' language
 };
 
@@ -401,7 +424,7 @@ Settings loadSettings()
     while ( fscanf( f, "%31s %63s", key, value ) == 2 )
     {
         if ( !strcmp( key, "difficulty" ) )
-            s.m_difficulty = (DifficultyE)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+            s.m_difficulty = (DifficultyE)Clamp( (float)atoi( value ), 0.0f, 3.0f );
         else if ( !strcmp( key, "brightness" ) )
             s.m_brightness = Clamp( (float)atof( value ), 0.6f, 2.0f );
         else if ( !strcmp( key, "language" ) )
@@ -414,6 +437,14 @@ Settings loadSettings()
             s.m_effects = Clamp( (float)atof( value ), 0.0f, 1.0f );
         else if ( !strcmp( key, "graphics" ) )
             s.m_quality = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+        else if ( !strcmp( key, "subtitles" ) )
+            s.m_subtitles = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+        else if ( !strcmp( key, "colours" ) )
+            s.m_colours = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+        else if ( !strcmp( key, "shake" ) )
+            s.m_shake = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+        else if ( !strcmp( key, "nightmare" ) )
+            s.m_nightmare = atoi( value ) != 0;
     }
     fclose( f );
     return s;
@@ -426,9 +457,9 @@ std::string savePath()
 }
 
 /** @brief Reads the save; false if there is none. */
-bool loadProgress( Progress &p )
+bool loadProgress( Progress &p, const std::string &path = savePath() )
 {
-    FILE *f = fopen( savePath().c_str(), "r" );
+    FILE *f = fopen( path.c_str(), "r" );
     if ( !f ) return false;
     char line[1024], key[32], value[128];
     p = Progress();
@@ -468,6 +499,12 @@ bool loadProgress( Progress &p )
             p.m_seed = atoi( value );
         else if ( !strcmp( key, "deaths" ) )
             p.m_deaths = atoi( value );
+        else if ( !strcmp( key, "cycle" ) )
+            p.m_cycle = atoi( value );
+        else if ( !strcmp( key, "spot" ) )
+            p.m_hasSpot = sscanf( rest, "%f %f %f", &p.m_spot.x, &p.m_spot.y, &p.m_spot.z ) == 3;
+        else if ( !strcmp( key, "fired" ) )
+            p.m_fired.insert( value );
         else if ( !strcmp( key, "hero" ) )
             p.m_hero =
                 !strcmp( value, "dorra" ) ? HeroE::DORRA : ( !strcmp( value, "ione" ) ? HeroE::IONE : HeroE::CORVIN );
@@ -489,14 +526,19 @@ bool loadProgress( Progress &p )
 }
 
 /** @brief Writes the save. */
-void saveProgress( const Progress &p )
+void saveProgress( const Progress &p, const std::string &path = savePath() )
 {
-    FILE *f = fopen( savePath().c_str(), "w" );
+    FILE *f = fopen( path.c_str(), "w" );
     if ( !f ) return;
     fprintf( f, "hero %s\nlevel %s\nscrap %d\nstims %d\nweapon %d\narmor %d\n", heroKey( p.m_hero ), p.m_level.c_str(),
              p.m_scrap, p.m_stims, p.m_weapon, p.m_armor );
-    fprintf( f, "xp %d\nherolevel %d\npoints %d\nseed %d\ndeaths %d\n", p.m_xp, p.m_heroLevel, p.m_points, p.m_seed,
-             p.m_deaths );
+    fprintf( f, "xp %d\nherolevel %d\npoints %d\nseed %d\ndeaths %d\ncycle %d\n", p.m_xp, p.m_heroLevel, p.m_points,
+             p.m_seed, p.m_deaths, p.m_cycle );
+    if ( p.m_hasSpot )
+    {
+        fprintf( f, "spot %.2f %.2f %.2f\n", p.m_spot.x, p.m_spot.y, p.m_spot.z );
+        for ( const std::string &e : p.m_fired ) fprintf( f, "fired %s\n", e.c_str() );
+    }
     for ( size_t i = 0; i < p.m_ranks.size(); ++i )
         if ( p.m_ranks[i] > 0 ) fprintf( f, "rank %d %d\n", (int)i, p.m_ranks[i] );
     for ( int i = 0; i < EquipSlots; ++i )
@@ -514,6 +556,8 @@ void saveSettings( const Settings &s )
     fprintf( f, "difficulty %d\nbrightness %.2f\nlanguage %s\nmusic %.1f\nvoices %.1f\neffects %.1f\n",
              (int)s.m_difficulty, s.m_brightness, s.m_language.c_str(), s.m_music, s.m_voices, s.m_effects );
     if ( s.m_quality >= 0 ) fprintf( f, "graphics %d\n", s.m_quality );
+    fprintf( f, "subtitles %d\ncolours %d\nshake %d\nnightmare %d\n", s.m_subtitles, s.m_colours, s.m_shake,
+             s.m_nightmare ? 1 : 0 );
     fclose( f );
 }
 
@@ -581,7 +625,7 @@ void drawMenu( const Font &font, const char *title, const char *subtitle, const 
     for ( size_t i = 0; i < items.size(); ++i )
     {
         bool  on = (int)i == chosen;
-        float y = h * 0.36f + i * 46 * s;   // ten rows fit above the game's subtitles
+        float y = h * 0.36f + i * fminf( 46.0f, 470.0f / items.size() ) * s;   // above the game's subtitles
         if ( on )
             DrawRectangle( (int)( w * 0.5f - 260 * s ), (int)( y - 6 * s ), (int)( 520 * s ), (int)( 44 * s ),
                            { 255, 170, 80, 40 } );
@@ -608,25 +652,85 @@ std::string volumeBar( const char *key, float v )
     return bar;
 }
 
+/** @brief What a menu row does. */
+enum class RowE
+{
+    CONTINUE,
+    PLUS,
+    START,
+    RESUME,
+    OPTIONS,
+    RESTART,
+    QUIT,
+    DIFFICULTY,
+    BRIGHTNESS,
+    GRAPHICS,
+    MUSIC,
+    VOICES,
+    EFFECTS,
+    LANGUAGE,
+    SUBTITLES,
+    COLOURS,
+    SHAKE,
+    BACK
+};
+
 /**
- * @brief The menu's items. Title: start, difficulty, brightness, graphics, music, voices, effects, language, quit.
- *        Pause: resume, difficulty, brightness, graphics, music, voices, effects, language, restart, quit.
+ * @brief A menu's rows. Title: continue, a new game+ (once the game is through), start, options, quit. Pause: resume,
+ *        options, restart, quit. Options: difficulty, brightness, graphics, the three volumes, language, subtitles,
+ *        colour vision, shake, back.
+ * @param[in] menu   0 title, 1 pause, 2 options
+ * @param[in] saved  there is a save
+ * @param[in] plus   the save has the game through
+ * @return the rows
  */
-std::vector<std::string> menuItems( bool title, const Settings &s, bool saved )
+std::vector<RowE> menuRows( int menu, bool saved, bool plus )
+{
+    using R = RowE;
+    if ( menu == 2 )
+        return { R::DIFFICULTY, R::BRIGHTNESS, R::GRAPHICS, R::MUSIC, R::VOICES, R::EFFECTS,
+                 R::LANGUAGE,   R::SUBTITLES,  R::COLOURS,  R::SHAKE, R::BACK };
+    if ( menu == 1 ) return { R::RESUME, R::OPTIONS, R::RESTART, R::QUIT };
+    std::vector<RowE> rows;
+    if ( saved ) rows.push_back( R::CONTINUE );
+    if ( plus ) rows.push_back( R::PLUS );
+    for ( R r : { R::START, R::OPTIONS, R::QUIT } ) rows.push_back( r );
+    return rows;
+}
+
+/** @brief A row as it reads (a setting with its value). */
+std::string rowText( RowE r, const Settings &s, int cycle )
+{
+    auto pick = []( const char *key, const std::string &value )
+    { return std::string( tr( key ) ) + "  " + tr( value ); };
+    switch ( r )
+    {
+    case RowE::CONTINUE: return tr( "menu.continue" );
+    case RowE::PLUS: return TextFormat( tr( "menu.plus" ), cycle + 1 );
+    case RowE::START: return tr( "menu.start" );
+    case RowE::RESUME: return tr( "menu.resume" );
+    case RowE::OPTIONS: return tr( "menu.options" );
+    case RowE::RESTART: return tr( "menu.restart" );
+    case RowE::QUIT: return tr( "menu.quit" );
+    case RowE::DIFFICULTY: return std::string( tr( "menu.difficulty" ) ) + "  " + difficultyName( s.m_difficulty );
+    case RowE::BRIGHTNESS: return brightnessBar( s.m_brightness );
+    case RowE::GRAPHICS: return pick( "menu.graphics", "graphics." + std::to_string( qualityOf( s ) ) );
+    case RowE::MUSIC: return volumeBar( "menu.music", s.m_music );
+    case RowE::VOICES: return volumeBar( "menu.voices", s.m_voices );
+    case RowE::EFFECTS: return volumeBar( "menu.effects", s.m_effects );
+    case RowE::LANGUAGE: return std::string( tr( "menu.language" ) ) + "  " + tr( "language.name" );
+    case RowE::SUBTITLES: return pick( "menu.subtitles", "subtitles." + std::to_string( s.m_subtitles ) );
+    case RowE::COLOURS: return pick( "menu.colours", "colours." + std::to_string( s.m_colours ) );
+    case RowE::SHAKE: return pick( "menu.shake", "shake." + std::to_string( s.m_shake ) );
+    default: return tr( "menu.back" );
+    }
+}
+
+/** @brief The rows' texts. */
+std::vector<std::string> rowTexts( const std::vector<RowE> &rows, const Settings &s, int cycle )
 {
     std::vector<std::string> items;
-    if ( title && saved ) items.push_back( tr( "menu.continue" ) );
-    items.push_back( tr( title ? "menu.start" : "menu.resume" ) );
-    items.push_back( std::string( tr( "menu.difficulty" ) ) + "  " + difficultyName( s.m_difficulty ) );
-    items.push_back( brightnessBar( s.m_brightness ) );
-    items.push_back( std::string( tr( "menu.graphics" ) ) + "  " +
-                     tr( "graphics." + std::to_string( qualityOf( s ) ) ) );
-    items.push_back( volumeBar( "menu.music", s.m_music ) );
-    items.push_back( volumeBar( "menu.voices", s.m_voices ) );
-    items.push_back( volumeBar( "menu.effects", s.m_effects ) );
-    items.push_back( std::string( tr( "menu.language" ) ) + "  " + tr( "language.name" ) );
-    if ( !title ) items.push_back( tr( "menu.restart" ) );
-    items.push_back( tr( "menu.quit" ) );
+    for ( RowE r : rows ) items.push_back( rowText( r, s, cycle ) );
     return items;
 }
 
@@ -685,6 +789,8 @@ int runGame( const Options &o, Gfx &gfx )
 {
     bool     sound = ( !o.m_mute && o.m_shot.empty() ) || o.m_silent;
     Settings settings = loadSettings();
+    // The journal (awards, the codex) only for a player: tests count in memory and keep nothing.
+    if ( o.m_shot.empty() && !o.m_autoplay ) journal::load( std::string( GetApplicationDirectory() ) + "journal.txt" );
     // The device is opened once: the music plays on across levels and menus.
     if ( sound ) InitAudioDevice();
     Score score;
@@ -708,6 +814,10 @@ int runGame( const Options &o, Gfx &gfx )
     auto game = std::make_unique<Game>();
     game->m_heroKind = hero;
     if ( o.m_heroLevel > 1 ) progress.m_heroLevel = o.m_heroLevel, progress.m_points = o.m_heroLevel;
+    progress.m_cycle = o.m_cycle;
+    if ( !o.m_loadFile.empty() && loadProgress( progress, o.m_loadFile ) )
+        level = progress.m_level, hero = progress.m_hero, game->m_heroKind = hero;
+    if ( o.m_colours >= 0 ) settings.m_colours = o.m_colours;
     game->m_progress = progress;
     game->m_genSeed = o.m_seed;
     if ( !game->load( gfx, assetsDir(), level, sound ) )
@@ -727,9 +837,17 @@ int runGame( const Options &o, Gfx &gfx )
         settings.m_difficulty = o.m_difficulty == "leicht"
                                     ? DifficultyE::EASY
                                     : ( o.m_difficulty == "schwer" ? DifficultyE::HARD : DifficultyE::NORMAL );
-    game->setDifficulty( settings.m_difficulty );
-    game->m_brightness = settings.m_brightness;
-    game->setVolumes( settings.m_voices, settings.m_effects );
+    // What the settings ask of a game and the renderer.
+    auto apply = [&]()
+    {
+        game->setDifficulty( settings.m_difficulty );
+        game->m_brightness = settings.m_brightness;
+        game->setVolumes( settings.m_voices, settings.m_effects );
+        game->m_subtitleScale = settings.m_subtitles == 0 ? 0.8f : ( settings.m_subtitles == 2 ? 1.3f : 1.0f );
+        game->m_shakeScale = settings.m_shake * 0.5f;
+        gfx.m_colourVision = settings.m_colours;
+    };
+    apply();
     game->m_autoplay = o.m_autoplay;
     game->m_camYaw = o.m_camYaw * DEG2RAD;
     if ( o.m_hasAt ) game->putHero( o.m_x, o.m_z, o.m_face );
@@ -754,6 +872,7 @@ int runGame( const Options &o, Gfx &gfx )
             in.m_move = o.m_move;
             in.m_map = o.m_map && i == 0;
             game->update( dt, in );
+            if ( game->takeCheckpoint() && !o.m_saveFile.empty() ) saveProgress( game->checkpoint(), o.m_saveFile );
             for ( const std::string &s : game->takeStings() ) score.sting( s );
             score.update( dt, game->musicCue(), game->musicHeat() );
             if ( o.m_trace > 0.0f && i % std::max( 1, (int)( o.m_trace * 60.0f ) ) == 0 )
@@ -775,7 +894,7 @@ int runGame( const Options &o, Gfx &gfx )
         else if ( o.m_menu )
         {
             // The title menu over the frame (to look at it without a window).
-            std::vector<std::string> items = menuItems( true, settings, false );
+            std::vector<std::string> items = rowTexts( menuRows( 0, false, false ), settings, 0 );
             savePicture( gfx, o.m_shot,
                          [&]( const RenderTexture2D *rt )
                          {
@@ -803,8 +922,10 @@ int runGame( const Options &o, Gfx &gfx )
         CHOOSE,
         PLAY,
         PAUSE,
-        PANEL
+        PANEL,
+        OPTIONS
     } mode = o.m_autoplay ? PLAY : TITLE;
+    auto optionsFrom = TITLE;   // where the options go back to
     int  chosen = 0;
     int  panelTab = 0, panelRow = 0;   ///< the inventory, character and map pages: which, and the chosen row
     bool quit = false;
@@ -816,9 +937,7 @@ int runGame( const Options &o, Gfx &gfx )
         game->m_heroKind = hero;
         game->m_progress = progress;
         game->load( gfx, assetsDir(), level, sound );
-        game->setDifficulty( settings.m_difficulty );
-        game->m_brightness = settings.m_brightness;
-        game->setVolumes( settings.m_voices, settings.m_effects );
+        apply();
         game->m_autoplay = o.m_autoplay;
         game->m_zoom = zoom;
         score.keep( game->musicPieces() );
@@ -826,6 +945,8 @@ int runGame( const Options &o, Gfx &gfx )
     };
     while ( !WindowShouldClose() && !quit )
     {
+        // The buttons in the texts follow the device last used.
+        if ( noteInput() ) game->refreshFont();
         float dt = fminf( GetFrameTime(), 0.05f );
         if ( mode == PLAY )
         {
@@ -849,6 +970,14 @@ int runGame( const Options &o, Gfx &gfx )
             else
             {
                 game->update( dt, in );
+                // A capsule woke: the game is saved there.
+                if ( game->takeCheckpoint() && o.m_hero.empty() )
+                {
+                    progress = game->checkpoint();
+                    saveProgress( progress );
+                    saved = progress;
+                    hasSave = true;
+                }
                 game->m_zoom = Clamp( game->m_zoom * ( 1.0f + zoomStep( dt ) ), 0.55f, 1.7f );
                 bool onward = game->autoAdvance() ? game->finishedFor() > 1.2f : in.m_confirm;
                 if ( game->finished() && onward )
@@ -861,7 +990,10 @@ int runGame( const Options &o, Gfx &gfx )
                         progress = game->progress();
                         level = ending ? game->next().substr( 4 ) : game->next();
                         progress.m_level = level;
-                        if ( o.m_hero.empty() ) saveProgress( progress ), hasSave = true;
+                        if ( o.m_hero.empty() ) saveProgress( progress ), saved = progress, hasSave = true;
+                        // Through once: Albtraum may be chosen from now on.
+                        if ( progress.m_flags.count( "gamedone" ) && !settings.m_nightmare )
+                            settings.m_nightmare = true, saveSettings( settings );
                     }
                     restart();
                     if ( ending && !o.m_autoplay ) mode = TITLE, chosen = 0;
@@ -877,7 +1009,7 @@ int runGame( const Options &o, Gfx &gfx )
             int      turn = k.m_change;
             if ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_TRIGGER_1 ) ) turn = -1;
             if ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 ) ) turn = 1;
-            if ( turn ) panelTab = ( panelTab + turn + 4 ) % 4, panelRow = 0;
+            if ( turn ) panelTab = ( panelTab + turn + Game::PanelTabs ) % Game::PanelTabs, panelRow = 0;
             int rows = game->panelRows( panelTab );
             if ( rows > 0 ) panelRow = ( panelRow + k.m_move + rows ) % rows;
             // A or Enter: put on, take off, learn; X or Delete: salvage.
@@ -919,61 +1051,74 @@ int runGame( const Options &o, Gfx &gfx )
         }
         else
         {
-            // The items as menuItems lists them (the title's "continue" first when there is a save).
-            MenuKeys k = menuKeys( dt );
-            int      base = mode == TITLE && hasSave ? 1 : 0;
-            int      count = ( mode == TITLE ? 9 : 10 ) + base;
-            chosen = ( chosen + k.m_move + count ) % count;
-            int  diffItem = 1 + base, brightItem = 2 + base, gfxItem = 3 + base, musicItem = 4 + base,
-                 voiceItem = 5 + base, fxItem = 6 + base, langItem = 7 + base;
-            int  restartItem = mode == PAUSE ? 8 : -1;
-            auto nextQuality = [&]( int step )
+            // The title, the pause and the options: a list of rows; settings change left and right (or with A).
+            MenuKeys          k = menuKeys( dt );
+            bool              plus = hasSave && saved.m_flags.count( "gamedone" );
+            std::vector<RowE> rows = menuRows( mode == OPTIONS ? 2 : ( mode == TITLE ? 0 : 1 ), hasSave, plus );
+            int               count = (int)rows.size();
+            chosen = ( chosen % count + k.m_move + count ) % count;
+            RowE row = rows[chosen];
+            int  step = k.m_change != 0 ? k.m_change : ( k.m_confirm ? 1 : 0 );
+            auto cycle = [&]( int &v, int n ) { v = ( v + step + n ) % n; };
+            auto volume = [&]( float &v ) { v = Clamp( roundf( v * 10.0f + k.m_change ) / 10.0f, 0.0f, 1.0f ); };
+            bool changed = true;
+            switch ( row )
             {
-                settings.m_quality = ( qualityOf( settings ) + step + 3 ) % 3;
-                gfx.setQuality( settings.m_quality );
-                saveSettings( settings );
-            };
-            if ( chosen == gfxItem && k.m_change ) nextQuality( k.m_change );
-            auto nextLanguage = [&]( int step )
+            case RowE::DIFFICULTY:
             {
-                std::vector<std::string> all = languages( assetsDir() );
-                if ( all.empty() ) return;
-                auto it = std::find( all.begin(), all.end(), settings.m_language );
-                int  i = it == all.end() ? 0 : (int)( it - all.begin() );
-                settings.m_language = all[( i + step + all.size() ) % all.size()];
-                loadTexts( assetsDir(), settings.m_language );
-                game->setLanguage();
-                saveSettings( settings );
-            };
-            if ( chosen == langItem && k.m_change ) nextLanguage( k.m_change );
-            if ( chosen == diffItem && k.m_change )
-            {
-                settings.m_difficulty = (DifficultyE)( ( (int)settings.m_difficulty + k.m_change + 3 ) % 3 );
-                game->setDifficulty( settings.m_difficulty );
-                saveSettings( settings );
+                int d = (int)settings.m_difficulty;
+                if ( step ) cycle( d, settings.m_nightmare ? 4 : 3 );
+                settings.m_difficulty = (DifficultyE)d;
+                break;
             }
-            if ( chosen == brightItem && k.m_change )
-            {
+            case RowE::BRIGHTNESS:
                 settings.m_brightness = Clamp( settings.m_brightness + 0.1f * k.m_change, 0.6f, 2.0f );
-                game->m_brightness = settings.m_brightness;
-                saveSettings( settings );
-            }
-            if ( chosen == musicItem && k.m_change )
-            {
-                settings.m_music = Clamp( roundf( settings.m_music * 10.0f + k.m_change ) / 10.0f, 0.0f, 1.0f );
+                break;
+            case RowE::GRAPHICS:
+                if ( step )
+                {
+                    settings.m_quality = qualityOf( settings );
+                    cycle( settings.m_quality, 3 );
+                    gfx.setQuality( settings.m_quality );
+                }
+                break;
+            case RowE::MUSIC:
+                volume( settings.m_music );
                 score.m_volume = settings.m_music;
+                break;
+            case RowE::VOICES: volume( settings.m_voices ); break;
+            case RowE::EFFECTS: volume( settings.m_effects ); break;
+            case RowE::LANGUAGE:
+                if ( step )
+                {
+                    std::vector<std::string> all = languages( assetsDir() );
+                    if ( all.empty() ) break;
+                    auto it = std::find( all.begin(), all.end(), settings.m_language );
+                    int  i = it == all.end() ? 0 : (int)( it - all.begin() );
+                    settings.m_language = all[( i + step + all.size() ) % all.size()];
+                    loadTexts( assetsDir(), settings.m_language );
+                    game->setLanguage();
+                }
+                break;
+            case RowE::SUBTITLES:
+                if ( step ) cycle( settings.m_subtitles, 3 );
+                break;
+            case RowE::COLOURS:
+                if ( step ) cycle( settings.m_colours, 3 );
+                break;
+            case RowE::SHAKE:
+                if ( step ) cycle( settings.m_shake, 3 );
+                break;
+            default: changed = false; break;
+            }
+            if ( changed && step )
+            {
+                apply();
                 saveSettings( settings );
             }
-            if ( ( chosen == voiceItem || chosen == fxItem ) && k.m_change )
+            if ( k.m_confirm && !changed )
             {
-                float &v = chosen == voiceItem ? settings.m_voices : settings.m_effects;
-                v = Clamp( roundf( v * 10.0f + k.m_change ) / 10.0f, 0.0f, 1.0f );
-                game->setVolumes( settings.m_voices, settings.m_effects );
-                saveSettings( settings );
-            }
-            if ( k.m_confirm )
-            {
-                if ( chosen == 0 && base == 1 && loadProgress( saved ) )
+                if ( row == RowE::CONTINUE && loadProgress( saved ) )
                 {
                     // Continue: the saved level with what was gained.
                     progress = saved;
@@ -982,29 +1127,48 @@ int runGame( const Options &o, Gfx &gfx )
                     restart();
                     mode = PLAY;
                 }
-                else if ( chosen == base && mode == TITLE && o.m_hero.empty() )
-                    mode = CHOOSE, chosen = hero == HeroE::DORRA ? 0 : ( hero == HeroE::IONE ? 2 : 1 );
-                else if ( chosen == base )
-                    mode = PLAY;
-                else if ( chosen == diffItem )
+                else if ( row == RowE::PLUS )
                 {
-                    settings.m_difficulty = (DifficultyE)( ( (int)settings.m_difficulty + 1 ) % 3 );
-                    game->setDifficulty( settings.m_difficulty );
-                    saveSettings( settings );
-                }
-                else if ( chosen == langItem )
-                    nextLanguage( 1 );
-                else if ( chosen == gfxItem )
-                    nextQuality( 1 );
-                else if ( chosen == restartItem )
-                {
+                    // A new game+: the hero as they are (level, gear, skills, scrap), the story from the prologue,
+                    // every place twelve areas further on. The notes read stay read.
+                    progress = saved;
+                    progress.m_cycle += 1;
+                    std::set<std::string> kept;
+                    for ( const std::string &f : progress.m_flags )
+                        if ( f.compare( 0, 5, "note:" ) == 0 || f == "gamedone" ) kept.insert( f );
+                    progress.m_flags = kept;
+                    progress.m_deaths = 0;
+                    journal::win( "plus" );
+                    progress.m_level = level = o.m_level;
+                    hero = progress.m_hero;
+                    saveProgress( progress );
+                    saved = progress;
                     restart();
                     mode = PLAY;
                 }
-                else if ( chosen == count - 1 )
+                else if ( row == RowE::START && o.m_hero.empty() )
+                    mode = CHOOSE, chosen = hero == HeroE::DORRA ? 0 : ( hero == HeroE::IONE ? 2 : 1 );
+                else if ( row == RowE::START || row == RowE::RESUME )
+                    mode = PLAY;
+                else if ( row == RowE::OPTIONS )
+                    optionsFrom = mode, mode = OPTIONS, chosen = 0;
+                else if ( row == RowE::BACK )
+                    mode = optionsFrom, chosen = 1;
+                else if ( row == RowE::RESTART )
+                {
+                    // From the level's start, not from its last capsule.
+                    progress.m_hasSpot = false;
+                    progress.m_fired.clear();
+                    restart();
+                    mode = PLAY;
+                }
+                else if ( row == RowE::QUIT )
                     quit = true;
             }
-            if ( k.m_back && mode == PAUSE ) mode = PLAY;
+            if ( k.m_back && mode == OPTIONS )
+                mode = optionsFrom, chosen = 1;
+            else if ( k.m_back && mode == PAUSE )
+                mode = PLAY;
             lastMouse = GetMousePosition();
         }
         // The music: the title's piece in the menus before the game, else what the game calls for; quieter in a menu.
@@ -1027,9 +1191,13 @@ int runGame( const Options &o, Gfx &gfx )
         }
         else if ( mode != PLAY && mode != PANEL )
         {
-            std::string subtitle = mode == TITLE ? game->title() : difficultyName( settings.m_difficulty );
-            drawMenu( game->font(), mode == TITLE ? "DARK CONCORDANCE" : tr( "menu.pause" ), subtitle.c_str(),
-                      menuItems( mode == TITLE, settings, hasSave ), chosen );
+            bool              plus = hasSave && saved.m_flags.count( "gamedone" );
+            std::string       subtitle = mode == TITLE     ? game->title()
+                                         : mode == OPTIONS ? std::string( tr( "menu.options" ) )
+                                                           : std::string( difficultyName( settings.m_difficulty ) );
+            std::vector<RowE> rows = menuRows( mode == OPTIONS ? 2 : ( mode == TITLE ? 0 : 1 ), hasSave, plus );
+            drawMenu( game->font(), mode == PAUSE ? tr( "menu.pause" ) : "DARK CONCORDANCE", subtitle.c_str(),
+                      rowTexts( rows, settings, saved.m_cycle ), chosen % (int)rows.size() );
         }
         if ( showFps ) DrawFPS( 10, 10 );
         EndDrawing();
@@ -1060,6 +1228,11 @@ int main( int argc, char **argv )
     if ( !o.m_shot.empty() ) flags |= FLAG_WINDOW_HIDDEN;
     SetConfigFlags( flags );
     InitWindow( o.m_width, o.m_height, "SpaceOpera" );
+    if ( !o.m_pad.empty() )
+        setDevice( o.m_pad == "xbox"   ? DeviceE::XBOX
+                   : o.m_pad == "ps"   ? DeviceE::PLAYSTATION
+                   : o.m_pad == "deck" ? DeviceE::DECK
+                                       : DeviceE::KEYBOARD );
     SetExitKey( KEY_NULL );   // Esc pauses; the menu quits
 
     Gfx gfx;

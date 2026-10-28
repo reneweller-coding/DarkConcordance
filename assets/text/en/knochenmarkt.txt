@@ -25,14 +25,14 @@ l2_cold.ione   = Cold rooms. The compressors run flat out. Whoever stores things
 l2_taxator.dorra = The Assessor. Built himself armour so he could look down on us.
 l2_end.dorra   = That was the Assessor. Someone else can have his scales. I want to know who paid.
 
-h_market       = The market: many rooms, side rooms behind doors (A / E). Rescue capsules remember where you go on from.
+h_market       = The market: many rooms, side rooms behind doors ({use}). Rescue capsules remember where you go on from.
 h_shield       = Shield guards block from the front. Attack from the side or from behind.
 h_shield.dorra = Shield guards block from the front. The ram hammer still gets through – from the side it is quicker.
-h_shield.ione  = Shield guards block from the front. Cut from the side – or jam them for a moment (B / F), and the shield drops.
+h_shield.ione  = Shield guards block from the front. Cut from the side – or jam them for a moment ({special}), and the shield drops.
 h_champion     = Champions (coloured ring): more health and a gift – green swift, blue armoured, orange explodes, red berserk. They always drop something.
 h_bomber       = Shoot crawlers from a distance. Their blast hits the other enemies too.
-h_bomber.dorra = Crawlers: throw a blast bolt (B / F) and keep your distance. Their blast hits the others too.
-h_bomber.ione  = Fuses: take one over (B / F) and send it among the others – it goes off there. Otherwise cut it apart at a distance.
+h_bomber.dorra = Crawlers: throw a blast bolt ({special}) and keep your distance. Their blast hits the others too.
+h_bomber.ione  = Fuses: take one over ({special}) and send it among the others – it goes off there. Otherwise cut it apart at a distance.
 h_taxator      = The Assessor: keep away when he stomps. His volleys come in a fan – dodge sideways.
 h_rush         = He is taking a run! Sidestep – if he runs into a wall, he stands stunned.
 

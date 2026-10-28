@@ -7,6 +7,7 @@
  */
 #include "Game.h"
 #include "GameShared.h"
+#include "Journal.h"
 #include "MeshBuilder.h"
 
 #include <raymath.h>
@@ -216,6 +217,7 @@ void Game::hitBreakable( int i, float damage, Vector3 at, Vector3 dir )
     }
     // Broken: out of the way, its pieces flying off from the side it was hit on.
     b.m_alive = false;
+    journal::count( "broken" );
     if ( b.m_prop >= 0 && b.m_prop < (int)m_level.m_props.size() ) m_level.m_props[b.m_prop].m_pos.y = -1000.0f;
     m_audio.play( SfxE::SMASH, at, m_camTarget, 0.9f );
     Vector3 mid = Vector3Add( b.m_pos, { 0.0f, look.m_height * 0.5f, 0.0f } );

@@ -23,7 +23,7 @@ item.blades.about = Two blades on short arms, for samples of rock and ice. They 
 h_tale           = A tale: what happens here has already happened. What you find stays in the memory; you can take nothing with you.
 h_ally_union     = The union's barricade guns fire on the clearance squads. Stay close to them.
 h_census         = Fly close past the people: Unzu counts them. Whoever is counted lights up for a moment.
-h_jam            = B / F: jammer. Everything close round the drone stands still for a moment.
+h_jam            = {special}: jammer. Everything close round the drone stands still for a moment.
 
 # Corvin: a confession
 tale.corvin.name  = A confession

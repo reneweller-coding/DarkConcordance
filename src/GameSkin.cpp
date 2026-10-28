@@ -303,6 +303,18 @@ void Game::figureLineup( int page )
         add( m_hero, []( FigurePose &p ) { p.m_air = true; } );
         add( m_hero, []( FigurePose &p ) { p.m_down = 0.5f; } );
     }
+    else if ( page == 2 )
+    {
+        // Hits, a heavy blow, the dodge roll, the hero and a carbine man side by side.
+        add( m_hero, []( FigurePose & ) {} );
+        add( m_hero, []( FigurePose &p ) { p.m_hit = 0.7f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_knock = 0.6f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_roll = 0.3f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_roll = 0.6f; } );
+        add( m_boarderGun, []( FigurePose & ) {} );
+        add( m_boarderGun, []( FigurePose &p ) { p.m_hit = 0.7f; } );
+        add( m_boarderGun, []( FigurePose &p ) { p.m_knock = 0.5f; } );
+    }
     else
     {
         add( m_boarderBaton, []( FigurePose & ) {} );

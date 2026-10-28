@@ -504,7 +504,7 @@ void Game::drawTugHud( int w, int h, float s )
     // Its bar in three parts (engine, gun, engine) and a marker over each weak point still there.
     float pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s, gap = 10.0f * s;
     float part = ( pw - 2.0f * gap ) / 3.0f;
-    text( tr( ( "boss." + m_level.m_machine ).c_str() ), w * 0.5f, py - 4.0f * s, 24, { 255, 210, 150, 240 } );
+    text( bossTitle( "boss." + m_level.m_machine ), w * 0.5f, py - 4.0f * s, 24, { 255, 210, 150, 240 } );
     for ( int i = 0; i < 3; ++i )
     {
         const BossPart &p = m_parts[i];

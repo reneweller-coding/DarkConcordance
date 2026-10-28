@@ -630,6 +630,14 @@ private:
     std::vector<unsigned char> m_fill;      ///< per floor cell: its inner corners filled (bits as m_cut)
     std::vector<signed char>   m_niche;     ///< per wall cell: the side its niche opens to (-1: none)
     std::vector<unsigned char> m_gallery;   ///< per floor cell: the walls a gallery runs along (bit d)
+
+    /** @brief A cell raised by a "raise" line. */
+    struct Raise
+    {
+        int   m_row, m_col;
+        float m_height;
+    };
+    std::vector<Raise> m_raise;   ///< the level file's raised markers
 };
 
 }   // namespace spaceopera

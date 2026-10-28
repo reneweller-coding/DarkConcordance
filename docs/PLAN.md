@@ -202,6 +202,12 @@ lines and the falls through the crust they crack, and a trap: a capsule or the l
 the hero back in every eight seconds; cut crust now closes at once where the hero is put back. The column cuts less
 often (every 3.6 s and 5 s instead of 3 s and 4.4 s), a cut costs 24 % of the health instead of 28 %.
 
+Round of the user's wishes (28.10.2026, "bitte baue das alles ein"): buttons drawn as the device in hand (Deck,
+Xbox, PlayStation, keys), hit reactions, a heavy blow's knockback, a dodge roll for every hero, the left hand on the
+rifle, feet on steps; New Game+ and Albtraum; a codex and 42 awards across all games; walkways with a shooter and
+railings in the larger rooms; saving at rescue capsules; an options menu with the subtitles' size, colour vision and
+the camera's shake; Barlow as the font where Bahnschrift is missing (Proton, Linux).
+
 Open: the user's play (balance, the music's choices and levels). Co-op is set aside for now (the user, 27.10.2026).
 
 Still to come, by first use:

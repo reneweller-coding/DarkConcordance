@@ -4,7 +4,9 @@
  * @author Rene Weller
  */
 #include "Game.h"
+#include "Glyphs.h"
 #include "GameShared.h"
+#include "Journal.h"
 
 #include "MeshBuilder.h"
 #include "Rig.h"
@@ -330,6 +332,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     loadTale();
     // "area 0": as deep as the hero is strong (the depths).
     if ( m_level.m_area <= 0 ) m_level.m_area = std::max( 2, ( m_progress.m_heroLevel + 4 ) / 2 );
+    m_level.m_area += 12 * m_progress.m_cycle;   // a new game+: every place that much further on
     m_areaHit = 1.0f + 0.12f * ( m_level.m_area - 1 );
     loadSurfaces( gfx, assets );
     // The lift's cell is part of its well.
@@ -628,6 +631,17 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     for ( size_t i = 0; i < m_people.size(); ++i )
         if ( m_people[i].m_sit < 0.5f ) dressPerson( m_people[i], (unsigned)( i * 7919u + 13u ) );
     if ( !m_level.m_intro.empty() ) m_intro = IntroTime;
+    if ( m_progress.m_hasSpot && m_progress.m_level == m_levelFile )
+    {
+        // Saved at a capsule: the hero in front of it, what had happened has happened (no opening card again).
+        m_pos = m_respawn = m_progress.m_spot;
+        for ( const std::string &f : m_progress.m_fired ) m_fired.insert( f );
+        m_intro = 0.0f;
+        Capsule *near = nullptr;
+        for ( Capsule &c : m_capsules )
+            if ( !near || Vector3Distance( c.m_pos, m_pos ) < Vector3Distance( near->m_pos, m_pos ) ) near = &c;
+        if ( near ) near->m_active = true;
+    }
     m_hero.animate( 0.0f, m_pos, { 0, 0 }, 0.0f, false, 0.0f, 0.0f );
     m_yaw = m_aimYaw = 0.0f;
     // What the hero brings along; what has happened (it opens doors and changes what people say, quietly).
@@ -647,13 +661,16 @@ void Game::loadFont()
 {
     if ( m_ownFont ) UnloadFont( m_font );
     m_ownFont = false;
-    // Bahnschrift with every character the loaded texts use (umlauts, dashes, quotes); raylib's font if it is missing.
+    // Bahnschrift with every character the loaded texts use (umlauts, dashes, quotes); where Windows' fonts are not
+    // there (Proton on the Steam Deck, Linux) Barlow, which comes with the game (SIL Open Font License).
     std::vector<int> cps = textCodepoints();
-    const char      *fontPath = "C:/Windows/Fonts/bahnschrift.ttf";
+    std::string      own = m_assets + "/fonts/Barlow-Regular.ttf";
+    const char      *fontPath = FileExists( "C:/Windows/Fonts/bahnschrift.ttf" ) && !getenv( "SPACEOPERA_BARLOW" )
+                                    ? "C:/Windows/Fonts/bahnschrift.ttf"
+                                    : own.c_str();
     if ( FileExists( fontPath ) )
     {
-        m_font = LoadFontEx( fontPath, 48, cps.data(), (int)cps.size() );
-        SetTextureFilter( m_font.texture, TEXTURE_FILTER_BILINEAR );
+        m_font = glyphFont( fontPath, 48, cps );   // the buttons in the texts drawn for the device in hand
         m_ownFont = m_font.texture.id > 0;
     }
     if ( !m_ownFont ) m_font = GetFontDefault();
@@ -673,6 +690,19 @@ void Game::setLanguage()
     renderBoard();
 }
 
+Progress Game::checkpoint() const
+{
+    // What had happened is kept, but not that a boss fell or rose: the boss stands again when one comes back.
+    Progress p = progress();
+    p.m_level = m_levelFile;
+    p.m_hasSpot = true;
+    p.m_spot = m_respawn;
+    p.m_fired.clear();
+    for ( const std::string &f : m_fired )
+        if ( f.compare( 0, 4, "boss" ) != 0 && f != "gamedone" ) p.m_fired.insert( f );
+    return p;
+}
+
 Progress Game::progress() const
 {
     Progress p = m_progress;
@@ -683,6 +713,8 @@ Progress Game::progress() const
     p.m_deaths = m_progress.m_deaths + m_deaths;
     if ( m_finished )
     {
+        p.m_hasSpot = false;   // the next level from its start
+        p.m_fired.clear();
         p.m_flags.insert( "done." + m_levelFile.substr( 0, m_levelFile.find( '.' ) ) );
         p.m_level = next();
     }
@@ -793,6 +825,7 @@ const char *difficultyName( DifficultyE d )
     {
     case DifficultyE::EASY: return tr( "difficulty.easy" );
     case DifficultyE::HARD: return tr( "difficulty.hard" );
+    case DifficultyE::NIGHTMARE: return tr( "difficulty.nightmare" );
     default: return tr( "difficulty.normal" );
     }
 }
@@ -989,6 +1022,13 @@ void Game::fire( const std::string &trigger )
     if ( m_fired.count( trigger ) ) return;
     m_fired.insert( trigger );
     if ( trigger == "bossdead" ) m_stings.push_back( "victory" );
+    // The journal's moments.
+    if ( trigger == "bossdead" && !m_autoplay ) journal::count( "bosses" );
+    if ( trigger == "grabbed" ) journal::win( "grabbed" );
+    if ( trigger == "burnt" ) journal::win( "molten" );
+    if ( trigger == "cores.spared" ) journal::win( "cores_spared" );
+    for ( int act = 1; act <= 3; ++act )
+        if ( trigger == TextFormat( "act%ddone", act ) ) journal::win( TextFormat( "act%d", act ) );
     // The press's moments go before everything waiting: they matter now.
     bool urgent = trigger == "bossstart" || trigger == "ramwarn" || trigger == "coreopen" || trigger == "tank1" ||
                   trigger == "armour";
@@ -1074,6 +1114,7 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
         m_dead = true;
         m_deadTimer = 0.0f;
         ++m_deaths;
+        if ( !m_autoplay ) journal::count( "deaths" );
         m_stings.push_back( "death" );
         if ( m_autoplay )
         {
@@ -1143,6 +1184,7 @@ void Game::killFoe( Foe &f, bool drops )
     }
     f.m_alive = false;
     ++m_kills;
+    countKill( f );
     // Experience for every kill; now and then an item; a champion always leaves one, a better one.
     gainXp( xpFor( f ) );
     onKill( f );
@@ -1232,6 +1274,7 @@ void Game::hurtFoe( Foe &f, float amount, Vector3 dir, DamageE kind )
     }
     f.m_hp -= amount;
     f.m_flash = 1.0f;
+    if ( amount > f.m_hpMax * 0.25f ) f.m_knock = 1.0f;   // a heavy blow throws a man back
     if ( !f.m_awake && !human( f ) ) m_audio.play( SfxE::CHITTER, f.m_pos, m_camTarget, 0.6f );
     f.m_awake = true;
     // Low gravity: a hit lifts a louse off its feet.
@@ -1664,6 +1707,7 @@ void Game::updateHero( float dt, const GameInput &in )
     {
         m_hp = fminf( hpMax(), m_hp + StimHeal * ( 1.0f + stat( StatE::STIMS ) / 100.0f ) );
         --m_stims;
+        journal::count( "stims" );
         m_audio.play( SfxE::STIM, m_pos, m_camTarget, 0.8f );
         for ( int i = 0; i < 16; ++i )
             m_particles.push_back(
@@ -1786,6 +1830,7 @@ void Game::moveHero( float dt )
         m_dead = true;
         m_deadTimer = 1.0f;
         ++m_deaths;
+        if ( !m_autoplay ) journal::count( "deaths" );
         m_stings.push_back( "death" );
         if ( m_autoplay ) TraceLog( LOG_WARNING, "DEATH: fall at %.1f,%.1f t=%.0f", m_pos.x, m_pos.z, m_time );
     }
@@ -1834,6 +1879,14 @@ void Game::moveHero( float dt )
             // stands: a capsule woken in a leap over a shaft would put the next life over it).
             m_respawn = front ? c.m_front : m_pos;
             fire( "capsule" );
+            if ( !m_tale && !m_level.m_peaceful )
+            {
+                // The game is saved here: who comes back, comes back to this capsule.
+                m_checkpoint = true;
+                m_toast = tr( "hud.saved" );
+                m_toastColor = { 140, 255, 170, 255 };
+                m_toastTimer = 2.0f;
+            }
             m_audio.play( SfxE::CAPSULE, c.m_pos, m_camTarget, 0.9f );
         }
     for ( Pickup &p : m_pickups )
@@ -1868,6 +1921,10 @@ void Game::moveHero( float dt )
     m_hero.m_swing = m_swing;
     m_hero.m_swingT = m_swingT;
     m_hero.m_block = m_block;
+    m_hero.m_hit = m_hurtFlash;
+    m_knockT = fmaxf( 0.0f, m_knockT - dt * 2.2f );
+    m_hero.m_knock = m_knockT;
+    m_hero.m_roll = m_dash > 0.0f && m_dashKind == 0 ? 1.0f - m_dash / fmaxf( m_dashLen, 0.05f ) : 0.0f;
     m_hero.animate( dt, m_pos, { m_vel.x, m_vel.z }, m_yaw, !m_ground, 0.0f, m_time );
 }
 
@@ -2162,6 +2219,7 @@ void Game::updateFoes( float dt )
             f.m_ground = true;
             f.m_yaw += Clamp( angleTo( f.m_yaw, faceYaw ), -6.0f * dt, 6.0f * dt );
             f.m_flash = fmaxf( 0.0f, f.m_flash - dt * 5.0f );
+            f.m_knock = fmaxf( 0.0f, f.m_knock - dt * 2.2f );
             continue;
         }
         // Nobody walks off an edge: at a shaft the wish to go on stops, or slides along it (a hit or a fall from a
@@ -2251,6 +2309,7 @@ void Game::updateFoes( float dt )
         {
             f.m_alive = false;   // fell into a shaft
             ++m_kills;
+            journal::count( "kills" );
             continue;
         }
         Vector3 o = m_pressModel.m_origin;
@@ -2258,6 +2317,7 @@ void Game::updateFoes( float dt )
         float turn = f.m_kind == FoeE::SHIELD ? 2.6f : ( f.m_kind == FoeE::TAXATOR ? 3.0f : 8.0f );
         f.m_yaw += Clamp( angleTo( f.m_yaw, faceYaw ), -turn * dt, turn * dt );
         f.m_flash = fmaxf( 0.0f, f.m_flash - dt * 5.0f );
+        f.m_knock = fmaxf( 0.0f, f.m_knock - dt * 2.2f );
     }
     m_hitScale = 1.0f;
     m_actor = -1;
@@ -3170,6 +3230,7 @@ void Game::update( float dt, const GameInput &inRaw )
         if ( !film.empty() && !m_progress.m_flags.count( "film." + film ) && startFilm( film ) )
             m_progress.m_flags.insert( "film." + film );
     }
+    updateJournal( dt );
     if ( updateFilm( dt, inRaw ) ) return;
     // A level that opens with a card: nothing moves under it until it has been read (A, Enter or a click ends it).
     if ( m_intro > 0.0f )
@@ -3296,8 +3357,8 @@ void Game::update( float dt, const GameInput &inRaw )
     if ( Vector3Length( lag ) > keep ) m_camTarget = Vector3Add( hero, Vector3Scale( Vector3Normalize( lag ), keep ) );
     float pull = arena ? 1.45f : ( m_scene == 1 || m_scene == 2 ? 0.7f : 1.0f );
     m_camPull += ( pull - m_camPull ) * fminf( 1.0f, dt * 1.5f );
-    Vector3 shake = { ( rnd() - 0.5f ) * m_shake * 0.5f, ( rnd() - 0.5f ) * m_shake * 0.3f,
-                      ( rnd() - 0.5f ) * m_shake * 0.5f };
+    float   jolt = m_shake * m_shakeScale;
+    Vector3 shake = { ( rnd() - 0.5f ) * jolt * 0.5f, ( rnd() - 0.5f ) * jolt * 0.3f, ( rnd() - 0.5f ) * jolt * 0.5f };
     m_cam.target = Vector3Add( m_camTarget, shake );
     m_cam.position = Vector3Add(
         m_cam.target, Vector3Scale( { 8.1f * sinf( m_camYaw ), 11.5f, 8.1f * cosf( m_camYaw ) }, m_zoom * m_camPull ) );
@@ -3567,6 +3628,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
 {
     m_dynamic.clear();
     Figure::frame();
+    Figure::ground( [this]( float x, float z ) { return groundAt( { x, 0.0f, z } ); } );
     if ( m_heroKind == HeroE::UNZU )
         poseUnzu( m_dynamic );
     else
@@ -3859,7 +3921,7 @@ void Game::drawHud( int w, int h )
         float tough = toughness( m_difficulty );
         float pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s, gap = 10.0f * s;
         float part = ( pw - 2.0f * gap ) / 3.0f;
-        text( tr( "boss.press" ), w * 0.5f, py - 4 * s, 24, { 255, 210, 150, 240 }, true );
+        text( bossTitle( "boss.press" ), w * 0.5f, py - 4 * s, 24, { 255, 210, 150, 240 }, true );
         const float fill[3] = { m_tank[0] / ( TankHp * tough ), m_core / ( CoreHp * tough ),
                                 m_tank[1] / ( TankHp * tough ) };
         const char *names[3] = { tr( "hud.tank" ), tr( "hud.core" ), tr( "hud.tank" ) };
@@ -3938,8 +4000,9 @@ void Game::drawHud( int w, int h )
             DrawRectangleLinesEx( { px, ly - 4.0f * s, size, size }, 2.0f * s,
                                   { 255, 180, 100, (unsigned char)( 120 * a ) } );
         }
-        text( who.c_str(), w * 0.5f, ly, 22, { 255, 190, 110, (unsigned char)( 255 * a ) }, true );
-        wrapped( trAs( m_line->m_id, heroKey( m_heroKind ) ), w * 0.5f, ly + 30 * s, 28, w * 0.55f,
+        float big = m_subtitleScale;
+        text( who.c_str(), w * 0.5f, ly, 22 * big, { 255, 190, 110, (unsigned char)( 255 * a ) }, true );
+        wrapped( trAs( m_line->m_id, heroKey( m_heroKind ) ), w * 0.5f, ly + 30 * s * big, 28 * big, w * 0.55f,
                  { 245, 242, 236, (unsigned char)( 255 * a ) } );
     }
 
@@ -3978,15 +4041,16 @@ void Game::drawHud( int w, int h )
     drawUseHud( w, h, s );
     drawLootHud( w, h, s );
     drawEndCard( w, h, s );
+    drawAward( w, h, s );
     drawFilm( w, h, s );
     if ( m_film.playing() && !m_filmKey.empty() )
     {
         // The film's subtitle: who, then what, over the lower picture (as a level's lines).
         std::string who = tr( "speaker." + m_filmWho );
         for ( char &ch : who ) ch = (char)toupper( (unsigned char)ch );
-        float ly = h - 150.0f * s;
-        text( who.c_str(), w * 0.5f, ly, 22, { 255, 190, 110, 255 }, true );
-        wrapped( spoken( m_filmKey ), w * 0.5f, ly + 30 * s, 28, w * 0.6f, { 245, 242, 236, 255 } );
+        float ly = h - 150.0f * s, big = m_subtitleScale;
+        text( who.c_str(), w * 0.5f, ly, 22 * big, { 255, 190, 110, 255 }, true );
+        wrapped( spoken( m_filmKey ), w * 0.5f, ly + 30 * s * big, 28 * big, w * 0.6f, { 245, 242, 236, 255 } );
     }
 
     if ( m_intro > 0.0f && !m_film.playing() )

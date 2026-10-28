@@ -243,13 +243,13 @@ inline void pushOutCircle( Vector3 &p, float r, float cx, float cz, float cr )
 /** @brief How much an enemy can take, by difficulty. */
 inline float toughness( DifficultyE d )
 {
-    return d == DifficultyE::EASY ? 0.75f : ( d == DifficultyE::HARD ? 1.3f : 1.0f );
+    return d == DifficultyE::EASY ? 0.75f : d == DifficultyE::HARD ? 1.3f : d == DifficultyE::NIGHTMARE ? 1.9f : 1.0f;
 }
 
 /** @brief How hard Corvin is hit, by difficulty. */
 inline float harm( DifficultyE d )
 {
-    return d == DifficultyE::EASY ? 0.55f : ( d == DifficultyE::HARD ? 1.35f : 1.0f );
+    return d == DifficultyE::EASY ? 0.55f : d == DifficultyE::HARD ? 1.35f : d == DifficultyE::NIGHTMARE ? 1.7f : 1.0f;
 }
 
 }   // namespace play

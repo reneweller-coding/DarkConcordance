@@ -14,6 +14,7 @@
 
 #include <raylib.h>
 
+#include <functional>
 #include <vector>
 
 namespace spaceopera
@@ -99,6 +100,9 @@ struct FigurePose
     float   m_sit = 0.0f;                   ///< 0..1 sitting on the floor, arms round the knees
     float   m_chair = 0.0f;                 ///< 0..1 sitting on a chair or stool, forearms on the table
     float   m_seat = 0.5f;                  ///< the seat's height (m)
+    float   m_hit = 0.0f;                   ///< 1 just hit .. 0 (a flinch of the chest)
+    float   m_knock = 0.0f;                 ///< 1 just thrown back by a heavy blow .. 0
+    float   m_roll = 0.0f;                  ///< 0..1 through a dodge roll (0: none)
 };
 
 /** @brief A person. */
@@ -151,6 +155,12 @@ public:
     static void frame();
 
     /**
+     * @brief Where the floor is, so the skinned figures put their feet on steps and edges.
+     * @param[in] ground  the floor's height at x, z (below -100: none)
+     */
+    static void ground( std::function<float( float, float )> ground );
+
+    /**
      * @brief Advances a walk cycle (for figures drawn from a FigurePose).
      * @param[in,out] p   the pose (its phase moves)
      * @param[in]     dt  seconds
@@ -191,6 +201,9 @@ public:
     int     m_swing = -1;                   ///< the blow under way (see FigurePose)
     float   m_swingT = 0.0f;                ///< how far through it
     float   m_block = 0.0f;                 ///< the shield raised
+    float   m_hit = 0.0f;                   ///< the flinch of a hit (see FigurePose)
+    float   m_knock = 0.0f;                 ///< thrown back
+    float   m_roll = 0.0f;                  ///< through a dodge roll
 
 private:
     /** @brief A part: a mesh on a bone. */
@@ -241,6 +254,7 @@ private:
     Matrix                 m_grip = {};                     ///< the weapon against the right forearm
     std::vector<int>       m_clips;                         ///< the clips the figure plays (see Figure.cpp)
     std::vector<Transform> m_skinPose;                      ///< the body's pose this time
+    int                    m_handL = -1;                    ///< the body's left hand (it holds the rifle's fore end)
     Matrix                 m_place = {};                    ///< the body's place in the world
 };
 

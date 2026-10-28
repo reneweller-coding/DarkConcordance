@@ -97,7 +97,7 @@ hm1_c           = What is beneath the drum?
 hm2             = No. I count. I leave the thinking to the Station Council. The Station Council has not yet agreed on it.
 hm3             = Maintenance levels. Closed for fourteen years. Residents: unknown. The corridors do not match the plan. The freight lift goes there anyway.
 
-h_talk          = A / E: talk
+h_talk          = {use}: talk
 h_exitlocked    = The freight lift goes up to the axis. Talk to Ysolde Varn first – in the Last Shift.
 h_exitlater     = Ysolde has no new job yet: to be continued.
 h_window        = Velm turns past beneath the floor: the cavern inside the asteroid, the other two drums.
@@ -116,7 +116,7 @@ workshop.max    = (maxed out)
 shop.price      = %d scrap
 shop.back       = Back
 shop.have       = Scrap: %d
-talk.next       = A / Enter: continue
+talk.next       = {confirm}: continue
 
 board.title     = THE HARVEST
 board.sub       = What it has swallowed so far

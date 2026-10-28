@@ -737,6 +737,13 @@ bool Level::loadText( const std::string &text )
             int r, c;
             while ( kv >> r >> c ) m_ilkaWay.push_back( { r, c } );
         }
+        else if ( key == "raise" )
+        {
+            // A marker's cell raised (the map has room for one character a cell: the marker, not the height).
+            Raise up = { 0, 0, 0.0f };
+            kv >> up.m_row >> up.m_col >> up.m_height;
+            m_raise.push_back( up );
+        }
         else if ( key == "native" )
         {
             Native n = { 0, 0, 0 };
@@ -803,6 +810,9 @@ bool Level::loadText( const std::string &text )
             else if ( ch >= 'A' && ch <= 'Z' )
                 m_markers.push_back( { ch, r, c, {} } );
         }
+    for ( const Raise &up : m_raise )
+        if ( up.m_row >= 0 && up.m_col >= 0 && up.m_row < m_rows && up.m_col < m_cols )
+            m_cells[(size_t)up.m_row * m_cols + up.m_col].m_height = up.m_height;
     for ( Marker &m : m_markers ) m.m_pos = centre( m.m_row, m.m_col );
     for ( Thing &t : m_things ) t.m_pos = centre( t.m_row, t.m_col );
     // The twilight band as shares of the map's width (a generated map's width is known only now).
@@ -2609,6 +2619,34 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     }
 
 #pragma warning( pop )
+    // A railing along every edge of a floor that drops more than a man's knee to the floor beside it.
+    for ( int r = 0; r < m_rows; ++r )
+        for ( int c = 0; c < m_cols; ++c )
+        {
+            const Cell &k = cell( r, c );
+            if ( k.m_kind != CellE::FLOOR || k.m_height < 0.9f ) continue;
+            for ( int d = 0; d < 4; ++d )
+            {
+                const Cell &n = cell( r + DR[d], c + DC[d] );
+                if ( n.m_kind != CellE::FLOOR || n.m_height > k.m_height - 0.9f ) continue;
+                Vector3 edge = { ( c + 0.5f + DC[d] * 0.46f ) * CellSize, k.m_height,
+                                 ( r + 0.5f + DR[d] * 0.46f ) * CellSize };
+                float   yaw = DC[d] != 0 ? PI * 0.5f : 0.0f;
+                metal.m_color = { 96, 100, 106, 255 };
+                for ( float y : { 0.5f, 0.95f } )
+                    metal.box( place( { edge.x, k.m_height + y, edge.z }, { 0.0f, yaw, 0.0f } ),
+                               { CellSize * 0.5f, 0.022f, 0.022f } );
+                metal.box( place( { edge.x, k.m_height + 0.04f, edge.z }, { 0.0f, yaw, 0.0f } ),
+                           { CellSize * 0.5f, 0.04f, 0.012f } );
+                Vector3 along = { DR[d] != 0 ? 1.0f : 0.0f, 0.0f, DC[d] != 0 ? 1.0f : 0.0f };
+                for ( float u : { -0.5f, 0.5f } )
+                {
+                    Vector3 p = Vector3Add( edge, Vector3Scale( along, u * CellSize * 0.98f ) );
+                    metal.box( place( { p.x, k.m_height + 0.5f, p.z } ), { 0.025f, 0.48f, 0.025f } );
+                }
+                metal.m_color = WHITE;
+            }
+        }
     // Galleries along the walls of the halls: a walkway of slats on brackets, a railing at its edge, lights beneath it
     // (they dissolve with the walls). A ladder up the wall at one end.
     for ( int r = 0; r < m_rows; ++r )

@@ -609,6 +609,8 @@ void Game::poseCrew( std::vector<Drawable> &out )
         p.m_time = m_time + f.m_id;
         p.m_air = !f.m_ground && f.m_alive;
         p.m_down = f.m_down;
+        p.m_hit = f.m_flash;
+        p.m_knock = f.m_knock;
         p.m_recoil = f.m_burst > 0 ? 1.0f - f.m_timer / 0.14f : 0.0f;
         if ( f.m_swingT >= 0.0f )
         {

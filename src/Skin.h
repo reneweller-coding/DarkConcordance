@@ -137,6 +137,25 @@ public:
     /** @return a bone's place in the model's space as a matrix */
     static Matrix matrix( const Transform &t );
 
+    /**
+     * @brief Turns a bone and everything that hangs on it about a point.
+     * @param[in,out] pose   the pose
+     * @param[in]     bone   the bone
+     * @param[in]     q      the turn
+     * @param[in]     pivot  about this point (the model's space)
+     */
+    void turn( std::vector<Transform> &pose, int bone, Quaternion q, Vector3 pivot ) const;
+
+    /**
+     * @brief Bends an arm or a leg so that its end reaches a point (the joint stays on the side it bends to now).
+     * @param[in,out] pose    the pose (the chain and all that hangs on it move)
+     * @param[in]     upper   the upper bone (upper arm, thigh)
+     * @param[in]     lower   the lower bone (forearm, shin)
+     * @param[in]     end     the end (hand, foot)
+     * @param[in]     target  where the end goes (the model's space)
+     */
+    void reach( std::vector<Transform> &pose, int upper, int lower, int end, Vector3 target ) const;
+
     /** @return the head bone's index */
     int head() const { return m_head; }
     /** @return how many bones */

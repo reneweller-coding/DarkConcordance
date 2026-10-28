@@ -51,10 +51,10 @@ p_hero5         = The girl. Ilka.
 p_doc3          = I'm sorry. They brought her in with the lighter. Empty.
 p_doc4          = Your treatment has been paid for, by the way. By a woman called Ysolde Varn. She'd like to speak with you.
 
-h_move          = Move: left stick / WASD. Turn the camera: right stick, or drag with the right mouse button.
+h_move          = Move: {move}. Turn the camera: {camera}. Dodge roll: {dodge}.
 h_thrust        = Thrust pulse: gravity tilts the way the arrow points. Lean against it – and mind the loose cargo.
 h_east          = The east bulkhead is open. To hold four.
-h_use           = A / E opens doors, searches lockers, reads terminals.
+h_use           = {use} opens doors, searches lockers, reads terminals.
 
 note.crewlog.title = Log, lighter “Good Hope”
 note.crewlog    = Day 41. Two more days to Velm. The water plant manages no more than two litres a head; I promised the people in the containers three. | Day 42. Two small contacts on long-range scan, no transponder, keeping their distance. I reported to Velm what we have aboard. Maybe that was a mistake. – Reyes

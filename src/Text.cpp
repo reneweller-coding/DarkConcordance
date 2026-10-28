@@ -5,6 +5,8 @@
  */
 #include "Text.h"
 
+#include "Glyphs.h"
+
 #include <raylib.h>
 
 #include <algorithm>
@@ -62,7 +64,7 @@ bool readLanguage( const std::string &assets, const std::string &language, std::
             std::string t = trim( line );
             size_t      eq = t.find( '=' );
             if ( t.empty() || t[0] == '#' || eq == std::string::npos ) continue;
-            out[trim( t.substr( 0, eq ) )] = trim( t.substr( eq + 1 ) );
+            out[trim( t.substr( 0, eq ) )] = actionTokens( trim( t.substr( eq + 1 ) ) );   // {use} … as buttons
         }
     }
     return true;

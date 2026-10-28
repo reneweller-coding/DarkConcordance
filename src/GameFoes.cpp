@@ -798,15 +798,15 @@ void Game::drawFoeHud( int w, int h, float s )
     if ( b < 0 || !m_foes[b].m_awake || m_foes[b].m_kind == FoeE::SHELL ) return;
     const Foe  &f = m_foes[b];
     std::string name = f.m_kind == FoeE::TAXATOR
-                           ? std::string( tr( f.m_variant == 1   ? "boss.hydraulic"
-                                              : f.m_variant == 2 ? "boss.okafor"
-                                              : f.m_variant == 3 ? "boss.leader"
-                                              : f.m_variant == 4 ? "boss.salvager"
-                                              : f.m_variant == 5 ? "boss.lamm"
-                                              : f.m_variant == 6 ? "boss.chief"
-                                              : f.m_variant == 7 ? "boss.foreman"
-                                              : f.m_variant == 8 ? "boss.varn"
-                                                                 : "boss.taxator" ) )
+                           ? std::string( bossTitle( f.m_variant == 1   ? "boss.hydraulic"
+                                                     : f.m_variant == 2 ? "boss.okafor"
+                                                     : f.m_variant == 3 ? "boss.leader"
+                                                     : f.m_variant == 4 ? "boss.salvager"
+                                                     : f.m_variant == 5 ? "boss.lamm"
+                                                     : f.m_variant == 6 ? "boss.chief"
+                                                     : f.m_variant == 7 ? "boss.foreman"
+                                                     : f.m_variant == 8 ? "boss.varn"
+                                                                        : "boss.taxator" ) )
                            : std::string( TextFormat( tr( "boss.guardian" ), foeName( f ).c_str() ) );
     if ( !m_level.word( "bossname" ).empty() ) name = tr( m_level.word( "bossname" ) );   // a tale's own
     float pw = 640.0f * s, px = w * 0.5f - pw * 0.5f, py = 40.0f * s;

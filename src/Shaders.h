@@ -847,7 +847,24 @@ uniform float time;
 uniform vec2 resolution;
 uniform vec4 grade;      // a tale's light: colour, contrast, extra grain, extra vignette
 uniform vec3 gradeTint;
+uniform int colourVision;   // 1 red-green, 2 blue-yellow: what the eye cannot tell apart is moved where it can
 out vec4 finalColor;
+
+vec3 daltonize( vec3 c, int kind )
+{
+    vec3 lms = vec3( 17.8824 * c.r + 43.5161 * c.g + 4.11935 * c.b, 3.45565 * c.r + 27.1554 * c.g + 3.86714 * c.b,
+                     0.0299566 * c.r + 0.184309 * c.g + 1.46709 * c.b );
+    if( kind == 1 ) lms.y = 0.494207 * lms.x + 1.24827 * lms.z;
+    else lms.z = -0.395913 * lms.x + 0.801109 * lms.y;
+    vec3 seen = vec3( 0.0809444479 * lms.x - 0.130504409 * lms.y + 0.116721066 * lms.z,
+                      -0.0102485335 * lms.x + 0.0540193266 * lms.y - 0.113614708 * lms.z,
+                      -0.000365296938 * lms.x - 0.00412161469 * lms.y + 0.693511405 * lms.z );
+    vec3 lost = c - seen;
+    // Red-green: what red carried goes to green and blue; blue-yellow: what blue carried goes to red and green.
+    vec3 moved = kind == 1 ? vec3( 0.0, 0.7 * lost.r + lost.g, 0.7 * lost.r + lost.b )
+                           : vec3( 0.7 * lost.b, 0.7 * lost.b, 0.0 );
+    return clamp( c + moved, 0.0, 1.0 );
+}
 float hash( vec2 p ) { return fract( sin( dot( p, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ); }
 void main()
 {
@@ -869,6 +886,7 @@ void main()
     c = clamp( ( mix( vec3( g ), c, grade.x ) * gradeTint - 0.5 ) * grade.y + 0.5, 0.0, 1.0 );
     c *= 1.0 - grade.w * pow( length( d ) * 1.3, 2.0 );
     c += ( hash( uv * resolution + fract( time ) * 91.7 ) - 0.5 ) * ( 0.035 + grade.z );
+    if( colourVision > 0 ) c = daltonize( c, colourVision );
     finalColor = vec4( c, 1.0 );
 }
 )";

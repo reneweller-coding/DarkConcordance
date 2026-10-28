@@ -797,9 +797,66 @@ private:
             for ( int k = m_rng.range( 1, 3 ); k > 0; --k )
                 block( r, anywhere( r, m_rng.range( 1, 2 ), m_rng.range( 1, 2 ) ), '#' );
         }
-        // Now and then a raised floor with a step round it.
+        // Now and then a raised floor with a step round it; in the larger rooms indoors a walkway along a wall.
         if ( big && t != "street" && m_rng.chance( 0.3f ) )
             block( r, anywhere( r, m_rng.range( 4, 5 ), m_rng.range( 4, 6 ) ), '1', '2' );
+        if ( r.width() >= 9 && r.height() >= 8 && !outdoor( t ) && t != "street" && room.m_kind == MAIN &&
+             m_rng.chance( 0.45f ) )
+            ledge( r );
+    }
+
+    /**
+     * @brief A walkway raised along a long wall: a metre and a half up, two steps at one end; at the other, someone
+     *        who shoots from up there (if the level's packs have shooters).
+     * @param[in] r  the room
+     */
+    void ledge( const Rect &r )
+    {
+        for ( int tries = 0; tries < 8; ++tries )
+        {
+            int  side = m_rng.range( 0, 3 );   // 0 north, 1 east, 2 south, 3 west
+            bool alongX = side == 0 || side == 2;
+            int  len = std::min( 7, ( alongX ? r.width() : r.height() ) - 4 );
+            if ( len < 5 ) return;
+            int from =
+                alongX ? m_rng.range( r.m_c0 + 2, r.m_c1 - 1 - len ) : m_rng.range( r.m_r0 + 2, r.m_r1 - 1 - len );
+            std::vector<std::pair<int, int>> cells;
+            for ( int k = 0; k < len; ++k )
+                cells.push_back( alongX ? std::pair<int, int>{ side == 0 ? r.m_r0 : r.m_r1, from + k }
+                                        : std::pair<int, int>{ from + k, side == 3 ? r.m_c0 : r.m_c1 } );
+            bool ok = true;
+            for ( auto [y, x] : cells )
+            {
+                ok = ok && free( y, x );
+                for ( int d = 0; d < 4; ++d ) ok = ok && m_g[y + DR[d]][x + DC[d]] != '/';
+            }
+            if ( !ok ) continue;
+            std::vector<std::string> saved = m_g;
+            bool                     flip = m_rng.chance( 0.5f );   // the steps at the start or at the end
+            for ( int k = 0; k < len; ++k )
+            {
+                int step = flip ? len - 1 - k : k;
+                m_g[cells[k].first][cells[k].second] = step == 0 ? '1' : ( step == 1 ? '2' : '3' );
+            }
+            if ( !connected( r ) )
+            {
+                m_g = saved;
+                continue;
+            }
+            // Up there, at the far end, one who shoots (a level's own shooters: carbines, shock rifles, rotary guns).
+            char shooter = 0;
+            for ( const Pack &p : m_rc.m_packs )
+                for ( char ch : p.m_letters )
+                    if ( !shooter && ( ch == 'T' || ch == 'U' || ch == '<' || ch == '%' ) ) shooter = ch;
+            if ( shooter )
+            {
+                auto [y, x] = cells[flip ? 0 : len - 1];
+                m_g[y][x] = shooter;
+                m_foes.insert( key( y, x ) );
+                m_extra.push_back( "raise " + std::to_string( y ) + " " + std::to_string( x ) + " 1.5" );
+            }
+            return;
+        }
     }
 
     /** @return the cell lies in or on the wall of a room of this kind */

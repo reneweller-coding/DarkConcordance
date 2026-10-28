@@ -7,6 +7,7 @@
  */
 #include "Game.h"
 #include "GameShared.h"
+#include "Journal.h"
 
 #include "MeshBuilder.h"
 #include "Text.h"
@@ -178,6 +179,8 @@ void Game::gainXp( int xp )
         m_progress.m_xp -= xpNeed( m_progress.m_heroLevel );
         ++m_progress.m_heroLevel;
         ++m_progress.m_points;
+        if ( m_progress.m_heroLevel >= 20 ) journal::win( "level_20" );
+        if ( m_progress.m_heroLevel >= 40 ) journal::win( "level_40" );
         m_levelUp = 3.5f;
         refreshStats();
         m_hp = hpMax();
@@ -201,7 +204,9 @@ void Game::dropItem( Vector3 at, float luck, int slot )
     if ( m_tale ) return;   // a memory leaves nothing to carry
     unsigned seed = (unsigned)m_progress.m_seed;
     int      level = std::max( 1, areaLevel() + (int)( rnd() * 3.0f ) - 1 );
-    Item     it = makeItem( level, heroIndex(), seed, luck * ( 1.0f + stat( StatE::FIND ) / 100.0f ), slot );
+    // Albtraum: finds a few levels higher, the rare ones more often.
+    if ( m_difficulty == DifficultyE::NIGHTMARE ) level += 4, luck *= 1.6f;
+    Item it = makeItem( level, heroIndex(), seed, luck * ( 1.0f + stat( StatE::FIND ) / 100.0f ), slot );
     m_progress.m_seed = (int)( seed & 0x7fffffff );
     Loot l;
     l.m_item = it;
@@ -248,6 +253,9 @@ void Game::updateLoot( float dt )
         }
         l.m_alive = false;
         m_progress.m_bag.push_back( l.m_item );
+        journal::count( "finds" );
+        if ( l.m_item.m_rarity == RarityE::UNIQUE ) journal::count( "uniques" );
+        if ( l.m_item.m_rarity == RarityE::SET ) journal::count( "setpieces" );
         m_toast = itemName( l.m_item );
         m_toastColor = rarityColor( l.m_item.m_rarity );
         m_toastTimer = 2.5f;
@@ -473,7 +481,23 @@ void Game::useSkills( float dt, const GameInput &in )
     for ( float &c : m_cool ) c = fmaxf( 0.0f, c - dt );
     m_overcharge = fmaxf( 0.0f, m_overcharge - dt );
     m_levelUp = fmaxf( 0.0f, m_levelUp - dt );
+    m_dodgeCool = fmaxf( 0.0f, m_dodgeCool - dt );
     if ( m_dead || m_finished || m_scene > 0 || m_level.m_peaceful ) return;
+    // Every hero's dodge roll: where the stick points (or ahead), a moment untouchable.
+    if ( in.m_dodge && m_dodgeCool <= 0.0f && m_dash <= 0.0f && m_ground )
+    {
+        Vector3 v = { m_vel.x, 0.0f, m_vel.z };
+        m_dashKind = 0;
+        m_dash = m_dashLen = 0.3f;
+        m_dashDir = Vector3Length( v ) > 1.0f ? Vector3Normalize( v ) : Vector3{ sinf( m_yaw ), 0.0f, cosf( m_yaw ) };
+        m_dashDamage = 0.0f;
+        m_dashHit.clear();
+        m_invuln = fmaxf( m_invuln, 0.35f );
+        m_dodgeCool = 1.4f;
+        m_swing = -1;
+        journal::count( "dodges" );
+        m_audio.play( SfxE::JUMP, m_pos, m_camTarget, 0.6f );
+    }
     int   hero = heroIndex();
     float cooldown = 1.0f - fminf( 0.6f, stat( StatE::COOLDOWN ) / 100.0f );
     float power = skillPower();
@@ -511,7 +535,7 @@ void Game::useSkills( float dt, const GameInput &in )
             // A roll goes where the stick points (or ahead), a charge straight ahead and through them.
             bool charge = key == "skill.charge";
             m_dashKind = charge ? 1 : 0;
-            m_dash = charge ? 0.38f : 0.28f;
+            m_dash = m_dashLen = charge ? 0.38f : 0.28f;
             Vector3 v = { m_vel.x, 0.0f, m_vel.z };
             m_dashDir = !charge && Vector3Length( v ) > 1.0f ? Vector3Normalize( v ) : fwd;
             m_dashDamage = ( 30.0f + 15.0f * r ) * power;
@@ -596,10 +620,11 @@ void Game::drawLootHud( int w, int h, float s )
     float part = Clamp( m_progress.m_xp / (float)xpNeed( m_progress.m_heroLevel ), 0.0f, 1.0f );
     DrawRectangle( (int)bx, (int)by, (int)bw, (int)( 6 * s ), { 0, 0, 0, 160 } );
     DrawRectangle( (int)bx, (int)by, (int)( bw * part ), (int)( 6 * s ), { 255, 200, 110, 220 } );
-    text( TextFormat( tr( "hud.level" ), m_progress.m_heroLevel ),
-          bx - 12 * s -
-              MeasureTextEx( m_font, TextFormat( tr( "hud.level" ), m_progress.m_heroLevel ), 18 * s, 1.0f ).x,
-          by - 8 * s, 18.0f, { 255, 210, 140, 230 } );
+    // The level, and in a new game+ its cycle.
+    std::string level = TextFormat( tr( "hud.level" ), m_progress.m_heroLevel );
+    if ( m_progress.m_cycle > 0 ) level += std::string( "  ·  " ) + TextFormat( tr( "hud.cycle" ), m_progress.m_cycle );
+    text( level.c_str(), bx - 12 * s - MeasureTextEx( m_font, level.c_str(), 18 * s, 1.0f ).x, by - 8 * s, 18.0f,
+          { 255, 210, 140, 230 } );
     if ( m_progress.m_points > 0 )
         text( TextFormat( tr( "hud.points" ), m_progress.m_points ), bx + bw + 12 * s, by - 8 * s, 18.0f,
               { 140, 220, 255, 230 } );
@@ -622,7 +647,7 @@ void Game::drawLootHud( int w, int h, float s )
                                (int)( size * Clamp( cool, 0.0f, 1.0f ) ), { 0, 0, 0, 170 } );
             DrawRectangleLinesEx( { x, y, size, size }, 2.0f * s,
                                   known ? Color{ 255, 190, 110, 200 } : Color{ 90, 90, 90, 160 } );
-            text( tr( keys[slot] ), x + 6 * s, y + 4 * s, 16.0f, { 200, 200, 200, 230 } );
+            text( tr( keys[slot] ), x + 5 * s, y + 2 * s, 26.0f, WHITE );   // the button, as the device has it
             text( tr( std::string( skillDefs()[k].m_key ) + ".short" ), x + size * 0.5f, y + size - 24 * s, 15.0f,
                   known ? Color{ 240, 230, 210, 240 } : Color{ 120, 120, 120, 200 }, true );
         }
