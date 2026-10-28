@@ -138,6 +138,9 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
                     s.m_figure.m_cloth = w.m_cloth;
                     s.m_figure.m_scale = w.m_scale;
                 }
+            // A whole person where one is made by their look (the portrait's name).
+            s.m_figure.m_dressed = -1;
+            dressAs( s.m_figure, look );
             if ( companion( look ) ) dressCompanion( s, look );
         }
         if ( companion( look ) && look == heroKey( m_tale ? m_realHero : m_heroKind ) ) s.m_hidden = true;

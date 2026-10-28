@@ -1,0 +1,7 @@
+skin base
+cut eyebrow003
+cut eyelashes01
+eyes high-poly
+cloth shoes05
+cut short04
+armour Glactic_Warrior_02

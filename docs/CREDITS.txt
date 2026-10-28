@@ -20,14 +20,16 @@ Font
 
 People and their movements
 --------------------------
-- The heroes' bodies are made with MPFB (MakeHuman for Blender, https://static.makehumancommunity.org/mpfb/) from
-  the MakeHuman assets, CC0: the base mesh, eyes, brows and lashes (MakeHuman system assets), the hair short02 and
-  bob02 (Data Collection AB), the hair bun by Rehman Polanski (CC0 in its asset pack; its file names AGPL 3.0), the
-  skins by jartur69, toigo and onlytheghosts, the suits and armour by MatCreator (bodysuit 2021, sci-fi armour
-  Guardian, Helios, Jupiter 7) and TheGreatEngineer (galactic warrior uniform). Tinted and fitted by
-  tools/make_heroes.py.
-- The other people's bodies, hair and every animation: Quaternius (https://quaternius.com), CC0 1.0 - Universal
-  Base Characters, Universal Animation Library and Universal Animation Library 2 (assets/models/quaternius/LICENSE.txt).
+- The heroes, the people with a portrait, the crowds of the hubs and the soldiers in the foes' suits are made with
+  MPFB (MakeHuman for Blender, https://static.makehumancommunity.org/mpfb/) from the MakeHuman assets, CC0: the
+  base mesh, eyes, brows, lashes, hair, skins, shoes and everyday clothes of the MakeHuman system assets (Data
+  Collection AB), the skins by jartur69, toigo and onlytheghosts, the hair bun and the tunic, trousers and boots by
+  Rehman Polanski (CC0 in their asset packs; the bun's file names AGPL 3.0), the suits and armour by MatCreator
+  (bodysuit 2021, sci-fi armour Guardian, Helios, Jupiter 7), TheGreatEngineer (galactic warrior uniform) and
+  culturalibre (hero and heroine suits), the robe by Donitz. Tinted and fitted by tools/make_heroes.py.
+- The rest of the people's bodies and hair, and every animation: Quaternius (https://quaternius.com), CC0 1.0 -
+  Universal Base Characters, Universal Animation Library and Universal Animation Library 2
+  (assets/models/quaternius/LICENSE.txt).
 
 Made with these tools (the results belong to the game)
 ------------------------------------------------------

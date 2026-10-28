@@ -1,0 +1,7 @@
+skin base
+cloth heroine_suit_2
+cut eyebrow003
+cut eyelashes01
+eyes high-poly
+cut long01
+cloth shoes01

@@ -399,7 +399,9 @@ void main()
         orm = texture( texture1, uv ).rgb;
         nObj = n0;
         // A cut-out (hair, brows, lashes): what is clear in the texture is not there.
-        if( matParams.w > 5.5 && tex.a < 0.5 ) discard;
+        if( matParams.w > 5.5 && matParams.w < 6.5 && tex.a < 0.5 ) discard;
+        // Tinted (a dressed body's clothes and armour): the person's or the faction's colour over the texture.
+        if( matParams.w > 6.5 ) albedo *= drawTint.rgb;
         // A decal: blended by its alpha over what is under it (nothing written where it is empty); a stain multiplies
         // what is under it (the blending does it: destination times this).
         if( matParams.w > 2.5 && matParams.w < 4.5 )

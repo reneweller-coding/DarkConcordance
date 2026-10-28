@@ -12,6 +12,7 @@
 
 #include <cmath>
 #include <iterator>
+#include <sstream>
 
 namespace spaceopera
 {
@@ -108,6 +109,7 @@ void Game::loadSkins( Gfx &gfx )
     Image     nrm = GenImageColor( 1, 1, { 128, 128, 255, 255 } );
     Texture2D nrmTex = LoadTextureFromImage( nrm );
     UnloadImage( nrm );
+    m_flatOrm = ormTex, m_flatNrm = nrmTex;
     auto surface = [&]( Texture2D albedo, float mode )
     {
         GenTextureMipmaps( &albedo );
@@ -155,27 +157,6 @@ void Game::loadSkins( Gfx &gfx )
             }
         }
     }
-    // The hero's own body, dressed (tools/make_heroes.py: MPFB, CC0): its textures as they are, the hair, brows and
-    // lashes cut out where their texture is clear.
-    const char *const own[3] = { "corvin.glb", "dorra.glb", "ione.glb" };
-    std::string       file = m_assets + "/models/heroes/" + ( (int)m_heroKind < 3 ? own[(int)m_heroKind] : "" );
-    if ( (int)m_heroKind < 3 && FileExists( file.c_str() ) && m_heroModel.load( file, file ) )
-    {
-        m_heroModel.addClips( dir + "anim_library.glb", one );
-        m_heroModel.addClips( dir + "anim_library2.glb", two );
-        for ( int i = 0; i < m_heroModel.m_body.meshCount; ++i )
-        {
-            Texture2D albedo =
-                m_heroModel.m_body.materials[m_heroModel.m_body.meshMaterial[i]].maps[MATERIAL_MAP_ALBEDO].texture;
-            Image  img = LoadImageFromTexture( albedo );
-            Color *px = LoadImageColors( img );
-            int    clear = 0, n = img.width * img.height;
-            for ( int k = 0; k < n; k += 7 ) clear += px[k].a < 128 ? 1 : 0;
-            UnloadImageColors( px );
-            UnloadImage( img );
-            m_heroSurfaces.push_back( surface( albedo, clear * 7 > n / 20 ? 6.0f : 1.0f ) );
-        }
-    }
     Image     white = GenImageColor( 4, 4, WHITE );
     Texture2D cloth = LoadTextureFromImage( white );
     UnloadImage( white );
@@ -210,17 +191,33 @@ void Game::bodyFigures()
         put( m_hero, 1, 1, 2, 0, suit, true );
     else
         put( m_hero, 0, 1, 0, 0, suit, true );
-    if ( !m_heroSurfaces.empty() )
+    // The hero's own body where it is made (tools/make_heroes.py): dressed, at its own size.
+    int own = dressed( heroKey( m_heroKind ) );
+    if ( own >= 0 )
     {
         FigureBody b;
-        b.m_model = &m_heroModel;
-        b.m_surfaces = m_heroSurfaces;
-        b.m_dressed = true;
+        b.m_model = &m_dressed[own].m_model;
+        b.m_surfaces = m_dressed[own].m_surfaces;
+        b.m_dressed = b.m_ownSize = true;
+        b.m_cloth = { 1.0f, 1.0f, 1.0f };
         m_hero.body( b );
     }
     // Men in suits; the frames twice a man's height move as men do, but nobody is seen inside their plates.
     for ( Figure *f : { &m_boarderBaton, &m_boarderGun, &m_guardFigure, &m_heavyFigure } )
         put( *f, 0, 0, 1, 0, suit, true );
+    // Where a soldier's body is made: a whole one under the plates' helmet, the armour in the faction's colour.
+    int soldier = dressed( "soldier" ), heavy = dressed( "heavy" );
+    for ( Figure *f : { &m_boarderBaton, &m_boarderGun, &m_guardFigure, &m_heavyFigure } )
+    {
+        int k = f == &m_heavyFigure && heavy >= 0 ? heavy : soldier;
+        if ( k < 0 ) continue;
+        FigureBody b;
+        b.m_model = &m_dressed[k].m_model;
+        b.m_surfaces = m_dressed[k].m_surfaces;
+        b.m_dressed = b.m_helmet = true;
+        b.m_cloth = surfaceColour( f->look().m_armor );
+        f->body( b );
+    }
     for ( Figure *f : { &m_taxatorFigure, &m_hydraFigure, &m_okaforFigure, &m_leaderFigure, &m_salvagerFigure,
                         &m_lammFigure, &m_chiefFigure, &m_foremanFigure, &m_varnFigure } )
         put( *f, 0, 0, -1, 0, suit, false );
@@ -298,6 +295,113 @@ void Game::dressPerson( Person &q, unsigned seed )
     q.m_skin = SkinState();
     q.m_skin.m_clip = m_clip["Idle_Loop"];
     q.m_skin.m_time = ( seed % 97 ) * 0.11f;
+    // A whole person where they are made: Ysolde, Kiri and the child as themselves, the crowd one of nine by the seed,
+    // their clothes in the colour chosen above.
+    static const char *const crowd[] = { "worn1",  "worn2",  "worn3",  "crowd1", "crowd2",
+                                         "crowd3", "crowd4", "crowd5", "crowd6" };
+    bool                     named = q.m_look == 4 || q.m_look == 5 || q.m_look == 8;
+    const char              *name = q.m_look == 4   ? "ysolde"
+                                    : q.m_look == 5 ? "kiri"
+                                    : q.m_look == 8 ? "kind"
+                                                    : crowd[( seed / 29 ) % 9];
+    dressAs( q, name );
+    if ( q.m_dressed >= 0 && !named )
+    {
+        float top = fmaxf( 0.05f, fmaxf( q.m_cloth.x, fmaxf( q.m_cloth.y, q.m_cloth.z ) ) );
+        q.m_dressTint = Vector3Add( Vector3Scale( q.m_cloth, 0.75f / top ), { 0.25f, 0.25f, 0.25f } );
+    }
+}
+
+int Game::dressed( const std::string &name )
+{
+    for ( size_t i = 0; i < m_dressed.size(); ++i )
+        if ( m_dressed[i].m_name == name ) return m_dressed[i].m_surfaces.empty() ? -1 : (int)i;
+    m_dressed.emplace_back();
+    Dressed &d = m_dressed.back();
+    d.m_name = name;
+    std::string file = m_assets + "/models/heroes/" + name + ".glb";
+    if ( !FileExists( file.c_str() ) ) file = m_assets + "/models/people/" + name + ".glb";
+    if ( !m_skins || !FileExists( file.c_str() ) || !d.m_model.load( file, file ) ) return -1;
+    std::string dir = m_assets + "/models/quaternius/";
+    d.m_model.addClips( dir + "anim_library.glb",
+                        std::vector<std::string>( std::begin( Clips1 ), std::end( Clips1 ) ) );
+    d.m_model.addClips( dir + "anim_library2.glb",
+                        std::vector<std::string>( std::begin( Clips2 ), std::end( Clips2 ) ) );
+    // The people share the clips' numbers with Quaternius' bodies (the same libraries, the same lists).
+    if ( d.m_model.clip( "Idle_Loop" ) != m_body[0].clip( "Idle_Loop" ) ||
+         d.m_model.clip( "Sitting_Idle_Loop" ) != m_body[0].clip( "Sitting_Idle_Loop" ) )
+        return -1;
+    // What each mesh is (make_heroes.py writes it beside the file): skin and eyes as they are, the hair, brows and
+    // lashes cut out, clothes and armour tinted per drawing.
+    std::vector<std::string> roles;
+    char                    *text = LoadFileText( ( file + ".txt" ).c_str() );
+    if ( text )
+    {
+        std::stringstream lines( text );
+        std::string       role, mesh;
+        while ( lines >> role && std::getline( lines, mesh ) ) roles.push_back( role );
+        UnloadFileText( text );
+    }
+    for ( int i = 0; i < d.m_model.m_body.meshCount; ++i )
+    {
+        Texture2D albedo =
+            d.m_model.m_body.materials[d.m_model.m_body.meshMaterial[i]].maps[MATERIAL_MAP_ALBEDO].texture;
+        const std::string role = i < (int)roles.size() ? roles[i] : "skin";
+        float             mode = role == "cut" ? 6.0f : role == "cloth" || role == "armour" ? 7.0f : 1.0f;
+        GenTextureMipmaps( &albedo );
+        SetTextureFilter( albedo, TEXTURE_FILTER_TRILINEAR );
+        Surface s = m_gfx->surface( albedo, m_flatOrm, m_flatNrm, Texture2D{} );
+        s.m_uvScale = 1.0f;
+        s.m_params = { 1.0f, 0.0f, 0.0f, mode };
+        s.m_variation = 0.0f;
+        m_surfaces.push_back( s );
+        d.m_surfaces.push_back( (int)m_surfaces.size() - 1 );
+    }
+    return (int)m_dressed.size() - 1;
+}
+
+void Game::dressAs( Person &q, const std::string &name )
+{
+    int k = m_skins ? dressed( name ) : -1;
+    if ( k < 0 ) return;
+    q.m_dressed = k;
+    q.m_dressTint = { 1.0f, 1.0f, 1.0f };
+    q.m_scale = 1.0f;   // a whole person has their own size
+    if ( q.m_body < 0 ) q.m_body = 0;
+}
+
+const SkinModel &Game::personModel( const Person &q ) const
+{
+    return q.m_dressed >= 0 ? m_dressed[q.m_dressed].m_model : m_body[q.m_body];
+}
+
+Vector3 Game::surfaceColour( int surface )
+{
+    auto known = m_surfaceColour.find( surface );
+    if ( known != m_surfaceColour.end() ) return known->second;
+    Vector3 c = { 1.0f, 1.0f, 1.0f };
+    if ( surface >= 0 && surface < (int)m_surfaces.size() )
+    {
+        Image  img = LoadImageFromTexture( m_surfaces[surface].m_material.maps[MATERIAL_MAP_ALBEDO].texture );
+        Color *px = LoadImageColors( img );
+        double sum[3] = { 0, 0, 0 };
+        int    n = 0;
+        for ( int k = 0; k < img.width * img.height; k += 13, ++n )
+            sum[0] += px[k].r, sum[1] += px[k].g, sum[2] += px[k].b;
+        UnloadImageColors( px );
+        UnloadImage( img );
+        if ( n > 0 )
+        {
+            // The texture's mean under the surface's own tint (the factions share one armour texture).
+            Color   t = m_surfaces[surface].m_tint;
+            Vector3 mean = { (float)( sum[0] / n / 255.0 * t.r / 255.0 ), (float)( sum[1] / n / 255.0 * t.g / 255.0 ),
+                             (float)( sum[2] / n / 255.0 * t.b / 255.0 ) };
+            float   top = fmaxf( 0.02f, fmaxf( mean.x, fmaxf( mean.y, mean.z ) ) );
+            c = Vector3Scale( mean, Clamp( top * 2.2f, 0.3f, 1.0f ) / top );
+        }
+    }
+    m_surfaceColour[surface] = c;
+    return c;
 }
 
 void Game::updateSkins( float dt )
@@ -307,7 +411,7 @@ void Game::updateSkins( float dt )
     {
         Person &q = m_people[i];
         if ( q.m_body < 0 ) continue;
-        const SkinModel &m = m_body[q.m_body];
+        const SkinModel &m = personModel( q );
         float            speed = Vector2Length( q.m_vel ), rate = 1.0f;
         int              clip = m_clip["Idle_Loop"];
         unsigned         h = (unsigned)i * 2654435761u;
@@ -340,14 +444,14 @@ void Game::updateSkins( float dt )
         const char *clip = talking ? "Idle_Talking_Loop" : q.m_look == 1 ? "Idle_FoldArms_Loop" : "Idle_Loop";
         if ( q.m_chair > 0.5f )
             clip = talking ? "Sitting_Talking_Loop" : "Sitting_Idle_Loop";   // a companion at the table
-        m_body[q.m_body].play( q.m_skin, m_clip[clip], 0.4f );
-        m_body[q.m_body].advance( q.m_skin, dt );
+        personModel( q ).play( q.m_skin, m_clip[clip], 0.4f );
+        personModel( q ).advance( q.m_skin, dt );
     }
 }
 
 void Game::poseSkin( Person &q, std::vector<Drawable> &out )
 {
-    const SkinModel &m = m_body[q.m_body];
+    const SkinModel &m = personModel( q );
     m.pose( q.m_skin, q.m_bones );
     // On a stool the pelvis sits on the seat.
     float y = q.m_pos.y;
@@ -357,6 +461,29 @@ void Game::poseSkin( Person &q, std::vector<Drawable> &out )
                                    MatrixTranslate( q.m_pos.x, y, q.m_pos.z ) );
     Matrix head = MatrixMultiply( q.m_bones[m.head()], place );
     float  neck = m.m_body.bindPose[m.head()].translation.y - 0.07f;
+    // A whole person: their meshes as they are made, the clothes tinted; no garments, no hair of the game's.
+    if ( q.m_dressed >= 0 )
+    {
+        const std::vector<int> &surfaces = m_dressed[q.m_dressed].m_surfaces;
+        for ( int i = 0; i < m.m_body.meshCount && i < (int)surfaces.size(); ++i )
+        {
+            Drawable d;
+            d.m_mesh = m.m_body.meshes[i];
+            d.m_surface = surfaces[i];
+            d.m_transform = place;
+            if ( m.m_skinned[i] )
+            {
+                d.m_bones = q.m_bones.data();
+                d.m_boneCount = (int)q.m_bones.size();
+            }
+            else
+                d.m_transform = head;
+            d.m_tint = { q.m_dressTint.x, q.m_dressTint.y, q.m_dressTint.z, 0.0f };
+            d.m_spotShadow = false;
+            out.push_back( d );
+        }
+        return;
+    }
     for ( int i = 0; i < m.m_body.meshCount; ++i )
     {
         Drawable d;

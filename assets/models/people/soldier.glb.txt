@@ -1,0 +1,7 @@
+skin base
+cut eyebrow003
+cut eyelashes01
+eyes high-poly
+cloth MC-BodySuit-2021
+armour MC-SciFi-Armor_Guardian
+armour MC-SciFi-Armor_Helios

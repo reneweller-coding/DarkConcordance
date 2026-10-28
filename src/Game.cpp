@@ -1863,6 +1863,8 @@ void Game::moveHero( float dt )
         logDeath();
         m_stings.push_back( "death" );
         if ( m_autoplay ) TraceLog( LOG_WARNING, "DEATH: fall at %.1f,%.1f t=%.0f", m_pos.x, m_pos.z, m_time );
+        // The autopilot fell soon after a jump: no more jumps from where it took off.
+        if ( m_autoplay && m_jumpFrom >= 0 && m_time - m_jumpTime < 8.0f ) m_noJump.insert( m_jumpFrom );
     }
     m_invuln -= dt;
     m_hurtFlash = fmaxf( 0.0f, m_hurtFlash - dt * 2.5f );
@@ -2885,7 +2887,7 @@ void Game::plan()
     std::function<bool( int, int )> want;
     if ( m_level.m_vacuum || !m_waters.empty() || !m_level.m_meter.empty() )
     {
-        if ( ( m_outside || m_metering ) && m_oxygen < m_oxygenMax * 0.3f ) m_seekAir = true;
+        if ( ( m_outside || m_metering ) && m_oxygen < m_oxygenMax * 0.3f && m_seekCool <= 0.0f ) m_seekAir = true;
         if ( m_oxygen > m_oxygenMax * 0.95f ) m_seekAir = false;
         if ( m_seekAir )
             want = [&]( int r, int c )
@@ -2898,6 +2900,8 @@ void Game::plan()
                 if ( m_level.m_meter == "warmth" ) return !m_level.m_meterIndoor && !m_level.outdoor( r, c );
                 if ( m_level.m_meter == "dose" ) return !exposed( p );
                 if ( m_level.m_meter == "climate" ) return c >= m_level.m_bandHot && c <= m_level.m_bandCold;
+                if ( m_level.m_meter == "shadow" )   // under a roof, or in the shield's sweeping shadow
+                    return !m_level.outdoor( r, c ) || ( c >= m_level.m_bandHot && c <= m_level.m_bandCold );
                 return !m_level.m_vacuum || !m_level.outdoor( r, c );
             };
     }
@@ -2906,6 +2910,7 @@ void Game::plan()
     std::vector<int> prev;
     std::deque<int>  q;
     if ( !m_level.walkable( sr, sc ) ) return;
+    if ( want ) goal = -1;   // what is wanted is found by the search, not where the route goes
     for ( int pass = 0; pass < 2; ++pass )
     {
         prev.assign( (size_t)rows * cols, -2 );
@@ -2949,7 +2954,7 @@ void Game::plan()
                 if ( passable( nr, nc ) && !m_blocked.count( nr * cols + nc ) &&
                      m_level.centre( nr, nc ).y - h <= StepUp && ( pass == 1 || !m_propCells[(size_t)nr * cols + nc] ) )
                     n = nr * cols + nc;
-                else if ( m_level.cell( nr, nc ).m_kind == CellE::VOID )
+                else if ( m_level.cell( nr, nc ).m_kind == CellE::VOID && !m_noJump.count( cur ) )
                     for ( int k = 2; k <= 1 + maxGap; ++k )
                     {
                         int jr = cr + DR[d] * k, jc = cc + DC[d] * k;
@@ -2965,6 +2970,12 @@ void Game::plan()
         if ( goal >= 0 && prev[goal] != -2 ) break;
     }
     m_path.clear();
+    // The suit's needs and nothing in reach to meet them: on along the way, and a look again in ten seconds.
+    if ( goal < 0 && want && m_seekAir )
+    {
+        m_seekAir = false, m_seekCool = 10.0f, m_planTimer = 0.0f;
+        return;
+    }
     if ( goal < 0 || prev[goal] == -2 ) return;
     for ( int c = goal; c >= 0; c = prev[c] ) m_path.push_back( c );
     std::reverse( m_path.begin(), m_path.end() );
@@ -2977,7 +2988,7 @@ void Game::unstall( float dt )
     double mark = m_waypoint * 1e7 + m_kills * 1e3 + m_fired.size();
     for ( const BossPart &q : m_parts ) mark += fmaxf( 0.0f, q.m_hp ) * 1e-3;
     if ( boss() >= 0 ) mark += m_foes[boss()].m_hp * 1e-3;
-    if ( mark != m_stallMark || m_dead ) m_stallMark = mark, m_stallTime = 0.0f;
+    if ( mark != m_stallMark ) m_stallMark = mark, m_stallTime = 0.0f;
     m_stallTime += dt;
     if ( m_stallTime < 240.0f ) return;
     m_stallTime = 0.0f;
@@ -3016,6 +3027,7 @@ void Game::autopilot( float dt, GameInput &in )
         return;
     }
     if ( m_unstall ) unstall( dt );
+    m_seekCool -= dt;
     std::stringstream talkTo( m_level.m_autotalk );
     std::string       who;
     m_talkGoal = -1;
@@ -3167,8 +3179,16 @@ void Game::autopilot( float dt, GameInput &in )
         m_stuckTimer += dt;
         if ( m_stuckTimer > 2.5f )
         {
-            // Some way with floor under it (never off an edge).
-            if ( Vector3Distance( m_pos, m_lastPos ) < 0.4f && Vector2Length( in.m_move ) > 0.1f )
+            // Some way with floor under it (never off an edge). Stuck three times at one place on the way: that
+            // cell is no way through (a centrifuge or a prop in a narrow passage), the planner looks for another.
+            bool stuck = Vector3Distance( m_pos, m_lastPos ) < 0.4f && Vector2Length( in.m_move ) > 0.1f;
+            if ( stuck )
+            {
+                m_stuckCount = Vector3Distance( m_pos, m_stuckAt ) < 1.5f ? m_stuckCount + 1 : 1;
+                m_stuckAt = m_pos;
+                if ( m_stuckCount >= 3 && !m_path.empty() ) m_blocked.insert( m_path.front() ), m_stuckCount = 0;
+            }
+            if ( stuck )
                 for ( int k = 0; k < 8; ++k )
                 {
                     Vector2 dir = Vector2Normalize( { rnd() - 0.5f, rnd() - 0.5f } );
@@ -3286,7 +3306,7 @@ void Game::autopilot( float dt, GameInput &in )
         else if ( groundAt( ahead ) < -100.0f )
         {
             if ( speed > 3.3f )
-                in.m_jump = true;
+                in.m_jump = true, m_jumpFrom = r * cols + c, m_jumpTime = m_time;
             else
                 m_runup = 0.45f;
         }

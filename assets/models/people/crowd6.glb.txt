@@ -1,0 +1,8 @@
+skin base
+cut eyebrow003
+cut eyelashes01
+eyes high-poly
+cut ponytail01
+cloth bootsviking
+cloth pantsviking
+cloth tunicviking

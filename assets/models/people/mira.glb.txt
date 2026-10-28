@@ -1,0 +1,7 @@
+cut bob02
+skin base
+cut eyebrow003
+cut eyelashes01
+eyes high-poly
+cloth shoes01
+armour Glactic_Warrior_02

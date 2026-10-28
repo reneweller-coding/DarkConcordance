@@ -28,6 +28,7 @@
 #include <raymath.h>
 
 #include <algorithm>
+#include <deque>
 #include <map>
 #include <set>
 #include <string>
@@ -590,7 +591,9 @@ private:
         float               m_scale = 1.0f;                    ///< a child is smaller
         int                 m_force = -1;                      ///< a clip played regardless (pictures)
         SkinState           m_skin;
-        std::vector<Matrix> m_bones;   ///< this frame's skin matrices (alive until drawn)
+        std::vector<Matrix> m_bones;                              ///< this frame's skin matrices (alive until drawn)
+        int                 m_dressed = -1;                       ///< a whole person of m_dressed (else m_body's)
+        Vector3             m_dressTint = { 1.0f, 1.0f, 1.0f };   ///< over that one's clothes
     };
     /** @brief A ship braking far below (the view through the window). */
     struct Ship
@@ -1337,13 +1340,42 @@ private:
     void dressPerson( Person &q, unsigned seed );
     void updateSkins( float dt );
     void poseSkin( Person &q, std::vector<Drawable> &out );
-    bool             m_skins = false;       ///< the bodies are there
-    SkinModel        m_body[2];             ///< a man, a woman
-    SkinModel        m_heroModel;           ///< the hero's own body, dressed (assets/models/heroes; none: m_body's)
-    std::vector<int> m_heroSurfaces;        ///< per mesh of it: its surface
-    std::vector<int> m_bodySurface[2][2];   ///< per mesh of each body: its surface, per skin tone
-    std::vector<int> m_hairSurface[2][5];   ///< per hair of each body, per colour
-    std::vector<std::vector<GarmentPiece>> m_garments[2];           ///< per body, per garment (GarmentE): its pieces
+    bool      m_skins = false;   ///< the bodies are there
+    SkinModel m_body[2];         ///< a man, a woman
+    /** @brief A whole person made by tools/make_heroes.py: the body with the clips, a surface per mesh. */
+    struct Dressed
+    {
+        std::string      m_name;
+        SkinModel        m_model;
+        std::vector<int> m_surfaces;
+    };
+    std::deque<Dressed>    m_dressed;   ///< loaded as they are wanted (a deque keeps them in place for the figures)
+    std::map<int, Vector3> m_surfaceColour;   ///< a surface's mean colour (the faction's, for the men in suits)
+    Texture2D              m_flatOrm = {}, m_flatNrm = {};   ///< rough, not metal; no normal map
+    /**
+     * @brief A dressed body by name: the hero's own (assets/models/heroes) or one of the people's
+     *        (assets/models/people), loaded the first time.
+     * @param[in] name  its file's name without .glb
+     * @return its index in m_dressed, or -1 if there is none
+     */
+    int dressed( const std::string &name );
+    /**
+     * @brief A person drawn as a whole one, if there is one by that name (the clothes as they are).
+     * @param[in,out] q     the person
+     * @param[in]     name  the look's name
+     */
+    void dressAs( Person &q, const std::string &name );
+    /** @return the body a person is drawn with */
+    const SkinModel &personModel( const Person &q ) const;
+    /**
+     * @brief A surface's colour for tinting: its texture's mean, the brightest channel at one (dark ones darker).
+     * @param[in] surface  the surface
+     * @return the colour
+     */
+    Vector3 surfaceColour( int surface );
+    std::vector<int>                       m_bodySurface[2][2];   ///< per mesh of each body: its surface, per skin tone
+    std::vector<int>                       m_hairSurface[2][5];   ///< per hair of each body, per colour
+    std::vector<std::vector<GarmentPiece>> m_garments[2];         ///< per body, per garment (GarmentE): its pieces
     int                                    m_garmentSurface = -1;   ///< cloth for the garments (the colour per draw)
     std::map<std::string, int>             m_clip;                  ///< the clips by name (the same in both bodies)
     void drawShipHud( int w, int h, float s );
@@ -1585,13 +1617,19 @@ private:
     Vector3           m_lastPos = { 0, 0, 0 };
     size_t            m_waypoint = 0;     ///< the next of the level's route
     float             m_wpClose = 0.0f;   ///< seconds the autopilot has been close to its waypoint without reaching it
-    float             m_stallTime = 0.0f;    ///< seconds without progress (tests, m_unstall)
-    double            m_stallMark = 0.0;     ///< what progress looked like then
-    int               m_stalls = 0;          ///< how often the hero was put on
-    int               m_meleeFoe = -1;       ///< the foe Dorra's autopilot goes for
-    float             m_meleeHp = 0.0f;      ///< its health when she last hurt it
-    float             m_meleeSince = 0.0f;   ///< since when no blow of hers has landed on it
-    std::map<int, float> m_meleeSkip;        ///< foes she cannot get at, left to the bolts until then
+    float             m_stallTime = 0.0f;   ///< seconds without progress (tests, m_unstall)
+    float             m_seekCool = 0.0f;    ///< the suit's needs found nothing in reach: seconds before looking again
+    Vector3           m_stuckAt = { 0, 0, 0 };   ///< where the autopilot last had to free itself
+    int               m_stuckCount = 0;          ///< how often in a row at that place
+    int               m_jumpFrom = -1;           ///< the cell the autopilot last jumped from
+    float             m_jumpTime = -100.0f;      ///< and when
+    std::set<int>     m_noJump;                  ///< cells it jumped from and fell: no jumps from there
+    double            m_stallMark = 0.0;         ///< what progress looked like then
+    int               m_stalls = 0;              ///< how often the hero was put on
+    int               m_meleeFoe = -1;           ///< the foe Dorra's autopilot goes for
+    float             m_meleeHp = 0.0f;          ///< its health when she last hurt it
+    float             m_meleeSince = 0.0f;       ///< since when no blow of hers has landed on it
+    std::map<int, float> m_meleeSkip;            ///< foes she cannot get at, left to the bolts until then
     unsigned             m_seed = 4242;
 };
 

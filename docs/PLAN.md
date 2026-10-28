@@ -333,6 +333,19 @@ Still to come, by first use:
    `Deploy/build_release.ps1` and `Deploy/build_linux.sh` (zip 1.2 GB, tar.gz with dav1d in lib/), `LICENSE`
    (AGPL-3.0), `docs/CREDITS.txt`, `docs/README-player.txt`; the log falls back to the player's folder. Open: the
    rifle's grip on Corvin's body, the other people still on Quaternius' bodies, a remote and publishing (the user's).
+11. The open points — done (28.10.2026, the user's wish): the rifle's grip was a wrong T-pose (raylib reads a clip's
+   first frame at time 0, and the single key lay later, so the game measured every clip from the A-pose and the arms
+   crossed): the `A_TPose` now keyed at frames 0 and 1, exported from time 0. The plates brighter. Everyone else
+   with a portrait, nine of the crowd and two soldiers as whole people from MPFB (27 in `assets/models/people`,
+   101 MB), the everyday clothes with logos, crop tops and shorts swapped for coveralls, tunics, robes, uniforms and
+   suits; shader mode 7 tints clothes per person and armour per faction. The two stalls: the planner's search for
+   shade knew no "shadow" meter (every cell counted as shade, Corvin stood in the light; now under a roof or in the
+   shield's sweep) and found the route's goal instead of nothing; three times stuck at one place blocks that cell
+   for the planner (Ione in the Mill, 1,712 s to 671 s); a fall soon after a jump bans jumps from where it took off
+   (Ione in the Rechenmond fell five times at one gap; now once), and a death counts as no progress for the last
+   resort. Campaign on Normal afterwards: all 75 places finished, deaths per act I/II/III/IV Corvin 12/0/1/0, Dorra
+   4/0/0/0, Ione 7/2/8/0 (the Rechenmond's falls, since learnt), 1.6-3.8 h; one stall (that gap). Packages
+   rebuilt (zip and tar.gz 1.3 GB each), both started muted from the package (the Linux one in the hub).
 
 ## Open decisions (the user's)
 

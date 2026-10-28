@@ -162,6 +162,8 @@ void Game::dressCompanion( NpcState &s, const std::string &look )
             s.m_figure.m_tone = l.m_tone;
             s.m_figure.m_cloth = l.m_cloth;
             s.m_figure.m_scale = l.m_scale;
+            s.m_figure.m_dressed = -1;
+            dressAs( s.m_figure, look );   // the hero's own body, where it is made
         }
     auto seat = m_companionSeat.find( m_level.m_npcs[s.m_def].m_id );
     if ( seat == m_companionSeat.end() ) return;

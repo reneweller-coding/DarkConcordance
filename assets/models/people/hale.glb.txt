@@ -1,0 +1,7 @@
+skin base
+cut eyebrow003
+cut eyelashes01
+eyes high-poly
+cloth male_elegantsuit01
+cloth shoes04
+cut short02

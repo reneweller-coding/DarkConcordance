@@ -1,0 +1,8 @@
+cut bob02
+skin base
+cloth Monks_Robe
+cloth Monks_Hood_Off
+cut eyebrow003
+cut eyelashes01
+eyes high-poly
+cloth shoes02

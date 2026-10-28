@@ -178,7 +178,7 @@ void Game::updateVault( float dt )
         {
             if ( f.m_kind != FoeE::SHELL || f.m_body < 0 ) continue;
             Person          &q = m_shellBodies[f.m_body];
-            const SkinModel &m = m_body[q.m_body];
+            const SkinModel &m = personModel( q );
             q.m_pos = f.m_pos;
             q.m_yaw = f.m_yaw;
             float speed = sqrtf( f.m_vel.x * f.m_vel.x + f.m_vel.z * f.m_vel.z );

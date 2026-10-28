@@ -1,0 +1,7 @@
+cut bob02
+skin base
+cut eyebrow009
+cut eyelashes01
+eyes high-poly
+armour MC-SciFi-Armor_Guardian
+armour Glactic_Warrior_02

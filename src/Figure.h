@@ -81,7 +81,9 @@ struct FigureBody
     int              m_browSurface = -1;                  ///< their surface
     Vector3          m_cloth = { 0.12f, 0.12f, 0.14f };   ///< below the neck: the suit's or the clothes' colour
     bool             m_shown = true;                      ///< drawn (false: a frame's plates move with no man inside)
-    bool m_dressed = false;   ///< a whole person (suit, hair, own size): only the weapon and the shield are boxes
+    bool             m_dressed = false;   ///< a whole person (suit, hair): only the weapon and the shield are boxes
+    bool             m_ownSize = false;   ///< drawn at its own size (a hero), not as tall as the plates' figure
+    bool m_helmet = false;   ///< the plates' helmet stays on (the men in suits: the visor shows the faction)
 };
 
 /** @brief Everything a pose depends on, so one built figure can draw many people. */
@@ -115,6 +117,8 @@ public:
      * @param[in] s  the surfaces to use and how the figure is made
      */
     void build( const FigureSurfaces &s );
+    /** @return how the figure is made (its surfaces, weapon, size) */
+    const FigureSurfaces &look() const { return m_look; }
 
     /**
      * @brief Moves the figure.

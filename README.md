@@ -557,16 +557,24 @@ A hit makes the chest flinch, a heavy blow throws a man back; every hero rolls o
 rifle is held with the left hand on its fore end (two-bone IK, the clips hold a pistol); on steps and edges the body
 sinks to the lower floor and the leg on the higher one bends.
 
-**The heroes' own bodies** (`assets/models/heroes/<hero>.glb`, made by `tools/make_heroes.py` in Blender with MPFB,
-MakeHuman's assets, CC0): a whole person each, as the portraits have them – Corvin in grey plates over a black
-undersuit, short and very broad Dorra in ochre plates with her red bun, thin Ione in a grey-blue maintenance suit –
-on MPFB's game engine rig (Quaternius' bone names, so every clip fits), with an `A_TPose` clip that stands the body
-in the animation library's T-pose (each bone turned, parents first, to point where the library's does; the game
-retargets every clip from it). The figure draws such a body at its own size with its own textures (hair, brows and
-lashes cut out where their texture is clear) and only the weapon and Dorra's shield as boxes (`FigureBody::
-m_dressed`); without the file the hero is built of plates as before. The other people keep Quaternius' bodies.
+**Whole people** (`tools/make_heroes.py`, in Blender with MPFB, MakeHuman's assets, CC0): the heroes
+(`assets/models/heroes`) as their portraits have them – Corvin in grey plates over a black undersuit, short and very
+broad Dorra in ochre plates with her red bun, thin Ione in a grey-blue maintenance suit – and in
+`assets/models/people` everyone else with a portrait (Ysolde in her violet coat, Ottla, Kiri in her orange coverall,
+Okafor, Pell, Hale, Lamm, Ruul, Ilka as a girl and grown, Mira, the child, and the tales' Dreier, Brask, Siel and
+Josse), nine of the crowd and two soldiers. Each stands on MPFB's game engine rig (Quaternius' bone names, so every
+clip fits) with an `A_TPose` clip, keyed from time 0, that stands the body in the animation library's T-pose (each
+bone turned, parents first, to point where the library's does; the game retargets every clip from it). Beside each
+GLB, `<name>.glb.txt` says what each mesh is: skin and eyes are drawn as they are, hair, brows and lashes cut out
+where their texture is clear, clothes and armour tinted per drawing (`Game::dressed`, loaded the first time a body is
+wanted). The hero is drawn at their own size with only the weapon and Dorra's shield as boxes; the companions aboard
+wear the heroes' bodies; the people to talk to are found by their look's name; the crowd takes one of the nine by
+its seed, its clothes in the person's colour; the boarders, guards and heavies wear the soldier's body under the
+plates' helmet (the visor shows the faction), the armour in the faction's colour (the armour surface's texture under
+its tint). Where a file is missing, the plates and Quaternius' bodies stand in as before.
 
     blender --background --factory-startup --python tools/make_heroes.py -- corvin --out assets/models/heroes/corvin.glb --preview work/mpfb/corvin.png
+    blender --background --factory-startup --python tools/make_heroes.py -- ysolde --out assets/models/people/ysolde.glb
 
 **The people's clothes** (`src/Garments.cpp`): the shader dresses the body – a jacket's colour above the belt, the
 trousers' below, a pattern (pinstripes, checks, reflective bands, quilting, worn patches), the sleeves rolled up or
