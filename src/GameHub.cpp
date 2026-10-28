@@ -686,7 +686,7 @@ void Game::updateCrowd( float dt )
         p.m_yaw = q.m_yaw;
         p.m_vel = q.m_vel;
         p.m_phase = q.m_phase;
-        Figure::step( p, dt );
+        m_folk[q.m_look].step( p, dt );
         q.m_phase = p.m_phase;
     }
 

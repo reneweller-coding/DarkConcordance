@@ -80,14 +80,11 @@ const char *const BodyBones[(int)BoneE::COUNT] = { "pelvis",     "spine_03",   "
 std::function<float( float, float )> g_ground;   ///< the floor's height (feet on steps)
 std::deque<std::vector<Matrix>>      g_bonePool;
 size_t                               g_boneUsed = 0;
-float                                g_walkCycle = Stride;     ///< metres a walk cycle covers (the body's walk clip)
-float                                g_jogCycle = Stride;      ///< metres a jog cycle covers
-float                                g_sprintCycle = Stride;   ///< metres a sprint cycle covers
 
 /** @brief How far the run has gone from a walk into a jog (x) and from a jog into a sprint (y), by the speed. */
 Vector2 gaits( float speed )
 {
-    return { Clamp( ( speed - 1.8f ) / 1.6f, 0.0f, 1.0f ), Clamp( ( speed - 4.6f ) / 1.4f, 0.0f, 1.0f ) };
+    return { Clamp( ( speed - 1.8f ) / 3.2f, 0.0f, 1.0f ), Clamp( ( speed - 5.4f ) / 1.4f, 0.0f, 1.0f ) };
 }
 
 std::vector<Matrix> &nextBones()
@@ -485,14 +482,14 @@ void Figure::animate( float dt, Vector3 pos, Vector2 vel, float yaw, bool air, f
     m_recoil = fmaxf( 0.0f, m_recoil - dt * 7.0f );
 }
 
-void Figure::step( FigurePose &p, float dt )
+void Figure::step( FigurePose &p, float dt ) const
 {
     // Walking backwards runs the cycle backwards.
     float along = p.m_vel.x * sinf( p.m_yaw ) + p.m_vel.y * cosf( p.m_yaw );
     float speed = Vector2Length( p.m_vel ) * ( along < -0.3f ? -1.0f : 1.0f );
     // As long as the clips' cycles (a walk's short steps, a jog's long ones).
     Vector2 run = gaits( fabsf( speed ) );
-    float   stride = Lerp( Lerp( g_walkCycle, g_jogCycle, run.x ), g_sprintCycle, run.y );
+    float   stride = Lerp( Lerp( m_cycle[0], m_cycle[1], run.x ), m_cycle[2], run.y );
     if ( !p.m_air ) p.m_phase = fmodf( p.m_phase + speed * dt * 2.0f * PI / stride + 2.0f * PI, 2.0f * PI );
 }
 
@@ -737,6 +734,11 @@ void Figure::calibrate()
         if ( m.clip( ClipNames[c] ) >= 0 ) m_clips[c] = m.clip( ClipNames[c] );
     for ( int b = 0; b < (int)BoneE::COUNT; ++b ) m_map[b] = m.bone( BodyBones[b] );
     m_handL = m.bone( "hand_l" );
+    m_handR = m.bone( "hand_r" );
+    m_knuckleL = m.bone( "middle_01_l" );
+    m_knuckleR = m.bone( "middle_01_r" );
+    m_spine = m.bone( "spine_01" );
+    m_neck = m.bone( "neck_01" );
     for ( int b = 0; b < (int)BoneE::COUNT; ++b )
         if ( m_map[b] < 0 || m_clips[C_IDLE] < 0 )
         {
@@ -805,9 +807,9 @@ void Figure::calibrate()
                 slide += foot[i].y - foot[i + 1].y, time += length / n;
         return time > 0.0f ? slide / time * length * m_bodyScale : Stride;
     };
-    g_walkCycle = cycleOf( C_WALK );
-    g_jogCycle = cycleOf( C_JOG );
-    g_sprintCycle = cycleOf( C_SPRINT );
+    m_cycle[0] = cycleOf( C_WALK );
+    m_cycle[1] = cycleOf( C_JOG );
+    m_cycle[2] = cycleOf( C_SPRINT );
     // The weapon held as the boxes hold it, against the forearm.
     solve( still );
     Matrix grip = MatrixMultiply( m_bones[(int)BoneE::WEAPON], MatrixInvert( m_bones[(int)BoneE::FORE_R] ) );
@@ -925,14 +927,6 @@ void Figure::solveSkin( const FigurePose &p )
     m_place = MatrixMultiply( MatrixMultiply( MatrixScale( k * sc.x, k * sc.y, k * sc.z ), MatrixRotateY( p.m_yaw ) ),
                               MatrixTranslate( p.m_pos.x, y, p.m_pos.z ) );
     Matrix toBody = MatrixInvert( m_place );
-    // The left hand on the rifle's fore end (the clips hold a pistol).
-    if ( m_look.m_suit && m_look.m_weapon == WeaponE::RIFLE && upright > 0.5f && m_handL >= 0 )
-    {
-        Matrix weapon = MatrixMultiply(
-            MatrixMultiply( m_grip, SkinModel::matrix( m_skinPose[m_map[(int)BoneE::FORE_R]] ) ), m_place );
-        Vector3 grip = Vector3Transform( Vector3Transform( { 0.0f, -0.05f, 0.2f }, weapon ), toBody );
-        m.reach( m_skinPose, m_map[(int)BoneE::UPPER_L], m_map[(int)BoneE::FORE_L], m_handL, grip );
-    }
     // Feet on steps and edges: the body sinks to the lower floor, the leg on the higher one bends.
     if ( g_ground && !p.m_air && p.m_down <= 0.0f && p.m_chair <= 0.0f && p.m_roll <= 0.0f )
     {
@@ -961,11 +955,63 @@ void Figure::solveSkin( const FigurePose &p )
             }
         }
     }
+    // The rifle shouldered and aimed along the heading (the clips hold a pistol): the chest turns its left shoulder
+    // forward, the head looks on ahead, the butt sits in front of the right shoulder, both hands take the gun.
+    bool   shouldered = m_look.m_suit && m_look.m_weapon == WeaponE::RIFLE && upright > 0.5f && m_handL >= 0 &&
+                        m_handR >= 0 && m_spine >= 0;
+    Matrix rifle = {};
+    if ( shouldered )
+    {
+        const float unit = 1.0f / m_bodyScale;   // a metre in the body's space
+        // The shoulders' line at a fixed angle (the clip's chest and the stride's twist taken out).
+        Vector3 across = Vector3Subtract( m_skinPose[m_map[(int)BoneE::UPPER_L]].translation,
+                                          m_skinPose[m_map[(int)BoneE::UPPER_R]].translation );
+        float   now = atan2f( -across.z, across.x ), want = -0.5f;
+        m.turn( m_skinPose, m_spine, QuaternionFromAxisAngle( { 0.0f, 1.0f, 0.0f }, want - now ),
+                m_skinPose[m_spine].translation );
+        int neck = m_neck >= 0 ? m_neck : m.head();
+        m.turn( m_skinPose, neck, QuaternionFromAxisAngle( { 0.0f, 1.0f, 0.0f }, 0.4f ), m_skinPose[neck].translation );
+        // The barrel a little low while running, up with the kick; the gun rides back with it.
+        float   amp = Clamp( speed / 4.2f, 0.0f, 1.0f );
+        float   tilt = 0.07f + 0.025f * amp * sinf( 2.0f * p.m_phase ) - 0.14f * p.m_recoil;
+        Vector3 dir = { 0.0f, -sinf( tilt ), cosf( tilt ) };
+        Vector3 shoulder = m_skinPose[m_map[(int)BoneE::UPPER_R]].translation;
+        float   inward = shoulder.x < 0.0f ? 1.0f : -1.0f;
+        Vector3 butt = Vector3Add( shoulder, Vector3Scale( { 0.035f * inward, -0.045f, 0.07f }, unit ) );
+        Vector3 origin = Vector3Add( butt, Vector3Scale( dir, ( 0.4f - 0.04f * p.m_recoil ) * unit ) );
+        Vector3 gunAt = Vector3Transform( origin, m_place );
+        Vector3 aim =
+            Vector3Normalize( Vector3Subtract( Vector3Transform( Vector3Add( origin, dir ), m_place ), gunAt ) );
+        Vector3 size = m_body.m_ownSize ? Vector3{ 1.0f, 1.0f, 1.0f } : m_look.m_scale;
+        rifle = MatrixMultiply( MatrixScale( size.x, size.y, size.z ), along( aim, { 0.0f, 1.0f, 0.0f }, gunAt ) );
+        // The right wrist behind the grip, the left under the fore end; each hand then points along the gun.
+        auto onGun = [&]( Vector3 v ) { return Vector3Transform( Vector3Transform( v, rifle ), toBody ); };
+        // The elbows down and a little out (the right one would stick out behind, as a pistol is held).
+        m.reach( m_skinPose, m_map[(int)BoneE::UPPER_R], m_map[(int)BoneE::FORE_R], m_handR,
+                 onGun( { 0.0f, -0.075f, -0.17f } ), { -0.45f * inward, -1.0f, 0.0f } );
+        m.reach( m_skinPose, m_map[(int)BoneE::UPPER_L], m_map[(int)BoneE::FORE_L], m_handL,
+                 onGun( { 0.03f, -0.085f, 0.19f } ), { 0.3f * inward, -1.0f, 0.0f } );
+        auto point = [&]( int hand, int knuckle, Vector3 v )
+        {
+            if ( knuckle < 0 ) return;
+            Vector3 wrist = m_skinPose[hand].translation;
+            Vector3 pointing = Vector3Subtract( m_skinPose[knuckle].translation, wrist );
+            Vector3 to = Vector3Subtract( onGun( v ), onGun( { 0.0f, 0.0f, 0.0f } ) );
+            if ( Vector3Length( pointing ) < 1e-4f ) return;
+            m.turn( m_skinPose, hand,
+                    QuaternionFromVector3ToVector3( Vector3Normalize( pointing ), Vector3Normalize( to ) ), wrist );
+        };
+        point( m_handR, m_knuckleR, { 0.0f, -0.3f, 1.0f } );
+        point( m_handL, m_knuckleL, { -0.35f, 0.25f, 1.0f } );
+    }
     for ( int b = 0; b < (int)BoneE::COUNT; ++b )
         m_bones[b] =
             MatrixMultiply( MatrixMultiply( m_offset[b], SkinModel::matrix( m_skinPose[m_map[b]] ) ), m_place );
     m_bones[(int)BoneE::WEAPON] =
-        MatrixMultiply( MatrixMultiply( m_grip, SkinModel::matrix( m_skinPose[m_map[(int)BoneE::FORE_R]] ) ), m_place );
+        shouldered
+            ? rifle
+            : MatrixMultiply( MatrixMultiply( m_grip, SkinModel::matrix( m_skinPose[m_map[(int)BoneE::FORE_R]] ) ),
+                              m_place );
     finish( p );
 }
 

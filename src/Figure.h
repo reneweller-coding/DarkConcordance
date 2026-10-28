@@ -166,11 +166,11 @@ public:
     static void ground( std::function<float( float, float )> ground );
 
     /**
-     * @brief Advances a walk cycle (for figures drawn from a FigurePose).
+     * @brief Advances a walk cycle (for figures drawn from a FigurePose) as far as this figure's body steps.
      * @param[in,out] p   the pose (its phase moves)
      * @param[in]     dt  seconds
      */
-    static void step( FigurePose &p, float dt );
+    void step( FigurePose &p, float dt ) const;
 
     /** @brief Kicks the rifle back (a shot). */
     void recoil() { m_recoil = 1.0f; }
@@ -261,7 +261,11 @@ private:
     std::vector<int>       m_clips;                         ///< the clips the figure plays (see Figure.cpp)
     std::vector<Transform> m_skinPose;                      ///< the body's pose this time
     int                    m_handL = -1;                    ///< the body's left hand (it holds the rifle's fore end)
-    Matrix                 m_place = {};                    ///< the body's place in the world
+    int                    m_handR = -1;                    ///< the body's right hand (on the rifle's grip)
+    int                    m_knuckleL = -1, m_knuckleR = -1;   ///< the middle fingers' roots (which way a hand points)
+    int                    m_spine = -1, m_neck = -1;          ///< the chest turns about the first, the head the second
+    float                  m_cycle[3] = { 2.0f, 2.0f, 2.0f };   ///< metres a walk, a jog, a sprint cycle covers
+    Matrix                 m_place = {};                        ///< the body's place in the world
 };
 
 }   // namespace spaceopera

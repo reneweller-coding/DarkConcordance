@@ -147,14 +147,16 @@ public:
     void turn( std::vector<Transform> &pose, int bone, Quaternion q, Vector3 pivot ) const;
 
     /**
-     * @brief Bends an arm or a leg so that its end reaches a point (the joint stays on the side it bends to now).
+     * @brief Bends an arm or a leg so that its end reaches a point.
      * @param[in,out] pose    the pose (the chain and all that hangs on it move)
      * @param[in]     upper   the upper bone (upper arm, thigh)
      * @param[in]     lower   the lower bone (forearm, shin)
      * @param[in]     end     the end (hand, foot)
      * @param[in]     target  where the end goes (the model's space)
+     * @param[in]     bend    which way the joint goes (zero: it stays on the side it bends to now)
      */
-    void reach( std::vector<Transform> &pose, int upper, int lower, int end, Vector3 target ) const;
+    void reach( std::vector<Transform> &pose, int upper, int lower, int end, Vector3 target,
+                Vector3 bend = { 0.0f, 0.0f, 0.0f } ) const;
 
     /** @return the head bone's index */
     int head() const { return m_head; }

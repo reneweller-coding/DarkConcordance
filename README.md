@@ -547,16 +547,21 @@ The heroes, the men in suits and frames and the people in clothes move with the 
 libraries (CC0, `assets/models/quaternius`) on a skinned base body; the plates the figures are built of (helmets,
 chest plates, pauldrons, arm and leg plates, boots, backpack and lamp, the weapon, Dorra's shield) ride on its bones
 (`Figure::body`, `Figure::solveSkin`). The legs blend standing, walking, a run and a sprint by the speed, their
-cycle as long as the clip's planted foot slides, so the feet keep still; the upper body is laid over them: the rifle
-aimed (the pistol's two-handed aim) with its kick on a shot, the hammer and the baton ready, the three blows
+cycle as long as the clip's planted foot slides (each figure its own body's), so the feet keep still; the jog is the
+clip's own only at about 5 m/s (slower, its long strides floated in slow bounds), so up to there the walk shortens
+it; the upper body is laid over them: the rifle shouldered (see below) with its kick on a shot, the hammer and the
+baton ready, the three blows
 (forehand, backhand, overhead, timed so the clip's hit lands with the game's), the shield raised, Ione's swarm cast;
 jumps, sitting at a table, huddling on the floor, falling dead. Each limb's plates turn about the body's own joint
 and lie along its bone. With the helmet off (in the hubs) the body's own face shows, with the hero's hair as in the
 portraits: Corvin's short dark hair, Dorra's red bun, Ione's black crop. The frames twice a man's height (the
 Taxator, Okafor's walker, the foreman's crane walker …) move as men do, but no body shows inside their plates.
-A hit makes the chest flinch, a heavy blow throws a man back; every hero rolls out of the way (the clip's roll); a
-rifle is held with the left hand on its fore end (two-bone IK, the clips hold a pistol); on steps and edges the body
-sinks to the lower floor and the leg on the higher one bends.
+A hit makes the chest flinch, a heavy blow throws a man back; every hero rolls out of the way (the clip's roll). The
+clips hold a pistol, so a rifle is shouldered by hand: the chest turns its left shoulder forward (a fixed angle, the
+stride's twist taken out), the head looks on ahead, the butt sits in front of the right shoulder, the barrel points
+along the heading (a little low while running, up with the kick), and both arms reach the gun (two-bone IK with the
+elbows bent down and out; each hand turned to point along it). On steps and edges the body sinks to the lower floor
+and the leg on the higher one bends.
 
 **Whole people** (`tools/make_heroes.py`, in Blender with MPFB, MakeHuman's assets, CC0): the heroes
 (`assets/models/heroes`) as their portraits have them – Corvin in grey plates over a black undersuit, short and very
@@ -663,7 +668,9 @@ renders n frames first and logs the time per frame; `--quality low|middle|high` 
 high otherwise), `--w`/`--h` the size (1600x900, on a Steam Deck 1280x800), `--ss` the scene's scale; `--pad
 keys|xbox|ps|deck` the buttons in the texts, `--colours 0|1|2` colour vision, `--cycle n` a New Game+'s cycle,
 `--savefile FILE` writes the save a capsule makes, `--loadfile FILE` goes on from a save. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
-`--camyaw deg` turns the camera, `--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
+`--camyaw deg` turns the camera, `--camrise h` lowers it (its height over a distance of 8.1; 1.5 looks from the
+side), `--clip s` writes the warm-up's last seconds as pictures (`<shot>_NNNN.png`, 15 a second, to see motion by),
+`--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
 language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue; `--flags a,b`
 sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture;
 `--panel 0|1|2|3` shows the inventory, skills, character or map page, `--map` the map over the game; `--seed n` picks

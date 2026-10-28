@@ -976,8 +976,8 @@ void Game::putHero( float x, float z, float yaw )
     m_hero.animate( 0.0f, m_pos, { 0, 0 }, m_yaw, false, 0.0f, m_time );
     m_camTarget = Vector3Add( m_pos, { 0.0f, 1.0f, 0.0f } );
     m_cam.target = m_camTarget;
-    m_cam.position =
-        Vector3Add( m_camTarget, Vector3Scale( { 8.1f * sinf( m_camYaw ), 11.5f, 8.1f * cosf( m_camYaw ) }, m_zoom ) );
+    m_cam.position = Vector3Add(
+        m_camTarget, Vector3Scale( { 8.1f * sinf( m_camYaw ), m_camRise, 8.1f * cosf( m_camYaw ) }, m_zoom ) );
     m_cam.up = { 0.0f, 1.0f, 0.0f };
     m_cam.fovy = 38.0f;
     m_cam.projection = CAMERA_PERSPECTIVE;
@@ -2319,7 +2319,7 @@ void Game::updateFoes( float dt )
             p.m_yaw = f.m_yaw;
             p.m_phase = f.m_phase;
             p.m_air = !f.m_ground;
-            Figure::step( p, dt );
+            foeFigure( f ).step( p, dt );
             f.m_phase = p.m_phase;
         }
         float floor = groundAt( f.m_pos );
@@ -3479,8 +3479,9 @@ void Game::update( float dt, const GameInput &inRaw )
     float   jolt = m_shake * m_shakeScale;
     Vector3 shake = { ( rnd() - 0.5f ) * jolt * 0.5f, ( rnd() - 0.5f ) * jolt * 0.3f, ( rnd() - 0.5f ) * jolt * 0.5f };
     m_cam.target = Vector3Add( m_camTarget, shake );
-    m_cam.position = Vector3Add(
-        m_cam.target, Vector3Scale( { 8.1f * sinf( m_camYaw ), 11.5f, 8.1f * cosf( m_camYaw ) }, m_zoom * m_camPull ) );
+    m_cam.position =
+        Vector3Add( m_cam.target, Vector3Scale( { 8.1f * sinf( m_camYaw ), m_camRise, 8.1f * cosf( m_camYaw ) },
+                                                m_zoom * m_camPull ) );
     // A dodge tilts the picture towards where it pushes.
     Vector3 look = Vector3Normalize( Vector3Subtract( m_cam.target, m_cam.position ) );
     Vector3 side = Vector3Normalize( Vector3CrossProduct( look, { 0.0f, 1.0f, 0.0f } ) );

@@ -356,6 +356,7 @@ public:
     float       m_time = 0.0f;         ///< seconds played
     float       m_brightness = 1.0f;   ///< exposure factor (the menus' brightness)
     float       m_camYaw = 0.0f;       ///< camera turned about the hero (radians, 0 = looking north)
+    float       m_camRise = 11.5f;     ///< tests: the camera's height over its distance of 8.1 (lower: flatter)
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
     HeroE       m_heroKind = HeroE::CORVIN;           ///< who is played (set before load)
     Progress    m_progress;                           ///< what the level starts with (set before load)

@@ -9,10 +9,11 @@
        "motion": "Very slow push towards the cut moon, mining lights crawl and flicker.", "say": [["hero", "f_pro1"]], "seconds": 7},
       {"id": "s0", "picture": "Deep space. A long chain of small refugee ships braking with bright blue-white fusion flames, strung out in a line in front of a gigantic dim red dwarf star that fills half the frame. Black sky, faint stars.",
        "motion": "Very slow drift of the camera along the chain of ships, the fusion flames flicker and pulse.", "say": [["hero", "f_pro9"]]},
-      {"id": "s1", "picture": "An old overloaded rusty cargo lighter in space, its hull covered with dozens of strapped-on steel freight containers, patched plates, a weak braking flame at its stern, red starlight on its flank.",
-       "motion": "Slow push-in towards the ship, the braking flame flickers, tiny lights blink on the containers.", "say": [["hero", "f_pro2"]], "seconds": 7},
-      {"id": "s2", "picture": "Science fiction: inside a cramped steel cargo module of a spaceship converted into living space, colonists of mixed origins in padded grey thermal jumpsuits with utility harnesses and clip-on breathing masks, strapped into fold-down webbing seats against the walls so they do not float, glowing amber light strips along the ceiling, an air scrubber unit with blinking status lights, frost and condensation on riveted walls, tired faces.",
-       "motion": "Slow handheld camera moving along the container, people shift and breathe, a child turns in her sleep.", "say": [["hero", "f_pro3"]], "seconds": 6},
+      {"id": "s1", "picture": "Science fiction, in deep space, black starry void, no water, no sea: an old overloaded rusty cargo spacecraft, a boxy frame of girders with dozens of strapped-on steel freight containers, no keel and no deck, patched hull plates, thruster nozzles with a weak braking flame, red starlight on its flank.",
+       "motion": "Slow push-in towards the spacecraft, the braking flame flickers, tiny lights blink on the containers.", "say": [["hero", "f_pro2"]], "seconds": 7},
+      {"id": "s2", "picture": "Science fiction: inside a cramped steel cargo module of a spaceship converted into living space, colonists of mixed origins in padded grey thermal jumpsuits with utility harnesses and clip-on breathing masks, strapped into fold-down webbing seats against the walls, glowing amber light strips along the ceiling, an air scrubber unit with blinking status lights, frost and condensation on riveted walls, tired faces.",
+       "motion": "Static shot from a tripod, the camera does not move at all. The colonists sit still in their seats, strapped in, their backs against the wall; they only breathe and blink.", "say": [["hero", "f_pro3"]], "seconds": 6,
+       "turn": 3.5},
       {"id": "n2", "picture": "Science fiction: Close-up of an old man's weathered hands in a padded grey thermal suit holding a scratched metal identity tag on a cord, inside a cramped spaceship cargo module lit by amber light strips.",
        "motion": "The hands turn the tag slowly, amber light flickers.", "say": [["hero", "f_pro10"]], "seconds": 6},
       {"id": "s3", "picture": "A small nine-year-old child, a girl with a round childish face and short dark hair, wearing an oversized adult jacket, sitting at a small round porthole, her face lit dark red by the light of a star outside, quiet and tired.",
@@ -21,12 +22,12 @@
        "motion": "Very slow zoom towards the bright point of light, it pulses faintly.", "say": [["ilka", "f_pro6"]]},
       {"id": "n3", "picture": "Science fiction: The cramped cockpit of an old cargo spaceship, a woman pilot in her thirties in a worn grey flight suit with a faded patch of a fictional freight company and no flags or national insignia, headset on, at the controls, red warning lights blinking, radar screens with two small contacts, tense.",
        "motion": "The pilot leans forward and works the controls, warning lights blink.", "say": [["pilot", "f_pro11"]], "seconds": 6},
-      {"id": "s5", "picture": "A sleek white patrol ship of an advanced civilisation, smooth and elegant, hanging motionless far away in space, cold soft lights along its hull, utterly clean, watching.",
-       "motion": "The ship hangs still, the camera slowly circles it, its lights glow steadily.", "say": [["patrol", "f_pro7"]], "seconds": 7},
-      {"id": "n4", "picture": "Science fiction: The bridge of an advanced spaceship, pure white and empty, smooth curved walls, a single soft sphere of light hovering in the middle, a large window showing a small rusty cargo ship far away.",
+      {"id": "s5", "picture": "Science fiction, in deep space, black starry void, no water: a sleek white patrol spacecraft of an advanced civilisation, a smooth seamless elongated shape like a polished stone, no windows, no masts, no decks, hanging motionless far away, cold soft lights along its hull, utterly clean, watching.",
+       "motion": "The spacecraft hangs still, the camera slowly circles it, its lights glow steadily.", "say": [["patrol", "f_pro7"]], "seconds": 7},
+      {"id": "n4", "picture": "Science fiction: The bridge of an advanced spaceship, pure white and empty, smooth curved walls, a single soft sphere of light hovering in the middle, a large window looking out into black deep space full of stars, far away in the darkness a small battered colony freighter spacecraft, a boxy rusty hull of riveted cargo modules with thruster nozzles and antenna masts. No water, no sea, no sky.",
        "motion": "The sphere of light pulses softly, the camera drifts slowly.", "say": [["patrol", "f_pro12"]], "seconds": 6},
-      {"id": "s6", "picture": "Black angular raider skiffs with harpoon lines and grappling claws closing in on the hull of a rusty cargo ship, the claws about to bite, sparks.",
-       "motion": "The skiffs accelerate towards the hull, harpoon lines shoot out and snap taut.", "say": [["hero", "f_pro8"]]},
+      {"id": "s6", "picture": "Science fiction, in deep space, black starry void all around, no water, no sea, no planet: black angular raider spacecraft with harpoon lines and grappling claws closing in on the hull of a battered colony freighter spacecraft, a long boxy hull of riveted rusty cargo modules with thruster nozzles, the claws about to bite into the hull plates, sparks.",
+       "motion": "Weightless in space, the raider craft glide towards the hull, harpoon lines shoot out and snap taut, sparks fly.", "say": [["hero", "f_pro8"]]},
       {"id": "n5", "picture": "Science fiction: Masked raiders in dark angular armour with glowing visors cutting through a spaceship airlock door with a plasma cutter, sparks spraying, one holds a handheld neural scanner with a glowing ring.",
        "motion": "Sparks spray, the airlock door gives way, the raiders push forward.", "say": [["hero", "f_pro13"]], "seconds": 6}
     ]
@@ -59,7 +60,7 @@
   "act2": {
     "music": "act2end",
     "shots": [
-      {"id": "n1", "picture": "Science fiction: A small battered survey spaceship clamped onto the hull of a long skeletal space freighter in flight, a figure in a space suit cutting into the hull with a torch, sparks.",
+      {"id": "n1", "picture": "Science fiction, in deep space, black starry void all around, no water, no sea: a small battered survey spaceship clamped onto a long skeletal space freighter, a lattice spine of girders with frosted cargo pods, a figure in a space suit floating beside it and cutting into a pod with a torch, sparks.",
        "motion": "Sparks fly from the torch, the two ships drift together through space.", "say": [["hero", "f_a2_5"]], "seconds": 6},
       {"id": "s0", "picture": "Seen through a large frosted window: a gigantic grey moon that has been cut open and hollowed out like an empty shell, its inside glowing orange, a ring of enormous rocket engines built onto its rim, and in front of it a wide fan of glowing molten rock streaming out into space. No ships.",
        "motion": "Very slow push towards the window, the ore fan glows and drifts.", "say": [["hero", "f_a2_1"]]},
@@ -75,7 +76,7 @@
        "motion": "The beams sweep across the hull, it breaks apart slowly, debris tumbles.", "say": []},
       {"id": "s4", "picture": "Close-up of rows of small glowing control cores in a cargo rack, their blue lights going out one by one, darkness spreading.",
        "motion": "The lights go out one by one along the row until only one is left.", "say": [["hero", "f_a2_4"]]},
-      {"id": "s5", "picture": "Pure blinding white light flooding everything, the faint silhouette of a ship dissolving in it.",
+      {"id": "s5", "picture": "Science fiction: pure blinding white light flooding everything, the faint silhouette of a long skeletal space freighter with cargo pods on a lattice spine dissolving in it.",
        "motion": "The white light grows until it fills the whole frame.", "say": []}
     ]
   },

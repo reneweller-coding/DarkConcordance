@@ -317,7 +317,7 @@ void SkinModel::turn( std::vector<Transform> &pose, int bone, Quaternion q, Vect
     }
 }
 
-void SkinModel::reach( std::vector<Transform> &pose, int upper, int lower, int end, Vector3 target ) const
+void SkinModel::reach( std::vector<Transform> &pose, int upper, int lower, int end, Vector3 target, Vector3 bend ) const
 {
     Vector3 a = pose[upper].translation, b = pose[lower].translation, c = pose[end].translation;
     Vector3 to = Vector3Subtract( target, a );
@@ -325,8 +325,8 @@ void SkinModel::reach( std::vector<Transform> &pose, int upper, int lower, int e
     if ( la < 1e-4f || lb < 1e-4f || len < 1e-4f ) return;
     float   d = Clamp( len, fabsf( la - lb ) + 1e-3f, la + lb - 1e-3f );
     Vector3 u = Vector3Scale( to, 1.0f / len );
-    // The joint where the two lengths meet, on the side of the line it is on now.
-    Vector3 side = Vector3Subtract( b, a );
+    // The joint where the two lengths meet, on the side of the line it is on now (or the one asked for).
+    Vector3 side = Vector3Length( bend ) > 0.0f ? bend : Vector3Subtract( b, a );
     side = Vector3Subtract( side, Vector3Scale( u, Vector3DotProduct( side, u ) ) );
     if ( Vector3Length( side ) < 1e-4f ) return;
     Vector3 v = Vector3Normalize( side );

@@ -357,6 +357,16 @@ Still to come, by first use:
    the saves, the hero's choice, „Wie beginnen?“ with a finished Ione and the difficulty row; found and fixed: a
    save's line wider than the window (now set smaller), a hero's long description (now two lines), the campaign
    test's end save kept the ending's marker in its level (play strips it; the test now does too).
+13. Motion and the prologue's ships — done (29.10.2026, the user: the motions look dreadful, the marksman's rifle
+   too; ships on water in the prologue; the seated slide forward). Seen from the side for the first time (the new
+   `--camrise` and `--clip` series): the rifle hung rigid on the right forearm in the pistol clip's aim and pointed
+   up and to the left, and the jog clip (made for about 5 m/s) at 4.2 m/s stepped in long slow bounds; the plates
+   had hidden both before the whole people. Now the rifle is shouldered and aimed along the heading with both hands
+   on it, the walk shortens the jog up to 5 m/s, and every figure steps by its own body's cycle (a global took the
+   last calibrated figure's). Films: prologue n4 and s6 painted again as spacecraft in deep space (a "cargo ship" had
+   become a sea ship), and so were the others FLUX had put on water (prologue s1 a barge's keel, s5 a motor yacht,
+   act II n1 a red waterline, s5 a steamer's silhouette); prologue s2 from a tripod, and since LTX holds its many
+   faces still only about 3.5 s, its start plays forward and back again (a shot's new "turn" in `films.json`).
 
 ## Open decisions (the user's)
 

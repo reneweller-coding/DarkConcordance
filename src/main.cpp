@@ -84,6 +84,7 @@ struct Options
     std::string              m_photo;   ///< with --shot: the photo mode, its camera turned, tilted, pulled ("t,p,z")
     std::vector<std::string> m_binds;   ///< tests: keys and buttons bound otherwise ("<name> <key> <pad>")
     float                    m_camYaw = 0.0f;           ///< camera turned about the hero (degrees)
+    float                    m_camRise = 0.0f;          ///< tests: the camera's height (0: as in play, 11.5)
     Vector2                  m_move = { 0.0f, 0.0f };   ///< with --shot: the left stick held during the warm-up
     std::string              m_hero;                    ///< corvin, dorra (else the choice in the menu)
     std::string              m_flags;                   ///< what has happened already (comma-separated; tests)
@@ -119,6 +120,7 @@ struct Options
     std::string              m_dumpGen;    ///< write the generated level's file here
     int                      m_heroLevel = 0;   ///< tests: the hero's level at the start
     float                    m_trace = 0.0f;    ///< tests: log the run's state every so many seconds
+    float                    m_clip = 0.0f;     ///< with --shot: the warm-up's last seconds as pictures (15 a second)
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -273,6 +275,10 @@ Options parse( int argc, char **argv )
             o.m_heroLevel = atoi( next().c_str() );
         else if ( a == "--xp" )
             o.m_xp = atoi( next().c_str() );
+        else if ( a == "--camrise" )
+            o.m_camRise = (float)atof( next().c_str() );
+        else if ( a == "--clip" )
+            o.m_clip = (float)atof( next().c_str() );
     }
     return o;
 }
@@ -1165,6 +1171,7 @@ int runGame( const Options &o, Gfx &gfx )
     apply();
     game->m_autoplay = o.m_autoplay;
     game->m_camYaw = o.m_camYaw * DEG2RAD;
+    if ( o.m_camRise > 0.0f ) game->m_camRise = o.m_camRise;
     if ( o.m_hasAt ) game->putHero( o.m_x, o.m_z, o.m_face );
     if ( o.m_lineup ) game->lineup();
     if ( o.m_creatures >= 0 ) game->creatureLineup( o.m_creatures );
@@ -1253,6 +1260,12 @@ int runGame( const Options &o, Gfx &gfx )
             in.m_move = o.m_move;
             in.m_map = o.m_map && i == 0;
             game->update( dt, in );
+            if ( o.m_clip > 0.0f && i >= frames - (int)( o.m_clip * 60.0f ) && i % 4 == 0 )
+            {
+                // A series to watch motion by: <shot>_0000.png on.
+                std::string base = o.m_shot.substr( 0, o.m_shot.rfind( '.' ) );
+                savePicture( gfx, TextFormat( "%s_%04d.png", base.c_str(), i / 4 ), draw );
+            }
             if ( game->takeCheckpoint() && !o.m_saveFile.empty() ) saveProgress( game->checkpoint(), o.m_saveFile );
             for ( const std::string &s : game->takeStings() ) score.sting( s );
             score.update( dt, game->musicCue(), game->musicHeat() );

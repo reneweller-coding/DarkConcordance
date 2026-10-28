@@ -11,6 +11,8 @@ serves every language; its voices and subtitles come from the game at playback (
 
     python tools\\make_films.py pictures|motion|cut|all [--film prolog ...] [--redo prolog:3 ...]
 
+A shot's "turn" (seconds) plays only its start, forward and back again, for a picture LTX holds still only so long.
+
 The voices must be spoken first (tools/make_voices.py reads the films' lines too). Pictures and motion run below normal
 priority, one model at a time on the GPU; a shot already there is kept (--redo makes it again, picture and motion).
 """
@@ -203,10 +205,22 @@ def cut(chosen):
             print("%s: shots missing, not cut" % name)
             continue
         args, chain, last, offset = [], [], "0:v", 0.0
-        for i, (c, p) in enumerate(zip(clips, plan)):
+        for i, (c, p, shot) in enumerate(zip(clips, plan, film["shots"])):
             args += ["-i", c]
-            chain.append("[%d:v]trim=duration=%.3f,setpts=PTS-STARTPTS,fps=%d,format=yuv420p[v%d]" %
-                         (i, p["length"], FPS, i))
+            turn = float(shot.get("turn", 0.0))
+            if turn > 0.0:
+                # A shot LTX holds still only so long: its start played forward and back again until it is long enough.
+                k = int(math.ceil(p["length"] / turn))
+                parts = ["[t%d_%d]" % (i, j) for j in range(k)]
+                chain.append("[%d:v]trim=duration=%.3f,setpts=PTS-STARTPTS,split=%d%s" % (i, turn, k, "".join(parts)))
+                for j in range(1, k, 2):
+                    chain.append("%sreverse[r%d_%d]" % (parts[j], i, j))
+                    parts[j] = "[r%d_%d]" % (i, j)
+                chain.append("%sconcat=n=%d:v=1:a=0,trim=duration=%.3f,setpts=PTS-STARTPTS,fps=%d,format=yuv420p[v%d]" %
+                             ("".join(parts), k, p["length"], FPS, i))
+            else:
+                chain.append("[%d:v]trim=duration=%.3f,setpts=PTS-STARTPTS,fps=%d,format=yuv420p[v%d]" %
+                             (i, p["length"], FPS, i))
         last = "v0"
         offset = plan[0]["length"]
         for i in range(1, len(clips)):
