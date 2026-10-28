@@ -6,6 +6,8 @@
  */
 #include "Glyphs.h"
 
+#include "Bindings.h"
+
 #include "Text.h"
 
 #include <raymath.h>
@@ -21,10 +23,11 @@ namespace spaceopera
 namespace
 {
 
-const char *const ActionNames[(int)ActionE::COUNT] = { "use",       "jump",      "special",  "fire", "stim",   "skill2",
-                                                       "skill3",    "strafe",    "confirm",  "back", "pause",  "map",
-                                                       "inventory", "character", "salvage",  "page", "choose", "change",
-                                                       "move",      "camera",    "camreset", "next", "dodge" };
+const char *const ActionNames[(int)ActionE::COUNT] = { "use",      "jump",   "special",   "fire",      "stim",
+                                                       "skill2",   "skill3", "strafe",    "confirm",   "back",
+                                                       "pause",    "map",    "inventory", "character", "salvage",
+                                                       "page",     "choose", "change",    "move",      "camera",
+                                                       "camreset", "next",   "dodge",     "store",     "photo" };
 
 DeviceE g_device = DeviceE::KEYBOARD;
 bool    g_known = false;    ///< the first look has been taken
@@ -78,10 +81,92 @@ struct Part
     std::string m_label;
 };
 
+/** @return the binding an action's glyph shows (-1: a menu's own key) */
+int boundOf( ActionE a )
+{
+    switch ( a )
+    {
+    case ActionE::USE: return (int)BindE::USE;
+    case ActionE::JUMP: return (int)BindE::JUMP;
+    case ActionE::SPECIAL: return (int)BindE::SPECIAL;
+    case ActionE::FIRE: return (int)BindE::FIRE;
+    case ActionE::STIM: return (int)BindE::STIM;
+    case ActionE::SKILL2: return (int)BindE::SKILL2;
+    case ActionE::SKILL3: return (int)BindE::SKILL3;
+    case ActionE::STRAFE: return (int)BindE::STRAFE;
+    case ActionE::MAP: return (int)BindE::MAP;
+    case ActionE::INVENTORY: return (int)BindE::INVENTORY;
+    case ActionE::CHARACTER: return (int)BindE::CHARACTER;
+    case ActionE::SALVAGE: return (int)BindE::SALVAGE;
+    case ActionE::CAMRESET: return (int)BindE::CAMRESET;
+    case ActionE::DODGE: return (int)BindE::DODGE;
+    case ActionE::STORE: return (int)BindE::STORE;
+    case ActionE::PHOTO: return (int)BindE::PHOTO;
+    default: return -1;
+    }
+}
+
+/** @brief A key (or mouse button) as a glyph's part. */
+Part keyPart( int key )
+{
+    return key == MouseLeft ? Part{ Part::MOUSE, 0, "" } : Part{ Part::KEY, 0, keyLabel( key ) };
+}
+
+/** @brief A pad button as a glyph's part. */
+Part padPart( int button )
+{
+    using K = Part::KindE;
+    switch ( button )
+    {
+    case GAMEPAD_BUTTON_RIGHT_FACE_DOWN: return { K::FACE, 0, "" };
+    case GAMEPAD_BUTTON_RIGHT_FACE_RIGHT: return { K::FACE, 1, "" };
+    case GAMEPAD_BUTTON_RIGHT_FACE_LEFT: return { K::FACE, 2, "" };
+    case GAMEPAD_BUTTON_RIGHT_FACE_UP: return { K::FACE, 3, "" };
+    case GAMEPAD_BUTTON_LEFT_TRIGGER_1: return { K::SHOULDER, 0, "" };
+    case GAMEPAD_BUTTON_RIGHT_TRIGGER_1: return { K::SHOULDER, 1, "" };
+    case GAMEPAD_BUTTON_LEFT_TRIGGER_2: return { K::TRIGGER, 0, "" };
+    case GAMEPAD_BUTTON_RIGHT_TRIGGER_2: return { K::TRIGGER, 1, "" };
+    case GAMEPAD_BUTTON_MIDDLE_LEFT: return { K::VIEW, 0, "" };
+    case GAMEPAD_BUTTON_MIDDLE_RIGHT: return { K::MENU, 0, "" };
+    case GAMEPAD_BUTTON_LEFT_FACE_UP: return { K::DPAD, 1, "" };
+    case GAMEPAD_BUTTON_LEFT_FACE_DOWN: return { K::DPAD, 2, "" };
+    case GAMEPAD_BUTTON_LEFT_FACE_LEFT: return { K::DPAD, 4, "" };
+    case GAMEPAD_BUTTON_LEFT_FACE_RIGHT: return { K::DPAD, 8, "" };
+    case GAMEPAD_BUTTON_LEFT_THUMB: return { K::STICK, 2, "" };
+    case GAMEPAD_BUTTON_RIGHT_THUMB: return { K::STICK, 3, "" };
+    default: return { K::KEY, 0, "-" };
+    }
+}
+
 /** @brief What an action is on a device. */
 std::vector<Part> partsOf( ActionE a, DeviceE d )
 {
     using K = Part::KindE;
+    // What the player binds shows their key or button (on a pad, using goes with the jump unless it has its own).
+    int bound = boundOf( a );
+    if ( bound >= 0 )
+    {
+        const Binding &k = binding( (BindE)bound );
+        if ( d == DeviceE::KEYBOARD ) return { keyPart( k.m_key ) };
+        int button = k.m_pad;
+        if ( a == ActionE::USE && button == 0 ) button = binding( BindE::JUMP ).m_pad;
+        return { padPart( button ) };
+    }
+    if ( a == ActionE::MOVE && d == DeviceE::KEYBOARD )
+    {
+        // The four keys as one cap where each is a letter (WASD), else side by side.
+        std::vector<Part> parts;
+        std::string       letters;
+        bool              short4 = true;
+        for ( BindE b : { BindE::UP, BindE::LEFT, BindE::DOWN, BindE::RIGHT } )
+        {
+            std::string l = keyLabel( binding( b ).m_key );
+            short4 = short4 && l.size() == 1;
+            letters += l;
+            parts.push_back( keyPart( binding( b ).m_key ) );
+        }
+        return short4 ? std::vector<Part>{ Part{ K::KEY, 0, letters } } : parts;
+    }
     if ( d == DeviceE::KEYBOARD )
     {
         auto key = []( const char *k ) { return Part{ K::KEY, 0, tr( k ) }; };
@@ -111,6 +196,7 @@ std::vector<Part> partsOf( ActionE a, DeviceE d )
         case ActionE::CAMRESET: return { key( "key.backspace" ) };
         case ActionE::NEXT: return { plain( "Enter" ) };
         case ActionE::DODGE: return { key( "key.ctrl" ) };
+        case ActionE::STORE: return { plain( "F" ) };
         default: return { plain( "?" ) };
         }
     }
@@ -122,7 +208,8 @@ std::vector<Part> partsOf( ActionE a, DeviceE d )
     case ActionE::SPECIAL:
     case ActionE::BACK: return { Part{ K::FACE, 1, "" } };
     case ActionE::SALVAGE: return { Part{ K::FACE, 2, "" } };
-    case ActionE::STIM: return { Part{ K::FACE, 3, "" } };
+    case ActionE::STIM:
+    case ActionE::STORE: return { Part{ K::FACE, 3, "" } };
     case ActionE::FIRE: return { Part{ K::TRIGGER, 1, "" } };
     case ActionE::STRAFE: return { Part{ K::TRIGGER, 0, "" } };
     case ActionE::SKILL2: return { Part{ K::SHOULDER, 0, "" } };

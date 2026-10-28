@@ -51,6 +51,8 @@ enum class ActionE
     CAMRESET,
     NEXT,
     DODGE,
+    STORE,
+    PHOTO,
     COUNT
 };
 

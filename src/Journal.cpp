@@ -6,6 +6,8 @@
  */
 #include "Journal.h"
 
+#include "Files.h"
+
 #include <cstdio>
 #include <cstring>
 #include <map>
@@ -101,12 +103,12 @@ void load( const std::string &path )
 void flush()
 {
     if ( !g_dirty || g_path.empty() ) return;
-    FILE *f = fopen( g_path.c_str(), "w" );
+    FILE *f = beginWrite( g_path );
     if ( !f ) return;
     for ( const auto &[name, n] : g_counts ) fprintf( f, "count %s %d\n", name.c_str(), n );
     for ( const std::string &t : g_met ) fprintf( f, "met %s\n", t.c_str() );
     for ( const std::string &a : g_won ) fprintf( f, "won %s\n", a.c_str() );
-    fclose( f );
+    endWrite( f, g_path );
     g_dirty = false;
 }
 

@@ -9,7 +9,10 @@ ranged combat aimed as in *Fallout: Brotherhood of Steel*, pools of light in the
 „Spiel starten“ asks who you are: **Dorra Vask** (melee: ram hammer, shield, blast bolts) or **Corvin Aske**
 (ranged: the Gauss rifle); Ione follows later. The game begins with the prologue, wakes up on Station Velm (the hub)
 and goes down to level 1 from there, back to Velm after it; hero, scrap, stims, upgrades and what has happened go along
-and are saved in `save.txt` beside the program at each level's start („Fortsetzen“ in the title menu).
+and are saved at each level's start („Fortsetzen“ in the title menu) in the player's folder: `%APPDATA%\SpaceOpera`
+on Windows, `$XDG_DATA_HOME/SpaceOpera` or `~/.local/share/SpaceOpera` on Linux (the save, the settings, the journal,
+the stash and the play log; what lay beside the program before moves there once). Every file there is written whole
+or not at all (into a `.tmp`, then over the old one, which stays as `.bak` and is read if the file is broken).
 
 **Steam Deck:** everything plays with the pad (the menus, the inventory, the conversations, the shops and the lift
 with the cross or the left stick, A to choose, B back). On the Deck (Steam sets `SteamDeck=1`) the window takes its
@@ -39,7 +42,30 @@ it for pictures.
 
 **Options** (the title's and the pause's menu): difficulty, brightness, graphics, music, voices, effects, language,
 the subtitles' size (small, normal, large), colour vision (red-green or blue-yellow: what the eye cannot tell apart is
-moved into colours it can, in the last pass) and the camera's shake (off, half, full).
+moved into colours it can, in the last pass), the camera's shake (off, half, full), the loot filter (keep everything;
+salvage common finds at once; common and magic ones – never what fills an empty slot, never a module) and the
+controls.
+
+**Controls** („Tastenbelegung“, `src/Bindings.cpp`): every action of play (the four ways to walk, fire, jump, the
+roll, the special, the two skills, the stim, use, keep facing, the map, the inventory, the character page, the
+camera back, the photo mode) and the inventory's two (salvage, into the locker) has a key or mouse button and a pad
+button of its own; choose a row, press what it is to be (Esc: as it was). Taken from another action of the same place,
+that one gets the old one; „Wie ab Werk“ brings back the game's own. They are kept in the settings (`bind` lines), and
+the buttons in the texts show them. The menus keep their own keys (the arrows, Enter, Esc; the pad's cross, A, B,
+Start), and walking also goes with the arrows and the left stick.
+
+**The locker** (the inventory in a hub: Velm, the ship, the ring): sixty places beside the bag, the same in every
+game and for every hero (`stash.txt` in the player's folder) – what Corvin leaves there, Dorra finds in her own game.
+F or Y puts the chosen item in or takes it out (Enter or A takes it out too).
+
+**Photo mode** (P, or „Fotomodus“ in the pause): the game stands still and the HUD is gone; the camera pans (WASD,
+the left stick), turns (Q E, the right stick, the right mouse button), tilts (R F) and goes in and out (the wheel, the
+triggers); Enter or A saves the picture into `photos` in the player's folder, H or Y hides the help.
+
+**Play log** (`playlog.txt` in the player's folder, for a play test): each level's start (hero, level, difficulty,
+cycle, gear, the Depths' anomalies), where the hero is every ten seconds with health and the foes near, every death
+with its cause and who stood round, the boss fights, what was put on, salvaged and filtered, and at the end time,
+deaths, kills, scrap and the skills, rolls and stims used. Only real play writes it (`--playlog FILE` for tests).
 
 **Saving:** at the start of every level and at every rescue capsule that wakes (with what has happened in the level
 by then; the foes stand again, a boss too). „Fortsetzen“ goes on from there; „Neustart“ in the pause begins the level
@@ -50,7 +76,7 @@ they are – level, gear, skills, scrap, the notes read – and every place twel
 of higher levels); the HUD shows the cycle. „Albtraum“ then may be chosen as a difficulty: foes 1.9 times as tough,
 hitting 1.7 times as hard, finds four levels higher and the rare ones more often.
 
-**Codex and awards** (the inventory's fifth and sixth pages, kept in `journal.txt` beside the program across all
+**Codex and awards** (the inventory's fifth and sixth pages, kept in `journal.txt` in the player's folder across all
 games): every creature family (with its three grades), every foe and boss met, with what is known of it and how many
 were felled, and every note read; 42 awards (kills, bosses, the acts, the three endings, each hero through, flawless
 levels, finds, uniques and sets, the codex, the notes, a fall into molten metal, the Catcher's grip, New Game+,
@@ -133,7 +159,12 @@ flocks of birds wheel under the cavern's lights.
 
 **The Depths** ([assets/levels/tiefen.txt](assets/levels/tiefen.txt)): the maintenance levels under the drum, open
 from the hub's lift after level 1 and again and again, laid out anew on every visit, as strong as the hero, with a
-guardian champion before the lift. For experience and gear.
+guardian champion before the lift. For experience and gear. Each visit brings one to three **anomalies**, named
+under the place's name when it begins and on the character page: tough brood (more health), frenzy (quicker), outnumbered
+(more packs), champions (more of them), blackout (the light dimmed, the fog thicker), low gravity, the bursting dead
+(a short glow, then a blast that hurts the hero), thinned stims, merciless (harder blows), rich veins (twice the
+scrap). Each one makes the finds better (by a sixth to a third) and brings more experience (`src/GameAnomaly.cpp`;
+the recipe's `anomalies 3`, the table in `Level.cpp`).
 
 **Enemies:** besides lice and boarders, market guards with riot shields (attack from the side), heavies with rotary
 guns (a spin-up, then a long burst), hovering drones, saw bots in swarms, crawlers with charges (they go off near you
@@ -354,6 +385,13 @@ guardians are creatures now (a glacier spider, a nightmare, a zero-point core).
 Hits are of four kinds – kinetic (slugs, blows, blades), heat (plasma, embers, fire, blasts), shock (arcs, mauls,
 sparks), acid – and every enemy shrugs some off and fears others: machines are weak to shock, suits to acid, the
 golems and crawlers are immune to heat, the eels to shock, the vines burn, the crystals and phantoms laugh at slugs.
+**Fighting together** (`src/GameTactics.cpp`): those that close in come from the sides – two of three bend away
+from the straight line as they near, so they arrive round the hero – and one that would arrive alone while two or
+more are still coming circles a little way off until they are there (two and a half seconds at most; champions never
+wait). Those that shoot step behind cover when they are hit (a floor cell close by from which the hero cannot be
+seen; no two take the same), stay a while and come out again to shoot; one up on a ledge stays up there while it sees
+the hero. The guards, the heavies, the drones and the bosses keep their own ways.
+
 The weapon's kind is in its description; the enemy one aims at shows its name and what it is weak to, tough
 against or immune to; a hit on a weakness calls it out. Burning ground, acid and frost hurt, eat at the armour or
 slow the hero (shown under the stock line). `--creatures 0|1` with `--shot` lines them all up
@@ -478,6 +516,17 @@ Taxator, Okafor's walker, the foreman's crane walker …) move as men do, but no
 A hit makes the chest flinch, a heavy blow throws a man back; every hero rolls out of the way (the clip's roll); a
 rifle is held with the left hand on its fore end (two-bone IK, the clips hold a pistol); on steps and edges the body
 sinks to the lower floor and the leg on the higher one bends.
+
+**The people's clothes** (`src/Garments.cpp`): the shader dresses the body – a jacket's colour above the belt, the
+trousers' below, a pattern (pinstripes, checks, reflective bands, quilting, worn patches), the sleeves rolled up or
+the hands bare – and garments go over it, each made in the body's rest pose round the body's own outline (measured
+from its mesh at load) and riding on one bone as the hair does: a long coat (its skirt behind, a flap on each thigh, a
+collar), a hood down or up, a scarf, a pack with a bedroll, a satchel, a tool belt with pouches, a work vest, a
+collar, a knitted cap, an apron, knee pads, cargo pockets, boots for everyone. What the people do tells what they
+wear: dockers (overalls with reflective bands, tool belt, knee pads), traders (coat, satchel), spacers (a quilted
+flight jacket), travellers (worn clothes, pack, scarf, the hood), technicians (a checked shirt, vest, tool belt – Kiri),
+the street's people and those at a stall (an apron); Ysolde wears a trader's coat and a scarf. On a stool a coat
+shows only its collar. `--lineup` with `--shot` lines ten of them up round the hero, each in another outfit.
 `--figures 0|1|2` with `--shot` lines figures up in their poses in front of the hero (the hero; the men and the
 people; hits, a heavy blow and the roll), best in `--level ../../tools/figures.txt` (`figures_hub.txt`: helmets
 off).
@@ -491,6 +540,22 @@ The first room: an observation deck with a glass floor over a gas giant and a ne
 ## Build and run
 
     .\build.ps1          # msvc Release; the game lands in bin\msvc\SpaceOpera.exe
+
+**Linux** (WSL2 with Ubuntu 22.04, and so the Steam Deck's native build): `g++-12`, Ninja, the X11 and ALSA headers
+and the system's dav1d (`sudo apt install g++-12 ninja-build libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
+libasound2-dev libdav1d-dev`); built outside the Windows drive for speed, raylib's sources taken from the MSVC build:
+
+    cmake -S /mnt/g/Tools/Games/SpaceOpera -B ~/build/spaceopera -G Ninja -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12 \
+          -DFETCHCONTENT_SOURCE_DIR_RAYLIB=/mnt/g/Tools/Games/SpaceOpera/build/msvc/_deps/raylib-src \
+          -DSPACEOPERA_BIN_DIR=/mnt/g/Tools/Games/SpaceOpera/bin/linux
+    nice ninja -C ~/build/spaceopera -j 4      # bin/linux/SpaceOpera, reads assets/ from the source tree
+
+It plays under WSLg (the films too: dav1d 0.9's settings where 1.0's are missing). GCC builds with `-fwrapv`, so an
+`int` that overflows wraps round as with MSVC and a seed lays out the same level on both (`hashCell` had built other
+house fronts before). The Windows build also runs under Wine 6 (Proton's ground): the player's files are copied by
+hand, not with `std::filesystem::copy_file` (Wine lacks the `CopyFile2` it calls), and Barlow stands in for the
+missing Bahnschrift.
 
 Tests and pictures without a window (always silent):
 
@@ -515,6 +580,9 @@ sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the tr
 a generated level's layout, `--dumpgen FILE` writes the generated level file, `--herolevel n`, `--loot n` (items
 scattered round the hero) and `--xp n` set up a hero for tests, `--trace s` logs the run (and the music's piece and
 heat) every s seconds. `--silent` runs the sound (device, music, backgrounds) at volume 0, also with `--shot`;
+`--playlog FILE` writes the play log there, `--lootfilter 0|1|2` sets the loot filter, `--stash n` puts the bag's
+first n items into the stash for the picture, `--bind "<name> <key> <pad>"` binds otherwise (as in the settings),
+`--controls` puts the controls' page over the picture, `--photo turn,tilt,zoom` takes it in the photo mode;
 `--scoretest FILE` mixes a scripted stretch of music (title, a level calm to fight, a boss, the stingers, a change of
 takes) into a WAV without playing it; `--dumpsound DIR` writes the synthesised effects and backgrounds as WAVs.
 

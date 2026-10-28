@@ -65,7 +65,30 @@ const char *const LightSkin[2] = { "T_Superhero_Male_Ligh.png", "T_Superhero_Fem
 const char *const Hair[2][4] = { { "Hair_SimpleParted", "Hair_Buzzed", "Hair_Beard", "Eyebrows_Regular" },
                                  { "Hair_Long", "Hair_Buns", "Hair_BuzzedFemale", "Eyebrows_Female" } };
 constexpr int     HairStyles = 3;
-constexpr float   WalkSpeed = 1.3f;   ///< m/s the walk clip covers
+/** @brief Second colours: scarves, caps, vests, packs (rust, mustard, teal, plum, bone, olive, slate). */
+const Vector3 Accent[] = { { 0.55f, 0.16f, 0.12f }, { 0.62f, 0.5f, 0.18f }, { 0.16f, 0.36f, 0.38f },
+                           { 0.34f, 0.2f, 0.36f },  { 0.7f, 0.66f, 0.56f }, { 0.3f, 0.34f, 0.22f },
+                           { 0.2f, 0.22f, 0.3f } };
+/** @brief Trousers: charcoal, brown, navy, olive, black, faded khaki. */
+const Vector3 Trousers[] = { { 0.16f, 0.16f, 0.18f }, { 0.26f, 0.2f, 0.15f }, { 0.13f, 0.16f, 0.26f },
+                             { 0.25f, 0.27f, 0.19f }, { 0.09f, 0.09f, 0.1f }, { 0.36f, 0.33f, 0.28f } };
+/** @brief What the people of the stations do, as their clothes tell it. */
+enum class OutfitE : int
+{
+    DOCKER,      ///< overalls with reflective bands, a tool belt, knee pads, often a cap
+    TRADER,      ///< a long coat, a satchel, sometimes a scarf
+    SPACER,      ///< a quilted flight jacket with a collar, cargo pockets
+    TRAVELLER,   ///< worn clothes, a pack with a bedroll, a scarf, the hood up or down
+    TECH,        ///< a checked shirt, sleeves rolled up, a work vest, a tool belt
+    CIVILIAN,    ///< a jacket, a collar or a scarf, now and then a bag
+    VENDOR,      ///< an apron, sleeves rolled up (only who stands at a stall)
+    COUNT        ///< how many
+};
+constexpr unsigned wearing( GarmentE g )
+{
+    return 1u << (int)g;
+}
+constexpr float WalkSpeed = 1.3f;   ///< m/s the walk clip covers
 
 /** @brief Clothes by the box figures' looks (their surfaces' tints), a little brighter. */
 const Vector3 Cloth[] = { { 0.42f, 0.45f, 0.5f },  { 0.33f, 0.24f, 0.17f }, { 0.32f, 0.4f, 0.34f },
@@ -119,6 +142,7 @@ void Game::loadSkins( Gfx &gfx )
                                  { 190, 160, 105, 255 },
                                  { 150, 70, 35, 255 },
                                  { 165, 165, 160, 255 } };
+        m_garments[b] = buildGarments( m );
         for ( const char *h : Hair[b] )
         {
             int    k = m.addHair( dir + h + ".gltf" );
@@ -131,6 +155,10 @@ void Game::loadSkins( Gfx &gfx )
             }
         }
     }
+    Image     white = GenImageColor( 4, 4, WHITE );
+    Texture2D cloth = LoadTextureFromImage( white );
+    UnloadImage( white );
+    m_garmentSurface = surface( cloth, 5.0f );
     for ( const auto &list : { one, two } )
         for ( const std::string &name : list ) m_clip[name] = m_body[0].clip( name );
     m_skins = m_clip["Idle_Loop"] >= 0 && m_clip["Walk_Loop"] >= 0;
@@ -185,6 +213,59 @@ void Game::dressPerson( Person &q, unsigned seed )
     q.m_hairColour = q.m_look == 4 ? 4 : q.m_look == 5 ? 0 : (int)( ( seed / 11 ) % 5 );
     q.m_cloth = Cloth[std::min( q.m_look, (int)std::size( Cloth ) - 1 )];
     q.m_scale = q.m_look == 8 ? 0.66f : 0.95f + ( seed % 5 ) * 0.012f;
+    // What they wear over it, by what they do: Ysolde a trader's coat, Kiri a technician's vest, the child a
+    // traveller's pack; the others by the seed (an apron only for who stands still).
+    q.m_accent = Accent[( seed / 17 ) % std::size( Accent )];
+    q.m_lower = Trousers[( seed / 19 ) % std::size( Trousers )];
+    OutfitE outfit = q.m_look == 4   ? OutfitE::TRADER
+                     : q.m_look == 5 ? OutfitE::TECH
+                     : q.m_look == 8 ? OutfitE::TRAVELLER
+                                     : (OutfitE)( ( seed / 13 ) % (int)OutfitE::COUNT );
+    if ( outfit == OutfitE::VENDOR && ( q.m_walks || q.m_chair > 0.5f ) ) outfit = OutfitE::CIVILIAN;
+    unsigned roll = seed / 23;
+    switch ( outfit )
+    {
+    case OutfitE::DOCKER:
+        q.m_lower = q.m_cloth;
+        q.m_cut = 3.0f + ( roll % 2 ? 10.0f : 0.0f );
+        q.m_wear = wearing( GarmentE::TOOLBELT ) | wearing( GarmentE::KNEEPADS ) |
+                   ( roll / 2 % 2 ? wearing( GarmentE::CAP ) : 0u );
+        break;
+    case OutfitE::TRADER:
+        q.m_cut = 20.0f;
+        q.m_wear = wearing( GarmentE::COAT ) | wearing( GarmentE::SATCHEL ) |
+                   ( roll % 3 == 0 || q.m_look == 4 ? wearing( GarmentE::SCARF ) : 0u );
+        break;
+    case OutfitE::SPACER:
+        q.m_cut = 4.0f + ( roll % 2 ? 20.0f : 0.0f );
+        q.m_wear = wearing( GarmentE::COLLAR ) | wearing( GarmentE::POCKETS ) |
+                   ( roll % 4 == 1 ? wearing( GarmentE::SCARF ) : 0u ) |
+                   ( roll % 3 == 2 ? wearing( GarmentE::TOOLBELT ) : 0u );
+        break;
+    case OutfitE::TRAVELLER:
+        q.m_cut = 25.0f;
+        q.m_wear = wearing( GarmentE::BACKPACK ) | wearing( GarmentE::SCARF ) |
+                   wearing( roll % 5 < 2 ? GarmentE::HOOD_UP : GarmentE::HOOD );
+        break;
+    case OutfitE::TECH:
+        q.m_cut = 32.0f;
+        q.m_wear = wearing( GarmentE::VEST ) | wearing( GarmentE::TOOLBELT ) |
+                   ( roll % 2 || q.m_look == 5 ? wearing( GarmentE::POCKETS ) : 0u ) |
+                   ( roll % 4 == 1 && q.m_look != 5 ? wearing( GarmentE::CAP ) : 0u );
+        break;
+    case OutfitE::CIVILIAN:
+        q.m_cut = 20.0f + ( roll % 3 == 0 ? 1.0f : 0.0f );
+        q.m_wear = ( roll % 2 ? wearing( GarmentE::COLLAR ) : 0u ) |
+                   ( roll % 3 == 1 ? wearing( GarmentE::SCARF ) : 0u ) |
+                   ( roll % 4 == 2 ? wearing( GarmentE::SATCHEL ) : 0u );
+        break;
+    default:
+        q.m_cut = 30.0f + ( roll % 2 ? 2.0f : 0.0f );
+        q.m_wear = wearing( GarmentE::APRON ) | ( roll % 3 == 0 ? wearing( GarmentE::SCARF ) : 0u ) |
+                   ( roll % 4 == 0 ? wearing( GarmentE::CAP ) : 0u );
+        break;
+    }
+    q.m_wear |= wearing( GarmentE::BOOTS );
     q.m_skin = SkinState();
     q.m_skin.m_clip = m_clip["Idle_Loop"];
     q.m_skin.m_time = ( seed % 97 ) * 0.11f;
@@ -261,13 +342,48 @@ void Game::poseSkin( Person &q, std::vector<Drawable> &out )
         else
             d.m_transform = head;
         d.m_tint = { q.m_cloth.x, q.m_cloth.y, q.m_cloth.z, neck };
+        d.m_cloth = { q.m_lower.x, q.m_lower.y, q.m_lower.z, q.m_cut };
         d.m_spotShadow = false;
         out.push_back( d );
     }
-    // The hair and the brows, rigid on the head.
+    // The garments, each piece on its bone. On a stool a coat shows only its collar; no apron, no pack.
+    unsigned wear = q.m_wear;
+    if ( q.m_chair > 0.5f )
+    {
+        if ( wear & wearing( GarmentE::COAT ) )
+            wear = ( wear & ~wearing( GarmentE::COAT ) ) | wearing( GarmentE::COLLAR );
+        wear &= ~( wearing( GarmentE::APRON ) | wearing( GarmentE::BACKPACK ) );
+    }
+    float         pattern = fmodf( q.m_cut, 10.0f );
+    const Vector3 colours[(int)GarmentColourE::COUNT] = {
+        q.m_cloth, q.m_lower.x < 0.0f ? q.m_cloth : q.m_lower, q.m_accent, { 0.3f, 0.2f, 0.13f }, { 0.1f, 0.1f, 0.11f }
+    };
+    for ( int g = 0; g < (int)m_garments[q.m_body].size(); ++g )
+    {
+        if ( !( wear & ( 1u << g ) ) ) continue;
+        for ( const GarmentPiece &piece : m_garments[q.m_body][g] )
+        {
+            if ( piece.m_bone < 0 || piece.m_bone >= (int)q.m_bones.size() ) continue;
+            Vector3  c = colours[(int)piece.m_colour];
+            Drawable d;
+            d.m_mesh = piece.m_mesh;
+            d.m_surface = m_garmentSurface;
+            d.m_transform = MatrixMultiply( q.m_bones[piece.m_bone], place );
+            d.m_tint = { c.x, c.y, c.z, 0.0f };
+            // The jacket's pattern on what is of its cloth; worn clothes worn all over.
+            d.m_cloth = { -1.0f, 0.0f, 0.0f,
+                          piece.m_colour == GarmentColourE::UPPER || pattern > 4.5f ? pattern : 0.0f };
+            d.m_spotShadow = false;
+            out.push_back( d );
+        }
+    }
+    // The hair and the brows, rigid on the head; long hair stays under a cap, all but a beard under a hood.
+    bool capped = wear & wearing( GarmentE::CAP ), hooded = wear & wearing( GarmentE::HOOD_UP );
+    bool shortHair = q.m_hair == ( q.m_body == 0 ? 1 : 2 ) || ( q.m_body == 0 && q.m_hair == 2 );
     for ( int k : { q.m_hair, HairStyles } )
     {
         if ( k < 0 || k >= (int)m.m_hair.size() ) continue;
+        if ( k == q.m_hair && ( ( capped && !shortHair ) || ( hooded && !( q.m_body == 0 && k == 2 ) ) ) ) continue;
         for ( int i = 0; i < m.m_hair[k].meshCount; ++i )
         {
             Drawable d;
@@ -352,14 +468,13 @@ void Game::lineup()
     for ( int i = 0; i < n; ++i )
     {
         Person q;
-        q.m_pos = { m_pos.x + ( i - ( n - 1 ) * 0.5f ) * 1.3f, m_pos.y, m_pos.z - 2.0f };
+        q.m_pos = { m_pos.x + ( i % 5 - 2 ) * 0.95f, m_pos.y, m_pos.z + ( i < 5 ? 1.4f : -1.3f ) };   // around the hero
         q.m_yaw = 0.0f;
         q.m_look = i % 2 ? 7 : 6;
         q.m_sit = 0.0f;
         q.m_down = 0.0f;
-        dressPerson( q, (unsigned)( i * 3 + 1 ) );
+        dressPerson( q, (unsigned)( i * 13 + 1 + i / 7 * 23 ) );   // each in another outfit
         q.m_look = i == 0 ? 0 : i % 9 == 3 ? 5 : q.m_look;
-        q.m_cloth = Cloth[i % std::size( Cloth )];
         q.m_force = m_clip[clips[i]];
         q.m_skin.m_clip = q.m_force;
         q.m_skin.m_time = 0.35f;

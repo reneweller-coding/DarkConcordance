@@ -8,6 +8,7 @@
 #include "Game.h"
 #include "GameShared.h"
 #include "Journal.h"
+#include "PlayLog.h"
 
 #include "MeshBuilder.h"
 #include "Text.h"
@@ -172,7 +173,7 @@ void Game::gainXp( int xp )
 {
     if ( m_progress.m_heroLevel >= MaxLevel ) return;
     if ( m_tale ) m_taleXp += xp;
-    m_progress.m_xp += (int)( xp * ( 1.0f + stat( StatE::XP ) / 100.0f ) );
+    m_progress.m_xp += (int)( xp * ( 1.0f + stat( StatE::XP ) / 100.0f ) * m_xpScale );
     while ( m_progress.m_heroLevel < MaxLevel && m_progress.m_xp >= xpNeed( m_progress.m_heroLevel ) )
     {
         // A level: a skill point, more health, healed whole; a ring of light.
@@ -206,7 +207,7 @@ void Game::dropItem( Vector3 at, float luck, int slot )
     int      level = std::max( 1, areaLevel() + (int)( rnd() * 3.0f ) - 1 );
     // Albtraum: finds a few levels higher, the rare ones more often.
     if ( m_difficulty == DifficultyE::NIGHTMARE ) level += 4, luck *= 1.6f;
-    Item it = makeItem( level, heroIndex(), seed, luck * ( 1.0f + stat( StatE::FIND ) / 100.0f ), slot );
+    Item it = makeItem( level, heroIndex(), seed, luck * ( 1.0f + stat( StatE::FIND ) / 100.0f ) * m_findScale, slot );
     m_progress.m_seed = (int)( seed & 0x7fffffff );
     Loot l;
     l.m_item = it;
@@ -240,6 +241,24 @@ void Game::updateLoot( float dt )
         if ( l.m_t < 0.6f || m_dead || fabsf( l.m_pos.y - m_pos.y ) > 1.5f ||
              Vector2Distance( { l.m_pos.x, l.m_pos.z }, { m_pos.x, m_pos.z } ) > PickupReach )
             continue;
+        // The loot filter: common (and magic) finds go to scrap at once, unless they fill an empty slot.
+        const ItemBase &kind = itemBases()[l.m_item.m_base];
+        int             into = gearIndex( l.m_item );
+        bool fills = ( kind.m_hero < 0 || kind.m_hero == heroIndex() ) && into >= 0 && !m_progress.m_worn[into];
+        if ( !fills && into >= 0 && (int)l.m_item.m_rarity < m_lootFilter )
+        {
+            l.m_alive = false;
+            int scrap = std::max( 1, itemValue( l.m_item ) / 3 );
+            m_scrap += scrap;
+            journal::count( "finds" );
+            playlog::line( "autosalvage %s rarity %d level %d", itemName( l.m_item ).c_str(), (int)l.m_item.m_rarity,
+                           l.m_item.m_level );
+            m_toast = TextFormat( tr( "loot.autosalvaged" ), itemName( l.m_item ).c_str(), scrap );
+            m_toastColor = { 200, 195, 185, 255 };
+            m_toastTimer = 1.6f;
+            m_audio.play( SfxE::PICKUP, l.m_pos, m_camTarget, 0.5f );
+            continue;
+        }
         if ( (int)m_progress.m_bag.size() >= BagSize )
         {
             if ( m_bagFull <= 0.0f )
@@ -425,7 +444,8 @@ void Game::poseLoot( std::vector<Drawable> &out )
 void Game::equip( int i )
 {
     if ( i < 0 || i >= (int)m_progress.m_bag.size() ) return;
-    Item            it = m_progress.m_bag[i];
+    Item it = m_progress.m_bag[i];
+    playlog::line( "equip %s rarity %d level %d", itemName( it ).c_str(), (int)it.m_rarity, it.m_level );
     const ItemBase &b = itemBases()[it.m_base];
     if ( b.m_hero >= 0 && b.m_hero != heroIndex() )
     {
@@ -467,6 +487,8 @@ void Game::unequip( int slot )
 void Game::salvage( int i )
 {
     if ( i < 0 || i >= (int)m_progress.m_bag.size() ) return;
+    playlog::line( "salvage %s rarity %d level %d", itemName( m_progress.m_bag[i] ).c_str(),
+                   (int)m_progress.m_bag[i].m_rarity, m_progress.m_bag[i].m_level );
     int scrap = std::max( 1, itemValue( m_progress.m_bag[i] ) / 3 );
     m_scrap += scrap;
     m_progress.m_bag.erase( m_progress.m_bag.begin() + i );
@@ -496,6 +518,7 @@ void Game::useSkills( float dt, const GameInput &in )
         m_dodgeCool = 1.4f;
         m_swing = -1;
         journal::count( "dodges" );
+        ++m_logUses["rolls"];
         m_audio.play( SfxE::JUMP, m_pos, m_camTarget, 0.6f );
     }
     int   hero = heroIndex();
@@ -516,6 +539,7 @@ void Game::useSkills( float dt, const GameInput &in )
         }
         const SkillDef &def = skillDefs()[k];
         std::string     key = def.m_key;
+        ++m_logUses[key.substr( 6 )];   // the play log counts them
         m_cool[slot] = def.m_cooldown * cooldown;
         Vector3 fwd = { sinf( m_yaw ), 0.0f, cosf( m_yaw ) };
         if ( key == "skill.overcharge" )

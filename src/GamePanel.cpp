@@ -5,6 +5,7 @@
  * @author Rene Weller
  */
 #include "Game.h"
+#include "Files.h"
 #include "GameShared.h"
 
 #include "Text.h"
@@ -229,6 +230,22 @@ std::vector<Game::PanelRow> Game::inventory() const
         row.m_detail = itemDetail( it );
         rows.push_back( row );
     }
+    // In a hub: the stash, shared by every game.
+    if ( atStash() )
+    {
+        rows.push_back( { TextFormat( tr( "inv.stash" ), (int)m_stash.size(), StashSize ), "", "", true } );
+        for ( size_t i = 0; i < m_stash.size(); ++i )
+        {
+            const Item &it = m_stash[i];
+            PanelRow    row;
+            row.m_title = itemName( it );
+            row.m_value = TextFormat( tr( "item.ilevel" ), it.m_level );
+            row.m_color = rarityColor( it.m_rarity );
+            row.m_stash = (int)i;
+            row.m_detail = itemDetail( it );
+            rows.push_back( row );
+        }
+    }
     rows.push_back( { tr( "inv.supplies" ), "", "", true } );
     rows.push_back( { tr( "item.stims" ), TextFormat( "%d", m_stims ), tr( "item.stims.about" ) } );
     rows.push_back( { tr( "item.scrap" ), TextFormat( "%d", m_scrap ), tr( "item.scrap.about" ) } );
@@ -349,6 +366,81 @@ std::vector<Game::PanelRow> Game::rowsOf( int tab ) const
     return tab == 0 ? inventory() : tab == 1 ? skillRows() : tab == 4 ? codexRows() : awardRows();
 }
 
+const Item *Game::rowItem( const PanelRow &row ) const
+{
+    if ( row.m_bag >= 0 && row.m_bag < (int)m_progress.m_bag.size() ) return &m_progress.m_bag[row.m_bag];
+    if ( row.m_stash >= 0 && row.m_stash < (int)m_stash.size() ) return &m_stash[row.m_stash];
+    if ( row.m_slot >= 0 && m_progress.m_worn[row.m_slot] ) return &m_progress.m_gear[row.m_slot];
+    return nullptr;
+}
+
+void Game::loadStash( const std::string &path )
+{
+    m_stashPath = path;
+    m_stash.clear();
+    FILE *f = fopen( path.c_str(), "r" );
+    if ( !f ) f = fopen( ( path + ".bak" ).c_str(), "r" );
+    if ( !f ) return;
+    char line[2048];
+    while ( fgets( line, sizeof( line ), f ) )
+    {
+        std::string s = line;
+        while ( !s.empty() && ( s.back() == '\n' || s.back() == '\r' ) ) s.pop_back();
+        Item it;
+        if ( s.rfind( "item ", 0 ) == 0 && loadItem( s.substr( 5 ), it ) && (int)m_stash.size() < StashSize )
+            m_stash.push_back( it );
+    }
+    fclose( f );
+}
+
+void Game::saveStash() const
+{
+    if ( m_stashPath.empty() ) return;
+    FILE *f = beginWrite( m_stashPath );
+    if ( !f ) return;
+    for ( const Item &it : m_stash ) fprintf( f, "item %s\n", saveItem( it ).c_str() );
+    endWrite( f, m_stashPath );
+}
+
+bool Game::atStash() const
+{
+    // The hubs: Velm, the ship in both acts, the ring.
+    const std::string &act = m_level.m_act;
+    return m_level.m_peaceful && act.size() > 3 && act.compare( act.size() - 3, 3, "hub" ) == 0;
+}
+
+void Game::store( int bag )
+{
+    if ( !atStash() || bag < 0 || bag >= (int)m_progress.m_bag.size() ) return;
+    if ( (int)m_stash.size() >= StashSize )
+    {
+        m_toast = tr( "stash.full" );
+        m_toastColor = { 255, 140, 110, 255 };
+        m_toastTimer = 2.0f;
+        return;
+    }
+    m_stash.push_back( m_progress.m_bag[bag] );
+    m_progress.m_bag.erase( m_progress.m_bag.begin() + bag );
+    saveStash();
+    m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.6f );
+}
+
+void Game::take( int stash )
+{
+    if ( !atStash() || stash < 0 || stash >= (int)m_stash.size() ) return;
+    if ( (int)m_progress.m_bag.size() >= BagSize )
+    {
+        m_toast = tr( "loot.full" );
+        m_toastColor = { 255, 140, 110, 255 };
+        m_toastTimer = 2.0f;
+        return;
+    }
+    m_progress.m_bag.push_back( m_stash[stash] );
+    m_stash.erase( m_stash.begin() + stash );
+    saveStash();
+    m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.6f );
+}
+
 void Game::panelAction( int tab, int row, int action )
 {
     std::vector<PanelRow> rows = tab == 0 ? inventory() : tab == 1 ? skillRows() : std::vector<PanelRow>();
@@ -357,8 +449,21 @@ void Game::panelAction( int tab, int row, int action )
     {
         if ( r.m_header ) continue;
         if ( index++ != row ) continue;
-        if ( r.m_bag >= 0 )
+        if ( r.m_bag >= 0 && action == 2 )
+            store( r.m_bag );
+        else if ( r.m_bag >= 0 )
             action == 0 ? equip( r.m_bag ) : salvage( r.m_bag );
+        else if ( r.m_stash >= 0 && action != 1 )
+            take( r.m_stash );
+        else if ( r.m_stash >= 0 )
+        {
+            // Salvaged from the stash: into the bag for a moment, then to scrap.
+            if ( (int)m_progress.m_bag.size() < BagSize )
+            {
+                take( r.m_stash );
+                salvage( (int)m_progress.m_bag.size() - 1 );
+            }
+        }
         else if ( r.m_slot >= 0 && action == 0 )
             unequip( r.m_slot );
         else if ( r.m_skill >= 0 && action == 0 )
@@ -397,9 +502,10 @@ void Game::drawPanel( int w, int h, int tab, int sel )
                            { 255, 170, 80, 220 } );
     }
     label( font,
-           tr( tab == 0   ? "panel.help.inventory"
-               : tab == 1 ? "panel.help.skills"
-                          : "panel.help" ),
+           tr( tab == 0 && atStash() ? "panel.help.stash"
+               : tab == 0            ? "panel.help.inventory"
+               : tab == 1            ? "panel.help.skills"
+                                     : "panel.help" ),
            w * 0.5f, h - 56.0f * s, 20.0f * s, { 150, 150, 150, 220 }, 1 );
     float left = w * 0.08f, right = w * 0.92f, top = 140.0f * s;
 
@@ -442,28 +548,24 @@ void Game::drawPanel( int w, int h, int tab, int sel )
                 DrawRectangle( (int)( left - 12.0f * s ), (int)( y - 5.0f * s ), (int)( listW + 24.0f * s ),
                                (int)( 36.0f * s ), { 255, 170, 80, 40 } );
             }
-            Color title =
-                row.m_bag >= 0 ? row.m_color : ( on ? Color{ 255, 220, 170, 255 } : Color{ 210, 205, 195, 230 } );
-            const Item *item = row.m_bag >= 0                                     ? &m_progress.m_bag[row.m_bag]
-                               : row.m_slot >= 0 && m_progress.m_worn[row.m_slot] ? &m_progress.m_gear[row.m_slot]
-                                                                                  : nullptr;
+            bool  carried = row.m_bag >= 0 || row.m_stash >= 0;
+            Color title = carried ? row.m_color : ( on ? Color{ 255, 220, 170, 255 } : Color{ 210, 205, 195, 230 } );
+            const Item *item = rowItem( row );
             if ( const Texture2D *pic = item ? pictureOf( *item ) : nullptr )
                 DrawTexturePro( *pic, { 0, 0, (float)pic->width, (float)pic->height },
                                 { left - 44.0f * s, y - 4.0f * s, 34.0f * s, 34.0f * s }, { 0, 0 }, 0.0f, WHITE );
             label( font, row.m_title.c_str(), left, y, 24.0f * s, title );
             label( font, row.m_value.c_str(), left + listW, y, 24.0f * s,
-                   row.m_bag >= 0 ? Color{ 170, 170, 165, 220 } : row.m_color, 2 );
+                   carried ? Color{ 170, 170, 165, 220 } : row.m_color, 2 );
             y += rowH;
         }
         EndScissorMode();
         if ( chosen )
         {
             float       x = w * 0.54f, dy = top;
-            Color       c = chosen->m_bag >= 0 || chosen->m_slot >= 0 ? chosen->m_color : Color{ 245, 236, 222, 255 };
-            const Item *item = chosen->m_bag >= 0 ? &m_progress.m_bag[chosen->m_bag]
-                               : chosen->m_slot >= 0 && m_progress.m_worn[chosen->m_slot]
-                                   ? &m_progress.m_gear[chosen->m_slot]
-                                   : nullptr;
+            bool        carried = chosen->m_bag >= 0 || chosen->m_stash >= 0;
+            Color       c = carried || chosen->m_slot >= 0 ? chosen->m_color : Color{ 245, 236, 222, 255 };
+            const Item *item = rowItem( *chosen );
             if ( const Texture2D *pic = item ? pictureOf( *item ) : nullptr )
             {
                 // The item's picture, framed in its rarity's colour.
@@ -473,9 +575,7 @@ void Game::drawPanel( int w, int h, int tab, int sel )
                 DrawRectangleLinesEx( { x, dy, size, size }, 2.0f * s, { c.r, c.g, c.b, 170 } );
                 dy += size + 18.0f * s;
             }
-            std::string title = chosen->m_bag >= 0    ? chosen->m_title
-                                : chosen->m_slot >= 0 ? chosen->m_value
-                                                      : chosen->m_title;
+            std::string title = carried ? chosen->m_title : chosen->m_slot >= 0 ? chosen->m_value : chosen->m_title;
             label( font, title.c_str(), x, dy, 34.0f * s, c );
             dy += 56.0f * s;
             for ( const std::string &line : wrap( font, chosen->m_detail, 24.0f * s, right - x ) )
@@ -483,10 +583,10 @@ void Game::drawPanel( int w, int h, int tab, int sel )
                 label( font, line.c_str(), x, dy, 24.0f * s, { 215, 210, 200, 240 } );
                 dy += 32.0f * s;
             }
-            // For something in the bag: what it would replace.
-            if ( chosen->m_bag >= 0 )
+            // For something in the bag or the stash: what it would replace.
+            if ( carried )
             {
-                const Item &it = m_progress.m_bag[chosen->m_bag];
+                const Item &it = *item;
                 int         slot = gearIndex( it );
                 if ( slot >= 0 && m_progress.m_worn[slot] )
                 {
@@ -552,6 +652,7 @@ void Game::drawPanel( int w, int h, int tab, int sel )
         stat2( "stat.stims", TextFormat( "%d", m_stims ) );
         stat2( "stat.scrap", TextFormat( "%d", m_scrap ) );
         stat2( "stat.place", tr( m_level.m_name ) );
+        if ( !m_level.m_anomalies.empty() ) stat2( "stat.anomalies", anomalyNames() );
         return;
     }
     // The map: the whole of what has been seen, the place's name over it.

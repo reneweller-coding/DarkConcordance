@@ -8,6 +8,7 @@
 
 #include <raylib.h>
 
+#include <cstddef>
 #include <vector>
 
 namespace spaceopera
@@ -70,6 +71,14 @@ public:
      * @param[in] rings  each ring's corners (same count per ring), from bottom to top
      */
     void prism( const Matrix &m, const std::vector<std::vector<Vector3>> &rings );
+
+    /**
+     * @brief A smooth skin through rings of points (cloth over a body): each corner's normal from its neighbours.
+     * @param[in] m       where it goes
+     * @param[in] rings   each ring's points (same count per ring), from bottom to top; open at both ends
+     * @param[in] closed  each ring goes all the way round (false: an arc, open at its ends)
+     */
+    void loft( const Matrix &m, const std::vector<std::vector<Vector3>> &rings, bool closed );
 
     /**
      * @brief One flat triangle.

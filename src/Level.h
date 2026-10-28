@@ -271,6 +271,23 @@ struct Seat
  */
 unsigned hashCell( int r, int c, int salt );
 
+/** @brief An anomaly of a place built anew each time (the Depths): lines for its recipe, what it does to the fight. */
+struct AnomalyDef
+{
+    const char *m_key;             ///< its name's text key ("anomaly.<key>")
+    const char *m_lines;           ///< recipe lines it adds before the place is built ("" none)
+    float       m_hp = 1.0f;       ///< the enemies' health
+    float       m_tempo = 1.0f;    ///< their pace
+    float       m_harm = 1.0f;     ///< what they do to the hero
+    float       m_stims = 1.0f;    ///< what a stim heals
+    float       m_scrap = 1.0f;    ///< the scrap found
+    bool        m_burst = false;   ///< the dead burst
+    float       m_reward = 0.3f;   ///< better finds (+30 %) and more experience (two thirds of that)
+};
+
+/** @return the anomalies there are */
+const std::vector<AnomalyDef> &anomalyDefs();
+
 /**
  * @brief The hash as a number in 0..1.
  * @param[in] r     row
@@ -407,28 +424,29 @@ public:
      */
     bool outdoor( int r, int c ) const;
 
-    std::string             m_name;                                              ///< key of the name shown at the start
-    std::string             m_act;                                               ///< key of the act's name
-    float                   m_gravity = 9.81f;                                   ///< m/s²
-    Vector4                 m_fog = { 0.01f, 0.05f, 0.5f, 1.0f };                ///< fog as in Lighting
-    Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };             ///< the fog's own glow
-    Vector3                 m_ambUp = { 0.01f, 0.01f, 0.01f };                   ///< ambient from above
-    Vector3                 m_ambDown = { 0.01f, 0.01f, 0.01f };                 ///< ambient from below
-    float                   m_wallHeight = 4.5f;                                 ///< wall height
-    std::vector<Marker>     m_markers;                                           ///< spawns, lights, pickups
-    std::vector<Line>       m_lines;                                             ///< spoken lines
-    std::vector<Hint>       m_hints;                                             ///< hints
-    std::vector<LevelLight> m_lights;                                            ///< fixed lights (after build)
-    std::vector<Zone>       m_zones;                                             ///< areas with their themes
-    std::vector<Sign>       m_signs;                                             ///< signs (after build)
-    std::vector<Prop>       m_props;                                             ///< solid props (after build)
-    std::vector<BreakSpot>  m_breaks;                                            ///< things that break (after build)
-    std::vector<Seat>       m_seats;                                             ///< stools (after build)
-    std::vector<Decal>      m_decals;                                            ///< decals (after build)
-    std::vector<std::pair<std::string, std::pair<int, int>>> m_signRequests;     ///< "sign" lines: texture, cell
-    std::string                                              m_sky;              ///< the sky's picture ("" none)
-    bool                                                     m_thrust = false;   ///< the ship dodges: gravity tilts
-    std::string                                              m_next;             ///< the level after this one
+    std::string             m_name;              ///< key of the name shown at the start
+    std::string             m_act;               ///< key of the act's name
+    std::vector<int>        m_anomalies;         ///< a generated place's anomalies this time (anomalyDefs())
+    float                   m_gravity = 9.81f;   ///< m/s²
+    Vector4                 m_fog = { 0.01f, 0.05f, 0.5f, 1.0f };                   ///< fog as in Lighting
+    Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };                ///< the fog's own glow
+    Vector3                 m_ambUp = { 0.01f, 0.01f, 0.01f };                      ///< ambient from above
+    Vector3                 m_ambDown = { 0.01f, 0.01f, 0.01f };                    ///< ambient from below
+    float                   m_wallHeight = 4.5f;                                    ///< wall height
+    std::vector<Marker>     m_markers;                                              ///< spawns, lights, pickups
+    std::vector<Line>       m_lines;                                                ///< spoken lines
+    std::vector<Hint>       m_hints;                                                ///< hints
+    std::vector<LevelLight> m_lights;                                               ///< fixed lights (after build)
+    std::vector<Zone>       m_zones;                                                ///< areas with their themes
+    std::vector<Sign>       m_signs;                                                ///< signs (after build)
+    std::vector<Prop>       m_props;                                                ///< solid props (after build)
+    std::vector<BreakSpot>  m_breaks;                                               ///< things that break (after build)
+    std::vector<Seat>       m_seats;                                                ///< stools (after build)
+    std::vector<Decal>      m_decals;                                               ///< decals (after build)
+    std::vector<std::pair<std::string, std::pair<int, int>>> m_signRequests;        ///< "sign" lines: texture, cell
+    std::string                                              m_sky;                 ///< the sky's picture ("" none)
+    bool                                                     m_thrust = false;      ///< the ship dodges: gravity tilts
+    std::string                                              m_next;                ///< the level after this one
     std::string                                              m_gate = "bossdead";   ///< the event that opens the door
     std::string                                              m_ambience = "tunnels";   ///< the background sound
     std::string                      m_music;              ///< the place's piece (assets/music/music.txt); "" none

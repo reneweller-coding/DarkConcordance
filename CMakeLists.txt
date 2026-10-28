@@ -49,7 +49,8 @@ if( MSVC )
     # A window program without a console that still starts in main().
     target_link_options( SpaceOpera PRIVATE /ENTRY:mainCRTStartup )
 else()
-    target_compile_options( SpaceOpera PRIVATE -Wall -Wextra -Wno-missing-field-initializers )
+    # -fwrapv: an int that overflows wraps round as with MSVC, so a seed builds the same level everywhere.
+    target_compile_options( SpaceOpera PRIVATE -Wall -Wextra -Wno-missing-field-initializers -fwrapv )
     target_link_options( SpaceOpera PRIVATE -static-libstdc++ -static-libgcc )
 endif()
 

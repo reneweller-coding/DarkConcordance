@@ -89,6 +89,7 @@ Gfx::DrawLocs Gfx::drawLocs( Shader s )
     l.m_variation = GetShaderLocation( s, "variation" );
     l.m_cutaway = GetShaderLocation( s, "cutaway" );
     l.m_tint = GetShaderLocation( s, "drawTint" );
+    l.m_cloth = GetShaderLocation( s, "drawCloth" );
     l.m_cutCentre = GetShaderLocation( s, "cutCentre" );
     l.m_cutRadius = GetShaderLocation( s, "cutRadius" );
     return l;
@@ -466,11 +467,12 @@ void Gfx::draw( const std::vector<Drawable> &list, const std::vector<Surface> &s
         float cut = d.m_cutaway ? 1.0f : 0.0f;
         SetShaderValue( shader, l.m_cutaway, &cut, SHADER_UNIFORM_FLOAT );
         SetShaderValue( shader, l.m_tint, &d.m_tint, SHADER_UNIFORM_VEC4 );
+        SetShaderValue( shader, l.m_cloth, &d.m_cloth, SHADER_UNIFORM_VEC4 );
         s.m_material.maps[MATERIAL_MAP_ALBEDO].color = s.m_tint;
         if ( !skin )
         {
             // A stain multiplies what is drawn under it.
-            bool multiply = s.m_params.w > 3.5f;
+            bool multiply = s.m_params.w > 3.5f && s.m_params.w < 4.5f;
             if ( multiply )
             {
                 rlSetBlendFactors( RL_DST_COLOR, RL_ZERO, RL_FUNC_ADD );

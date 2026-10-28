@@ -158,6 +158,7 @@ void Game::onHit( Foe &f, float damage, Vector3 dir, Vector3 at, bool crit )
 void Game::onKill( const Foe &f )
 {
     if ( m_dead || m_level.m_peaceful ) return;
+    anomalyDeath( f.m_pos );
     // Health for the kill (the stat), and what the powers make of it.
     if ( stat( StatE::LIFE_KILL ) > 0.0f ) m_hp = fminf( hpMax(), m_hp + stat( StatE::LIFE_KILL ) );
     if ( m_power[(int)PowerE::HEAL_KILL] ) m_hp = fminf( hpMax(), m_hp + hpMax() * 0.04f );

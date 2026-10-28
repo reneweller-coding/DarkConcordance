@@ -190,6 +190,42 @@ void MeshBuilder::lathe( const Matrix &m, const std::vector<Vector2> &profile, i
         }
 }
 
+void MeshBuilder::loft( const Matrix &m, const std::vector<std::vector<Vector3>> &rings, bool closed )
+{
+    size_t count = rings.size(), k = count ? rings.front().size() : 0;
+    if ( count < 2 || k < 2 ) return;
+    // A closed ring repeats its first point at its end (the seam gets its own UVs).
+    size_t around = closed ? k + 1 : k;
+    reserve( count * around );
+    unsigned short first = (unsigned short)m_pos.size();
+    for ( size_t r = 0; r < count; ++r )
+    {
+        Vector3 mid = { 0.0f, 0.0f, 0.0f };
+        for ( Vector3 p : rings[r] ) mid = Vector3Add( mid, p );
+        mid = Vector3Scale( mid, 1.0f / k );
+        for ( size_t j = 0; j < around; ++j )
+        {
+            size_t  i = j % k;
+            Vector3 p = rings[r][i];
+            Vector3 prev = rings[r][closed ? ( i + k - 1 ) % k : ( i > 0 ? i - 1 : i )];
+            Vector3 next = rings[r][closed ? ( i + 1 ) % k : ( i + 1 < k ? i + 1 : i )];
+            Vector3 down = rings[r > 0 ? r - 1 : r][i], up = rings[r + 1 < count ? r + 1 : r][i];
+            Vector3 n = Vector3CrossProduct( Vector3Subtract( next, prev ), Vector3Subtract( up, down ) );
+            n = Vector3Length( n ) > 1e-9f ? Vector3Normalize( n ) : Vector3{ 0.0f, 1.0f, 0.0f };
+            if ( Vector3DotProduct( n, Vector3Subtract( p, mid ) ) < 0.0f ) n = Vector3Negate( n );
+            vertex( Vector3Transform( p, m ), rotate( m, n ), { (float)j / ( around - 1 ), (float)r / ( count - 1 ) } );
+        }
+    }
+    for ( size_t r = 0; r + 1 < count; ++r )
+        for ( size_t j = 0; j + 1 < around; ++j )
+        {
+            unsigned short a = (unsigned short)( first + r * around + j );
+            unsigned short b = (unsigned short)( a + around );
+            m_idx.insert( m_idx.end(), { a, b, (unsigned short)( b + 1 ), a, (unsigned short)( b + 1 ),
+                                         (unsigned short)( a + 1 ) } );
+        }
+}
+
 void MeshBuilder::cylinder( const Matrix &m, float radius, float height, int sides )
 {
     lathe( m,

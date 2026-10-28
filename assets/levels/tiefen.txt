@@ -10,6 +10,7 @@ fogcolor 0.0015 0.002 0.003
 ambient  0.02 0.022 0.026 0.014 0.015 0.018
 walls    4.5
 area     0
+anomalies 3
 next     velm.txt
 gate     bossdead
 ambience depths

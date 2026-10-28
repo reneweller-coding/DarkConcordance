@@ -7,6 +7,7 @@
 #include "Glyphs.h"
 #include "GameShared.h"
 #include "Journal.h"
+#include "PlayLog.h"
 
 #include "MeshBuilder.h"
 #include "Rig.h"
@@ -334,6 +335,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     if ( m_level.m_area <= 0 ) m_level.m_area = std::max( 2, ( m_progress.m_heroLevel + 4 ) / 2 );
     m_level.m_area += 12 * m_progress.m_cycle;   // a new game+: every place that much further on
     m_areaHit = 1.0f + 0.12f * ( m_level.m_area - 1 );
+    applyAnomalies();
     loadSurfaces( gfx, assets );
     // The lift's cell is part of its well.
     for ( const Marker &m : m_level.m_markers )
@@ -939,7 +941,7 @@ void Game::spawnFoe( FoeE kind, Vector3 pos, bool awake )
     f.m_pos = pos;
     const float hp[12] = { LouseHp, WelderHp, BatonHp,  GunnerHp,  ShieldHp, HeavyHp,
                            DroneHp, SawHp,    BomberHp, TaxatorHp, ShellHp,  60.0f };
-    f.m_hp = hp[(int)kind] * toughness( m_difficulty ) * ( 1.0f + 0.25f * ( m_level.m_area - 1 ) );
+    f.m_hp = hp[(int)kind] * toughness( m_difficulty ) * ( 1.0f + 0.25f * ( m_level.m_area - 1 ) ) * m_foeHp;
     f.m_home = f.m_safe = pos;
     f.m_hpMax = f.m_hp;
     if ( kind == FoeE::DRONE ) f.m_rush.y = pos.y - 1.75f;
@@ -1024,6 +1026,9 @@ void Game::fire( const std::string &trigger )
     if ( trigger == "bossdead" ) m_stings.push_back( "victory" );
     // The journal's moments.
     if ( trigger == "bossdead" && !m_autoplay ) journal::count( "bosses" );
+    if ( trigger == "bossstart" || trigger == "bossdead" )
+        playlog::line( "%s %s t %.0f hp %.0f/%.0f deaths %d", trigger.c_str(), m_levelFile.c_str(), m_time, m_hp,
+                       hpMax(), m_deaths );
     if ( trigger == "grabbed" ) journal::win( "grabbed" );
     if ( trigger == "burnt" ) journal::win( "molten" );
     if ( trigger == "cores.spared" ) journal::win( "cores_spared" );
@@ -1115,6 +1120,7 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
         m_deadTimer = 0.0f;
         ++m_deaths;
         if ( !m_autoplay ) journal::count( "deaths" );
+        logDeath();
         m_stings.push_back( "death" );
         if ( m_autoplay )
         {
@@ -1705,9 +1711,10 @@ void Game::updateHero( float dt, const GameInput &in )
 
     if ( in.m_stim && m_stims > 0 && m_hp < hpMax() )
     {
-        m_hp = fminf( hpMax(), m_hp + StimHeal * ( 1.0f + stat( StatE::STIMS ) / 100.0f ) );
+        m_hp = fminf( hpMax(), m_hp + StimHeal * ( 1.0f + stat( StatE::STIMS ) / 100.0f ) * m_stimScale );
         --m_stims;
         journal::count( "stims" );
+        ++m_logUses["stims"];
         m_audio.play( SfxE::STIM, m_pos, m_camTarget, 0.8f );
         for ( int i = 0; i < 16; ++i )
             m_particles.push_back(
@@ -1831,6 +1838,7 @@ void Game::moveHero( float dt )
         m_deadTimer = 1.0f;
         ++m_deaths;
         if ( !m_autoplay ) journal::count( "deaths" );
+        logDeath();
         m_stings.push_back( "death" );
         if ( m_autoplay ) TraceLog( LOG_WARNING, "DEATH: fall at %.1f,%.1f t=%.0f", m_pos.x, m_pos.z, m_time );
     }
@@ -1901,7 +1909,7 @@ void Game::moveHero( float dt )
         {
             p.m_alive = false;
             if ( p.m_kind == 0 )
-                m_scrap += (int)roundf( p.m_amount * ( 1.0f + stat( StatE::FIND ) / 100.0f ) );
+                m_scrap += (int)roundf( p.m_amount * ( 1.0f + stat( StatE::FIND ) / 100.0f ) * m_scrapScale );
             else if ( p.m_kind == 2 )
                 m_oxygen = fminf( m_oxygenMax, m_oxygen + p.m_amount );
             else if ( p.m_kind == 3 )
@@ -2079,6 +2087,7 @@ void Game::updateFoes( float dt )
         {
             Vector3 path = ( f.m_los && dist < 9.0f ) ? dir : flowDir( f.m_pos );
             if ( Vector3Length( path ) < 0.5f ) path = dir;
+            tactics( f, dt, dir, dist, path );
             if ( f.m_kind == FoeE::SHIELD )
                 updateGuard( f, dt, dir, dist, path, want, faceYaw );
             else if ( f.m_kind == FoeE::HEAVY )
@@ -2196,6 +2205,7 @@ void Game::updateFoes( float dt )
             }
         }
         if ( !f.m_alive ) continue;   // a bomber went off
+        if ( chase ) tacticsAfter( f, dir, want, faceYaw );
         // A boss keeps to its hall: led too far away, it walks back.
         float leash = f.m_kind == FoeE::SHELL ? 30.0f : 16.0f;   // Mother's bodies keep to their whole hall
         if ( ( f.m_kind == FoeE::TAXATOR || f.m_elite == 2 ) && Vector3Distance( f.m_pos, f.m_home ) > leash &&
@@ -3270,7 +3280,8 @@ void Game::update( float dt, const GameInput &inRaw )
     useSkills( dt, in );
     updateHero( dt, in );
     updateBoreHoles();
-    updateFoes( dt );
+    updateFoes( dt * m_foeTempo );
+    updateAnomalies( dt );
     updateHazards( dt );
     updateAilments( dt );
     updateSwarm( dt );
@@ -3780,7 +3791,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
 
     Lighting L = lighting();
     gfx.m_sunShadows = m_skyTex.id > 0 || m_ringMesh.vertexCount > 0;
-    gfx.m_cutCentre = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
+    gfx.m_cutCentre = Vector3Add( m_photo ? m_photoTarget : m_pos, { 0.0f, m_photo ? 0.2f : 1.2f, 0.0f } );
     gfx.m_cutRadius = 2.6f;
     gfx.m_exposure = 1.7f * m_brightness;
     gradeFor( gfx );
@@ -3801,7 +3812,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     int w = out ? out->texture.width : GetScreenWidth();
     int h = out ? out->texture.height : GetScreenHeight();
     if ( out ) BeginTextureMode( *out );
-    drawHud( w, h );
+    if ( !m_photo ) drawHud( w, h );   // a photo without it
     if ( out ) EndTextureMode();
 }
 
@@ -3983,6 +3994,7 @@ void Game::drawHud( int w, int h )
         text( tr( m_level.m_act ), w * 0.5f, h * 0.30f, 26, { 255, 190, 120, (unsigned char)( 220 * a ) }, true );
         text( tr( m_level.m_name ), w * 0.5f, h * 0.30f + 36 * s, 64, { 240, 235, 230, (unsigned char)( 255 * a ) },
               true );
+        drawAnomalies( w, h, h * 0.30f + 124 * s, (unsigned char)( 240 * a ) );
     }
     if ( m_line && !m_talk && !m_menu )
     {
@@ -4125,7 +4137,10 @@ std::string Game::report() const
         m_path.empty() ? -1 : m_path.front() / m_level.cols(), m_path.empty() ? -1 : m_path.front() % m_level.cols(),
         m_reading.empty() ? 0 : 1, m_oxygen, m_seekAir ? 1 : 0, m_outside ? 1 : 0, parts.c_str(), m_ground ? 1 : 0,
         m_vel.x, m_vel.y, m_vel.z, m_dash );
-    return buf;
+    // How the enemies fought together (foe-seconds): waiting, to cover, in cover, on a ledge, flanking.
+    const int *t = m_tacticFrames;
+    return std::string( buf ) + TextFormat( " tactics=%d/%d/%d/%d/%d", t[1] / 60, t[2] / 60, t[3] / 60, t[4] / 60,
+                                            t[5] / 60 );
 }
 
 }   // namespace spaceopera

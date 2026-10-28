@@ -287,6 +287,12 @@ Still to come, by first use:
    8 fog steps, 4 shadow samples, smaller shadow maps; instead of a separate half-resolution fog pass, since the fog is
    drawn within each surface's shader), the window at 1280x800 there, the pad's cross in the game's own menus. Not
    tried on a Deck yet; reckoned at 30-50 frames a second.
+7. The second round of the user's wish list — done (28.10.2026), all but more languages and Steam: a play log for the
+   play test; the player's files in their own folder, written whole or not at all; a native Linux build (WSL2, Ubuntu
+   22.04, GCC 12; `-fwrapv` so both compilers lay out the same levels) and the Windows build under Wine; clothes for
+   the hubs' people (shader patterns and garments on the bones, outfits by what they do); a locker shared by every
+   game; a loot filter; every action's key and pad button bound freely; one to three anomalies per visit to the
+   Depths with better finds; enemies that flank, wait for the others and take cover; a photo mode.
 
 ## Open decisions (the user's)
 

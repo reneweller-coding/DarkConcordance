@@ -8,6 +8,7 @@
 #include "Game.h"
 #include "GameShared.h"
 #include "Journal.h"
+#include "PlayLog.h"
 
 #include <raymath.h>
 
@@ -88,8 +89,46 @@ void Game::checkCodex()
     if ( all == (int)( std::size( Families ) + std::size( Foes ) + std::size( Bosses ) ) ) journal::win( "codex_all" );
 }
 
+std::string Game::foesNear() const
+{
+    // The awake foes within 14 m, by their names' keys (a champion starred).
+    std::string near;
+    for ( const Foe &f : m_foes )
+        if ( f.m_alive && !f.m_hidden && f.m_awake && Vector3Distance( f.m_pos, m_pos ) < 14.0f )
+            near += std::string( " " ) + entryOf( foeNoun( f ) ).substr( 4 ) + ( f.m_elite ? "*" : "" );
+    return near.empty() ? " -" : near;
+}
+
+void Game::logDeath()
+{
+    playlog::line( "death %s at %.0f %.0f t %.0f cause %s hpmax %.0f by%s", m_levelFile.c_str(), m_pos.x, m_pos.z,
+                   m_time, m_hurtBy, hpMax(), foesNear().c_str() );
+}
+
 void Game::updateJournal( float dt )
 {
+    // The play log: the level's start, where the hero is every ten seconds.
+    if ( playlog::on() && !m_logStarted )
+    {
+        m_logStarted = true;
+        std::string gear;
+        for ( int i = 0; i < EquipSlots; ++i )
+            if ( m_progress.m_worn[i] ) gear += " | " + itemName( m_progress.m_gear[i] );
+        playlog::line( "level %s hero %s level %d difficulty %d cycle %d%s", m_levelFile.c_str(), heroKey( m_heroKind ),
+                       m_progress.m_heroLevel, (int)m_difficulty, m_progress.m_cycle, gear.c_str() );
+        if ( !m_level.m_anomalies.empty() )
+        {
+            std::string keys;
+            for ( int k : m_level.m_anomalies ) keys += std::string( " " ) + anomalyDefs()[k].m_key;
+            playlog::line( "anomalies%s", keys.c_str() );
+        }
+    }
+    if ( playlog::on() && !m_finished && !m_dead && ( m_logT -= dt ) <= 0.0f )
+    {
+        m_logT = 10.0f;
+        playlog::line( "at %s %.0f %.0f t %.0f hp %.0f/%.0f kills %d foes%s", m_levelFile.c_str(), m_pos.x, m_pos.z,
+                       m_time, m_hp, hpMax(), m_kills, foesNear().c_str() );
+    }
     // The foes awake near the hero are met (once a second).
     m_journalT -= dt;
     if ( m_journalT <= 0.0f )
@@ -106,6 +145,14 @@ void Game::updateJournal( float dt )
         if ( m_tale && journal::meet( "tale:" + m_levelFile ) ) journal::count( "tales" );
         if ( !m_level.m_peaceful && !m_tale && m_deaths == 0 && m_kills > 0 ) journal::count( "flawless" );
         if ( !m_level.m_peaceful && m_difficulty == DifficultyE::NIGHTMARE ) journal::win( "nightmare_level" );
+        std::string uses;
+        for ( const auto &[what, n] : m_logUses ) uses += TextFormat( " %s=%d", what.c_str(), n );
+        playlog::line( "done %s t %.0f deaths %d kills %d scrap %d level %d%s", m_levelFile.c_str(), m_time, m_deaths,
+                       m_kills, m_scrap, m_progress.m_heroLevel, uses.c_str() );
+        // How the enemies fought together (foe-seconds): waiting, to cover, in cover, on a ledge, flanking.
+        const int *t = m_tacticFrames;
+        playlog::line( "tactics %s wait %d tocover %d cover %d ledge %d flank %d", m_levelFile.c_str(), t[1] / 60,
+                       t[2] / 60, t[3] / 60, t[4] / 60, t[5] / 60 );
         journal::flush();
     }
     // New awards, one banner after the other.

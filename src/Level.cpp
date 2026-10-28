@@ -21,10 +21,31 @@ namespace spaceopera
 
 unsigned hashCell( int r, int c, int salt )
 {
-    unsigned h = (unsigned)( r * 73856093 ) ^ (unsigned)( c * 19349663 ) ^ (unsigned)( salt * 83492791 );
+    // Multiplied unsigned: wrapping round is defined there (GCC takes an int's overflow as never happening and builds
+    // other levels than MSVC).
+    unsigned h = (unsigned)r * 73856093u ^ (unsigned)c * 19349663u ^ (unsigned)salt * 83492791u;
     h ^= h >> 13;
     h *= 0x5bd1e995u;
     return h ^ ( h >> 15 );
+}
+
+const std::vector<AnomalyDef> &anomalyDefs()
+{
+    // The recipe lines are the Depths' own values made harder (tiefen.txt).
+    static const std::vector<AnomalyDef> defs = {
+        { "tough", "", 1.5f },
+        { "frenzy", "", 1.0f, 1.2f },
+        { "swarm", "gendensity 1.9\n" },
+        { "champions", "genelite 0.65\n" },
+        { "dark", "ambient 0.008 0.009 0.011 0.006 0.006 0.008\nfog 0.012 0.045 0.6 1.2\n", 1.0f, 1.0f, 1.0f, 1.0f,
+          1.0f, false, 0.2f },
+        { "lowgrav", "gravity 3.6\n", 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, false, 0.15f },
+        { "burst", "", 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, true },
+        { "drain", "", 1.0f, 1.0f, 1.0f, 0.6f, 1.0f, false, 0.25f },
+        { "merciless", "", 1.0f, 1.0f, 1.3f },
+        { "rich", "", 1.0f, 1.0f, 1.0f, 1.0f, 2.0f, false, 0.15f }
+    };
+    return defs;
 }
 
 float hash01( int r, int c, int salt )
@@ -409,6 +430,30 @@ bool Level::load( const std::string &path, unsigned seed )
     if ( !text ) return false;
     std::string all( text );
     UnloadFileText( text );
+    // A place with anomalies ("anomalies n": up to n): one to three by the seed, their lines into the recipe's head.
+    m_anomalies.clear();
+    size_t at = all.find( "\nanomalies " ), head = all.find( "\n[" );
+    if ( at != std::string::npos && head != std::string::npos && at < head )
+    {
+        int      most = atoi( all.c_str() + at + 11 );
+        unsigned h = seed * 2654435761u ^ 0x9e3779b9u;
+        h ^= h >> 15;
+        h *= 0x2c1b3c6du;
+        h ^= h >> 12;
+        int              count = std::min( most, 1 + ( h % 100 < 45 ? 1 : 0 ) + ( h % 100 < 15 ? 1 : 0 ) );
+        std::vector<int> pool;
+        for ( int i = 0; i < (int)anomalyDefs().size(); ++i ) pool.push_back( i );
+        std::string extra;
+        for ( int i = 0; i < count && !pool.empty(); ++i )
+        {
+            h = h * 1664525u + 1013904223u;
+            int k = (int)( ( h >> 8 ) % pool.size() );
+            m_anomalies.push_back( pool[k] );
+            extra += anomalyDefs()[pool[k]].m_lines;
+            pool.erase( pool.begin() + k );
+        }
+        all.insert( head + 1, extra );
+    }
     // A recipe becomes a level file first: generated from the seed.
     if ( isRecipe( all ) ) all = m_generated = generateLevel( all, seed );
     return loadText( all );

@@ -16,8 +16,11 @@
  * @author Rene Weller
  */
 #include "Game.h"
+#include "Bindings.h"
+#include "Files.h"
 #include "Glyphs.h"
 #include "Journal.h"
+#include "PlayLog.h"
 #include "Gfx.h"
 #include "Scene.h"
 #include "Score.h"
@@ -31,6 +34,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <ctime>
 #include <functional>
 #include <memory>
 #include <string>
@@ -43,57 +47,63 @@ namespace
 /** @brief The command line. */
 struct Options
 {
-    int         m_width = 0;                     ///< picture width (0: 1600, on a Steam Deck 1280)
-    int         m_height = 0;                    ///< picture height (0: 900, on a Steam Deck 800)
-    float       m_ss = -1.0f;                    ///< supersampling (negative: the quality's)
-    int         m_quality = -1;                  ///< 0 low, 1 middle, 2 high (negative: the setting's)
-    std::string m_shot;                          ///< render this picture and exit
-    std::string m_level = "gute_hoffnung.txt";   ///< the level (the prologue starts the game)
-    bool        m_hasAt = false;                 ///< --at was given
-    float       m_x = 0.0f;                      ///< where to put the hero (east)
-    float       m_z = 0.0f;                      ///< (south)
-    float       m_face = 0.0f;                   ///< heading (degrees, 0 = towards the camera)
-    bool        m_walk = false;                  ///< look test: caught mid-stride
-    bool        m_fire = false;                  ///< a shot just fired
-    bool        m_awake = false;                 ///< every enemy awake
-    bool        m_autoplay = false;              ///< the autopilot plays
-    bool        m_report = false;                ///< log the autopilot's run
-    bool        m_mute = false;                  ///< no sound
-    bool        m_lookdev = false;               ///< the look test
-    std::string m_dumpSound;                     ///< write the synthesised sounds as WAVs into this folder, then end
-    std::string m_scoreTest;                     ///< mix a scripted stretch of music into this WAV, then end
-    bool        m_silent = false;                ///< tests: the sound runs (device, music, beds), at volume 0
-    float       m_warm = 4.0f;                   ///< seconds simulated before the picture
-    float       m_exposure = -1.0f;              ///< exposure (negative: the renderer's)
-    int         m_bench = 0;               ///< with --shot: render this many frames first and log the time per frame
-    std::string m_difficulty;              ///< leicht, normal, schwer (else the saved setting)
-    std::string m_language;                ///< de, en (else the saved setting)
-    bool        m_menu = false;            ///< with --shot: the title menu over the picture
-    float       m_camYaw = 0.0f;           ///< camera turned about the hero (degrees)
-    Vector2     m_move = { 0.0f, 0.0f };   ///< with --shot: the left stick held during the warm-up
-    std::string m_hero;                    ///< corvin, dorra (else the choice in the menu)
-    std::string m_flags;                   ///< what has happened already (comma-separated; tests)
-    std::string m_talk;                    ///< with --shot: a conversation open in the picture
-    std::string m_film;                    ///< a film played over the level (assets/films/<name>)
-    int         m_shop = 0;                ///< with --shot: Ottla's (1) or Kiri's (2) menu open
-    int         m_panel = -1;              ///< with --shot: the inventory (0), character (1) or map (2) page
-    bool        m_map = false;             ///< with --shot: the map over the game
-    bool        m_lineup = false;          ///< with --shot: a row of people in their animations before the hero
-    int         m_creatures = -1;          ///< with --shot: the creatures in front of the hero (page 0 or 1)
-    int         m_figures = -1;            ///< with --shot: figures in their poses in front of the hero (page 0, 1)
-    std::string m_pad;             ///< keys, xbox, ps, deck: the buttons shown in the texts (else the device used)
-    int         m_cycle = 0;       ///< tests: a new game+'s cycle
-    std::string m_saveFile;        ///< tests: where a capsule's save goes (instead of save.txt)
-    std::string m_loadFile;        ///< tests: a save to go on from
-    int         m_colours = -1;    ///< tests: colour vision 0..2 (else the setting)
-    float       m_zoom = 0.0f;     ///< with --shot: the camera's distance factor (0: as it is)
-    int         m_loot = 0;        ///< tests: items scattered round the hero at the start
-    std::string m_gear;            ///< tests: what the hero puts on at the start (--gear item.rail3,u12,s5)
-    int         m_xp = 0;          ///< tests: experience given at the start
-    unsigned    m_seed = 0;        ///< a generated level's seed (0: from the progress)
-    std::string m_dumpGen;         ///< write the generated level's file here
-    int         m_heroLevel = 0;   ///< tests: the hero's level at the start
-    float       m_trace = 0.0f;    ///< tests: log the run's state every so many seconds
+    int                      m_width = 0;                     ///< picture width (0: 1600, on a Steam Deck 1280)
+    int                      m_height = 0;                    ///< picture height (0: 900, on a Steam Deck 800)
+    float                    m_ss = -1.0f;                    ///< supersampling (negative: the quality's)
+    int                      m_quality = -1;                  ///< 0 low, 1 middle, 2 high (negative: the setting's)
+    std::string              m_shot;                          ///< render this picture and exit
+    std::string              m_level = "gute_hoffnung.txt";   ///< the level (the prologue starts the game)
+    bool                     m_hasAt = false;                 ///< --at was given
+    float                    m_x = 0.0f;                      ///< where to put the hero (east)
+    float                    m_z = 0.0f;                      ///< (south)
+    float                    m_face = 0.0f;                   ///< heading (degrees, 0 = towards the camera)
+    bool                     m_walk = false;                  ///< look test: caught mid-stride
+    bool                     m_fire = false;                  ///< a shot just fired
+    bool                     m_awake = false;                 ///< every enemy awake
+    bool                     m_autoplay = false;              ///< the autopilot plays
+    bool                     m_report = false;                ///< log the autopilot's run
+    bool                     m_mute = false;                  ///< no sound
+    bool                     m_lookdev = false;               ///< the look test
+    std::string              m_dumpSound;          ///< write the synthesised sounds as WAVs into this folder, then end
+    std::string              m_scoreTest;          ///< mix a scripted stretch of music into this WAV, then end
+    bool                     m_silent = false;     ///< tests: the sound runs (device, music, beds), at volume 0
+    float                    m_warm = 4.0f;        ///< seconds simulated before the picture
+    float                    m_exposure = -1.0f;   ///< exposure (negative: the renderer's)
+    int                      m_bench = 0;    ///< with --shot: render this many frames first and log the time per frame
+    std::string              m_difficulty;   ///< leicht, normal, schwer (else the saved setting)
+    std::string              m_language;     ///< de, en (else the saved setting)
+    bool                     m_menu = false;       ///< with --shot: the title menu over the picture
+    bool                     m_controls = false;   ///< with --shot: the controls' page over the picture
+    std::string              m_photo;   ///< with --shot: the photo mode, its camera turned, tilted, pulled ("t,p,z")
+    std::vector<std::string> m_binds;   ///< tests: keys and buttons bound otherwise ("<name> <key> <pad>")
+    float                    m_camYaw = 0.0f;           ///< camera turned about the hero (degrees)
+    Vector2                  m_move = { 0.0f, 0.0f };   ///< with --shot: the left stick held during the warm-up
+    std::string              m_hero;                    ///< corvin, dorra (else the choice in the menu)
+    std::string              m_flags;                   ///< what has happened already (comma-separated; tests)
+    std::string              m_talk;                    ///< with --shot: a conversation open in the picture
+    std::string              m_film;                    ///< a film played over the level (assets/films/<name>)
+    int                      m_shop = 0;                ///< with --shot: Ottla's (1) or Kiri's (2) menu open
+    int                      m_panel = -1;        ///< with --shot: the inventory (0), character (1) or map (2) page
+    int                      m_stash = 0;         ///< with --shot: the first items of the bag into the stash
+    int                      m_lootFilter = -1;   ///< tests: the loot filter (-1: as set)
+    bool                     m_map = false;       ///< with --shot: the map over the game
+    bool                     m_lineup = false;    ///< with --shot: a row of people in their animations before the hero
+    int                      m_creatures = -1;    ///< with --shot: the creatures in front of the hero (page 0 or 1)
+    int                      m_figures = -1;   ///< with --shot: figures in their poses in front of the hero (page 0, 1)
+    std::string              m_pad;   ///< keys, xbox, ps, deck: the buttons shown in the texts (else the device used)
+    int                      m_cycle = 0;      ///< tests: a new game+'s cycle
+    std::string              m_playLog;        ///< tests: write the play log here
+    std::string              m_saveFile;       ///< tests: where a capsule's save goes (instead of save.txt)
+    std::string              m_loadFile;       ///< tests: a save to go on from
+    int                      m_colours = -1;   ///< tests: colour vision 0..2 (else the setting)
+    float                    m_zoom = 0.0f;    ///< with --shot: the camera's distance factor (0: as it is)
+    int                      m_loot = 0;       ///< tests: items scattered round the hero at the start
+    std::string              m_gear;           ///< tests: what the hero puts on at the start (--gear item.rail3,u12,s5)
+    int                      m_xp = 0;         ///< tests: experience given at the start
+    unsigned                 m_seed = 0;       ///< a generated level's seed (0: from the progress)
+    std::string              m_dumpGen;        ///< write the generated level's file here
+    int                      m_heroLevel = 0;   ///< tests: the hero's level at the start
+    float                    m_trace = 0.0f;    ///< tests: log the run's state every so many seconds
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -166,6 +176,12 @@ Options parse( int argc, char **argv )
             o.m_difficulty = next();
         else if ( a == "--menu" )
             o.m_menu = true;
+        else if ( a == "--controls" )
+            o.m_controls = true;
+        else if ( a == "--photo" )
+            o.m_photo = next();
+        else if ( a == "--bind" )
+            o.m_binds.push_back( next() );
         else if ( a == "--lang" )
             o.m_language = next();
         else if ( a == "--hero" )
@@ -184,6 +200,10 @@ Options parse( int argc, char **argv )
             sscanf( next().c_str(), "%f,%f", &o.m_move.x, &o.m_move.y );
         else if ( a == "--panel" )
             o.m_panel = atoi( next().c_str() );
+        else if ( a == "--stash" )
+            o.m_stash = atoi( next().c_str() );
+        else if ( a == "--lootfilter" )
+            o.m_lootFilter = atoi( next().c_str() );
         else if ( a == "--map" )
             o.m_map = true;
         else if ( a == "--lineup" )
@@ -196,6 +216,8 @@ Options parse( int argc, char **argv )
             o.m_pad = next();
         else if ( a == "--cycle" )
             o.m_cycle = atoi( next().c_str() );
+        else if ( a == "--playlog" )
+            o.m_playLog = next();
         else if ( a == "--savefile" )
             o.m_saveFile = next();
         else if ( a == "--loadfile" )
@@ -261,23 +283,24 @@ void bench( Gfx &gfx, int frames, const Options &o, const std::function<void( co
  */
 GameInput readInput( Vector2 &lastMouse, float dt )
 {
+    // The actions as the player has bound them (Bindings.h); the arrows walk too, Enter and Start confirm.
     GameInput in;
-    if ( IsKeyDown( KEY_W ) || IsKeyDown( KEY_UP ) ) in.m_move.y -= 1.0f;
-    if ( IsKeyDown( KEY_S ) || IsKeyDown( KEY_DOWN ) ) in.m_move.y += 1.0f;
-    if ( IsKeyDown( KEY_A ) || IsKeyDown( KEY_LEFT ) ) in.m_move.x -= 1.0f;
-    if ( IsKeyDown( KEY_D ) || IsKeyDown( KEY_RIGHT ) ) in.m_move.x += 1.0f;
-    in.m_fire = IsMouseButtonDown( MOUSE_BUTTON_LEFT ) || IsKeyDown( KEY_K );
-    in.m_jump = IsKeyPressed( KEY_SPACE );
-    in.m_stim = IsKeyPressed( KEY_Q );
-    in.m_special = IsKeyPressed( KEY_F );
-    in.m_use = IsKeyPressed( KEY_E );
-    in.m_map = IsKeyPressed( KEY_M ) || IsKeyPressed( KEY_TAB );
-    in.m_skill2 = IsKeyPressed( KEY_R );
-    in.m_skill3 = IsKeyPressed( KEY_G );
+    if ( held( BindE::UP ) || IsKeyDown( KEY_UP ) ) in.m_move.y -= 1.0f;
+    if ( held( BindE::DOWN ) || IsKeyDown( KEY_DOWN ) ) in.m_move.y += 1.0f;
+    if ( held( BindE::LEFT ) || IsKeyDown( KEY_LEFT ) ) in.m_move.x -= 1.0f;
+    if ( held( BindE::RIGHT ) || IsKeyDown( KEY_RIGHT ) ) in.m_move.x += 1.0f;
+    in.m_fire = held( BindE::FIRE );
+    in.m_jump = pressed( BindE::JUMP );
+    in.m_stim = pressed( BindE::STIM );
+    in.m_special = pressed( BindE::SPECIAL );
+    in.m_use = pressed( BindE::USE );
+    in.m_map = pressed( BindE::MAP );
+    in.m_skill2 = pressed( BindE::SKILL2 );
+    in.m_skill3 = pressed( BindE::SKILL3 );
     in.m_confirm = IsKeyPressed( KEY_ENTER );
-    in.m_strafe = IsKeyDown( KEY_LEFT_SHIFT ) || IsKeyDown( KEY_RIGHT_SHIFT );
-    in.m_cameraReset = IsKeyPressed( KEY_BACKSPACE );
-    in.m_dodge = IsKeyPressed( KEY_LEFT_CONTROL ) || IsKeyPressed( KEY_RIGHT_CONTROL );
+    in.m_strafe = held( BindE::STRAFE );
+    in.m_cameraReset = pressed( BindE::CAMRESET );
+    in.m_dodge = pressed( BindE::DODGE );
     Vector2 mouse = GetMousePosition();
     in.m_mouse = mouse;
     if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) )
@@ -296,21 +319,10 @@ GameInput readInput( Vector2 &lastMouse, float dt )
         }
         float turn = GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_X );
         if ( fabsf( turn ) > 0.2f ) in.m_cameraTurn += ( turn - copysignf( 0.2f, turn ) ) / 0.8f * 2.4f * dt;
-        in.m_cameraReset = in.m_cameraReset || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_THUMB );
-        in.m_dodge = in.m_dodge || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_THUMB );
-        in.m_strafe = in.m_strafe || GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_TRIGGER ) > 0.3f;
-        in.m_fire = in.m_fire || GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_TRIGGER ) > 0.3f ||
-                    IsGamepadButtonDown( 0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT );
-        in.m_jump = in.m_jump || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN );
-        in.m_stim = in.m_stim || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_UP );
-        in.m_special = in.m_special || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT );
         in.m_confirm = in.m_confirm || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT );
-        in.m_map = in.m_map || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_UP );
         // The cross's up and down also step through the game's own menus (talks, shops, the lift).
         if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_UP ) ) in.m_navStep = -1;
         if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_DOWN ) ) in.m_navStep = 1;
-        in.m_skill2 = in.m_skill2 || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_TRIGGER_1 );
-        in.m_skill3 = in.m_skill3 || IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 );
     }
     return in;
 }
@@ -390,6 +402,7 @@ struct Settings
     int         m_subtitles = 1;                      ///< 0 small, 1 normal, 2 large
     int         m_colours = 0;                        ///< colour vision: 0 as it is, 1 red-green, 2 blue-yellow
     int         m_shake = 2;                          ///< the camera's shake: 0 off, 1 half, 2 full
+    int         m_loot = 0;                           ///< the loot filter: 0 keep all, 1 salvage common, 2 and magic
     bool        m_nightmare = false;                  ///< Albtraum may be chosen (the game is through once)
     std::string m_language;                           ///< the texts' language
 };
@@ -410,7 +423,7 @@ int qualityOf( const Settings &s )
 /** @brief Where the settings live. */
 std::string settingsPath()
 {
-    return std::string( GetApplicationDirectory() ) + "settings.txt";
+    return userDir() + "settings.txt";
 }
 
 /** @brief Reads the settings (defaults if there are none; the language at first the system's). */
@@ -420,10 +433,14 @@ Settings loadSettings()
     s.m_language = systemLanguage( assetsDir() );
     FILE *f = fopen( settingsPath().c_str(), "r" );
     if ( !f ) return s;
-    char key[32], value[64];
-    while ( fscanf( f, "%31s %63s", key, value ) == 2 )
+    char line[256];
+    while ( fgets( line, sizeof( line ), f ) )
     {
-        if ( !strcmp( key, "difficulty" ) )
+        char key[32] = {}, value[200] = {};
+        if ( sscanf( line, "%31s %199[^\r\n]", key, value ) != 2 ) continue;
+        if ( !strcmp( key, "bind" ) )
+            readBinding( value );
+        else if ( !strcmp( key, "difficulty" ) )
             s.m_difficulty = (DifficultyE)Clamp( (float)atoi( value ), 0.0f, 3.0f );
         else if ( !strcmp( key, "brightness" ) )
             s.m_brightness = Clamp( (float)atof( value ), 0.6f, 2.0f );
@@ -443,6 +460,8 @@ Settings loadSettings()
             s.m_colours = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
         else if ( !strcmp( key, "shake" ) )
             s.m_shake = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+        else if ( !strcmp( key, "loot" ) )
+            s.m_loot = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
         else if ( !strcmp( key, "nightmare" ) )
             s.m_nightmare = atoi( value ) != 0;
     }
@@ -453,14 +472,16 @@ Settings loadSettings()
 /** @brief Where the game is saved (the start of the level to play). */
 std::string savePath()
 {
-    return std::string( GetApplicationDirectory() ) + "save.txt";
+    return userDir() + "save.txt";
 }
 
 /** @brief Reads the save; false if there is none. */
 bool loadProgress( Progress &p, const std::string &path = savePath() )
 {
+    // A save cut short (the power gone while it was written) gives way to the one before it.
+    bool  backup = path.size() >= 4 && path.compare( path.size() - 4, 4, ".bak" ) == 0;
     FILE *f = fopen( path.c_str(), "r" );
-    if ( !f ) return false;
+    if ( !f ) return !backup && loadProgress( p, path + ".bak" );
     char line[1024], key[32], value[128];
     p = Progress();
     while ( fgets( line, sizeof( line ), f ) )
@@ -522,13 +543,14 @@ bool loadProgress( Progress &p, const std::string &path = savePath() )
             p.m_flags.insert( value );
     }
     fclose( f );
-    return !p.m_level.empty() && FileExists( ( assetsDir() + "/levels/" + p.m_level ).c_str() );
+    bool whole = !p.m_level.empty() && FileExists( ( assetsDir() + "/levels/" + p.m_level ).c_str() );
+    return whole || ( !backup && loadProgress( p, path + ".bak" ) );
 }
 
 /** @brief Writes the save. */
 void saveProgress( const Progress &p, const std::string &path = savePath() )
 {
-    FILE *f = fopen( path.c_str(), "w" );
+    FILE *f = beginWrite( path );
     if ( !f ) return;
     fprintf( f, "hero %s\nlevel %s\nscrap %d\nstims %d\nweapon %d\narmor %d\n", heroKey( p.m_hero ), p.m_level.c_str(),
              p.m_scrap, p.m_stims, p.m_weapon, p.m_armor );
@@ -545,20 +567,21 @@ void saveProgress( const Progress &p, const std::string &path = savePath() )
         if ( p.m_worn[i] ) fprintf( f, "gear %d %s\n", i, saveItem( p.m_gear[i] ).c_str() );
     for ( const Item &it : p.m_bag ) fprintf( f, "bag %s\n", saveItem( it ).c_str() );
     for ( const std::string &flag : p.m_flags ) fprintf( f, "flag %s\n", flag.c_str() );
-    fclose( f );
+    endWrite( f, path );
 }
 
 /** @brief Writes the settings. */
 void saveSettings( const Settings &s )
 {
-    FILE *f = fopen( settingsPath().c_str(), "w" );
+    FILE *f = beginWrite( settingsPath() );
     if ( !f ) return;
     fprintf( f, "difficulty %d\nbrightness %.2f\nlanguage %s\nmusic %.1f\nvoices %.1f\neffects %.1f\n",
              (int)s.m_difficulty, s.m_brightness, s.m_language.c_str(), s.m_music, s.m_voices, s.m_effects );
     if ( s.m_quality >= 0 ) fprintf( f, "graphics %d\n", s.m_quality );
-    fprintf( f, "subtitles %d\ncolours %d\nshake %d\nnightmare %d\n", s.m_subtitles, s.m_colours, s.m_shake,
-             s.m_nightmare ? 1 : 0 );
-    fclose( f );
+    fprintf( f, "subtitles %d\ncolours %d\nshake %d\nloot %d\nnightmare %d\n", s.m_subtitles, s.m_colours, s.m_shake,
+             s.m_loot, s.m_nightmare ? 1 : 0 );
+    for ( int b = 0; b < (int)BindE::COUNT; ++b ) fprintf( f, "bind %s\n", bindingLine( (BindE)b ).c_str() );
+    endWrite( f, settingsPath() );
 }
 
 /** @brief Navigation in a menu: up, down, left, right, confirm, back (keyboard, gamepad, left stick). */
@@ -634,6 +657,55 @@ void drawMenu( const Font &font, const char *title, const char *subtitle, const 
     text( tr( "menu.help" ), h - 70 * s, 20, { 150, 150, 150, 200 } );
 }
 
+/**
+ * @brief Draws the controls' page: per action its key and its pad button; then the defaults and back.
+ * @param[in] font     the font
+ * @param[in] chosen   the chosen row
+ * @param[in] waiting  the chosen action waits for its new key or button
+ */
+void drawControls( const Font &font, int chosen, bool waiting )
+{
+    int   w = GetScreenWidth(), h = GetScreenHeight();
+    float s = h / 1080.0f;
+    DrawRectangle( 0, 0, w, h, { 0, 0, 0, 200 } );
+    auto text = [&]( const std::string &t, float x, float y, float size, Color c, int align )
+    {
+        Vector2 m = MeasureTextEx( font, t.c_str(), size * s, 1.0f );
+        float   at = align == 1 ? x - m.x * 0.5f : align == 2 ? x - m.x : x;
+        DrawTextEx( font, t.c_str(), { at + 2 * s, y + 2 * s }, size * s, 1.0f, { 0, 0, 0, 200 } );
+        DrawTextEx( font, t.c_str(), { at, y }, size * s, 1.0f, c );
+    };
+    text( tr( "menu.controls" ), w * 0.5f, 50 * s, 60, { 245, 236, 222, 255 }, 1 );
+    float name = w * 0.5f - 430 * s, key = w * 0.5f + 150 * s, pad = w * 0.5f + 400 * s, top = 150 * s, row = 34 * s;
+    text( tr( "controls.key" ), key, top - 40 * s, 22, { 255, 170, 90, 230 }, 1 );
+    text( tr( "controls.pad" ), pad, top - 40 * s, 22, { 255, 170, 90, 230 }, 1 );
+    int count = (int)BindE::COUNT + 2;
+    for ( int i = 0; i < count; ++i )
+    {
+        float y = top + i * row + ( i >= (int)BindE::COUNT ? 16 * s : 0.0f );
+        bool  on = i == chosen;
+        if ( on )
+            DrawRectangle( (int)( name - 16 * s ), (int)( y - 4 * s ), (int)( pad - name + 140 * s ), (int)( 32 * s ),
+                           { 255, 170, 80, 40 } );
+        Color c = on ? Color{ 255, 205, 140, 255 } : Color{ 200, 200, 200, 220 };
+        if ( i >= (int)BindE::COUNT )
+        {
+            text( tr( i == (int)BindE::COUNT ? "controls.defaults" : "menu.back" ), name, y, 26, c, 0 );
+            continue;
+        }
+        const Binding &b = binding( (BindE)i );
+        text( tr( std::string( "bind." ) + bindName( (BindE)i ) ), name, y, 26, c, 0 );
+        if ( on && waiting )
+            text( tr( "controls.press" ), ( key + pad ) * 0.5f, y, 26, { 255, 220, 120, 255 }, 1 );
+        else
+        {
+            text( keyLabel( b.m_key ), key, y, 26, c, 1 );
+            text( padLabel( b.m_pad ), pad, y, 26, c, 1 );
+        }
+    }
+    text( tr( "controls.help" ), w * 0.5f, h - 70 * s, 20, { 150, 150, 150, 200 }, 1 );
+}
+
 /** @brief A brightness bar as text. */
 std::string brightnessBar( float b )
 {
@@ -672,6 +744,9 @@ enum class RowE
     SUBTITLES,
     COLOURS,
     SHAKE,
+    LOOT,
+    CONTROLS,
+    PHOTO,
     BACK
 };
 
@@ -688,9 +763,9 @@ std::vector<RowE> menuRows( int menu, bool saved, bool plus )
 {
     using R = RowE;
     if ( menu == 2 )
-        return { R::DIFFICULTY, R::BRIGHTNESS, R::GRAPHICS, R::MUSIC, R::VOICES, R::EFFECTS,
-                 R::LANGUAGE,   R::SUBTITLES,  R::COLOURS,  R::SHAKE, R::BACK };
-    if ( menu == 1 ) return { R::RESUME, R::OPTIONS, R::RESTART, R::QUIT };
+        return { R::DIFFICULTY, R::BRIGHTNESS, R::GRAPHICS, R::MUSIC, R::VOICES,   R::EFFECTS, R::LANGUAGE,
+                 R::SUBTITLES,  R::COLOURS,    R::SHAKE,    R::LOOT,  R::CONTROLS, R::BACK };
+    if ( menu == 1 ) return { R::RESUME, R::PHOTO, R::OPTIONS, R::RESTART, R::QUIT };
     std::vector<RowE> rows;
     if ( saved ) rows.push_back( R::CONTINUE );
     if ( plus ) rows.push_back( R::PLUS );
@@ -722,6 +797,9 @@ std::string rowText( RowE r, const Settings &s, int cycle )
     case RowE::SUBTITLES: return pick( "menu.subtitles", "subtitles." + std::to_string( s.m_subtitles ) );
     case RowE::COLOURS: return pick( "menu.colours", "colours." + std::to_string( s.m_colours ) );
     case RowE::SHAKE: return pick( "menu.shake", "shake." + std::to_string( s.m_shake ) );
+    case RowE::LOOT: return pick( "menu.loot", "lootfilter." + std::to_string( s.m_loot ) );
+    case RowE::CONTROLS: return tr( "menu.controls" );
+    case RowE::PHOTO: return tr( "menu.photo" );
     default: return tr( "menu.back" );
     }
 }
@@ -789,8 +867,14 @@ int runGame( const Options &o, Gfx &gfx )
 {
     bool     sound = ( !o.m_mute && o.m_shot.empty() ) || o.m_silent;
     Settings settings = loadSettings();
+    for ( const std::string &line : o.m_binds ) readBinding( line );
+    if ( !o.m_playLog.empty() ) playlog::open( o.m_playLog );
     // The journal (awards, the codex) only for a player: tests count in memory and keep nothing.
-    if ( o.m_shot.empty() && !o.m_autoplay ) journal::load( std::string( GetApplicationDirectory() ) + "journal.txt" );
+    if ( o.m_shot.empty() && !o.m_autoplay )
+    {
+        journal::load( userDir() + "journal.txt" );
+        playlog::open( userDir() + "playlog.txt" );
+    }
     // The device is opened once: the music plays on across levels and menus.
     if ( sound ) InitAudioDevice();
     Score score;
@@ -818,6 +902,7 @@ int runGame( const Options &o, Gfx &gfx )
     if ( !o.m_loadFile.empty() && loadProgress( progress, o.m_loadFile ) )
         level = progress.m_level, hero = progress.m_hero, game->m_heroKind = hero;
     if ( o.m_colours >= 0 ) settings.m_colours = o.m_colours;
+    if ( o.m_lootFilter >= 0 ) settings.m_loot = o.m_lootFilter;
     game->m_progress = progress;
     game->m_genSeed = o.m_seed;
     if ( !game->load( gfx, assetsDir(), level, sound ) )
@@ -845,7 +930,11 @@ int runGame( const Options &o, Gfx &gfx )
         game->setVolumes( settings.m_voices, settings.m_effects );
         game->m_subtitleScale = settings.m_subtitles == 0 ? 0.8f : ( settings.m_subtitles == 2 ? 1.3f : 1.0f );
         game->m_shakeScale = settings.m_shake * 0.5f;
+        game->m_lootFilter = settings.m_loot;
         gfx.m_colourVision = settings.m_colours;
+        // The shared stash: only for real play (tests keep theirs in memory).
+        if ( o.m_shot.empty() && !o.m_autoplay && game->m_stashPath.empty() )
+            game->loadStash( userDir() + "stash.txt" );
     };
     apply();
     game->m_autoplay = o.m_autoplay;
@@ -882,6 +971,18 @@ int runGame( const Options &o, Gfx &gfx )
         if ( o.m_report ) TraceLog( LOG_WARNING, "RUN: %s", game->report().c_str() );
         if ( !o.m_talk.empty() || o.m_shop ) game->openForPicture( o.m_talk, o.m_shop );
         if ( o.m_bench > 0 ) bench( gfx, o.m_bench, o, draw );
+        if ( !o.m_photo.empty() )
+        {
+            Game::PhotoInput pin;
+            sscanf( o.m_photo.c_str(), "%f,%f,%f", &pin.m_turn, &pin.m_tilt, &pin.m_zoom );
+            game->startPhoto();
+            game->photo( 0.0f, pin );
+        }
+        for ( int i = 0; i < o.m_stash && !game->m_progress.m_bag.empty(); ++i )
+        {
+            game->m_stash.push_back( game->m_progress.m_bag.front() );
+            game->m_progress.m_bag.erase( game->m_progress.m_bag.begin() );
+        }
         if ( o.m_panel >= 0 )
             savePicture( gfx, o.m_shot,
                          [&]( const RenderTexture2D *rt )
@@ -889,6 +990,15 @@ int runGame( const Options &o, Gfx &gfx )
                              game->render( gfx, rt );
                              BeginTextureMode( *rt );
                              game->drawPanel( rt->texture.width, rt->texture.height, o.m_panel, 0 );
+                             EndTextureMode();
+                         } );
+        else if ( o.m_controls )
+            savePicture( gfx, o.m_shot,
+                         [&]( const RenderTexture2D *rt )
+                         {
+                             game->render( gfx, rt );
+                             BeginTextureMode( *rt );
+                             drawControls( game->font(), 4, false );
                              EndTextureMode();
                          } );
         else if ( o.m_menu )
@@ -923,13 +1033,19 @@ int runGame( const Options &o, Gfx &gfx )
         PLAY,
         PAUSE,
         PANEL,
-        OPTIONS
+        OPTIONS,
+        CONTROLS,
+        PHOTO
     } mode = o.m_autoplay ? PLAY : TITLE;
-    auto optionsFrom = TITLE;   // where the options go back to
-    int  chosen = 0;
-    int  panelTab = 0, panelRow = 0;   ///< the inventory, character and map pages: which, and the chosen row
-    bool quit = false;
-    auto restart = [&]()
+    bool        photoHelp = true;      ///< the photo mode's help shows
+    float       photoToast = 0.0f;     ///< a picture was saved: how long it is still said
+    std::string photoSaved;            ///< where
+    bool        waiting = false;       ///< the controls' page waits for a key or button
+    auto        optionsFrom = TITLE;   // where the options go back to
+    int         chosen = 0;
+    int         panelTab = 0, panelRow = 0;   ///< the inventory, character and map pages: which, and the chosen row
+    bool        quit = false;
+    auto        restart = [&]()
     {
         float zoom = game->m_zoom;
         game->shutdown();
@@ -946,6 +1062,7 @@ int runGame( const Options &o, Gfx &gfx )
     while ( !WindowShouldClose() && !quit )
     {
         // The buttons in the texts follow the device last used.
+        updateBindings();
         if ( noteInput() ) game->refreshFont();
         float dt = fminf( GetFrameTime(), 0.05f );
         if ( mode == PLAY )
@@ -953,13 +1070,17 @@ int runGame( const Options &o, Gfx &gfx )
             GameInput in = readInput( lastMouse, dt );
             bool      pause = IsKeyPressed( KEY_ESCAPE ) ||
                               ( IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT ) );
-            // I the inventory, C the character page, the pad's View button both; the game waits meanwhile.
-            bool pad = IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_LEFT );
-            bool inventory = IsKeyPressed( KEY_I ) || pad, character = IsKeyPressed( KEY_C );
+            // The inventory, the character page (as bound); the game waits meanwhile.
+            bool inventory = pressed( BindE::INVENTORY ), character = pressed( BindE::CHARACTER );
             if ( pause && !game->finished() )
             {
                 mode = PAUSE;
                 chosen = 0;
+            }
+            else if ( pressed( BindE::PHOTO ) && !game->finished() )
+            {
+                game->startPhoto();
+                mode = PHOTO;
             }
             else if ( ( inventory || character ) && !game->finished() )
             {
@@ -1014,14 +1135,12 @@ int runGame( const Options &o, Gfx &gfx )
             if ( rows > 0 ) panelRow = ( panelRow + k.m_move + rows ) % rows;
             // A or Enter: put on, take off, learn; X or Delete: salvage.
             if ( k.m_confirm ) game->panelAction( panelTab, panelRow, 0 );
-            if ( IsKeyPressed( KEY_DELETE ) || IsKeyPressed( KEY_X ) ||
-                 ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_LEFT ) ) )
-                game->panelAction( panelTab, panelRow, 1 );
+            if ( pressed( BindE::SALVAGE ) ) game->panelAction( panelTab, panelRow, 1 );
+            // Into the stash, out of it (in a hub).
+            if ( pressed( BindE::STORE ) ) game->panelAction( panelTab, panelRow, 2 );
             rows = game->panelRows( panelTab );
             if ( panelRow >= rows ) panelRow = std::max( 0, rows - 1 );
-            if ( k.m_back || IsKeyPressed( KEY_I ) || IsKeyPressed( KEY_C ) ||
-                 ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_LEFT ) ) )
-                mode = PLAY;
+            if ( k.m_back || pressed( BindE::INVENTORY ) || pressed( BindE::CHARACTER ) ) mode = PLAY;
             lastMouse = GetMousePosition();
         }
         else if ( mode == CHOOSE )
@@ -1046,6 +1165,103 @@ int runGame( const Options &o, Gfx &gfx )
             {
                 mode = TITLE;
                 chosen = 0;
+            }
+            lastMouse = GetMousePosition();
+        }
+        else if ( mode == PHOTO )
+        {
+            // The game stands still; the camera pans (WASD, the arrows, the left stick), turns (Q E, the right
+            // stick, the right mouse button), tilts (R F, the right stick), goes in and out (the wheel, the triggers).
+            Game::PhotoInput pin;
+            bool             pad = IsGamepadAvailable( 0 );
+            auto             key = []( int a, int b )
+            { return ( IsKeyDown( a ) ? 1.0f : 0.0f ) - ( IsKeyDown( b ) ? 1.0f : 0.0f ); };
+            pin.m_move = { key( KEY_D, KEY_A ) + key( KEY_RIGHT, KEY_LEFT ),
+                           key( KEY_S, KEY_W ) + key( KEY_DOWN, KEY_UP ) };
+            pin.m_turn = key( KEY_E, KEY_Q ) * 1.6f * dt;
+            pin.m_tilt = key( KEY_R, KEY_F ) * 0.9f * dt;
+            pin.m_zoom = -GetMouseWheelMove() * 0.1f;
+            Vector2 mouse = GetMousePosition();
+            if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) )
+            {
+                pin.m_turn += ( mouse.x - lastMouse.x ) * 0.006f;
+                pin.m_tilt += ( mouse.y - lastMouse.y ) * 0.004f;
+            }
+            lastMouse = mouse;
+            if ( pad )
+            {
+                auto axis = []( int a )
+                {
+                    float v = GetGamepadAxisMovement( 0, a );
+                    return fabsf( v ) > 0.2f ? v : 0.0f;
+                };
+                pin.m_move = Vector2Add( pin.m_move, { axis( GAMEPAD_AXIS_LEFT_X ), axis( GAMEPAD_AXIS_LEFT_Y ) } );
+                pin.m_turn += axis( GAMEPAD_AXIS_RIGHT_X ) * 2.0f * dt;
+                pin.m_tilt -= axis( GAMEPAD_AXIS_RIGHT_Y ) * 1.2f * dt;
+                pin.m_zoom += ( ( GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_TRIGGER ) + 1.0f ) -
+                                ( GetGamepadAxisMovement( 0, GAMEPAD_AXIS_LEFT_TRIGGER ) + 1.0f ) ) *
+                              0.6f * dt;
+            }
+            if ( Vector2Length( pin.m_move ) > 1.0f ) pin.m_move = Vector2Normalize( pin.m_move );
+            game->photo( dt, pin );
+            // H or Y: the help; Enter or A: the picture (into the player's folder); Esc, B, Start or the key: back.
+            if ( IsKeyPressed( KEY_H ) || ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_UP ) ) )
+                photoHelp = !photoHelp;
+            if ( IsKeyPressed( KEY_ENTER ) || ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN ) ) )
+            {
+                time_t now = time( nullptr );
+                char   stamp[32];
+                strftime( stamp, sizeof( stamp ), "%Y%m%d_%H%M%S", localtime( &now ) );
+                photoSaved = photoDir() + "photo_" + stamp + ".png";
+                savePicture( gfx, photoSaved, draw );
+                photoToast = 3.0f;
+            }
+            photoToast -= dt;
+            if ( IsKeyPressed( KEY_ESCAPE ) || pressed( BindE::PHOTO ) ||
+                 ( pad && ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT ) ||
+                            IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT ) ) ) )
+            {
+                game->endPhoto();
+                mode = PLAY;
+            }
+        }
+        else if ( mode == CONTROLS )
+        {
+            // A row chosen and confirmed waits for the key or the button (Esc or Start: as it was).
+            int  count = (int)BindE::COUNT + 2;
+            bool changed = false;
+            if ( waiting )
+            {
+                int key = capturedKey(), button = capturedPad();
+                if ( IsKeyPressed( KEY_ESCAPE ) ||
+                     ( IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT ) ) )
+                    waiting = false;
+                else if ( key != 0 )
+                    bind( (BindE)chosen, false, key ), waiting = false, changed = true;
+                else if ( button != 0 )
+                    bind( (BindE)chosen, true, button ), waiting = false, changed = true;
+            }
+            else
+            {
+                MenuKeys k = menuKeys( dt );
+                chosen = ( chosen + k.m_move + count ) % count;
+                auto back = [&]()
+                {
+                    std::vector<RowE> rows = menuRows( 2, false, false );
+                    mode = OPTIONS;
+                    chosen = (int)( std::find( rows.begin(), rows.end(), RowE::CONTROLS ) - rows.begin() );
+                };
+                if ( k.m_confirm && chosen < (int)BindE::COUNT )
+                    waiting = true;
+                else if ( k.m_confirm && chosen == (int)BindE::COUNT )
+                    resetBindings(), changed = true;
+                else if ( k.m_confirm || k.m_back )
+                    back();
+            }
+            if ( changed )
+            {
+                saveSettings( settings );
+                game->refreshFont();
             }
             lastMouse = GetMousePosition();
         }
@@ -1109,6 +1325,9 @@ int runGame( const Options &o, Gfx &gfx )
             case RowE::SHAKE:
                 if ( step ) cycle( settings.m_shake, 3 );
                 break;
+            case RowE::LOOT:
+                if ( step ) cycle( settings.m_loot, 3 );
+                break;
             default: changed = false; break;
             }
             if ( changed && step )
@@ -1152,6 +1371,14 @@ int runGame( const Options &o, Gfx &gfx )
                     mode = PLAY;
                 else if ( row == RowE::OPTIONS )
                     optionsFrom = mode, mode = OPTIONS, chosen = 0;
+                else if ( row == RowE::CONTROLS )
+                    mode = CONTROLS, chosen = 0, waiting = false;
+                else if ( row == RowE::PHOTO )
+                {
+                    game->startPhoto();
+                    mode = PHOTO;
+                    lastMouse = GetMousePosition();
+                }
                 else if ( row == RowE::BACK )
                     mode = optionsFrom, chosen = 1;
                 else if ( row == RowE::RESTART )
@@ -1188,6 +1415,24 @@ int runGame( const Options &o, Gfx &gfx )
             for ( const char *key : keys ) items.push_back( tr( std::string( "choose." ) + key ) );
             drawMenu( game->font(), tr( "menu.choose" ), tr( std::string( "choose." ) + keys[chosen] + ".about" ),
                       items, chosen );
+        }
+        else if ( mode == CONTROLS )
+            drawControls( game->font(), chosen, waiting );
+        else if ( mode == PHOTO )
+        {
+            // Its help at the bottom (the picture saved is taken without it), what was saved.
+            int   w = GetScreenWidth(), h = GetScreenHeight();
+            float s = h / 1080.0f;
+            auto  line = [&]( const std::string &t, float y, float size, Color c )
+            {
+                Vector2 m = MeasureTextEx( game->font(), t.c_str(), size * s, 1.0f );
+                DrawRectangle( (int)( w * 0.5f - m.x * 0.5f - 14 * s ), (int)( y - 6 * s ), (int)( m.x + 28 * s ),
+                               (int)( m.y + 12 * s ), { 0, 0, 0, 140 } );
+                DrawTextEx( game->font(), t.c_str(), { w * 0.5f - m.x * 0.5f, y }, size * s, 1.0f, c );
+            };
+            if ( photoHelp ) line( tr( "photo.help" ), h - 70 * s, 20, { 220, 215, 205, 230 } );
+            if ( photoToast > 0.0f )
+                line( TextFormat( tr( "photo.saved" ), photoSaved.c_str() ), 40 * s, 22, { 160, 255, 190, 240 } );
         }
         else if ( mode != PLAY && mode != PANEL )
         {

@@ -327,8 +327,9 @@ uniform sampler2D emissionMap;
 uniform vec4 colDiffuse;
 uniform mat4 matNormal;
 uniform float uvScale;
-uniform vec4 matParams;    // roughness scale, metallic scale, normal strength, mapping (0 triplanar, 1 UV, 2 clothed, 3 decal, 4 stain)
+uniform vec4 matParams;    // roughness scale, metallic scale, normal strength, mapping (0 triplanar, 1 UV, 2 clothed, 3 decal, 4 stain, 5 garment)
 uniform vec4 drawTint;     // clothed: the clothes' colour, the height (rest pose) the skin shows above
+uniform vec4 drawCloth;    // clothed: the trousers' colour (x < 0: as drawTint); w the cut: pattern + 10 sleeves rolled up + 20 bare hands
 uniform vec4 emissive;     // rgb, mode (0 plain, 1 grooves glow, 2 emission map)
 uniform vec2 emissiveMask; // the grooves' smoothstep
 uniform float variation;
@@ -399,7 +400,7 @@ void main()
         nObj = n0;
         // A decal: blended by its alpha over what is under it (nothing written where it is empty); a stain multiplies
         // what is under it (the blending does it: destination times this).
-        if( matParams.w > 2.5 )
+        if( matParams.w > 2.5 && matParams.w < 4.5 )
         {
             alpha = tex.a;
             if( alpha < 0.03 ) discard;
@@ -410,16 +411,65 @@ void main()
             }
         }
     }
-    if( matParams.w > 1.5 && matParams.w < 2.5 && objPos.y < drawTint.w )
+    bool garment = matParams.w > 4.5;
+    float cut = max( drawCloth.w, 0.0 );
+    float hands = step( 19.5, cut );
+    float rolled = step( 9.5, cut - hands * 20.0 );
+    float pattern = cut - hands * 20.0 - rolled * 10.0;
+    float ax = abs( objPos.x );
+    // Rolled-up sleeves and bare hands leave the body's skin (the arms reach out along x in the rest pose).
+    bool bare = ( rolled > 0.5 && ax > 0.5 ) || ( hands > 0.5 && ax > 0.64 );
+    // Below the neck, and the shoulders' tops beside it (they reach above the neck's height in the rest pose).
+    bool clothed = objPos.y < drawTint.w || ( ax > 0.11 && objPos.y < drawTint.w + 0.1 );
+    if( garment || ( matParams.w > 1.5 && matParams.w < 2.5 && clothed && !bare ) )
     {
-        // Clothes over the body (below the neck in the rest pose): the colour with a weave in it; boots, a belt and
-        // gloves darker.
+        // Clothes over the body (below the neck in the rest pose) and the garments over them: the colour with a weave
+        // in it, the jacket's pattern; boots, a belt and gloves darker. The trousers have their own colour.
+        bool legs = !garment && objPos.y < 0.95 && ax < 0.4;
+        vec3 colour = legs && drawCloth.x >= 0.0 ? drawCloth.rgb : drawTint.rgb;
         float weave = noise3( objPos * 60.0 ) * 0.4 + noise3( objPos * 6.0 ) * 0.6;
-        albedo = toLinear( drawTint.rgb ) * ( 0.7 + 0.45 * weave );
-        if( objPos.y < 0.24 || abs( objPos.x ) > 0.64 )
-            albedo *= 0.32;
-        else if( objPos.y > 0.92 && objPos.y < 0.98 )
-            albedo *= 0.4;
+        float shade = 0.7 + 0.45 * weave;
+        if( pattern > 0.5 && pattern < 1.5 && !legs )
+            shade *= 0.84 + 0.3 * step( 0.86, fract( ( objPos.x + objPos.z ) * 42.0 ) );   // pinstripes
+        else if( pattern > 1.5 && pattern < 2.5 && !legs )
+        {
+            // Checks, as on a flannel shirt.
+            float u = step( 0.62, fract( ( objPos.x + objPos.z ) * 11.0 ) ), v = step( 0.62, fract( objPos.y * 11.0 ) );
+            shade *= 0.7 + 0.26 * u + 0.26 * v + 0.12 * u * v;
+        }
+        else if( pattern > 2.5 && pattern < 3.5 && !garment )
+        {
+            // Reflective bands round the chest, the upper arms and the shins (overalls).
+            bool band = ( objPos.y > 1.19 && objPos.y < 1.24 && ax < 0.3 ) || ( ax > 0.37 && ax < 0.41 && objPos.y > 1.25 )
+                        || ( objPos.y > 0.4 && objPos.y < 0.45 && ax < 0.3 );
+            if( band )
+            {
+                colour = vec3( 0.84, 0.86, 0.82 );   // silver, it throws the light back
+                shade = 1.1 + 0.1 * weave;
+            }
+        }
+        else if( pattern > 3.5 && pattern < 4.5 && !legs )
+        {
+            // Quilted, as a padded flight jacket.
+            float q = min( abs( fract( ( objPos.x + objPos.y + objPos.z ) * 11.0 ) - 0.5 ),
+                           abs( fract( ( objPos.x - objPos.y - objPos.z ) * 11.0 ) - 0.5 ) );
+            shade *= 0.76 + 0.32 * smoothstep( 0.0, 0.22, q );
+        }
+        else if( pattern > 4.5 )
+        {
+            // Worn: patches of other cloth, stains.
+            shade *= mix( 0.76, 1.14, hash13( floor( objPos * 7.0 ) ) ) * ( 0.84 + 0.16 * noise3( objPos * 23.0 ) );
+        }
+        albedo = toLinear( colour ) * shade;
+        if( !garment )
+        {
+            if( objPos.y < 0.24 || ax > 0.64 )
+                albedo *= 0.32;   // boots, gloves
+            else if( objPos.y > 0.92 && objPos.y < 0.98 )
+                albedo *= 0.4;    // the belt
+            else if( rolled > 0.5 && ax > 0.47 )
+                albedo *= 1.12;   // the rolled cuff
+        }
         orm = vec3( 1.0, 0.85, 0.0 );
     }
     albedo *= colDiffuse.rgb * fragColor.rgb;

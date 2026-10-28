@@ -17,6 +17,7 @@
 #include "Creatures.h"
 #include "Figure.h"
 #include "Film.h"
+#include "Garments.h"
 #include "Gfx.h"
 #include "Items.h"
 #include "Level.h"
@@ -270,6 +271,42 @@ public:
      */
     void panelAction( int tab, int row, int action );
 
+    // The photo mode (GamePhoto.cpp): the game stands still, the camera moves freely, the HUD is gone.
+    struct PhotoInput
+    {
+        Vector2 m_move = { 0.0f, 0.0f };   ///< pan on the screen (x right, y down)
+        float   m_turn = 0.0f;             ///< turn (radians)
+        float   m_tilt = 0.0f;             ///< tilt up (radians)
+        float   m_zoom = 0.0f;             ///< the distance's change (a share)
+    };
+    /** @brief Begins it from the camera as it is. */
+    void startPhoto();
+    /** @brief Moves the camera. */
+    void photo( float dt, const PhotoInput &in );
+    /** @brief Ends it. */
+    void endPhoto();
+    /** @return whether it is on */
+    bool photoOn() const { return m_photo; }
+
+    // The shared stash (GamePanel.cpp): in the hubs a locker beside the bag, the same for every game and hero.
+    static constexpr int StashSize = 60;     ///< what it holds
+    std::vector<Item>    m_stash;            ///< what is in it
+    std::string          m_stashPath;        ///< stash.txt in the player's folder ("": tests, kept in memory)
+    int                  m_lootFilter = 0;   ///< finds salvaged at once: 0 none, 1 common, 2 common and magic
+    /**
+     * @brief Reads the stash.
+     * @param[in] path  stash.txt
+     */
+    void loadStash( const std::string &path );
+    /** @brief Writes it (whole or not at all). */
+    void saveStash() const;
+    /** @return whether the stash is at hand (a hub) */
+    bool atStash() const;
+    /** @brief Puts an item from the bag into the stash. */
+    void store( int bag );
+    /** @brief Takes an item from the stash into the bag. */
+    void take( int stash );
+
     /** @brief Pictures: a row of people in front of the hero, each in another animation. */
     void lineup();
     /**
@@ -381,18 +418,24 @@ private:
         float m_zapT = 0.0f;     ///< until a taken machine fires at its own again
         int m_variant = 0;   ///< a kind's other shape: the Taxator's kind as the Hydrauliker, a gunner with a shock gun
         // The places' own creatures, the later gifts, the leaders (GameFamilies.cpp).
-        int     m_family = -1;          ///< a creature's family (FamilyE in GameFamilies.cpp)
-        int     m_tier = 0;             ///< its tier 0 .. 2 (another name, more of everything)
-        int     m_affix2 = -1;          ///< a second gift (the later acts' champions, the leaders)
-        int     m_leader = -1;          ///< the leader it follows or the champion that called it (index into m_foes)
-        int     m_title = -1;           ///< a leader's name (leader.name.<n>, leader.title.<n % titles>)
-        float   m_ward = 0.0f;          ///< a shielded champion's shield
-        float   m_wardT = 9.0f;         ///< seconds since its shield was hit
-        float   m_giftT = 2.0f;         ///< until a gift acts again (a blink, a zap, a call, a burning step)
-        float   m_callT = 0.0f;         ///< until its weakness or toughness is called out again
-        Vector3 m_rush = { 0, 0, 0 };   ///< the Taxator's charge (its direction)
-        Vector3 m_home = { 0, 0, 0 };   ///< where it was put (a boss keeps to its hall)
-        Vector3 m_safe = { 0, 0, 0 };   ///< where it last stood in the open (never left in rock)
+        int   m_family = -1;    ///< a creature's family (FamilyE in GameFamilies.cpp)
+        int   m_tier = 0;       ///< its tier 0 .. 2 (another name, more of everything)
+        int   m_affix2 = -1;    ///< a second gift (the later acts' champions, the leaders)
+        int   m_leader = -1;    ///< the leader it follows or the champion that called it (index into m_foes)
+        int   m_title = -1;     ///< a leader's name (leader.name.<n>, leader.title.<n % titles>)
+        float m_ward = 0.0f;    ///< a shielded champion's shield
+        float m_wardT = 9.0f;   ///< seconds since its shield was hit
+        float m_giftT = 2.0f;   ///< until a gift acts again (a blink, a zap, a call, a burning step)
+        float m_callT = 0.0f;   ///< until its weakness or toughness is called out again
+        // Fighting together (GameTactics.cpp).
+        int     m_tactic = 0;                         ///< what it does besides its own ways this frame
+        float   m_waitT = 0.0f;                       ///< how long it has waited for the others
+        float   m_coverT = 0.0f;                      ///< still behind cover (or on its way there)
+        float   m_coverCool = 0.0f;                   ///< until it takes cover again
+        Vector3 m_cover = { 0.0f, -1000.0f, 0.0f };   ///< where its cover is
+        Vector3 m_rush = { 0, 0, 0 };                 ///< the Taxator's charge (its direction)
+        Vector3 m_home = { 0, 0, 0 };                 ///< where it was put (a boss keeps to its hall)
+        Vector3 m_safe = { 0, 0, 0 };                 ///< where it last stood in the open (never left in rock)
     };
     struct Blob
     {
@@ -515,13 +558,17 @@ private:
         float   m_chair = 0.0f;                ///< on a stool
         float   m_seat = 0.5f;                 ///< the stool's height
         // Drawn as a skinned figure (Quaternius' bodies) when m_body >= 0.
-        int                 m_body = -1;                      ///< 0 a man, 1 a woman
-        int                 m_hair = -1;                      ///< which hair of that body (-1 none)
-        int                 m_tone = 0;                       ///< 0 dark, 1 light skin
-        int                 m_hairColour = 0;                 ///< black, brown, blond, red, grey
-        Vector3             m_cloth = { 0.5f, 0.5f, 0.5f };   ///< the clothes' colour
-        float               m_scale = 1.0f;                   ///< a child is smaller
-        int                 m_force = -1;                     ///< a clip played regardless (pictures)
+        int                 m_body = -1;                       ///< 0 a man, 1 a woman
+        int                 m_hair = -1;                       ///< which hair of that body (-1 none)
+        int                 m_tone = 0;                        ///< 0 dark, 1 light skin
+        int                 m_hairColour = 0;                  ///< black, brown, blond, red, grey
+        Vector3             m_cloth = { 0.5f, 0.5f, 0.5f };    ///< the clothes' colour (the jacket's)
+        Vector3             m_lower = { -1.0f, 0.0f, 0.0f };   ///< the trousers' colour (x < 0: as m_cloth)
+        Vector3             m_accent = { 0.5f, 0.5f, 0.5f };   ///< the second colour (scarf, cap, vest, pack)
+        float               m_cut = 0.0f;                      ///< pattern + 10 sleeves rolled up + 20 bare hands
+        unsigned            m_wear = 0;                        ///< the garments worn (bits by GarmentE)
+        float               m_scale = 1.0f;                    ///< a child is smaller
+        int                 m_force = -1;                      ///< a clip played regardless (pictures)
         SkinState           m_skin;
         std::vector<Matrix> m_bones;   ///< this frame's skin matrices (alive until drawn)
     };
@@ -562,6 +609,20 @@ private:
     Target findTarget( Vector3 from, Vector3 dir, float cone ) const;
     Vector3 targetPoint( const Target &t ) const;
     bool los( Vector3 a, Vector3 b ) const;
+    /** @return how a foe fights with the others: 1 it closes in, 2 it shoots from afar, 0 its own ways */
+    int foeRole( const Foe &f ) const;
+    /**
+     * @brief Cover near a foe: a floor cell close by from which the hero cannot be seen.
+     * @param[in]  f    the foe
+     * @param[out] out  the cell's middle on its floor
+     * @return whether there is one
+     */
+    bool findCover( const Foe &f, Vector3 &out ) const;
+    /** @brief Fighting together, before the foe's own ways: which way it goes (flanking, waiting, cover). */
+    void tactics( Foe &f, float dt, Vector3 dir, float dist, Vector3 &path );
+    /** @brief And after them: what waiting, cover or a ledge make of its wish to move. */
+    void tacticsAfter( Foe &f, Vector3 dir, Vector3 &want, float &faceYaw );
+    int m_tacticFrames[6] = {};   ///< the play log: foe-frames waiting, to cover, in cover, holding a ledge, flanking
     bool gapBetween( Vector3 a, Vector3 b ) const;
     void hurtHero( float amount, Vector3 push, Vector3 from );
     void killFoe( Foe &f, bool drops );
@@ -725,6 +786,41 @@ private:
     Mesh       m_droneBody = {}, m_droneRotor = {}, m_droneEye = {}, m_blade = {}, m_sac = {}, m_ring = {};
     float      m_hitScale = 1.0f;   ///< what the foe acting now does more (champions)
     float      m_areaHit = 1.0f;    ///< what enemies do more in a deeper area
+    // The Depths' anomalies (GameAnomaly.cpp): what they make of the fight and the finds.
+    bool    m_photo = false;                        ///< the photo mode is on
+    Vector3 m_photoTarget = { 0.0f, 0.0f, 0.0f };   ///< what its camera looks at
+    float   m_photoYaw = 0.0f;                      ///< its turn round it
+    float   m_photoPitch = 0.9f;                    ///< its tilt
+    float   m_photoDist = 14.0f;                    ///< its distance
+    float   m_foeHp = 1.0f;                         ///< the enemies' health
+    float   m_foeTempo = 1.0f;                      ///< their pace
+    float   m_stimScale = 1.0f;                     ///< what a stim heals
+    float   m_scrapScale = 1.0f;                    ///< the scrap found
+    float   m_findScale = 1.0f;                     ///< the finds' luck
+    float   m_xpScale = 1.0f;                       ///< the experience
+    bool    m_burstDead = false;                    ///< the dead burst
+    struct Burst
+    {
+        Vector3 m_pos;   ///< where the dead lies
+        float   m_t;     ///< until it bursts
+    };
+    std::vector<Burst> m_bursts;
+    /** @brief The factors from the place's anomalies (before the enemies come). */
+    void applyAnomalies();
+    /** @return the anomalies' names in a line */
+    std::string anomalyNames() const;
+    /** @brief An enemy fell: where the dead burst, a fuse. */
+    void anomalyDeath( Vector3 at );
+    /** @brief The fuses, the blasts. */
+    void updateAnomalies( float dt );
+    /**
+     * @brief The anomalies and what they bring, two lines centred.
+     * @param[in] w      the screen's width
+     * @param[in] h      its height
+     * @param[in] y      the first line's top
+     * @param[in] alpha  how visible
+     */
+    void drawAnomalies( int w, int h, float y, unsigned char alpha );
     struct Summon
     {
         FoeE    first;
@@ -1017,9 +1113,12 @@ private:
         int         m_slot = -1;                        ///< a worn item's slot
         int         m_bag = -1;                         ///< an item in the bag
         int         m_skill = -1;                       ///< a skill
+        int         m_stash = -1;                       ///< an item in the stash
         Color       m_color = { 210, 205, 195, 230 };   ///< the value's colour
     };
     std::vector<PanelRow> skillRows() const;
+    /** @return the item a row shows (nullptr: none) */
+    const Item *rowItem( const PanelRow &row ) const;
     std::vector<PanelRow> rowsOf( int tab ) const;   // a page's rows: inventory, skills, codex, awards
 
     // GameCodex.cpp: the codex and the awards (journal.txt across all games).
@@ -1037,6 +1136,12 @@ private:
     std::string              m_awardShown;                          ///< the one showing
     float                    m_awardT = 0.0f;                       ///< how long it still shows
     bool                     m_checkpoint = false;                  ///< a capsule woke: save
+    // The play log (PlayLog.h): what a level was like, for balancing from real play.
+    void logDeath();
+    std::string foesNear() const;
+    bool                       m_logStarted = false;   ///< the level's first line is written
+    float                      m_logT = 10.0f;         ///< until the next place
+    std::map<std::string, int> m_logUses;              ///< skills, rolls, stims used in the level
     std::string itemDetail( const Item &it ) const;
     void loadPanel();
     void updateMap( float dt );
@@ -1179,11 +1284,13 @@ private:
     void dressPerson( Person &q, unsigned seed );
     void updateSkins( float dt );
     void poseSkin( Person &q, std::vector<Drawable> &out );
-    bool                       m_skins = false;       ///< the bodies are there
-    SkinModel                  m_body[2];             ///< a man, a woman
-    std::vector<int>           m_bodySurface[2][2];   ///< per mesh of each body: its surface, per skin tone
-    std::vector<int>           m_hairSurface[2][5];   ///< per hair of each body, per colour
-    std::map<std::string, int> m_clip;                ///< the clips by name (the same in both bodies)
+    bool                                   m_skins = false;       ///< the bodies are there
+    SkinModel                              m_body[2];             ///< a man, a woman
+    std::vector<int>                       m_bodySurface[2][2];   ///< per mesh of each body: its surface, per skin tone
+    std::vector<int>                       m_hairSurface[2][5];   ///< per hair of each body, per colour
+    std::vector<std::vector<GarmentPiece>> m_garments[2];         ///< per body, per garment (GarmentE): its pieces
+    int                                    m_garmentSurface = -1;   ///< cloth for the garments (the colour per draw)
+    std::map<std::string, int>             m_clip;                  ///< the clips by name (the same in both bodies)
     void drawShipHud( int w, int h, float s );
 
     Level                 m_level;

@@ -8,6 +8,7 @@
 #include <dav1d/dav1d.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstring>
 #include <fstream>
 #include <sstream>
@@ -61,8 +62,13 @@ bool Film::open( const std::string &path )
 
     Dav1dSettings settings;
     dav1d_default_settings( &settings );
+#if DAV1D_API_VERSION_MAJOR >= 6
     settings.n_threads = 4;
     settings.max_frame_delay = 1;   // a picture for every frame sent: no frames held back
+#else
+    settings.n_frame_threads = 1;   // dav1d before 1.0 (Ubuntu 22.04): one frame at a time, tiles in parallel
+    settings.n_tile_threads = 4;
+#endif
     if ( dav1d_open( &m_ctx, &settings ) < 0 )
     {
         m_ctx = nullptr;

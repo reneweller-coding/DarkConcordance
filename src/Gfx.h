@@ -74,6 +74,7 @@ struct Drawable
     const Matrix *m_bones = nullptr;              ///< a skinned figure's bone matrices (they must live until drawn)
     int           m_boneCount = 0;                ///< how many
     Vector4       m_tint = { 1, 1, 1, 0 };   ///< clothed surfaces: the clothes' colour, the height the skin shows above
+    Vector4 m_cloth = { -1, 0, 0, 0 };   ///< clothed: the trousers' colour (x < 0: as m_tint); w the cut (Shaders.h)
 };
 
 /** @brief The renderer. */
@@ -224,7 +225,7 @@ private:
     /** @brief Where the per-draw uniforms of a lit shader are. */
     struct DrawLocs
     {
-        int m_uv, m_params, m_emissive, m_mask, m_variation, m_cutaway, m_tint, m_cutCentre, m_cutRadius;
+        int m_uv, m_params, m_emissive, m_mask, m_variation, m_cutaway, m_tint, m_cloth, m_cutCentre, m_cutRadius;
     };
     /** @brief Finds them. */
     DrawLocs drawLocs( Shader s );

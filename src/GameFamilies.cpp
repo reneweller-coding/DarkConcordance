@@ -613,6 +613,26 @@ void Game::creatureLineup( int page )
         }
 }
 
+int Game::foeRole( const Foe &f ) const
+{
+    switch ( f.m_kind )
+    {
+    case FoeE::LOUSE:
+    case FoeE::BATON:
+    case FoeE::SAW:
+    case FoeE::BOMBER: return 1;
+    case FoeE::WELDER: return 2;
+    case FoeE::GUNNER: return f.m_variant == 4 ? 0 : ( f.m_variant == 1 ? 1 : 2 );
+    case FoeE::CREATURE:
+    {
+        if ( f.m_family < 0 || f.m_family >= FAMILIES ) return 0;
+        ArchE a = Families[f.m_family].m_arch;
+        return a == CASTER ? 2 : ( a == LUNGER || a == CHARGER || a == SWARM ) ? 1 : 0;
+    }
+    default: return 0;   // the guards, the heavies, the drones, the bosses and Mother's bodies: their own ways
+    }
+}
+
 int Game::nativeTier()
 {
     // Later acts bring the grown ones.
@@ -633,7 +653,7 @@ void Game::spawnNative( int family, Vector3 p, int tier )
     Foe &f = m_foes.back();
     f.m_family = family;
     f.m_tier = tier;
-    f.m_hp = d.m_hp * TierHp[tier] * toughness( m_difficulty ) * ( 1.0f + 0.25f * ( m_level.m_area - 1 ) );
+    f.m_hp = d.m_hp * TierHp[tier] * toughness( m_difficulty ) * ( 1.0f + 0.25f * ( m_level.m_area - 1 ) ) * m_foeHp;
     f.m_hpMax = f.m_hp;
     f.m_timer = 1.0f + rnd();
 }
