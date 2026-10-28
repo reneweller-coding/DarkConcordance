@@ -2758,6 +2758,7 @@ void Game::plan()
     {
         // A swarm: to the nearest carrier still standing (the floor under it).
         float best = 1e9f;
+        int   nearest = -1;
         for ( int id : m_hives )
         {
             const Foe &h = m_foes[id];
@@ -2766,9 +2767,12 @@ void Game::plan()
             int gr, gc;
             m_level.cellOf( h.m_pos, gr, gc );
             if ( !m_level.walkable( gr, gc ) ) continue;
-            best = d, goal = gr * cols + gc;
+            best = d, goal = gr * cols + gc, nearest = id;
         }
-        if ( goal >= 0 && m_heroKind != HeroE::DORRA && best < 16.0f ) goal = -1;   // Corvin shoots from where he is
+        // Corvin and Ione shoot from where they are, once the carrier is in sight.
+        if ( goal >= 0 && m_heroKind != HeroE::DORRA && best < 16.0f &&
+             los( Vector3Add( m_pos, { 0, 1.25f, 0 } ), targetPoint( { 0, nearest, {} } ) ) )
+            goal = -1;
     }
     else if ( tugFighting() )
     {
@@ -2777,19 +2781,33 @@ void Game::plan()
         bool reached = false;
         for ( const BossPart &q : m_parts )
             reached = reached ||
-                      ( q.m_hp > 0.0f && Vector3Distance( q.m_pos, m_pos ) < fminf( 26.0f, m_stats.m_range - 1.5f ) );
-        if ( m_heroKind != HeroE::DORRA && reached && los( Vector3Add( m_pos, { 0, 1.3f, 0 } ), m_parts[1].m_pos ) )
+                      ( q.m_hp > 0.0f && Vector3Distance( q.m_pos, m_pos ) < fminf( 26.0f, m_stats.m_range - 1.5f ) &&
+                        los( Vector3Add( m_pos, { 0, 1.3f, 0 } ), q.m_pos ) );
+        if ( m_heroKind != HeroE::DORRA && reached )
         {
             m_path.clear();
             return;
         }
-        // Dorra by the near engine while it lives (her hammer reaches it from the edge), else where she stands.
+        // By the near engine while it lives (Dorra's hammer reaches it from the edge), else by the first part still
+        // standing.
         Vector3 stand = m_tugStand;
-        if ( m_parts[0].m_hp > 0.0f ) stand.z = m_parts[0].m_pos.z;
+        for ( const BossPart &q : m_parts )
+            if ( q.m_hp > 0.0f )
+            {
+                stand.z = q.m_pos.z;
+                break;
+            }
         int gr, gc;
         m_level.cellOf( stand, gr, gc );
         if ( !m_level.walkable( gr, gc ) ) m_level.cellOf( m_tugStand, gr, gc );
         goal = gr * cols + gc;
+    }
+    else if ( m_tugOn && !m_tugAwake && !m_tugDead )
+    {
+        // A machine that wakes only when someone comes near (the catcher): to where one fights it.
+        int gr, gc;
+        m_level.cellOf( m_tugStand, gr, gc );
+        if ( m_level.walkable( gr, gc ) ) goal = gr * cols + gc;
     }
     else if ( motherFighting() && motherLinked() )
     {
@@ -2815,8 +2833,9 @@ void Game::plan()
     {
         // Corvin fights the boss from where he stands once it is in sight and near; until then he goes to it.
         Vector3 b = m_foes[boss()].m_pos;
-        if ( m_heroKind != HeroE::DORRA && Vector3Distance( b, m_pos ) < 13.0f &&
-             los( Vector3Add( m_pos, { 0, 1.3f, 0 } ), Vector3Add( b, { 0, 1.3f, 0 } ) ) )
+        Vector3 chest = Vector3Add( m_pos, { 0, 1.25f, 0 } ), aim = targetPoint( { 0, boss(), {} } );
+        if ( m_heroKind != HeroE::DORRA && Vector3Distance( b, m_pos ) < 13.0f && m_foes[boss()].m_awake &&
+             los( chest, aim ) && !rackInWay( chest, aim ) )
         {
             m_path.clear();
             return;
@@ -2855,6 +2874,12 @@ void Game::plan()
             if ( pr >= 0 && pc >= 0 && pr < rows && pc < cols && p.m_radius > 0.3f )
                 m_propCells[(size_t)pr * cols + pc] = 1;
         }
+        // A centrifuge's pull, too: round it where there is a way.
+        for ( const Vector3 &sp : m_spinners )
+            for ( int r = 0; r < rows; ++r )
+                for ( int c = 0; c < cols; ++c )
+                    if ( Vector3Distance( m_level.centre( r, c ), { sp.x, m_level.centre( r, c ).y, sp.z } ) < 5.0f )
+                        m_propCells[(size_t)r * cols + c] = 1;
     }
     // Out of air: to the nearest hut or air post first (until the suit is full); in a storm into the lee of something.
     std::function<bool( int, int )> want;
@@ -2946,6 +2971,32 @@ void Game::plan()
     if ( !m_path.empty() ) m_path.erase( m_path.begin() );
 }
 
+void Game::unstall( float dt )
+{
+    // Progress: the route, the kills, what the boss and the machines have left, what has happened.
+    double mark = m_waypoint * 1e7 + m_kills * 1e3 + m_fired.size();
+    for ( const BossPart &q : m_parts ) mark += fmaxf( 0.0f, q.m_hp ) * 1e-3;
+    if ( boss() >= 0 ) mark += m_foes[boss()].m_hp * 1e-3;
+    if ( mark != m_stallMark || m_dead ) m_stallMark = mark, m_stallTime = 0.0f;
+    m_stallTime += dt;
+    if ( m_stallTime < 240.0f ) return;
+    m_stallTime = 0.0f;
+    ++m_stalls;
+    TraceLog( LOG_WARNING, "STALL: %s waypoint=%d/%d at=%.1f,%.1f", m_levelFile.c_str(), (int)m_waypoint,
+              (int)m_level.m_route.size(), m_pos.x, m_pos.z );
+    Vector3 to = m_pos;
+    if ( m_waypoint < m_level.m_route.size() )
+        to = m_level.centre( m_level.m_route[m_waypoint].first, m_level.m_route[m_waypoint].second ), ++m_waypoint;
+    else if ( liftOpen() )
+        to = m_lift;
+    else if ( boss() >= 0 )
+        to = Vector3Add( m_foes[boss()].m_pos, { 6.0f, 0.0f, 0.0f } );
+    else if ( m_tugOn && !m_tugDead )
+        to = m_tugStand;
+    putHero( to.x, to.z, m_yaw * RAD2DEG );
+    m_path.clear(), m_planTimer = 0.0f;
+}
+
 void Game::autopilot( float dt, GameInput &in )
 {
     in = GameInput();
@@ -2964,6 +3015,7 @@ void Game::autopilot( float dt, GameInput &in )
             in.m_special = true;
         return;
     }
+    if ( m_unstall ) unstall( dt );
     std::stringstream talkTo( m_level.m_autotalk );
     std::string       who;
     m_talkGoal = -1;
@@ -3007,9 +3059,14 @@ void Game::autopilot( float dt, GameInput &in )
     if ( m_waypoint < m_level.m_route.size() )
     {
         // A waypoint on the way counts from near by; the last one only when standing in it.
+        // The last one: close by for a quarter of a minute counts too (a foe, a prop or the suit's needs can keep it
+        // from the very middle).
         auto  wp = m_level.m_route[m_waypoint];
-        float near = m_waypoint + 1 < m_level.m_route.size() ? 1.6f : 0.6f;
-        if ( Vector3Distance( m_pos, m_level.centre( wp.first, wp.second ) ) < near ) ++m_waypoint, m_planTimer = 0.0f;
+        bool  last = m_waypoint + 1 >= m_level.m_route.size();
+        float near = last ? 0.6f : 1.6f;
+        float dist = Vector3Distance( m_pos, m_level.centre( wp.first, wp.second ) );
+        m_wpClose = last && dist < 3.0f ? m_wpClose + dt : 0.0f;
+        if ( dist < near || m_wpClose > 15.0f ) ++m_waypoint, m_planTimer = 0.0f, m_wpClose = 0.0f;
     }
     m_planTimer -= dt;
     if ( m_planTimer <= 0.0f )
@@ -3110,8 +3167,15 @@ void Game::autopilot( float dt, GameInput &in )
         m_stuckTimer += dt;
         if ( m_stuckTimer > 2.5f )
         {
+            // Some way with floor under it (never off an edge).
             if ( Vector3Distance( m_pos, m_lastPos ) < 0.4f && Vector2Length( in.m_move ) > 0.1f )
-                m_unstick = 0.6f, m_unstickDir = Vector2Normalize( { rnd() - 0.5f, rnd() - 0.5f } ), m_planTimer = 0.0f;
+                for ( int k = 0; k < 8; ++k )
+                {
+                    Vector2 dir = Vector2Normalize( { rnd() - 0.5f, rnd() - 0.5f } );
+                    if ( groundAt( { m_pos.x + dir.x * 1.5f, 0.0f, m_pos.z + dir.y * 1.5f } ) < -100.0f ) continue;
+                    m_unstick = 0.6f, m_unstickDir = dir, m_planTimer = 0.0f;
+                    break;
+                }
             m_lastPos = m_pos;
             m_stuckTimer = 0.0f;
         }
@@ -3188,6 +3252,7 @@ void Game::autopilot( float dt, GameInput &in )
             move = Vector2Normalize( move );
             if ( groundAt( { m_pos.x + move.x * 1.5f, 0.0f, m_pos.z + move.y * 1.5f } ) > -100.0f ) in.m_move = move;
         }
+        unstick();
         return;
     }
     int     next = m_path.front();

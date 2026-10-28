@@ -1,6 +1,6 @@
 # Production plan
 
-The game follows the user's story outline (*DARK CONCORDANCE* / *KATABASIS* – title open): a prologue, four acts,
+The game follows the user's story outline (*DARK CONCORDANCE*, the title since 28.10.2026): a prologue, four acts,
 24 playable locations, three hubs. Combat is arcade like *Baldur's Gate: Dark Alliance*, ranged combat is aimed like
 *Fallout: Brotherhood of Steel*; the story around it is not arcade. Every location gets a **wonder** (a picture one
 does not forget) and a **wound** (what is done to people there), and almost every one its own mechanic.
@@ -316,11 +316,28 @@ Still to come, by first use:
    autopilot; scrap at the end 360-2,000 (was 14,000-34,000), the workshop at 9-10. Acts II-IV stay easier than
    act I for the autopilot; a play test should tell. Open: the autopilot (not the game) stalls now and then when a
    level ends with someone to talk to it cannot reach (Dorra in Halden and the Arche, Ione in the Erzstrom).
+10. Title, autopilot, heroes, release — done (28.10.2026, the user's wish): the title *DARK CONCORDANCE*. The campaign
+   test keeps the hero before each place (`--keep`, `--places`) to replay a stall alone. What it found: two faults
+   of the game — waiting creatures in a corridor were written into the map as digits, which the level reads as
+   floor heights (a metre-high block before the only door of the Drowned Quarter: now a "native" line, as in the
+   rooms); a shipyard girder shoved the hero over an edge into space (an edge now holds like a wall: caught, not
+   thrown off). And the autopilot's: the swarm's carrier out of sight (Netz), the catcher asleep beyond the route's
+   end and its last arm out of sight (Erzstrom), Dorra after a foe she cannot reach (Ertrunken, Halden, Arche: she
+   gives one up after eight seconds without a blow), the last waypoint near enough after fifteen seconds, the boss
+   only shot at where he can be aimed at (Wanderer), centrifuges' pull avoided where there is a way (Mühle), its
+   freeing step only onto floor; last resort after four minutes without progress: put on at the next waypoint
+   (`STALL:`, `stalls=`). Campaign on Normal afterwards: all 75 places finished, deaths per act I/II/III/IV Corvin
+   6/1/3/0, Dorra 7/0/0/0, Ione 8/5/0/0, 1.6-2.9 h of autopilot; two stalls (Corvin in the Verlies, Ione in the Mühle).
+   Velm needed nothing more (Ione 212 s since the laser fix). The heroes' own bodies from MPFB (`tools/make_heroes.py`,
+   `assets/models/heroes`), drawn dressed with only weapon and shield as boxes. Release: version 1.0.0,
+   `Deploy/build_release.ps1` and `Deploy/build_linux.sh` (zip 1.2 GB, tar.gz with dav1d in lib/), `LICENSE`
+   (AGPL-3.0), `docs/CREDITS.txt`, `docs/README-player.txt`; the log falls back to the player's folder. Open: the
+   rifle's grip on Corvin's body, the other people still on Quaternius' bodies, a remote and publishing (the user's).
 
 ## Open decisions (the user's)
 
-- Title: *DARK CONCORDANCE* or *KATABASIS* (collision check before it is final).
-- Where human character models come from, if the suits are not enough.
+- None at the moment.
 
 Decided (27.10.2026, the user): voices in German and English, with Qwen3-TTS; the cutscene films photographic; co-op
-not for now.
+not for now. Decided (28.10.2026, the user): the title *DARK CONCORDANCE* (no game of that name found); human
+character models from MPFB2 (MakeHuman for Blender, CC0 assets); the code under the AGPL-3.0.

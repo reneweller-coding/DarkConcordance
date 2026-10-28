@@ -155,6 +155,27 @@ void Game::loadSkins( Gfx &gfx )
             }
         }
     }
+    // The hero's own body, dressed (tools/make_heroes.py: MPFB, CC0): its textures as they are, the hair, brows and
+    // lashes cut out where their texture is clear.
+    const char *const own[3] = { "corvin.glb", "dorra.glb", "ione.glb" };
+    std::string       file = m_assets + "/models/heroes/" + ( (int)m_heroKind < 3 ? own[(int)m_heroKind] : "" );
+    if ( (int)m_heroKind < 3 && FileExists( file.c_str() ) && m_heroModel.load( file, file ) )
+    {
+        m_heroModel.addClips( dir + "anim_library.glb", one );
+        m_heroModel.addClips( dir + "anim_library2.glb", two );
+        for ( int i = 0; i < m_heroModel.m_body.meshCount; ++i )
+        {
+            Texture2D albedo =
+                m_heroModel.m_body.materials[m_heroModel.m_body.meshMaterial[i]].maps[MATERIAL_MAP_ALBEDO].texture;
+            Image  img = LoadImageFromTexture( albedo );
+            Color *px = LoadImageColors( img );
+            int    clear = 0, n = img.width * img.height;
+            for ( int k = 0; k < n; k += 7 ) clear += px[k].a < 128 ? 1 : 0;
+            UnloadImageColors( px );
+            UnloadImage( img );
+            m_heroSurfaces.push_back( surface( albedo, clear * 7 > n / 20 ? 6.0f : 1.0f ) );
+        }
+    }
     Image     white = GenImageColor( 4, 4, WHITE );
     Texture2D cloth = LoadTextureFromImage( white );
     UnloadImage( white );
@@ -189,6 +210,14 @@ void Game::bodyFigures()
         put( m_hero, 1, 1, 2, 0, suit, true );
     else
         put( m_hero, 0, 1, 0, 0, suit, true );
+    if ( !m_heroSurfaces.empty() )
+    {
+        FigureBody b;
+        b.m_model = &m_heroModel;
+        b.m_surfaces = m_heroSurfaces;
+        b.m_dressed = true;
+        m_hero.body( b );
+    }
     // Men in suits; the frames twice a man's height move as men do, but nobody is seen inside their plates.
     for ( Figure *f : { &m_boarderBaton, &m_boarderGun, &m_guardFigure, &m_heavyFigure } )
         put( *f, 0, 0, 1, 0, suit, true );

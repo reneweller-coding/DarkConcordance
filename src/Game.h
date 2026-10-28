@@ -349,11 +349,12 @@ public:
     /** @brief Tests and pictures: puts on these ("item.rail3", "u12" a unique, "s5" a set's piece), rare kinds. */
     void testGear( const std::string &list );
 
-    bool        m_autoplay = false;                   ///< the autopilot plays
-    float       m_zoom = 1.0f;                        ///< camera distance factor
-    float       m_time = 0.0f;                        ///< seconds played
-    float       m_brightness = 1.0f;                  ///< exposure factor (the menus' brightness)
-    float       m_camYaw = 0.0f;                      ///< camera turned about the hero (radians, 0 = looking north)
+    bool        m_autoplay = false;    ///< the autopilot plays
+    bool        m_unstall = false;     ///< tests: the autopilot is put on where it makes no progress for four minutes
+    float       m_zoom = 1.0f;         ///< camera distance factor
+    float       m_time = 0.0f;         ///< seconds played
+    float       m_brightness = 1.0f;   ///< exposure factor (the menus' brightness)
+    float       m_camYaw = 0.0f;       ///< camera turned about the hero (radians, 0 = looking north)
     DifficultyE m_difficulty = DifficultyE::NORMAL;   ///< how hard
     HeroE       m_heroKind = HeroE::CORVIN;           ///< who is played (set before load)
     Progress    m_progress;                           ///< what the level starts with (set before load)
@@ -659,6 +660,12 @@ private:
     void drawHud( int w, int h );
     void drawParticles( Gfx &gfx );
     void autopilot( float dt, GameInput &in );
+    /**
+     * @brief The campaign test's last resort: after four minutes without progress the hero is put on at the next
+     *        waypoint (or the lift, the boss, the machine); counted, and logged as a STALL line.
+     * @param[in] dt  seconds
+     */
+    void unstall( float dt );
     void plan();
     float rnd();
     float hpMax() const;
@@ -1330,11 +1337,13 @@ private:
     void dressPerson( Person &q, unsigned seed );
     void updateSkins( float dt );
     void poseSkin( Person &q, std::vector<Drawable> &out );
-    bool                                   m_skins = false;       ///< the bodies are there
-    SkinModel                              m_body[2];             ///< a man, a woman
-    std::vector<int>                       m_bodySurface[2][2];   ///< per mesh of each body: its surface, per skin tone
-    std::vector<int>                       m_hairSurface[2][5];   ///< per hair of each body, per colour
-    std::vector<std::vector<GarmentPiece>> m_garments[2];         ///< per body, per garment (GarmentE): its pieces
+    bool             m_skins = false;       ///< the bodies are there
+    SkinModel        m_body[2];             ///< a man, a woman
+    SkinModel        m_heroModel;           ///< the hero's own body, dressed (assets/models/heroes; none: m_body's)
+    std::vector<int> m_heroSurfaces;        ///< per mesh of it: its surface
+    std::vector<int> m_bodySurface[2][2];   ///< per mesh of each body: its surface, per skin tone
+    std::vector<int> m_hairSurface[2][5];   ///< per hair of each body, per colour
+    std::vector<std::vector<GarmentPiece>> m_garments[2];           ///< per body, per garment (GarmentE): its pieces
     int                                    m_garmentSurface = -1;   ///< cloth for the garments (the colour per draw)
     std::map<std::string, int>             m_clip;                  ///< the clips by name (the same in both bodies)
     void drawShipHud( int w, int h, float s );
@@ -1574,8 +1583,16 @@ private:
     Vector2           m_unstickDir = { 0, 0 };
     std::vector<char> m_propCells;   ///< cells a crate or a stall stands in (the autopilot goes round)
     Vector3           m_lastPos = { 0, 0, 0 };
-    size_t            m_waypoint = 0;   ///< the next of the level's route
-    unsigned          m_seed = 4242;
+    size_t            m_waypoint = 0;     ///< the next of the level's route
+    float             m_wpClose = 0.0f;   ///< seconds the autopilot has been close to its waypoint without reaching it
+    float             m_stallTime = 0.0f;    ///< seconds without progress (tests, m_unstall)
+    double            m_stallMark = 0.0;     ///< what progress looked like then
+    int               m_stalls = 0;          ///< how often the hero was put on
+    int               m_meleeFoe = -1;       ///< the foe Dorra's autopilot goes for
+    float             m_meleeHp = 0.0f;      ///< its health when she last hurt it
+    float             m_meleeSince = 0.0f;   ///< since when no blow of hers has landed on it
+    std::map<int, float> m_meleeSkip;        ///< foes she cannot get at, left to the bolts until then
+    unsigned             m_seed = 4242;
 };
 
 }   // namespace spaceopera

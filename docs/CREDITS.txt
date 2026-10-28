@@ -1,0 +1,43 @@
+DARK CONCORDANCE - credits and licences
+=======================================
+
+DARK CONCORDANCE is written, directed and assembled by Rene Weller. The program is free software under the GNU
+Affero General Public License 3.0 (LICENSE). Its levels, texts, pictures, films, music and voices were made for it
+with the tools named below and are passed on with it under the same licence. All persons, places and companies in
+the story are fictional.
+
+Libraries
+---------
+- raylib 5.5 (https://www.raylib.com), zlib/libpng licence, Copyright (c) 2013-2024 Ramon Santamaria and
+  contributors; with the libraries it carries: GLFW (zlib licence), miniaudio, cgltf and the stb libraries (public
+  domain or MIT).
+- dav1d (https://code.videolan.org/videolan/dav1d), the AV1 decoder for the films, BSD 2-Clause licence,
+  Copyright (c) 2018-2024 VideoLAN and dav1d authors, Copyright (c) 2018-2024 Two Orioles, LLC.
+
+Font
+----
+- Barlow by Jeremy Tribby, SIL Open Font License 1.1 (assets/fonts/Barlow-OFL.txt).
+
+People and their movements
+--------------------------
+- The heroes' bodies are made with MPFB (MakeHuman for Blender, https://static.makehumancommunity.org/mpfb/) from
+  the MakeHuman assets, CC0: the base mesh, eyes, brows and lashes (MakeHuman system assets), the hair short02 and
+  bob02 (Data Collection AB), the hair bun by Rehman Polanski (CC0 in its asset pack; its file names AGPL 3.0), the
+  skins by jartur69, toigo and onlytheghosts, the suits and armour by MatCreator (bodysuit 2021, sci-fi armour
+  Guardian, Helios, Jupiter 7) and TheGreatEngineer (galactic warrior uniform). Tinted and fitted by
+  tools/make_heroes.py.
+- The other people's bodies, hair and every animation: Quaternius (https://quaternius.com), CC0 1.0 - Universal
+  Base Characters, Universal Animation Library and Universal Animation Library 2 (assets/models/quaternius/LICENSE.txt).
+
+Made with these tools (the results belong to the game)
+------------------------------------------------------
+- Surfaces, signs and portraits: Google's Gemini image model (Vertex AI), tools/make_textures.py and
+  tools/make_portraits.py.
+- Film pictures: FLUX.2 [dev] by Black Forest Labs (run locally); their motion: LTX-2.3 by Lightricks (run
+  locally); encoded as AV1.
+- Music: ACE-Step 1.5 (run locally, the soundtrack mode of the AudioGenerator), tools/music.json.
+- The places' sound beds: Stable Audio Open 1.0 by Stability AI (run locally), tools/ambience.txt.
+- Voices: Qwen3-TTS by the Qwen team, Alibaba Cloud (Apache 2.0, run locally), tools/make_voices.py.
+- Sound effects: synthesised by the game itself.
+
+Thanks to everyone who gives their work away.

@@ -1,8 +1,8 @@
-# SpaceOpera (working title)
+# DARK CONCORDANCE
 
 A dark space opera action RPG in the manner of *Baldur's Gate: Dark Alliance*: three-quarter camera, gamepad,
-ranged combat aimed as in *Fallout: Brotherhood of Steel*, pools of light in the dark. The story is the user's outline
-(*DARK CONCORDANCE* / *KATABASIS*); the production plan is in [docs/PLAN.md](docs/PLAN.md).
+ranged combat aimed as in *Fallout: Brotherhood of Steel*, pools of light in the dark. The story is the user's outline;
+the repository keeps the working name SpaceOpera. The production plan is in [docs/PLAN.md](docs/PLAN.md).
 
 ## Starting the game
 
@@ -557,6 +557,17 @@ A hit makes the chest flinch, a heavy blow throws a man back; every hero rolls o
 rifle is held with the left hand on its fore end (two-bone IK, the clips hold a pistol); on steps and edges the body
 sinks to the lower floor and the leg on the higher one bends.
 
+**The heroes' own bodies** (`assets/models/heroes/<hero>.glb`, made by `tools/make_heroes.py` in Blender with MPFB,
+MakeHuman's assets, CC0): a whole person each, as the portraits have them – Corvin in grey plates over a black
+undersuit, short and very broad Dorra in ochre plates with her red bun, thin Ione in a grey-blue maintenance suit –
+on MPFB's game engine rig (Quaternius' bone names, so every clip fits), with an `A_TPose` clip that stands the body
+in the animation library's T-pose (each bone turned, parents first, to point where the library's does; the game
+retargets every clip from it). The figure draws such a body at its own size with its own textures (hair, brows and
+lashes cut out where their texture is clear) and only the weapon and Dorra's shield as boxes (`FigureBody::
+m_dressed`); without the file the hero is built of plates as before. The other people keep Quaternius' bodies.
+
+    blender --background --factory-startup --python tools/make_heroes.py -- corvin --out assets/models/heroes/corvin.glb --preview work/mpfb/corvin.png
+
 **The people's clothes** (`src/Garments.cpp`): the shader dresses the body – a jacket's colour above the belt, the
 trousers' below, a pattern (pinstripes, checks, reflective bands, quilting, worn patches), the sleeves rolled up or
 the hands bare – and garments go over it, each made in the body's rest pose round the body's own outline (measured
@@ -597,6 +608,13 @@ house fronts before). The Windows build also runs under Wine 6 (Proton's ground)
 hand, not with `std::filesystem::copy_file` (Wine lacks the `CopyFile2` it calls), and Barlow stands in for the
 missing Bahnschrift.
 
+**Release packages:** `.\Deploy\build_release.ps1` builds and packs `dist\DarkConcordance-<version>-windows-x64.zip`
+(the exe renamed DarkConcordance.exe, the assets without `assets/raw`, `README.txt` from `docs/README-player.txt`,
+`LICENSE`, `docs/CREDITS.txt`) and, through WSL, `Deploy/build_linux.sh` packs
+`dist/DarkConcordance-<version>-linux-x86_64.tar.gz` the same way with the system's dav1d in `lib/` (the program's
+rpath `$ORIGIN/lib` finds it there first, so the Steam Deck needs no dav1d of its own). The version is CMake's
+(`project( SpaceOpera VERSION … )`).
+
 Tests and pictures without a window (always silent):
 
     bin\msvc\SpaceOpera.exe --shot work\a.png --autoplay --report --warm 600 --hero dorra     # the prologue
@@ -622,9 +640,12 @@ scattered round the hero) and `--xp n` set up a hero for tests, `--trace s` logs
 heat) every s seconds. `--silent` runs the sound (device, music, backgrounds) at volume 0, also with `--shot`;
 `--campaign` (with `--shot`, `--autoplay`, `--warm s` per place) plays the story's fighting places in order from
 `--level` on with what is gained carried on – between them better finds put on, the rest salvaged, stims, the
-workshop, Kiri's work and crates bought – and logs a `CAMPAIGN:` line per place; `--savefile FILE` keeps the hero at
-the end, `--loadfile FILE --plus` begins a run with them carried over, `--difficulty leicht|normal|schwer|albtraum` (hero level, area, time, deaths, kills, scrap, the gear's
-worth); `--slots` shows the saves, `--tier n` the Depths' tier, `--crash` crashes on purpose (the report);
+workshop, Kiri's work and crates bought – and logs a `CAMPAIGN:` line per place (hero level, area, time, deaths, kills, scrap, the gear's worth);
+`--savefile FILE` keeps the hero at the end, `--loadfile FILE --plus` begins a run with them carried over, `--difficulty leicht|normal|schwer|albtraum`;
+`--keep DIR` keeps the hero as they come to each place (`DIR/<place>.txt`, to play that place again with
+`--loadfile`), `--places n` stops after n places; where the autopilot makes no progress for four minutes, the campaign
+test puts the hero on at the next waypoint (or the lift, the boss, the machine), logs a `STALL:` line and counts it
+in the place's `stalls=` (a weakness of the test's autopilot to look into, not a pass); `--slots` shows the saves, `--tier n` the Depths' tier, `--crash` crashes on purpose (the report);
 `--playlog FILE` writes the play log there, `--lootfilter 0|1|2` sets the loot filter, `--stash n` puts the bag's
 first n items into the stash for the picture, `--bind "<name> <key> <pad>"` binds otherwise (as in the settings),
 `--controls` puts the controls' page over the picture, `--photo turn,tilt,zoom` takes it in the photo mode;
@@ -828,3 +849,14 @@ it.
 up with two steps at one end, and at the other end stands one who shoots from up there (the level's own shooters;
 `raise r c h` in a level file raises a marker's cell, since the map holds one character a cell). Every edge that drops
 more than 0.9 m has a railing. Heroes, foes and the autopilot take the steps; the drop is a jump down.
+
+## Credits and licences
+
+`docs/CREDITS.txt` lists what DARK CONCORDANCE is made from: raylib (zlib licence) with GLFW, miniaudio, cgltf and
+stb, dav1d (BSD 2-Clause), the Barlow font (SIL Open Font License), MakeHuman's assets through MPFB and Quaternius'
+characters and animations (CC0), and the tools the pictures, films, music, sound beds and voices were made with
+(Gemini's image model, FLUX.2 [dev], LTX-2.3, ACE-Step 1.5, Stable Audio Open, Qwen3-TTS). The release packages
+carry it beside the game.
+
+DARK CONCORDANCE is free software under the GNU Affero General Public License 3.0 (`LICENSE`): use it, change it, pass
+it on, with the source of what you change.

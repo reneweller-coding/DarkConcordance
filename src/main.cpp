@@ -99,6 +99,8 @@ struct Options
     int                      m_tier = 0;           ///< tests: the Depths' tier (0: as saved)
     bool                     m_crash = false;      ///< tests: crash on purpose (the report)
     bool                     m_campaign = false;   ///< tests: the main path in order, what is gained carried on
+    std::string              m_keep;               ///< tests: the campaign keeps the hero before each place here
+    int                      m_places = 0;         ///< tests: the campaign stops after so many places (0: all)
     bool                     m_plus = false;       ///< tests: the hero of --loadfile carried into a new run
     std::string              m_playLog;            ///< tests: write the play log here
     std::string              m_saveFile;           ///< tests: where a capsule's save goes (instead of save.txt)
@@ -230,6 +232,10 @@ Options parse( int argc, char **argv )
             o.m_crash = true;
         else if ( a == "--campaign" )
             o.m_campaign = true;
+        else if ( a == "--keep" )
+            o.m_keep = next();
+        else if ( a == "--places" )
+            o.m_places = atoi( next().c_str() );
         else if ( a == "--plus" )
             o.m_plus = true;
         else if ( a == "--tier" )
@@ -1137,7 +1143,8 @@ int runGame( const Options &o, Gfx &gfx )
             if ( level == Path[k] ) first = k;
         Progress carried = game->progress();
         carried.m_hasSpot = false;
-        for ( int k = first; k < count; ++k )
+        int last = o.m_places > 0 ? std::min( count, first + o.m_places ) : count;
+        for ( int k = first; k < last; ++k )
         {
             if ( k > first )
             {
@@ -1148,9 +1155,18 @@ int runGame( const Options &o, Gfx &gfx )
                 game->m_progress = carried;
                 game->setDifficulty( settings.m_difficulty );
                 if ( !game->load( gfx, assetsDir(), Path[k], sound ) ) break;
+                if ( o.m_silent ) SetMasterVolume( 0.0f );   // each place's sound sets its volume again
                 apply();
             }
+            // The hero as they come to this place, to play it again alone (--loadfile, --places 1).
+            if ( !o.m_keep.empty() )
+            {
+                Progress before = carried;
+                before.m_level = Path[k];
+                saveProgress( before, o.m_keep + "/" + Path[k] );
+            }
             game->m_autoplay = true;
+            game->m_unstall = true;
             game->campaignPrep();
             const float dt = 1.0f / 60.0f;
             for ( int i = 0; i < (int)( o.m_warm * 60.0f ) && !game->finished(); ++i )
@@ -1923,9 +1939,11 @@ int runGame( const Options &o, Gfx &gfx )
 
 int main( int argc, char **argv )
 {
-    Options     o = parse( argc, argv );
+    Options o = parse( argc, argv );
+    // The log beside the program (the tests read it there), else in the player's folder (a folder one may not write in).
     std::string logPath = std::string( GetApplicationDirectory() ) + "spaceopera.log";
     g_log = fopen( logPath.c_str(), "w" );
+    if ( !g_log ) logPath = userDir() + "spaceopera.log", g_log = fopen( logPath.c_str(), "w" );
     crash::install( userDir() + "crashes/", logPath );
     SetTraceLogCallback( logToFile );
     SetTraceLogLevel( LOG_WARNING );
@@ -1939,7 +1957,7 @@ int main( int argc, char **argv )
     unsigned flags = FLAG_VSYNC_HINT;
     if ( !o.m_shot.empty() ) flags |= FLAG_WINDOW_HIDDEN;
     SetConfigFlags( flags );
-    InitWindow( o.m_width, o.m_height, "SpaceOpera" );
+    InitWindow( o.m_width, o.m_height, "DARK CONCORDANCE" );
     if ( !o.m_pad.empty() )
         setDevice( o.m_pad == "xbox"   ? DeviceE::XBOX
                    : o.m_pad == "ps"   ? DeviceE::PLAYSTATION

@@ -1,8 +1,8 @@
 /**
  * @file Text.h
- * @brief The game's texts in the chosen language: assets/text/<language>/*.txt hold "key = text" lines (menus, HUD,
- *        each level's lines, hints and sign plates). German is the source; it fills every gap of another language, and
- *        a key without any text shows itself.
+ * @brief The game's texts in the chosen language: the .txt files in assets/text/<language>/ hold "key = text" lines
+ *        (menus, HUD, each level's lines, hints and sign plates). German is the source; it fills every gap of another
+ *        language, and a key without any text shows itself.
  * @author Rene Weller
  */
 #pragma once

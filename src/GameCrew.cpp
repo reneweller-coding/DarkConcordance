@@ -646,6 +646,22 @@ bool Game::autopilotMelee( GameInput &in, const Target &best, float bestDist )
     if ( dist < 1e-3f ) return false;
     in.m_stick = Vector2Scale( d, 1.0f / dist );
     FoeE kind = best.m_kind == 0 ? m_foes[best.m_index].m_kind : FoeE::LOUSE;
+    // A foe she cannot get at (up on a walkway, behind a railing): after eight seconds without a blow landing she
+    // leaves it to the bolts for a while, and the path goes on.
+    if ( best.m_kind == 0 )
+    {
+        auto skip = m_meleeSkip.find( best.m_index );
+        if ( skip != m_meleeSkip.end() && skip->second > m_time )
+        {
+            in.m_special = m_boltTimer <= 0.0f;
+            return false;
+        }
+        const Foe &f = m_foes[best.m_index];
+        if ( best.m_index != m_meleeFoe || f.m_hp < m_meleeHp - 1.0f )
+            m_meleeFoe = best.m_index, m_meleeHp = f.m_hp, m_meleeSince = m_time;
+        else if ( m_time - m_meleeSince > 8.0f )
+            m_meleeSkip[best.m_index] = m_time + 20.0f, m_meleeFoe = -1;
+    }
     bool shooter = best.m_kind == 0 && ( kind == FoeE::GUNNER || kind == FoeE::HEAVY || kind == FoeE::DRONE );
     bool tank = best.m_kind == 1 || best.m_kind == 2;
     if ( m_boltTimer <= 0.0f &&

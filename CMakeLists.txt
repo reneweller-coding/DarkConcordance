@@ -1,4 +1,5 @@
-# SpaceOpera -- the look test of a dark space opera action RPG in the manner of Baldur's Gate: Dark Alliance.
+# DARK CONCORDANCE (the repository's working name: SpaceOpera) -- a dark space opera action RPG in the manner of
+# Baldur's Gate: Dark Alliance.
 # C++20 on raylib (fetched at configure time), like Sunstreak.
 cmake_minimum_required( VERSION 3.22 )
 
@@ -7,7 +8,7 @@ set( CMAKE_POLICY_VERSION_MINIMUM 3.5 )
 set( CMAKE_POLICY_DEFAULT_CMP0091 NEW )
 set( CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>" )
 
-project( SpaceOpera VERSION 0.1.0 LANGUAGES C CXX )
+project( SpaceOpera VERSION 1.0.0 LANGUAGES C CXX )
 
 set( CMAKE_CXX_STANDARD 20 )
 set( CMAKE_CXX_STANDARD_REQUIRED ON )
@@ -52,6 +53,8 @@ else()
     # -fwrapv: an int that overflows wraps round as with MSVC, so a seed builds the same level everywhere.
     target_compile_options( SpaceOpera PRIVATE -Wall -Wextra -Wno-missing-field-initializers -fwrapv )
     target_link_options( SpaceOpera PRIVATE -static-libstdc++ -static-libgcc )
+    # A release carries the system's dav1d in lib/ beside the program (Deploy/build_linux.sh): looked for there first.
+    set_target_properties( SpaceOpera PROPERTIES BUILD_RPATH "$ORIGIN/lib" )
 endif()
 
 if( SPACEOPERA_BIN_DIR )

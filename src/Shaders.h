@@ -398,6 +398,8 @@ void main()
         albedo = toLinear( tex.rgb );
         orm = texture( texture1, uv ).rgb;
         nObj = n0;
+        // A cut-out (hair, brows, lashes): what is clear in the texture is not there.
+        if( matParams.w > 5.5 && tex.a < 0.5 ) discard;
         // A decal: blended by its alpha over what is under it (nothing written where it is empty); a stain multiplies
         // what is under it (the blending does it: destination times this).
         if( matParams.w > 2.5 && matParams.w < 4.5 )
@@ -411,7 +413,7 @@ void main()
             }
         }
     }
-    bool garment = matParams.w > 4.5;
+    bool garment = matParams.w > 4.5 && matParams.w < 5.5;
     float cut = max( drawCloth.w, 0.0 );
     float hands = step( 19.5, cut );
     float rolled = step( 9.5, cut - hands * 20.0 );

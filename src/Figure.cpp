@@ -420,9 +420,11 @@ void Figure::build( const FigureSurfaces &s )
     }
     if ( s.m_weapon == WeaponE::HAMMER )
     {
+        size_t shield = m_parts.size();
         rbox( BoneE::FORE_L, s.m_armor, { 0.0f, -0.17f, 0.11f }, { 0.25f, 0.3f, 0.025f }, 0.03f );
         rbox( BoneE::FORE_L, s.m_dark, { 0.0f, -0.17f, 0.14f }, { 0.2f, 0.025f, 0.012f }, 0.008f );
         rbox( BoneE::FORE_L, s.m_metal, { 0.0f, -0.17f, 0.088f }, { 0.26f, 0.31f, 0.012f }, 0.01f );
+        for ( size_t i = shield; i < m_parts.size(); ++i ) m_parts[i].m_gear = true;
     }
 
     // Legs.
@@ -744,8 +746,8 @@ void Figure::calibrate()
     // The body as tall as the boxes: its hips where theirs are.
     std::vector<Transform> rest;
     m.sample( m_clips[C_IDLE], 0.0f, rest );
-    m_bodyScale = HipHeight / fmaxf( rest[m_map[(int)BoneE::PELVIS]].translation.y, 0.1f );
-    Vector3 sc = m_look.m_scale;
+    m_bodyScale = m_body.m_dressed ? 1.0f : HipHeight / fmaxf( rest[m_map[(int)BoneE::PELVIS]].translation.y, 0.1f );
+    Vector3 sc = m_body.m_dressed ? Vector3{ 1.0f, 1.0f, 1.0f } : m_look.m_scale;
     Matrix  place = MatrixScale( m_bodyScale * sc.x, m_bodyScale * sc.y, m_bodyScale * sc.z );
     // The boxes standing with empty hands (arms hanging, as in the body's first idle frame): each bone's offset.
     WeaponE    weapon = m_look.m_weapon;
@@ -917,7 +919,7 @@ void Figure::solveSkin( const FigurePose &p )
     }
 
     // Where the body stands (on a chair its hips on the seat).
-    Vector3 sc = m_look.m_scale;
+    Vector3 sc = m_body.m_dressed ? Vector3{ 1.0f, 1.0f, 1.0f } : m_look.m_scale;
     float   k = m_bodyScale, y = p.m_pos.y;
     if ( p.m_chair > 0.0f ) y = Lerp( y, p.m_seat + 0.1f - m.hipHeight( m_clips[C_CHAIR] ) * k * sc.y, p.m_chair );
     m_place = MatrixMultiply( MatrixMultiply( MatrixScale( k * sc.x, k * sc.y, k * sc.z ), MatrixRotateY( p.m_yaw ) ),
@@ -996,6 +998,7 @@ void Figure::emit( Vector4 glow, bool body, std::vector<Drawable> &out )
     // On a body the clothes are the shader's and a bare head is the body's own: those boxes stay away.
     for ( const Part &part : m_parts )
     {
+        if ( skinned && m_body.m_dressed && part.m_bone != BoneE::WEAPON && !part.m_gear ) continue;
         if ( skinned && !m_look.m_suit ) continue;
         if ( skinned && !m_look.m_helmet && part.m_bone == BoneE::HEAD && part.m_surface != m_look.m_metal ) continue;
         Drawable d;
@@ -1030,7 +1033,7 @@ void Figure::emit( Vector4 glow, bool body, std::vector<Drawable> &out )
         d.m_spotShadow = false;
         out.push_back( d );
     }
-    if ( m_look.m_suit && m_look.m_helmet ) return;
+    if ( ( m_look.m_suit && m_look.m_helmet ) || m_body.m_dressed ) return;
     for ( auto [k, surface] :
           { std::pair{ m_body.m_hair, m_body.m_hairSurface }, std::pair{ m_body.m_brows, m_body.m_browSurface } } )
     {

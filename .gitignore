@@ -4,4 +4,6 @@ build/
 # bin/<preset> what can be started, work/ local pictures and logs.
 bin/
 work/
+# dist/ the release packages (Deploy/build_release.ps1).
+dist/
 __pycache__/

@@ -81,6 +81,7 @@ struct FigureBody
     int              m_browSurface = -1;                  ///< their surface
     Vector3          m_cloth = { 0.12f, 0.12f, 0.14f };   ///< below the neck: the suit's or the clothes' colour
     bool             m_shown = true;                      ///< drawn (false: a frame's plates move with no man inside)
+    bool m_dressed = false;   ///< a whole person (suit, hair, own size): only the weapon and the shield are boxes
 };
 
 /** @brief Everything a pose depends on, so one built figure can draw many people. */
@@ -209,11 +210,12 @@ private:
     /** @brief A part: a mesh on a bone. */
     struct Part
     {
-        Mesh    m_mesh;       ///< in the bone's frame
-        int     m_surface;    ///< its surface
-        BoneE   m_bone;       ///< the bone it sits on
-        Vector4 m_emissive;   ///< its glow (x < 0: the surface's)
-        bool    m_visor;      ///< the visor (takes a per-figure glow)
+        Mesh    m_mesh;           ///< in the bone's frame
+        int     m_surface;        ///< its surface
+        BoneE   m_bone;           ///< the bone it sits on
+        Vector4 m_emissive;       ///< its glow (x < 0: the surface's)
+        bool    m_visor;          ///< the visor (takes a per-figure glow)
+        bool    m_gear = false;   ///< carried, not worn (the shield): shown on a dressed body too
     };
 
     /** @brief This figure's own pose. */

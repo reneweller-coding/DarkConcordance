@@ -446,6 +446,8 @@ void Game::updateElements( float dt )
             Vector3 before = m_pos;
             pushOutRect( m_pos, HeroRadius, p.x - hx, p.x + hx, p.z - hz, p.z + hz );
             m_level.collide( m_pos, HeroRadius, StepUp );
+            // An edge over nothing holds like a wall: who stands at it is caught, not shoved off into the void.
+            if ( m_ground && groundAt( m_pos ) < -100.0f ) m_pos = before;
             // Pushed back in by a wall: caught between.
             if ( fabsf( m_pos.x - p.x ) < hx + HeroRadius * 0.6f && fabsf( m_pos.z - p.z ) < hz + HeroRadius * 0.6f )
             {
@@ -453,7 +455,6 @@ void Game::updateElements( float dt )
                 drainHero( 35.0f * harm( m_difficulty ) * dt );
                 fire( "crushed" );
             }
-            (void)before;
         }
         for ( Foe &f : m_foes )
             if ( f.m_alive && !f.m_hidden && fabsf( f.m_pos.x - p.x ) < hx + 0.5f &&

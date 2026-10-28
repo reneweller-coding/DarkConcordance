@@ -1248,7 +1248,16 @@ private:
                         if ( d < best ) best = d, y = yy, x = xx, found = true;
                     }
                 if ( !found ) break;
-                m_g[y][x] = who[k];
+                // A digit is one of the place's own creatures: a line, as in the rooms (in the map it would be a
+                // raised floor, a metre high in a corridor, and nobody gets past it).
+                if ( who[k] >= '1' && who[k] <= '9' )
+                {
+                    m_reserved.insert( key( y, x ) );
+                    m_extra.push_back( "native " + std::to_string( y ) + " " + std::to_string( x ) + " " +
+                                       std::string( 1, who[k] ) );
+                }
+                else
+                    m_g[y][x] = who[k];
                 m_foes.insert( key( y, x ) );
             }
         }

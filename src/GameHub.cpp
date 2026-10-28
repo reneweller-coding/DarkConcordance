@@ -599,10 +599,10 @@ std::string Game::campaignLine() const
     int worth = 0;
     for ( int i = 0; i < EquipSlots; ++i ) worth += m_progress.m_worn[i] ? itemValue( m_progress.m_gear[i] ) : 0;
     return TextFormat( "%s hero=%s herolevel=%d area=%d finished=%d time=%.0f deaths=%d kills=%d scrap=%d stims=%d "
-                       "gear=%d workshop=%d/%d",
+                       "gear=%d workshop=%d/%d stalls=%d",
                        m_levelFile.c_str(), heroKey( m_heroKind ), m_progress.m_heroLevel, m_level.m_area,
                        m_finished ? 1 : 0, m_time, m_deaths, m_kills, m_scrap, m_stims, worth, m_progress.m_weapon,
-                       m_progress.m_armor );
+                       m_progress.m_armor, m_stalls );
 }
 
 Vector3 Game::strollTo( const Person &q )
