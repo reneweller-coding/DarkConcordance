@@ -1439,6 +1439,22 @@ void Game::shootPellet( bool first )
                                                   foeRadius( f ) );
                 stop = u >= 0.0f && u < len;
             }
+            // So does anything else a slug can hit (a tug's weak point, a rack, a crate, a balloon): else it flies
+            // through it unless it is in the last piece.
+            for ( const BossPart &p : m_parts )
+            {
+                if ( stop || p.m_hp <= 0.0f || !partsLive() ) continue;
+                float u = raySphere( from, dir, p.m_pos, p.m_radius );
+                stop = u >= 0.0f && u < len;
+            }
+            for ( const auto &rack : m_racks )
+            {
+                if ( stop || !rack.m_alive ) continue;
+                float u = rayCylinder( from, dir, rack.m_pos, 0.5f, 2.3f );
+                stop = u >= 0.0f && u < len;
+            }
+            float t = len;
+            stop = stop || breakableOnRay( from, dir, t ) >= 0 || balloonOnRay( from, dir, t ) >= 0;
             if ( stop ) break;
             m_tracers.push_back( { from, to, 0.08f } );
             from = to;
@@ -3115,9 +3131,9 @@ void Game::autopilot( float dt, GameInput &in )
     m_level.cellOf( m_pos, r, c );
     while ( m_ground && !m_path.empty() && m_path.front() == r * cols + c ) m_path.erase( m_path.begin() );
 
-    // Fight: aim at the nearest thing worth shooting, fire from the ground. One the weapon cannot hurt (an eel and the
-    // spark, a fiery guardian and the ember) is left alone; is it the boss, close by or the only one in sight, another
-    // weapon from the bag.
+    // Fight: aim at the nearest thing worth shooting, fire from the ground. One the weapon barely hurts (an eel and the
+    // spark, a fiery guardian and the ember: a quarter gets through) comes last; is it the boss, close by or the only
+    // one in sight, another weapon from the bag.
     Vector3 chest = Vector3Add( m_pos, { 0, 1.25f, 0 } );
     Target  best;
     float   bestDist = 1e9f, immuneDist = 1e9f;
@@ -3128,10 +3144,10 @@ void Game::autopilot( float dt, GameInput &in )
         const Foe &f = m_foes[i];
         if ( !f.m_alive || !f.m_awake || f.m_hidden ) continue;
         float d = Vector3Distance( f.m_pos, m_pos );
-        bool  untouchable = resist( f, kind ) >= 100;
-        if ( d >= 18.0f || d >= ( untouchable ? immuneDist : bestDist ) ) continue;
+        bool  barely = resist( f, kind ) >= 100;
+        if ( d >= 18.0f || d >= ( barely ? immuneDist : bestDist ) ) continue;
         if ( !los( chest, targetPoint( { 0, i, {} } ) ) || rackInWay( chest, targetPoint( { 0, i, {} } ) ) ) continue;
-        if ( untouchable )
+        if ( barely )
             immuneDist = d, immune = i;
         else
             bestDist = d, best = { 0, i, {} };
@@ -3139,6 +3155,7 @@ void Game::autopilot( float dt, GameInput &in )
     m_swapCool -= dt;
     if ( immune >= 0 && m_swapCool <= 0.0f && ( immune == boss() || immuneDist < 8.0f || best.m_kind < 0 ) )
         autoSwap( immune );
+    if ( best.m_kind < 0 && immune >= 0 ) best = { 0, immune, {} }, bestDist = immuneDist;
     // A swarm: its carriers first (they make the rest; the units only dive and pull away again).
     if ( m_swarmAwake && !m_swarmDone )
     {
@@ -4314,16 +4331,30 @@ std::string Game::report() const
     for ( size_t i = 1; i < m_level.m_route.size(); ++i )
         route += CellSize * hypotf( (float)( m_level.m_route[i].first - m_level.m_route[i - 1].first ),
                                     (float)( m_level.m_route[i].second - m_level.m_route[i - 1].second ) );
-    // The boss's gifts and what the hero's weapon does to it (a gift can make it immune to the weapon's kind).
-    std::string gifts = "-";
+    // The boss's gifts and how much it resists the hero's weapon; what the hero aims at (kind, part or foe with its
+    // health and resistance).
+    std::string gifts = "-", aim = "-";
     if ( boss() >= 0 )
     {
         const Foe &b = m_foes[boss()];
         gifts = TextFormat( "%d/%d,dmg=%d,resist=%d,ward=%.0f", b.m_affix, b.m_affix2, (int)heroDamage(),
                             resist( b, heroDamage() ), b.m_ward );
     }
-    return std::string( buf ) + TextFormat( " tactics=%d/%d/%d/%d/%d cells=%d route=%.0f bossgifts=%s", t[1] / 60,
-                                            t[2] / 60, t[3] / 60, t[4] / 60, t[5] / 60, cells, route, gifts.c_str() );
+    if ( m_target.m_kind == 0 && m_target.m_index >= 0 && m_target.m_index < (int)m_foes.size() )
+    {
+        const Foe &f = m_foes[m_target.m_index];
+        aim = TextFormat( "%s@%.0f,%.0f/hp%.0f/r%d", foeNoun( f ), f.m_pos.x, f.m_pos.z, f.m_hp,
+                          resist( f, heroDamage() ) );
+    }
+    else if ( m_target.m_kind > 0 )
+    {
+        Vector3 p = targetPoint( m_target );
+        aim = TextFormat( "kind%d/%d@%.1f,%.1f,%.1f/d%.1f/reach%.0f", m_target.m_kind, m_target.m_index, p.x, p.y, p.z,
+                          Vector3Distance( Vector3Add( m_pos, { 0.0f, 1.3f, 0.0f } ), p ), m_stats.m_range );
+    }
+    return std::string( buf ) + TextFormat( " tactics=%d/%d/%d/%d/%d cells=%d route=%.0f bossgifts=%s aim=%s",
+                                            t[1] / 60, t[2] / 60, t[3] / 60, t[4] / 60, t[5] / 60, cells, route,
+                                            gifts.c_str(), aim.c_str() );
 }
 
 }   // namespace spaceopera

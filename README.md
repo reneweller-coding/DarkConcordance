@@ -433,7 +433,9 @@ guardians are creatures now (a glacier spider, a nightmare, a zero-point core).
 
 Hits are of four kinds – kinetic (slugs, blows, blades), heat (plasma, embers, fire, blasts), shock (arcs, mauls,
 sparks), acid – and every enemy shrugs some off and fears others: machines are weak to shock, suits to acid, the
-golems and crawlers are immune to heat, the eels to shock, the vines burn, the crystals and phantoms laugh at slugs.
+golems and crawlers all but shrug off heat, the eels shock, the vines burn, the crystals and phantoms laugh at slugs.
+Nothing is immune: a resistance takes three quarters of a hit at most (a guardian proof against the only weapon one
+carried would bar the way for good), a full one only keeps off the kind's burning or stun.
 **Fighting together** (`src/GameTactics.cpp`): those that close in come from the sides – two of three bend away
 from the straight line as they near, so they arrive round the hero – and one that would arrive alone while two or
 more are still coming circles a little way off until they are there (two and a half seconds at most; champions never
@@ -442,7 +444,7 @@ seen; no two take the same), stay a while and come out again to shoot; one up on
 the hero. The guards, the heavies, the drones and the bosses keep their own ways.
 
 The weapon's kind is in its description; the enemy one aims at shows its name and what it is weak to, tough
-against or immune to; a hit on a weakness calls it out. Burning ground, acid and frost hurt, eat at the armour or
+against or all but immune to; a hit on a weakness calls it out, one that barely hurts too. Burning ground, acid and frost hurt, eat at the armour or
 slow the hero (shown under the stock line). `--creatures 0|1` with `--shot` lines them all up
 (`--level ../../tools/creatures.txt`, a plain hall for that).
 

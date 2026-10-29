@@ -753,6 +753,7 @@ void Game::spawnNative( int family, Vector3 p, int tier )
 
 int Game::resist( const Foe &f, DamageE kind ) const
 {
+    // 100 is proof against the kind's burning or stun; the damage itself stops at MostResist (damageScale).
     int r[4] = { 0, 0, 0, 0 };
     switch ( f.m_kind )
     {
@@ -815,7 +816,10 @@ int Game::creatureXp( const Foe &f ) const
 
 float Game::damageScale( Foe &f, DamageE kind, Vector3 dir )
 {
-    float scale = fmaxf( 0.0f, 1.0f - resist( f, kind ) / 100.0f );
+    // A quarter always gets through: nothing is immune to a kind of hit (a guardian that were could bar the way for
+    // good with the only weapon one has); what resists a kind fully only shrugs off its burning or stun.
+    int   r = resist( f, kind );
+    float scale = 1.0f - std::min( r, MostResist ) / 100.0f;
     // A crust crab's front is its shield.
     if ( f.m_kind == FoeE::CREATURE && f.m_family == CRAB )
     {
@@ -829,7 +833,7 @@ float Game::damageScale( Foe &f, DamageE kind, Vector3 dir )
     }
     if ( scale >= 1.4f )
         callout( f, "callout.weak", { 255, 230, 90, 255 } );
-    else if ( scale <= 0.0f )
+    else if ( r >= 100 )
         callout( f, "callout.immune", { 170, 170, 180, 255 } );
     else if ( scale <= 0.6f )
         callout( f, "callout.tough", { 190, 190, 200, 255 } );

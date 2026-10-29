@@ -540,7 +540,7 @@ int Game::cratePrice() const
 void Game::campaignPrep()
 {
     // Better is what is worth more (Items' worth weighs level, rarity and affixes); the best weapon of each other kind
-    // stays in the bag as a spare (the autopilot changes to it where its weapon cannot hurt a foe), the rest salvaged.
+    // stays in the bag as a spare (the autopilot changes to it where a foe resists its weapon fully), the rest salvaged.
     auto sort = [&]()
     {
         for ( bool again = true; again; )

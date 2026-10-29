@@ -695,9 +695,9 @@ private:
     void drawParticles( Gfx &gfx );
     void autopilot( float dt, GameInput &in );
     /**
-     * @brief The autopilot's answer to an immunity: the best weapon in the bag that can hurt the foe (and the boss, if
-     *        there is one) goes into the hand.
-     * @param[in] immune  the foe the weapon in the hand cannot hurt (index in m_foes)
+     * @brief The autopilot's answer to a full resistance: the best weapon in the bag that the foe (and the boss, if
+     *        there is one) does not resist fully goes into the hand.
+     * @param[in] immune  the foe that resists the weapon in the hand fully (index in m_foes)
      */
     void autoSwap( int immune );
     /**
@@ -722,6 +722,7 @@ private:
     void spawnNatives();
     /** @return what a weapon's hits are made of (DamageE) */
     static int weaponDamage( const Item &it );
+    static constexpr int MostResist = 75;   ///< the most of a hit a resistance takes (nothing is immune)
     float creatureRadius( const Foe &f ) const;
     float creatureHeight( const Foe &f ) const;
     int creatureXp( const Foe &f ) const;
