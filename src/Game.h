@@ -695,6 +695,12 @@ private:
     void drawParticles( Gfx &gfx );
     void autopilot( float dt, GameInput &in );
     /**
+     * @brief The autopilot's answer to an immunity: the best weapon in the bag that can hurt the foe (and the boss, if
+     *        there is one) goes into the hand.
+     * @param[in] immune  the foe the weapon in the hand cannot hurt (index in m_foes)
+     */
+    void autoSwap( int immune );
+    /**
      * @brief The campaign test's last resort: after four minutes without progress the hero is put on at the next
      *        waypoint (or the lift, the boss, the machine); counted, and logged as a STALL line.
      * @param[in] dt  seconds
@@ -1654,6 +1660,7 @@ private:
     float             m_wpClose = 0.0f;   ///< seconds the autopilot has been close to its waypoint without reaching it
     float             m_stallTime = 0.0f;   ///< seconds without progress (tests, m_unstall)
     float             m_seekCool = 0.0f;    ///< the suit's needs found nothing in reach: seconds before looking again
+    float             m_swapCool = 0.0f;    ///< seconds before the autopilot looks for another weapon again
     Vector3           m_stuckAt = { 0, 0, 0 };   ///< where the autopilot last had to free itself
     int               m_stuckCount = 0;          ///< how often in a row at that place
     int               m_jumpFrom = -1;           ///< the cell the autopilot last jumped from

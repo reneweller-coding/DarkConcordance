@@ -3016,6 +3016,23 @@ void Game::unstall( float dt )
     m_path.clear(), m_planTimer = 0.0f;
 }
 
+void Game::autoSwap( int immune )
+{
+    m_swapCool = 4.0f;
+    const Foe &f = m_foes[immune];
+    int        lead = boss(), pick = -1, worth = -1;
+    for ( int i = 0; i < (int)m_progress.m_bag.size(); ++i )
+    {
+        const Item     &it = m_progress.m_bag[i];
+        const ItemBase &b = itemBases()[it.m_base];
+        if ( gearIndex( it ) != 0 || ( b.m_hero >= 0 && b.m_hero != heroIndex() ) ) continue;
+        DamageE kind = (DamageE)weaponDamage( it );
+        if ( resist( f, kind ) >= 100 || ( lead >= 0 && resist( m_foes[lead], kind ) >= 100 ) ) continue;
+        if ( itemValue( it ) > worth ) worth = itemValue( it ), pick = i;
+    }
+    if ( pick >= 0 ) equip( pick );
+}
+
 void Game::autopilot( float dt, GameInput &in )
 {
     in = GameInput();
@@ -3098,19 +3115,30 @@ void Game::autopilot( float dt, GameInput &in )
     m_level.cellOf( m_pos, r, c );
     while ( m_ground && !m_path.empty() && m_path.front() == r * cols + c ) m_path.erase( m_path.begin() );
 
-    // Fight: aim at the nearest thing worth shooting, fire from the ground.
+    // Fight: aim at the nearest thing worth shooting, fire from the ground. One the weapon cannot hurt (an eel and the
+    // spark, a fiery guardian and the ember) is left alone; is it the boss, close by or the only one in sight, another
+    // weapon from the bag.
     Vector3 chest = Vector3Add( m_pos, { 0, 1.25f, 0 } );
     Target  best;
-    float   bestDist = 1e9f;
+    float   bestDist = 1e9f, immuneDist = 1e9f;
+    int     immune = -1;
+    DamageE kind = heroDamage();
     for ( int i = 0; i < (int)m_foes.size(); ++i )
     {
         const Foe &f = m_foes[i];
         if ( !f.m_alive || !f.m_awake || f.m_hidden ) continue;
         float d = Vector3Distance( f.m_pos, m_pos );
-        if ( d < bestDist && d < 18.0f && los( chest, targetPoint( { 0, i, {} } ) ) &&
-             !rackInWay( chest, targetPoint( { 0, i, {} } ) ) )
+        bool  untouchable = resist( f, kind ) >= 100;
+        if ( d >= 18.0f || d >= ( untouchable ? immuneDist : bestDist ) ) continue;
+        if ( !los( chest, targetPoint( { 0, i, {} } ) ) || rackInWay( chest, targetPoint( { 0, i, {} } ) ) ) continue;
+        if ( untouchable )
+            immuneDist = d, immune = i;
+        else
             bestDist = d, best = { 0, i, {} };
     }
+    m_swapCool -= dt;
+    if ( immune >= 0 && m_swapCool <= 0.0f && ( immune == boss() || immuneDist < 8.0f || best.m_kind < 0 ) )
+        autoSwap( immune );
     // A swarm: its carriers first (they make the rest; the units only dive and pull away again).
     if ( m_swarmAwake && !m_swarmDone )
     {
@@ -4286,8 +4314,16 @@ std::string Game::report() const
     for ( size_t i = 1; i < m_level.m_route.size(); ++i )
         route += CellSize * hypotf( (float)( m_level.m_route[i].first - m_level.m_route[i - 1].first ),
                                     (float)( m_level.m_route[i].second - m_level.m_route[i - 1].second ) );
-    return std::string( buf ) + TextFormat( " tactics=%d/%d/%d/%d/%d cells=%d route=%.0f", t[1] / 60, t[2] / 60,
-                                            t[3] / 60, t[4] / 60, t[5] / 60, cells, route );
+    // The boss's gifts and what the hero's weapon does to it (a gift can make it immune to the weapon's kind).
+    std::string gifts = "-";
+    if ( boss() >= 0 )
+    {
+        const Foe &b = m_foes[boss()];
+        gifts = TextFormat( "%d/%d,dmg=%d,resist=%d,ward=%.0f", b.m_affix, b.m_affix2, (int)heroDamage(),
+                            resist( b, heroDamage() ), b.m_ward );
+    }
+    return std::string( buf ) + TextFormat( " tactics=%d/%d/%d/%d/%d cells=%d route=%.0f bossgifts=%s", t[1] / 60,
+                                            t[2] / 60, t[3] / 60, t[4] / 60, t[5] / 60, cells, route, gifts.c_str() );
 }
 
 }   // namespace spaceopera

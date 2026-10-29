@@ -539,7 +539,8 @@ int Game::cratePrice() const
 
 void Game::campaignPrep()
 {
-    // Better is what is worth more (Items' worth weighs level, rarity and affixes); the rest salvaged.
+    // Better is what is worth more (Items' worth weighs level, rarity and affixes); the best weapon of each other kind
+    // stays in the bag as a spare (the autopilot changes to it where its weapon cannot hurt a foe), the rest salvaged.
     auto sort = [&]()
     {
         for ( bool again = true; again; )
@@ -555,7 +556,24 @@ void Game::campaignPrep()
                     equip( i ), again = true;
             }
         }
-        while ( !m_progress.m_bag.empty() ) salvage( (int)m_progress.m_bag.size() - 1 );
+        std::vector<char> spare( m_progress.m_bag.size(), 0 );
+        for ( int kind = 0; kind < 4 && m_progress.m_worn[0]; ++kind )
+        {
+            if ( kind == weaponDamage( m_progress.m_gear[0] ) ) continue;
+            int pick = -1;
+            for ( int i = 0; i < (int)m_progress.m_bag.size(); ++i )
+            {
+                const Item     &it = m_progress.m_bag[i];
+                const ItemBase &b = itemBases()[it.m_base];
+                if ( gearIndex( it ) != 0 || ( b.m_hero >= 0 && b.m_hero != heroIndex() ) ||
+                     weaponDamage( it ) != kind )
+                    continue;
+                if ( pick < 0 || itemValue( it ) > itemValue( m_progress.m_bag[pick] ) ) pick = i;
+            }
+            if ( pick >= 0 ) spare[pick] = 1;
+        }
+        for ( int i = (int)m_progress.m_bag.size() - 1; i >= 0; --i )
+            if ( !spare[i] ) salvage( i );
     };
     sort();
     int menu = m_menu;
