@@ -106,6 +106,7 @@ enum SurfE
     S_VARN,         ///< Ysolde's frame: violet
     S_MENDER,       ///< the computing moon's maintenance robots: white
     S_IONE,         ///< Ione's maintenance suit: grey-blue
+    S_HIDE,         ///< a creature's leathery hide (the vertices' colour on it)
     S_COUNT
 };
 

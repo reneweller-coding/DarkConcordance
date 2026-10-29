@@ -424,7 +424,7 @@ the others ask for it.
 Thirteen families of their own, each in three tiers (another name, more health and harm, more of what it does):
 crystal wardens (shards in fans) and phase shades (step out of nothing beside you) in the object of Tesh and the
 ark; cable eels (lunge and shock) and diving drones (torpedoes that burst) in the drowned quarter; arena beasts
-(charge in a line, dazed when they hit a wall) and strangler vines (whip close, spit acid far) in the dying gardens;
+(horned bulls in a leathery hide that trot on jointed legs, charge in a line, dazed when they hit a wall) and strangler vines (whip close, spit acid far) in the dying gardens;
 frost cores (bolts that chill) and ice spiders (leap, spin webs) on the computing moon, Seren, the cold transport and
 the dark world; slag golems (slam the ground) and magma crawlers (a burning trail, they burst) in the Mill and on
 Brannt; memory phantoms (flicker, volleys from beside you) and glitches (split in two when they die) in the net and

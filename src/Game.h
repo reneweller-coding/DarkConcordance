@@ -747,6 +747,7 @@ private:
     struct FamilyLook
     {
         Mesh m_body = {}, m_part = {}, m_glow = {};
+        Mesh m_limb = {};   ///< a second moving part (the beast's shins)
     };
     FamilyLook           m_familyLook[16][3];   ///< by family and tier
     LouseModel           m_spider, m_crab;      ///< the ice spiders' and crust crabs' legs

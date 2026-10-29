@@ -296,7 +296,7 @@ void Game::buildFamilies()
     for ( int fam = 0; fam < FAMILIES; ++fam )
         for ( int t = 0; t < 3; ++t )
         {
-            MeshBuilder body, part, glow;
+            MeshBuilder body, part, glow, limb;
             switch ( fam )
             {
             case CRYSTAL:
@@ -396,28 +396,82 @@ void Game::buildFamilies()
             }
             case BEAST:
             {
-                // A heavy four-legged runner: a broad back, a low head with horns, a tail.
-                body.m_color = t == 2 ? Color{ 110, 80, 70, 255 } : Color{ 170, 115, 80, 255 };
-                body.roundedBox( place( { 0.0f, 0.95f, 0.0f } ), { 0.42f, 0.36f, 0.72f }, 0.18f, 3 );
-                body.roundedBox( place( { 0.0f, 0.95f, 0.85f }, { 0.25f, 0.0f, 0.0f } ), { 0.26f, 0.23f, 0.3f }, 0.12f,
-                                 2 );
+                // A heavy four-legged runner bred for the arena: a deep chest and a hump, narrow hips, a short thick
+                // neck, a low heavy head with a jaw and horns curving forward, a tail; the grown ones plated and spiked.
+                Color hide = t == 2 ? Color{ 112, 70, 58, 255 }
+                                    : ( t == 1 ? Color{ 132, 100, 80, 255 } : Color{ 160, 112, 78, 255 } );
+                auto  taper = [&]( MeshBuilder &b, Vector3 a, Vector3 c, float r0, float r1, int sides )
+                {
+                    Vector3 d = Vector3Subtract( c, a );
+                    float   len = Vector3Length( d );
+                    b.lathe( along( d, a ), { { 0.0f, 0.0f }, { r0, 0.0f }, { r1, len }, { 0.0f, len } }, sides );
+                };
+                body.m_color = hide;
+                body.lathe( along( { 0.0f, 0.0f, 1.0f }, { 0.0f, 1.02f, -0.72f } ),
+                            { { 0.0f, 0.0f },
+                              { 0.2f, 0.04f },
+                              { 0.3f, 0.22f },
+                              { 0.33f, 0.55f },
+                              { 0.4f, 0.95f },
+                              { 0.41f, 1.2f },
+                              { 0.33f, 1.42f },
+                              { 0.0f, 1.5f } },
+                            16 );
+                body.roundedBox( place( { 0.0f, 1.3f, 0.32f }, { -0.15f, 0.0f, 0.0f } ), { 0.24f, 0.14f, 0.34f }, 0.12f,
+                                 3 );                                                                   // the hump
+                body.roundedBox( place( { 0.0f, 0.78f, 0.25f } ), { 0.26f, 0.12f, 0.4f }, 0.11f, 2 );   // the chest
+                taper( body, { 0.0f, 1.12f, 0.6f }, { 0.0f, 1.0f, 1.0f }, 0.25f, 0.18f, 14 );           // the neck
+                body.roundedBox( place( { 0.0f, 0.98f, 1.12f }, { 0.3f, 0.0f, 0.0f } ), { 0.17f, 0.16f, 0.22f }, 0.1f,
+                                 3 );   // the skull
+                body.roundedBox( place( { 0.0f, 0.86f, 1.34f }, { 0.45f, 0.0f, 0.0f } ), { 0.12f, 0.1f, 0.13f }, 0.07f,
+                                 2 );   // the snout
+                body.roundedBox( place( { 0.0f, 0.78f, 1.2f }, { 0.15f, 0.0f, 0.0f } ), { 0.11f, 0.05f, 0.16f }, 0.04f,
+                                 2 );                                                               // the jaw
+                taper( body, { 0.0f, 1.08f, -0.68f }, { 0.0f, 0.88f, -1.05f }, 0.08f, 0.05f, 8 );   // the tail
+                taper( body, { 0.0f, 0.88f, -1.05f }, { 0.0f, 0.62f, -1.28f }, 0.05f, 0.025f, 8 );
+                body.m_color = { 214, 200, 170, 255 };   // horn
                 for ( float x : { -1.0f, 1.0f } )
-                    beam( body, { x * 0.2f, 1.12f, 0.95f }, { x * ( 0.45f + 0.1f * t ), 1.45f + 0.1f * t, 0.75f },
-                          0.04f );
-                beam( body, { 0.0f, 1.05f, -0.7f }, { 0.0f, 0.75f, -1.2f }, 0.05f );
+                {
+                    Vector3 root = { x * 0.14f, 1.1f, 1.08f };
+                    Vector3 bend = { x * ( 0.36f + 0.06f * t ), 1.24f + 0.05f * t, 1.02f };
+                    Vector3 tip = { x * ( 0.42f + 0.08f * t ), 1.4f + 0.1f * t, 1.3f + 0.05f * t };
+                    taper( body, root, bend, 0.065f, 0.05f, 8 );
+                    taper( body, bend, tip, 0.05f, 0.012f, 8 );
+                }
                 if ( t >= 1 )
                 {
+                    // Arena plates strapped over the back and the neck.
                     body.m_color = { 120, 120, 125, 255 };
                     for ( int i = 0; i < 3; ++i )
-                        body.box( place( { 0.0f, 1.33f, 0.4f - i * 0.35f }, { 0.15f, 0.0f, 0.0f } ),
-                                  { 0.3f, 0.04f, 0.16f } );
+                        body.roundedBox( place( { 0.0f, 1.42f - 0.05f * i, 0.42f - i * 0.36f }, { -0.1f, 0.0f, 0.0f } ),
+                                         { 0.28f, 0.035f, 0.17f }, 0.02f, 1 );
+                    body.roundedBox( place( { 0.0f, 1.2f, 0.85f }, { 0.5f, 0.0f, 0.0f } ), { 0.2f, 0.03f, 0.14f },
+                                     0.02f, 1 );
                 }
                 if ( t == 2 )
-                    for ( int i = 0; i < 5; ++i )
-                        beam( body, { 0.0f, 1.3f, 0.5f - i * 0.25f }, { 0.0f, 1.6f, 0.45f - i * 0.25f }, 0.03f );
-                part.m_color = body.m_color;
-                beam( part, { 0.0f, 0.0f, 0.0f }, { 0.0f, -0.62f, 0.05f }, 0.09f );
-                for ( float x : { -0.1f, 0.1f } ) glow.box( place( { x, 1.0f, 1.14f } ), { 0.03f, 0.02f, 0.01f } );
+                {
+                    body.m_color = { 60, 56, 54, 255 };
+                    for ( int i = 0; i < 6; ++i )
+                        taper( body, { 0.0f, 1.42f - 0.04f * i, 0.62f - i * 0.25f },
+                               { 0.0f, 1.7f - 0.05f * i, 0.52f - i * 0.25f }, 0.04f, 0.0f, 6 );
+                }
+                // The legs from their joints downwards: a muscled thigh; a shin with a hoof.
+                part.m_color = hide;
+                part.lathe( along( { 0.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } ),
+                            { { 0.0f, -0.06f },
+                              { 0.11f, 0.0f },
+                              { 0.13f, 0.1f },
+                              { 0.1f, 0.32f },
+                              { 0.07f, 0.46f },
+                              { 0.0f, 0.5f } },
+                            10 );
+                limb.m_color = hide;
+                limb.lathe( along( { 0.0f, -1.0f, 0.0f }, { 0.0f, 0.0f, 0.0f } ),
+                            { { 0.0f, -0.04f }, { 0.07f, 0.0f }, { 0.055f, 0.28f }, { 0.06f, 0.44f }, { 0.0f, 0.48f } },
+                            10 );
+                limb.m_color = { 50, 44, 40, 255 };
+                limb.roundedBox( place( { 0.0f, -0.5f, 0.03f } ), { 0.08f, 0.04f, 0.1f }, 0.03f, 2 );   // the hoof
+                for ( float x : { -0.08f, 0.08f } ) glow.box( place( { x, 1.02f, 1.3f } ), { 0.03f, 0.02f, 0.01f } );
                 if ( t == 2 )
                     for ( float x : { -0.43f, 0.43f } )
                         glow.box( place( { x, 0.95f, 0.0f } ), { 0.005f, 0.05f, 0.5f } );
@@ -556,7 +610,7 @@ void Game::buildFamilies()
             }
             default: break;
             }
-            m_familyLook[fam][t] = { meshOf( body ), meshOf( part ), meshOf( glow ) };
+            m_familyLook[fam][t] = { meshOf( body ), meshOf( part ), meshOf( glow ), meshOf( limb ) };
         }
     // The ice spiders and crust crabs walk on the leg model; ground that burns or corrodes is a disc.
     m_spider.build( S_ICE, S_SNOW, S_GLOW, false, 1.25f );
@@ -1303,20 +1357,46 @@ void Game::poseCreatures( std::vector<Drawable> &out )
         }
         case BEAST:
         {
+            // A trot: the diagonal pairs step together; a planted foot slides back exactly as fast as the body goes
+            // (the phase turns 2 + 2v radians a second, half a turn on the ground), lifted on the way forward.
+            float  speed = sqrtf( f.m_vel.x * f.m_vel.x + f.m_vel.z * f.m_vel.z );
+            float  gait = fminf( 1.0f, speed / 1.5f );
+            float  stride = fminf( PI * speed / ( 2.0f + 2.0f * speed ) / size, 0.8f );
             float  lower = -0.2f * f.m_crouch;
-            Matrix m = at( lower );
-            add( look.m_body, S_ARMOR, m );
+            float  rock = 0.035f * gait * fabsf( sinf( f.m_phase ) );
+            Matrix m = MatrixMultiply( MatrixRotateX( 0.03f * gait * sinf( 2.0f * f.m_phase ) ), at( lower + rock ) );
+            add( look.m_body, S_HIDE, m );
             add( look.m_glow, S_GLOW, m, glow );
+            const float   thigh = 0.46f, shin = 0.48f;
             const Vector3 hips[4] = {
-                { -0.3f, 0.62f, 0.5f }, { 0.3f, 0.62f, 0.5f }, { -0.3f, 0.62f, -0.5f }, { 0.3f, 0.62f, -0.5f }
+                { -0.22f, 0.9f, 0.48f }, { 0.22f, 0.9f, 0.48f }, { -0.2f, 0.92f, -0.52f }, { 0.2f, 0.92f, -0.52f }
             };
             for ( int i = 0; i < 4; ++i )
             {
-                float  swing = sinf( f.m_phase + ( i == 0 || i == 3 ? 0.0f : PI ) ) * 0.5f *
-                               fminf( 1.0f, Vector3Length( f.m_vel ) / 3.0f );
-                Matrix leg = MatrixMultiply( MatrixRotateX( swing ),
-                                             MatrixTranslate( hips[i].x, hips[i].y - lower, hips[i].z ) );
-                add( look.m_part, S_ARMOR, MatrixMultiply( leg, m ) );
+                float   ph = f.m_phase + ( i == 0 || i == 3 ? 0.0f : PI );
+                float   lift = 0.14f * gait * fmaxf( 0.0f, sinf( ph ) );
+                Vector3 hip = hips[i];
+                Vector3 foot = { hip.x, -lower - rock + 0.04f + lift, hip.z - 0.5f * stride * cosf( ph ) };
+                Vector3 to = Vector3Subtract( foot, hip );
+                float   reach = Clamp( Vector3Length( to ), 0.2f, thigh + shin - 0.002f );
+                Vector3 u = Vector3Normalize( to );
+                // The knee: forward on the front legs, back on the hind legs, in the leg's plane.
+                Vector3 bend = { 0.0f, 0.0f, i < 2 ? 1.0f : -1.0f };
+                bend = Vector3Normalize( Vector3Subtract( bend, Vector3Scale( u, Vector3DotProduct( bend, u ) ) ) );
+                float cosA =
+                    Clamp( ( thigh * thigh + reach * reach - shin * shin ) / ( 2.0f * thigh * reach ), -1.0f, 1.0f );
+                Vector3 knee =
+                    Vector3Add( hip, Vector3Add( Vector3Scale( u, thigh * cosA ),
+                                                 Vector3Scale( bend, thigh * sqrtf( 1.0f - cosA * cosA ) ) ) );
+                Vector3 end = Vector3Add( hip, Vector3Scale( u, reach ) );
+                auto    bone = [&]( Vector3 from, Vector3 toward )
+                {
+                    Vector3 y = Vector3Normalize( Vector3Subtract( from, toward ) );   // the mesh hangs along -y
+                    Vector3 x = Vector3Normalize( Vector3Subtract( { 1.0f, 0.0f, 0.0f }, Vector3Scale( y, y.x ) ) );
+                    return MatrixMultiply( frame( x, y, Vector3CrossProduct( x, y ), from ), m );
+                };
+                add( look.m_part, S_HIDE, bone( hip, knee ) );
+                add( look.m_limb, S_HIDE, bone( knee, end ) );
             }
             break;
         }

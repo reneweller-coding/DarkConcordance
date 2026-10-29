@@ -742,13 +742,14 @@ void Game::parade()
         m_parade.push_back( { (int)m_people.size(), speeds[i] } );
         m_people.push_back( q );
     }
-    // A baton man charging, a carbine man advancing, a heavy walking; in front of them.
-    Figure     *men[3] = { &m_boarderBaton, &m_boarderGun, &m_heavyFigure };
-    const float paces[3] = { 3.6f, 2.6f, 1.2f };
-    for ( int i = 0; i < 3; ++i )
+    // A baton man charging, a carbine man advancing, a heavy and the Taxator walking (the large ones nearest).
+    Figure     *men[4] = { &m_boarderBaton, &m_boarderGun, &m_heavyFigure, &m_taxatorFigure };
+    const float paces[4] = { 3.6f, 2.6f, 1.2f, 1.5f };
+    const float lane[4] = { -2.0f, -3.6f, 2.2f, -0.2f };
+    for ( int i = 0; i < 4; ++i )
     {
         FigurePose p;
-        p.m_pos = { m_pos.x + 4.0f - i * 3.0f, m_pos.y, m_pos.z - 2.0f - i * 1.6f };
+        p.m_pos = { m_pos.x + 4.0f - i * 3.0f, m_pos.y, m_pos.z + lane[i] };
         p.m_yaw = PI * 0.5f;
         m_paradeMen.push_back( { m_lined.size(), paces[i] } );
         m_lined.push_back( { men[i], p } );

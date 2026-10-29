@@ -318,6 +318,7 @@ void Game::loadSurfaces( Gfx &gfx, const std::string &assets )
     tile( S_VARN, "armor", 1.6f, { 0.6f, 1.0f, 1.5f, 0.0f }, 0.15f, { 70, 46, 96, 255 } );
     tile( S_MENDER, "armor", 1.6f, { 0.8f, 1.0f, 1.5f, 0.0f }, 0.15f, { 214, 220, 228, 255 } );
     tile( S_IONE, "armor", 1.6f, { 0.7f, 1.0f, 1.5f, 0.0f }, 0.15f, { 92, 118, 138, 255 } );
+    tile( S_HIDE, "rock", 0.9f, { 0.9f, 0.0f, 1.0f, 0.0f }, 0.3f, { 226, 186, 150, 255 } );
 }
 
 bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound )

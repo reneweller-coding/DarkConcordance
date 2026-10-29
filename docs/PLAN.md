@@ -390,7 +390,14 @@ Still to come, by first use:
    MakeHuman's Helios armour has 73,000 vertices in the file, raylib indexes a mesh with 16 bits, and past 65,535 the
    indices wrapped, so triangles of the right thigh plate stretched to the foot; Dorra (her "stick to the floor"),
    Okafor, Siel and the soldiers wore it. `make_heroes.py` now decimates any mesh over 30,000 vertices before export
-   (`thin`); the four rebuilt, the largest mesh of every model now below 40,000.
+   (`thin`); the four rebuilt, the largest mesh of every model now below 40,000. Then the two things noticed on
+   the way (the user: look at them closely first): the heavies and every frame larger than a man stepped too often,
+   their feet sliding (the cycle was measured at the body's size, not at the size drawn: a heavy 1.34 times, the
+   Taxator and the walkers twice and more); now the cycle grows with the figure. And the arena beast was a box on four
+   straight sticks in armour plates: now a horned bull of the arena in a leathery hide (a new surface `S_HIDE`), a deep
+   chest and a hump, a neck, a heavy head with a jaw, horns curving forward, a tail, plates and spikes on the grown
+   ones; its legs of thigh and shin with hooves trot in diagonal pairs, the planted hoof sliding back exactly as fast
+   as the beast goes, the knees bending forward in front and back behind (two-bone IK per leg).
 
 ## Open decisions (the user's)
 

@@ -810,7 +810,7 @@ void Figure::calibrate()
         for ( int i = 0; i < n; ++i )
             if ( foot[i].x < low + 0.06f && foot[i + 1].x < low + 0.06f )
                 slide += foot[i].y - foot[i + 1].y, time += length / n;
-        return time > 0.0f ? slide / time * length * m_bodyScale : Stride;
+        return time > 0.0f ? slide / time * length * m_bodyScale * sc.z : Stride;   // as large as it is drawn
     };
     m_cycle[0] = cycleOf( C_WALK );
     m_cycle[1] = cycleOf( C_JOG );
