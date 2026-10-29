@@ -398,6 +398,18 @@ Still to come, by first use:
    chest and a hump, a neck, a heavy head with a jaw, horns curving forward, a tail, plates and spikes on the grown
    ones; its legs of thigh and shin with hooves trot in diagonal pairs, the planted hoof sliding back exactly as fast
    as the beast goes, the knees bending forward in front and back behind (two-bone IK per leg).
+15. Before the release — done (29.10.2026, the user: the campaign test again, then what should happen before the
+   release). The campaign test on all three heroes found what the autopilot and the players met: nothing is immune
+   any more (a resistance takes three quarters of a hit at most, `Game::MostResist`; a full one only keeps off the
+   kind's burning or stun): a fiery or shocking guardian against the only weapon one carried barred the way for good.
+   On Velm's drum the slug's pieces hit only foes and walls on the way, the tug's weak points, racks, crates and
+   balloons only in the last fifth of the reach (Ione at nine metres never hit the tug). The catcher's far arm lay 19
+   metres off the deck, out of a scatter gun's reach from anywhere: its arms lie along the edge now. A wandering
+   component shoved Corvin between a row of crates and the wall, where he was caught for good: a crate now gives
+   rather than push one into a wall. The autopilot changes to a spare weapon of another kind where a foe resists its
+   own fully (the campaign test keeps the best of each kind), counts a waypoint on a crate from beside it, goes round a
+   wandering component's track, closes in when a weak point is out of reach. Campaign test afterwards on Leicht,
+   Normal and Schwer: 225 of 225 places, no stall (deaths 1/0/0, 2/9/7, 24/43/17 for Corvin, Dorra, Ione).
 
 ## Open decisions (the user's)
 

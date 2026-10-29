@@ -2906,6 +2906,16 @@ void Game::plan()
                 for ( int c = 0; c < cols; ++c )
                     if ( Vector3Distance( m_level.centre( r, c ), { sp.x, m_level.centre( r, c ).y, sp.z } ) < 5.0f )
                         m_propCells[(size_t)r * cols + c] = 1;
+        // A wandering component's track as well: behind one the hero only creeps at its pace.
+        for ( const Mover &mv : m_movers )
+        {
+            int ar, ac, br, bc;
+            m_level.cellOf( mv.m_a, ar, ac );
+            m_level.cellOf( mv.m_b, br, bc );
+            for ( int r = std::max( 0, std::min( ar, br ) ); r <= std::min( rows - 1, std::max( ar, br ) ); ++r )
+                for ( int c = std::max( 0, std::min( ac, bc ) ); c <= std::min( cols - 1, std::max( ac, bc ) ); ++c )
+                    m_propCells[(size_t)r * cols + c] = 1;
+        }
     }
     // Out of air: to the nearest hut or air post first (until the suit is full); in a storm into the lee of something.
     std::function<bool( int, int )> want;
@@ -3113,11 +3123,14 @@ void Game::autopilot( float dt, GameInput &in )
     {
         // A waypoint on the way counts from near by; the last one only when standing in it.
         // The last one: close by for a quarter of a minute counts too (a foe, a prop or the suit's needs can keep it
-        // from the very middle).
-        auto  wp = m_level.m_route[m_waypoint];
-        bool  last = m_waypoint + 1 >= m_level.m_route.size();
-        float near = last ? 0.6f : 1.6f;
-        float dist = Vector3Distance( m_pos, m_level.centre( wp.first, wp.second ) );
+        // from the very middle). One with a crate or a stall in its cell counts from beside it (the way goes round the
+        // prop, so the hero only ever stands by it).
+        auto   wp = m_level.m_route[m_waypoint];
+        bool   last = m_waypoint + 1 >= m_level.m_route.size();
+        size_t cell = (size_t)wp.first * m_level.cols() + wp.second;
+        bool   prop = cell < m_propCells.size() && m_propCells[cell];
+        float  near = prop ? 2.4f : ( last ? 0.6f : 1.6f );
+        float  dist = Vector3Distance( m_pos, m_level.centre( wp.first, wp.second ) );
         m_wpClose = last && dist < 3.0f ? m_wpClose + dt : 0.0f;
         if ( dist < near || m_wpClose > 15.0f ) ++m_waypoint, m_planTimer = 0.0f, m_wpClose = 0.0f;
     }
@@ -3313,15 +3326,17 @@ void Game::autopilot( float dt, GameInput &in )
         int b = boss();
         if ( b >= 0 && m_waypoint >= m_level.m_route.size() )
         {
-            // Round the boss at eight to twelve metres, the way changing now and then; never towards a shaft.
+            // Round the boss at eight to twelve metres, the way changing now and then; never towards a shaft. A weak
+            // point out of the weapon's reach (one on a catcher's far side, a short gun in the hand): closer in.
             Vector3 f = m_foes[b].m_pos;
             Vector2 to = { f.x - m_pos.x, f.z - m_pos.z };
             float   d = Vector2Length( to );
             if ( d > 1e-3f ) to = Vector2Scale( to, 1.0f / d );
             float   side = fmodf( m_time, 8.0f ) < 4.0f ? 1.0f : -1.0f;
             Vector2 move = { -to.y * side, to.x * side };
-            if ( d > 12.0f ) move = Vector2Add( move, to );
-            if ( d < 8.0f ) move = Vector2Subtract( move, to );
+            bool    far = best.m_kind == 5 && Vector3Distance( chest, targetPoint( best ) ) > m_stats.m_range - 1.5f;
+            if ( d > 12.0f || far ) move = Vector2Add( move, to );
+            if ( d < 8.0f && !far ) move = Vector2Subtract( move, to );
             move = Vector2Normalize( move );
             if ( groundAt( { m_pos.x + move.x * 1.5f, 0.0f, m_pos.z + move.y * 1.5f } ) > -100.0f ) in.m_move = move;
         }
@@ -4352,9 +4367,14 @@ std::string Game::report() const
         aim = TextFormat( "kind%d/%d@%.1f,%.1f,%.1f/d%.1f/reach%.0f", m_target.m_kind, m_target.m_index, p.x, p.y, p.z,
                           Vector3Distance( Vector3Add( m_pos, { 0.0f, 1.3f, 0.0f } ), p ), m_stats.m_range );
     }
-    return std::string( buf ) + TextFormat( " tactics=%d/%d/%d/%d/%d cells=%d route=%.0f bossgifts=%s aim=%s",
+    // The waypoint the autopilot goes for (its middle, its floor's height).
+    Vector3 goal = m_waypoint < m_level.m_route.size()
+                       ? m_level.centre( m_level.m_route[m_waypoint].first, m_level.m_route[m_waypoint].second )
+                       : Vector3{ 0.0f, 0.0f, 0.0f };
+    return std::string( buf ) + TextFormat( " tactics=%d/%d/%d/%d/%d cells=%d route=%.0f bossgifts=%s aim=%s "
+                                            "goal=%.1f,%.1f,%.1f y=%.1f",
                                             t[1] / 60, t[2] / 60, t[3] / 60, t[4] / 60, t[5] / 60, cells, route,
-                                            gifts.c_str(), aim.c_str() );
+                                            gifts.c_str(), aim.c_str(), goal.x, goal.y, goal.z, m_pos.y );
 }
 
 }   // namespace spaceopera

@@ -1035,7 +1035,29 @@ bool Level::collide( Vector3 &pos, float radius, float step ) const
                 touched = true;
             }
     }
-    // Crates, barrels, scrap.
+    // Crates, barrels, scrap; never into a wall: one shoved between a crate and a wall (a wandering component does that)
+    // would be caught there for good, so the crate gives and one squeezes past it.
+    auto inWall = [&]( float x, float z )
+    {
+        int r0, c0;
+        cellOf( { x, pos.y, z }, r0, c0 );
+        for ( int r = r0 - 1; r <= r0 + 1; ++r )
+            for ( int c = c0 - 1; c <= c0 + 1; ++c )
+            {
+                const Cell &k = cell( r, c );
+                bool        shut = k.m_kind == CellE::DOOR && !k.m_open;
+                float       top = k.m_kind == CellE::ROCK || shut ? 1e9f
+                                  : k.m_kind == CellE::VOID       ? -1e9f
+                                  : k.m_kind == CellE::FIN        ? FinHeight
+                                  : k.m_kind == CellE::COUNTER    ? CounterHeight
+                                                                  : k.m_height;
+                if ( top <= pos.y + step ) continue;
+                float dx = x - Clamp( x, c * CellSize, ( c + 1 ) * CellSize );
+                float dz = z - Clamp( z, r * CellSize, ( r + 1 ) * CellSize );
+                if ( dx * dx + dz * dz < radius * radius - 1e-4f ) return true;
+            }
+        return false;
+    };
     for ( const Prop &p : m_props )
     {
         if ( pos.y > p.m_pos.y + 1.4f ) continue;
@@ -1044,8 +1066,9 @@ bool Level::collide( Vector3 &pos, float radius, float step ) const
         float min = radius + p.m_radius;
         if ( d < min && d > 1e-4f )
         {
-            pos.x = p.m_pos.x + dx / d * min;
-            pos.z = p.m_pos.z + dz / d * min;
+            float x = p.m_pos.x + dx / d * min, z = p.m_pos.z + dz / d * min;
+            if ( inWall( x, z ) ) continue;
+            pos.x = x, pos.z = z;
             touched = true;
         }
     }

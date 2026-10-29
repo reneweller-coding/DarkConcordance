@@ -209,8 +209,11 @@ void Game::loadMachine( const std::string &kind, float out, float tough )
     else if ( kind == "catcher" )
     {
         // The catcher at the stream's end: a huge funnel, arms on both sides that pluck containers out of the stream.
+        // The arms lie along the deck's edge, both some twelve metres off it (one beyond the funnel was out of a
+        // scatter gun's reach from anywhere on the deck).
         m_tugHome = { edge.x + out * 10.0f, 2.0f, edge.z };
         m_tugSlide = 4.0f, m_tugBob = 0.4f;
+        m_tugYaw += PI * 0.5f;
         m_tugGunAt = { 0.0f, 2.0f, 0.0f };
         m_tugBridge = { 0.0f, 6.0f, -2.0f };
         m_parts = { { "catcher.arm", { -6.5f, 3.0f, 0.0f }, 1.6f, 1150.0f * tough, 1150.0f * tough, {} },
