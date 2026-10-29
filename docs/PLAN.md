@@ -386,7 +386,11 @@ Still to come, by first use:
    and all thirteen families move well; the market guards did not: they walk with their shield up, and the sword
    clip's block raised the right arm straight ahead and left the shield hanging at the hip (Dorra's block the same).
    The shield now comes up by hand (two-bone IK at three quarters of the arm's own reach, the plate turned to face
-   ahead).
+   ahead). The long plate from a soldier's hip to the ankle (the user: please correct it) was no part of the armour:
+   MakeHuman's Helios armour has 73,000 vertices in the file, raylib indexes a mesh with 16 bits, and past 65,535 the
+   indices wrapped, so triangles of the right thigh plate stretched to the foot; Dorra (her "stick to the floor"),
+   Okafor, Siel and the soldiers wore it. `make_heroes.py` now decimates any mesh over 30,000 vertices before export
+   (`thin`); the four rebuilt, the largest mesh of every model now below 40,000.
 
 ## Open decisions (the user's)
 

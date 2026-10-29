@@ -202,6 +202,27 @@ def flatten(meshes):
                 bpy.ops.object.modifier_apply(modifier=m.name)
 
 
+def thin(meshes, most=30000):
+    """Meshes too fine for the game decimated: raylib indexes a mesh with 16 bits, so past 65535 vertices (the export
+    splits more at the seams) the indices wrap and triangles stretch across the body (MakeHuman's Helios armour, 73,000
+    in the file, drew a slab from the thigh to the ankle)."""
+    for o in meshes:
+        count = len(o.data.vertices)
+        if count <= most:
+            continue
+        bpy.context.view_layer.objects.active = o
+        for s in bpy.context.selected_objects:
+            s.select_set(False)
+        o.select_set(True)
+        m = o.modifiers.new("thin", "DECIMATE")
+        m.ratio = most / count
+        # Before the armature: it must stay last.
+        while o.modifiers.find("thin") > 0:
+            bpy.ops.object.modifier_move_up(modifier="thin")
+        bpy.ops.object.modifier_apply(modifier="thin")
+        print("THIN", o.name, count, "->", len(o.data.vertices))
+
+
 def joints(arm):
     """Each pose bone's head in world space (and the leaves' tails under their library names)."""
     out = {}
@@ -398,6 +419,7 @@ def main():
     arm, meshes, basemesh = build(a.hero, clothes)
     kinds = roles(meshes)
     flatten(meshes)
+    thin(meshes)
     tpose(arm, lib)
     tint(meshes, h.get("tint", {}), h["hair"].split("/")[0] if h["hair"] else "-")
     shrink_textures(1024 if a.hero in HEROES else 512)
