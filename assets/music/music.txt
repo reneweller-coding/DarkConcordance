@@ -46,6 +46,8 @@ klinik loop 2 main
 sterbegaerten loop 2 low mid
 sterbegaerten_fight loop 2 main
 boss3 loop 2 fight rage
+purge loop 2 fight rage
+spy loop 2 fight rage
 werft loop 2 low mid
 werft_fight loop 2 main
 anhoerung loop 2 main

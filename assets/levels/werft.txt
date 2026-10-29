@@ -27,7 +27,7 @@ next     gelassenheit.txt
 gate     bossdead
 ambience yard
 music    werft
-bossmusic boss3
+bossmusic purge
 
 genrooms      19
 genside       7

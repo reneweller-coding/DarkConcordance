@@ -20,7 +20,7 @@ next     netz.txt
 gate     bossdead
 ambience servers
 music    leitwerk
-bossmusic boss3
+bossmusic spy
 talkmusic ysolde
 npcafter ysolde bossdead
 autotalk ysolde

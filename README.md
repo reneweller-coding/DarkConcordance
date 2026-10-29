@@ -738,7 +738,8 @@ apply at once, to a line being spoken too.
 | seren, hesper, halden, arche, tesh, kael, wanderer, kuehltransport (each with `_fight`) | Act II | calm, tense; fight |
 | sterbegaerten, werft, rechenmond, verlies, velm2, brannt, erzstrom, muehle, leitwerk, netz (each with `_fight`) | Acts III and IV | calm, tense; fight |
 | klinik, anhoerung, anhoerung_fight | the clinic, the hearing | –; fight |
-| boss2, boss3, swarm, final | the machines, the men in frames, the swarms, the last fight | fight, rage |
+| boss2, swarm, final | the machines, the men in frames, the swarms, the last fight | fight, rage |
+| boss3, purge, spy | Lamm in the arena, the purge leader at the gate, Ysolde in the control centre | fight, rage |
 | hale, ysolde, ilka | while they talk | – |
 | act2end, act3end, end_a, end_b, end_c, epilogue | the acts' ends, the endings, the epilogue | – |
 | tale_corvin, tale_ione, tale_dorra, tale_unzu (each with `_fight`) | the companions' tales | calm, tense; fight |
@@ -762,6 +763,15 @@ under the Stability AI Community License (to be checked before a sale).
 
     G:\Tools\PythonSkripts\AudioGenerator\venv\Scripts\python.exe tools\make_audio.py music      # [--encode-only]
     G:\Tools\PythonSkripts\AudioGenerator\venv\Scripts\python.exe tools\make_audio.py ambience   # [--encode-only]
+
+ACE-Step drifts to major keys and bright moods, and a calm piece with the loop hint "steady groove" towards a laid-back
+beat; such pieces carry their own `hint` in music.json. `tools/redo_music.py` makes chosen pieces again with several
+candidates and lets a listening model (CLAP) keep the darkest takes, old and new, each with all its layers; it hears
+every take at one loudness, because CLAP takes a quiet file for a brighter one. Then `make_audio.py music
+--encode-only`.
+
+    G:\Tools\PythonSkripts\AudioGenerator\venv\Scripts\python.exe tools\redo_music.py make velm kernbank --candidates 4
+    G:\Tools\PythonSkripts\AudioGenerator\venv\Scripts\python.exe tools\redo_music.py pick velm kernbank
 
 ## Voices
 
