@@ -908,7 +908,8 @@ void Figure::solveSkin( const FigurePose &p )
         at( c, at45 * len( c ), other );
         m.layer( m_skinPose, other, upright * ease( 0.0f, 0.08f, t ) * ( 1.0f - ease( 0.88f, 1.0f, t ) ), 1.0f );
     }
-    if ( p.m_block > 0.0f )
+    bool shield = m_look.m_weapon == WeaponE::HAMMER;   // the hammer's arm carries a shield on the other
+    if ( p.m_block > 0.0f && !shield )
     {
         at( C_BLOCK, len( C_BLOCK ) * 0.5f, other );
         m.layer( m_skinPose, other, upright * p.m_block, 1.0f );
@@ -957,6 +958,41 @@ void Figure::solveSkin( const FigurePose &p )
                 Vector3 foot = Vector3Transform( m_skinPose[m_map[(int)feet[i]]].translation, m_place );
                 Vector3 goal = Vector3Transform( { foot.x, foot.y + lift, foot.z }, toBody );
                 m.reach( m_skinPose, m_map[(int)thighs[i]], m_map[(int)shins[i]], m_map[(int)feet[i]], goal );
+            }
+        }
+    }
+    // The shield up: the left forearm upright in front of the chest, the elbow down and out, the plate turned to face
+    // ahead (the clips block with a sword in the right hand).
+    float raise = shield && m_handL >= 0 ? p.m_block * Clamp( ( upright - 0.5f ) * 2.0f, 0.0f, 1.0f ) : 0.0f;
+    if ( raise > 0.0f )
+    {
+        // The hand ahead and in, at shoulder height, at three quarters of the arm's reach (so the elbow bends).
+        int     upper = m_map[(int)BoneE::UPPER_L], fore = m_map[(int)BoneE::FORE_L];
+        Vector3 shoulder = m_skinPose[upper].translation;
+        float   out = shoulder.x > 0.0f ? 1.0f : -1.0f;
+        float   reachLen = Vector3Distance( shoulder, m_skinPose[fore].translation ) +
+                           Vector3Distance( m_skinPose[fore].translation, m_skinPose[m_handL].translation );
+        Vector3 goal = Vector3Add(
+            shoulder, Vector3Scale( Vector3Normalize( { -0.42f * out, -0.06f, 0.9f } ), 0.74f * reachLen ) );
+        m.reach( m_skinPose, upper, fore, m_handL, Vector3Lerp( m_skinPose[m_handL].translation, goal, raise ),
+                 { 0.6f * out, -1.0f, 0.0f } );
+        // Turn the forearm about itself until the plate (its part's +z) faces ahead.
+        Vector3 elbow = m_skinPose[fore].translation, axis = Vector3Subtract( m_skinPose[m_handL].translation, elbow );
+        if ( Vector3Length( axis ) > 1e-4f )
+        {
+            axis = Vector3Normalize( axis );
+            Matrix  frame = MatrixMultiply( m_offset[(int)BoneE::FORE_L], SkinModel::matrix( m_skinPose[fore] ) );
+            Vector3 face = Vector3Subtract( Vector3Transform( { 0.0f, 0.0f, 1.0f }, frame ),
+                                            Vector3Transform( { 0.0f, 0.0f, 0.0f }, frame ) );
+            Vector3 ahead = { 0.0f, 0.0f, 1.0f };
+            face = Vector3Subtract( face, Vector3Scale( axis, Vector3DotProduct( face, axis ) ) );
+            ahead = Vector3Subtract( ahead, Vector3Scale( axis, Vector3DotProduct( ahead, axis ) ) );
+            if ( Vector3Length( face ) > 1e-4f && Vector3Length( ahead ) > 1e-4f )
+            {
+                face = Vector3Normalize( face ), ahead = Vector3Normalize( ahead );
+                float angle = atan2f( Vector3DotProduct( Vector3CrossProduct( face, ahead ), axis ),
+                                      Vector3DotProduct( face, ahead ) );
+                m.turn( m_skinPose, fore, QuaternionFromAxisAngle( axis, angle * raise ), elbow );
             }
         }
     }

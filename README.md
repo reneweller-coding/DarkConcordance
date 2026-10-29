@@ -567,7 +567,10 @@ jumps, sitting at a table, huddling on the floor, falling dead. Each limb's plat
 and lie along its bone. With the helmet off (in the hubs) the body's own face shows, with the hero's hair as in the
 portraits: Corvin's short dark hair, Dorra's red bun, Ione's black crop. The frames twice a man's height (the
 Taxator, Okafor's walker, the foreman's crane walker …) move as men do, but no body shows inside their plates.
-A hit makes the chest flinch, a heavy blow throws a man back; every hero rolls out of the way (the clip's roll). The
+A hit makes the chest flinch, a heavy blow throws a man back; every hero rolls out of the way (the clip's roll). A
+shield (Dorra's, the market guards') comes up by hand, not by the clips' sword block (which raised the right arm
+and left the shield hanging): the left forearm upright in front of the chest at three quarters of that arm's
+reach, the elbow down and out, the plate turned about the forearm to face ahead. The
 clips hold a pistol, so a rifle is shouldered by hand: the chest turns its left shoulder forward (a fixed angle, the
 stride's twist taken out), the head looks on ahead, the butt sits in front of the right shoulder, the barrel points
 along the heading (a little low while running, up with the kick), and both arms reach the gun (two-bone IK with the
@@ -682,7 +685,10 @@ keys|xbox|ps|deck` the buttons in the texts, `--colours 0|1|2` colour vision, `-
 `--camyaw deg` turns the camera, `--camrise h` lowers it (its height over a distance of 8.1; 1.5 looks from the
 side), `--clip s` writes the warm-up's last seconds as pictures (`<shot>_NNNN.png`, 15 a second, to see motion by),
 `--move x,y` holds the left stick during the warm-up, `--parade` sends people (strolling, Ilka running, fleeing) and
-boarders (charging, advancing, a heavy walking) to and fro before the hero at the game's speeds; `--lang de|en` picks the
+boarders (charging, advancing, a heavy walking) to and fro before the hero at the game's speeds, `--hunt
+kinds` wakes enemies of those kinds or creature families (`louse,shield,beast:2,…`) in a row ten metres north of a
+hero who cannot be hurt (with `--camyaw 90` they come from the side), `--figures 3` the shield: Dorra and a market
+guard ready, blocking, blocking while walking; `--lang de|en` picks the
 language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue; `--flags a,b`
 sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture;
 `--panel 0|1|2|3` shows the inventory, skills, character or map page, `--map` the map over the game; `--seed n` picks

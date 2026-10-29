@@ -613,6 +613,45 @@ void Game::creatureLineup( int page )
         }
 }
 
+void Game::hunt( const std::string &kinds )
+{
+    static const std::pair<const char *, FoeE> named[] = {
+        { "louse", FoeE::LOUSE },   { "welder", FoeE::WELDER }, { "baton", FoeE::BATON },    { "gunner", FoeE::GUNNER },
+        { "shield", FoeE::SHIELD }, { "heavy", FoeE::HEAVY },   { "drone", FoeE::DRONE },    { "saw", FoeE::SAW },
+        { "bomber", FoeE::BOMBER }, { "shell", FoeE::SHELL },   { "taxator", FoeE::TAXATOR }
+    };
+    std::vector<std::string> list;
+    for ( size_t a = 0, b; a <= kinds.size(); a = b + 1 )
+    {
+        b = kinds.find( ',', a );
+        if ( b == std::string::npos ) b = kinds.size();
+        if ( b > a ) list.push_back( kinds.substr( a, b - a ) );
+    }
+    m_untouchable = true;
+    for ( size_t i = 0; i < list.size(); ++i )
+    {
+        std::string name = list[i];
+        int         tier = 0;
+        if ( name.find( ':' ) != std::string::npos )
+            tier = atoi( name.c_str() + name.find( ':' ) + 1 ), name = name.substr( 0, name.find( ':' ) );
+        // Ten metres north in a row across (a camera from the east sees them come from the side).
+        float   t = list.size() > 1 ? (float)i / ( list.size() - 1 ) : 0.5f;
+        Vector3 at = { m_pos.x - 4.0f + 8.0f * t, m_pos.y, m_pos.z - 10.0f };
+        bool    made = false;
+        for ( const auto &[n, kind] : named )
+            if ( name == n )
+            {
+                spawnFoe( kind, kind == FoeE::DRONE ? Vector3Add( at, { 0.0f, 1.75f, 0.0f } ) : at, true );
+                made = true;
+            }
+        if ( !made && familyNamed( name ) >= 0 ) spawnNative( familyNamed( name ), at, tier ), made = true;
+        if ( !made ) continue;
+        shellBody( m_foes.back() );
+        m_foes.back().m_awake = true;
+        m_foes.back().m_timer = 0.0f;
+    }
+}
+
 int Game::foeRole( const Foe &f ) const
 {
     switch ( f.m_kind )

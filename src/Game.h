@@ -347,6 +347,14 @@ public:
      * @param[in] page  0 the first seven families, 1 the others
      */
     void creatureLineup( int page );
+    /**
+     * @brief Tests (--hunt): enemies of the named kinds or families woken in a ring round the hero, who cannot be
+     *        hurt, so they come at him and fight: to see how each moves.
+     * @param[in] kinds  comma-separated: louse, welder, baton, gunner, shield, heavy, drone, saw, bomber, taxator,
+     *                   shell, or a creature family's name (tier with ":1" or ":2")
+     */
+    void hunt( const std::string &kinds );
+    bool m_untouchable = false;   ///< tests: the hero takes no harm
 
     /**
      * @brief Tests and pictures: items scattered round the hero, experience given.
@@ -978,8 +986,9 @@ private:
     std::vector<Rack>   m_racks;
     int                 m_racksBroken = 0;
     std::vector<Person> m_shellBodies;
-    Mesh                m_rackMesh = {}, m_rackLights = {}, m_relayMesh = {}, m_relayTop = {}, m_coreGlow = {};
-    bool                m_motherOn = false, m_motherAwake = false, m_motherDone = false;
+    void shellBody( Foe &f );   ///< gives a shell its body (once)
+    Mesh m_rackMesh = {}, m_rackLights = {}, m_relayMesh = {}, m_relayTop = {}, m_coreGlow = {};
+    bool m_motherOn = false, m_motherAwake = false, m_motherDone = false;
 
     // GameWorld.cpp: what a place does around the fight (birds over a drum).
     struct Bird

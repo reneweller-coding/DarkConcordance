@@ -687,6 +687,16 @@ void Game::figureLineup( int page )
         add( m_boarderGun, []( FigurePose &p ) { p.m_hit = 0.7f; } );
         add( m_boarderGun, []( FigurePose &p ) { p.m_knock = 0.5f; } );
     }
+    else if ( page == 3 )
+    {
+        // The shield: the hero ready, blocking, blocking while walking; the guard the same.
+        add( m_hero, []( FigurePose & ) {} );
+        add( m_hero, []( FigurePose &p ) { p.m_block = 1.0f; } );
+        add( m_hero, []( FigurePose &p ) { p.m_block = 1.0f, p.m_vel = { 0.0f, 2.0f }, p.m_phase = 1.0f; } );
+        add( m_guardFigure, []( FigurePose & ) {} );
+        add( m_guardFigure, []( FigurePose &p ) { p.m_block = 1.0f; } );
+        add( m_guardFigure, []( FigurePose &p ) { p.m_block = 1.0f, p.m_vel = { 0.0f, 2.0f }, p.m_phase = 1.0f; } );
+    }
     else
     {
         add( m_boarderBaton, []( FigurePose & ) {} );
@@ -700,7 +710,7 @@ void Game::figureLineup( int page )
         add( m_folk[8], []( FigurePose & ) {} );
         add( m_taxatorFigure, []( FigurePose & ) {} );
     }
-    float gap = page == 0 ? 1.4f : 1.7f;
+    float gap = page == 0 ? 1.4f : ( page == 3 ? 2.2f : 1.7f );
     for ( size_t i = 0; i < row.size(); ++i )
     {
         FigurePose &p = row[i].second;

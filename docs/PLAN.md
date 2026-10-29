@@ -381,6 +381,12 @@ Still to come, by first use:
    in slow leaps exactly as the hero had (the jog clip played slower), so people now go as the heroes do, the walk
    blended into the jog by speed and the cycle measured from each body's planted foot; strollers no longer use one
    fixed walking speed for every body. The boarders (Figure, already per-figure cycles) charge and advance cleanly.
+   Then (the user: look closely at the rest too) every enemy kind and creature family seen coming from the side with
+   a new `--hunt`: lice, saw bots, bombers, the welder, drones, shells (their zombie walk), the heavies, the Taxator
+   and all thirteen families move well; the market guards did not: they walk with their shield up, and the sword
+   clip's block raised the right arm straight ahead and left the shield hanging at the hip (Dorra's block the same).
+   The shield now comes up by hand (two-bone IK at three quarters of the arm's own reach, the plate turned to face
+   ahead).
 
 ## Open decisions (the user's)
 

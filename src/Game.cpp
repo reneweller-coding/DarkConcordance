@@ -1091,7 +1091,7 @@ void Game::rumbleNow( float &low, float &high ) const
 
 void Game::hurtHero( float amount, Vector3 push, Vector3 from )
 {
-    if ( m_dead || m_invuln > 0.0f || m_finished || m_liftGoing || m_scene > 0 ) return;
+    if ( m_dead || m_invuln > 0.0f || m_finished || m_liftGoing || m_scene > 0 || m_untouchable ) return;
     if ( shielded( from ) )
     {
         // The shield takes it: a clang, sparks off the plates, a little of it comes through.

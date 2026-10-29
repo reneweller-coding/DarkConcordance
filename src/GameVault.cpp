@@ -86,27 +86,7 @@ void Game::loadVault()
         top.roundedBox( place( { 0.0f, 3.15f, 0.0f } ), { 0.22f, 0.22f, 0.22f }, 0.1f, 2 );
         m_relayTop = top.build().front();
     }
-    // The shells' bodies: Quaternius' figures in rags, pale, a core glowing at the back of the head.
-    for ( Foe &f : m_foes )
-    {
-        if ( f.m_kind != FoeE::SHELL || !m_skins ) continue;
-        Person   q = {};
-        unsigned seed = (unsigned)f.m_id * 2654435761u;
-        q.m_pos = f.m_pos;
-        q.m_yaw = f.m_yaw;
-        q.m_look = 0;
-        q.m_body = (int)( seed % 2 );
-        q.m_hair = f.m_variant == 2 ? -1 : (int)( ( seed >> 3 ) % 4 ) - 1;
-        q.m_tone = 1;
-        q.m_hairColour = 4;
-        q.m_cloth = f.m_variant == 2 ? Vector3{ 0.32f, 0.05f, 0.06f } : Vector3{ 0.16f, 0.17f, 0.19f };
-        q.m_scale = f.m_variant == 2 ? 1.08f : 0.97f + ( seed % 5 ) * 0.01f;
-        q.m_skin = SkinState();
-        q.m_skin.m_clip = m_clip["Idle_Loop"];
-        q.m_skin.m_time = ( seed % 97 ) * 0.11f;
-        f.m_body = (int)m_shellBodies.size();
-        m_shellBodies.push_back( q );
-    }
+    for ( Foe &f : m_foes ) shellBody( f );
     MeshBuilder core;
     core.roundedBox( place( { 0.0f, 0.0f, 0.0f } ), { 0.06f, 0.06f, 0.04f }, 0.02f, 2 );
     m_coreGlow = core.build().front();
@@ -134,6 +114,28 @@ bool Game::rackInWay( Vector3 a, Vector3 b ) const
         if ( t >= 0.0f && t < len - 0.5f ) return true;
     }
     return false;
+}
+
+void Game::shellBody( Foe &f )
+{
+    // A shell's body: Quaternius' figures in rags, pale, a core glowing at the back of the head.
+    if ( f.m_kind != FoeE::SHELL || !m_skins || f.m_body >= 0 ) return;
+    Person   q = {};
+    unsigned seed = (unsigned)f.m_id * 2654435761u;
+    q.m_pos = f.m_pos;
+    q.m_yaw = f.m_yaw;
+    q.m_look = 0;
+    q.m_body = (int)( seed % 2 );
+    q.m_hair = f.m_variant == 2 ? -1 : (int)( ( seed >> 3 ) % 4 ) - 1;
+    q.m_tone = 1;
+    q.m_hairColour = 4;
+    q.m_cloth = f.m_variant == 2 ? Vector3{ 0.32f, 0.05f, 0.06f } : Vector3{ 0.16f, 0.17f, 0.19f };
+    q.m_scale = f.m_variant == 2 ? 1.08f : 0.97f + ( seed % 5 ) * 0.01f;
+    q.m_skin = SkinState();
+    q.m_skin.m_clip = m_clip["Idle_Loop"];
+    q.m_skin.m_time = ( seed % 97 ) * 0.11f;
+    f.m_body = (int)m_shellBodies.size();
+    m_shellBodies.push_back( q );
 }
 
 void Game::breakRack( int i )
