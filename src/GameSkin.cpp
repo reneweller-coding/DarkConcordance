@@ -89,7 +89,6 @@ constexpr unsigned wearing( GarmentE g )
 {
     return 1u << (int)g;
 }
-constexpr float WalkSpeed = 1.3f;   ///< m/s the walk clip covers
 
 /** @brief Clothes by the box figures' looks (their surfaces' tints), a little brighter. */
 const Vector3 Cloth[] = { { 0.42f, 0.45f, 0.5f },  { 0.33f, 0.24f, 0.17f }, { 0.32f, 0.4f, 0.34f },
@@ -377,6 +376,37 @@ void Game::dressAs( Person &q, const std::string &name )
     if ( q.m_body < 0 ) q.m_body = 0;
 }
 
+Vector2 Game::gaitCycle( const SkinModel &m )
+{
+    auto known = m_gaitCycle.find( &m );
+    if ( known != m_gaitCycle.end() ) return known->second;
+    // As Figure::calibrate measures it: while the left foot is down it slides back under the hips as fast as the body
+    // goes; that speed times the clip's length is how far a cycle carries the body.
+    auto measure = [&]( int clip )
+    {
+        const int              n = 64;
+        int                    ankle = m.bone( "foot_l" ), hips = m.bone( "pelvis" );
+        float                  length = m.length( clip ), low = 1e9f;
+        std::vector<Transform> f;
+        std::vector<Vector2>   foot( n + 1 );
+        if ( clip < 0 || ankle < 0 || hips < 0 ) return 1.6f;
+        for ( int i = 0; i <= n; ++i )
+        {
+            m.sample( clip, length * i / n, f );
+            foot[i] = { f[ankle].translation.y, f[ankle].translation.z - f[hips].translation.z };
+            low = fminf( low, foot[i].x );
+        }
+        float slide = 0.0f, time = 0.0f;
+        for ( int i = 0; i < n; ++i )
+            if ( foot[i].x < low + 0.06f && foot[i + 1].x < low + 0.06f )
+                slide += foot[i].y - foot[i + 1].y, time += length / n;
+        return time > 0.0f && slide > 0.0f ? slide / time * length : 1.6f;
+    };
+    Vector2 c = { measure( m_clip["Walk_Loop"] ), measure( m_clip["Jog_Fwd_Loop"] ) };
+    m_gaitCycle[&m] = c;
+    return c;
+}
+
 const SkinModel &Game::personModel( const Person &q ) const
 {
     return q.m_dressed >= 0 ? m_dressed[q.m_dressed].m_model : m_body[q.m_body];
@@ -419,7 +449,7 @@ void Game::updateSkins( float dt )
         Person &q = m_people[i];
         if ( q.m_body < 0 ) continue;
         const SkinModel &m = personModel( q );
-        float            speed = Vector2Length( q.m_vel ), rate = 1.0f;
+        float            speed = Vector2Length( q.m_vel );
         int              clip = m_clip["Idle_Loop"];
         unsigned         h = (unsigned)i * 2654435761u;
         if ( q.m_force >= 0 )
@@ -432,17 +462,8 @@ void Game::updateSkins( float dt )
         }
         else if ( q.m_cower > 0.3f || q.m_sit > 0.5f )
             clip = m_clip["Crouch_Idle_Loop"];   // crouched (the hands go over the head in poseSkin), huddled
-        else if ( speed > 2.2f )
-        {
-            // Running away: the jog at its own pace for the body's legs (a child's are short).
-            clip = m_clip["Jog_Fwd_Loop"];
-            rate = speed / ( 5.0f * m.hipHeight( m_clip["Idle_Loop"] ) * q.m_scale / 0.95f );
-        }
         else if ( speed > 0.25f )
-        {
-            clip = m_clip["Walk_Loop"];
-            rate = speed / WalkSpeed;
-        }
+            clip = m_clip["Idle_Loop"];   // under the legs' cycle (poseSkin)
         else if ( q.m_chair > 0.5f )
             clip = ( ( h >> 8 ) + (unsigned)( m_time / 11.0f ) ) % 3 == 0 && q.m_fear <= 0
                        ? m_clip["Sitting_Talking_Loop"]
@@ -457,7 +478,18 @@ void Game::updateSkins( float dt )
         }
         if ( clip < 0 ) clip = m_clip["Idle_Loop"];
         m.play( q.m_skin, clip, 0.3f );
-        m.advance( q.m_skin, dt, rate );
+        m.advance( q.m_skin, dt );
+        // Walking or running: the walk blended into the jog by the speed, the cycle as far as the body's legs carry it
+        // (the planted foot stays put), as the heroes go.
+        bool moving = q.m_force < 0 && q.m_down <= 0.5f && q.m_cower <= 0.3f && q.m_sit <= 0.5f && q.m_chair <= 0.5f &&
+                      speed > 0.25f;
+        q.m_move = Clamp( q.m_move + ( moving ? 6.0f : -6.0f ) * dt, 0.0f, 1.0f );
+        if ( q.m_move > 0.0f )
+        {
+            Vector2 cycle = gaitCycle( m ), run = Figure::gait( speed );
+            float   stride = fmaxf( Lerp( cycle.x, cycle.y, run.x ) * q.m_scale, 0.3f );
+            q.m_cycleT = fmodf( q.m_cycleT + speed * dt / stride, 1.0f );
+        }
     }
     // The people to talk to: talking while they do, else standing (Ottla with her arms folded).
     for ( size_t i = 0; i < m_npcs.size(); ++i )
@@ -475,12 +507,25 @@ void Game::updateSkins( float dt )
 
 void Game::poseSkin( Person &q, std::vector<Drawable> &out )
 {
-    const SkinModel &m = personModel( q );
+    const SkinModel                           &m = personModel( q );
+    static thread_local std::vector<Transform> pose, legs, jog;
+    m.posed( q.m_skin, pose );
+    if ( q.m_move > 0.01f )
+    {
+        // The legs' cycle: the walk, into the jog with the speed.
+        int     walk = m_clip["Walk_Loop"], run = m_clip["Jog_Fwd_Loop"];
+        Vector2 share = Figure::gait( Vector2Length( q.m_vel ) );
+        m.sample( walk, q.m_cycleT * m.length( walk ), legs );
+        if ( share.x > 0.0f )
+        {
+            m.sample( run, q.m_cycleT * m.length( run ), jog );
+            SkinModel::mix( legs, jog, share.x );
+        }
+        SkinModel::mix( pose, legs, q.m_move );
+    }
     if ( q.m_cower > 0.01f || q.m_startle > 0.01f )
     {
         // Crouched in a fight: the head down, the hands over it, a tremble; a shot close by ducks them deeper.
-        static thread_local std::vector<Transform> pose;
-        m.posed( q.m_skin, pose );
         int   neck = m.bone( "neck_01" ), spine = m.bone( "spine_02" ), head = m.head();
         float w = fmaxf( q.m_cower, 0.6f * q.m_startle );
         if ( spine >= 0 )
@@ -506,10 +551,8 @@ void Game::poseSkin( Person &q, std::vector<Drawable> &out )
                                                                                     { 0.075f * side, 0.0f, 0.0f } ) ) );
             m.reach( pose, a, b, c, Vector3Lerp( pose[c].translation, goal, w ), { 0.6f * side, 0.0f, 1.0f } );
         }
-        m.skin( pose, q.m_bones );
     }
-    else
-        m.pose( q.m_skin, q.m_bones );
+    m.skin( pose, q.m_bones );
     // On a stool the pelvis sits on the seat.
     float y = q.m_pos.y;
     if ( q.m_chair > 0.5f ) y = q.m_seat + 0.1f - m.hipHeight( m_clip["Sitting_Idle_Loop"] ) * q.m_scale;
@@ -668,6 +711,38 @@ void Game::figureLineup( int page )
             p.m_vel = { sinf( p.m_yaw ) * Vector2Length( p.m_vel ), cosf( p.m_yaw ) * Vector2Length( p.m_vel ) };
     }
     m_lined = row;
+}
+
+void Game::parade()
+{
+    if ( !m_skins ) return;
+    // A stroller, a child strolling, Ilka running, two fleeing; each in a lane before the hero.
+    const int   looks[5] = { 0, 8, 3, 1, 6 };
+    const float speeds[5] = { 1.15f, 1.7f, 3.0f, 4.2f, 4.2f };
+    for ( int i = 0; i < 5; ++i )
+    {
+        Person q;
+        q.m_pos = { m_pos.x - 6.0f + i * 2.5f, m_pos.y, m_pos.z - 6.8f - i * 1.4f };
+        q.m_yaw = PI * 0.5f;
+        q.m_look = looks[i];
+        q.m_sit = 0.0f;
+        q.m_down = 0.0f;
+        q.m_walks = true;
+        dressPerson( q, (unsigned)( i * 31 + 7 ) );
+        m_parade.push_back( { (int)m_people.size(), speeds[i] } );
+        m_people.push_back( q );
+    }
+    // A baton man charging, a carbine man advancing, a heavy walking; in front of them.
+    Figure     *men[3] = { &m_boarderBaton, &m_boarderGun, &m_heavyFigure };
+    const float paces[3] = { 3.6f, 2.6f, 1.2f };
+    for ( int i = 0; i < 3; ++i )
+    {
+        FigurePose p;
+        p.m_pos = { m_pos.x + 4.0f - i * 3.0f, m_pos.y, m_pos.z - 2.0f - i * 1.6f };
+        p.m_yaw = PI * 0.5f;
+        m_paradeMen.push_back( { m_lined.size(), paces[i] } );
+        m_lined.push_back( { men[i], p } );
+    }
 }
 
 void Game::lineup()

@@ -136,7 +136,10 @@ Enter cuts it short).
   close by makes them flinch. In the generated levels the market folk who did not get away are crouched already when
   the fighting starts; the crowds who stay where they are (the hearing, the net, Unzu's settlement) turn to watch a
   fight that comes near and flinch at shots (`Game::updateRefugees`, `hideFrom`). Ilka is the girl MPFB made
-  (`ilkagirl`), and lies emptied in her nook at the end.
+  (`ilkagirl`), and lies emptied in her nook at the end. Whoever walks or runs (strollers, Ilka, the fleeing) goes as
+  the heroes do: the walk blended into the jog by the speed (`Figure::gait`), the cycle as far as that body's legs
+  carry it (`Game::gaitCycle`, measured once per body from the planted foot), so nobody bounds in slow leaps or
+  slides their feet.
 - **Wonder:** through the window, the red dwarf and the chain of fusion flames of the other refugee ships braking
   before it. **Wound:** the Concordance patrol *Not Our Concern* answers the distress call and declines.
 - **The end:** Ilka found too late, the scanner still warm, the shot from behind, the dark, and the charity clinic on
@@ -678,7 +681,8 @@ keys|xbox|ps|deck` the buttons in the texts, `--colours 0|1|2` colour vision, `-
 `--savefile FILE` writes the save a capsule makes, `--loadfile FILE` goes on from a save. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
 `--camyaw deg` turns the camera, `--camrise h` lowers it (its height over a distance of 8.1; 1.5 looks from the
 side), `--clip s` writes the warm-up's last seconds as pictures (`<shot>_NNNN.png`, 15 a second, to see motion by),
-`--move x,y` holds the left stick during the warm-up; `--lang de|en` picks the
+`--move x,y` holds the left stick during the warm-up, `--parade` sends people (strolling, Ilka running, fleeing) and
+boarders (charging, advancing, a heavy walking) to and fro before the hero at the game's speeds; `--lang de|en` picks the
 language; `--hero dorra|corvin` skips the choice; `--level FILE` starts elsewhere than the prologue; `--flags a,b`
 sets what has happened, `--talk id` opens a conversation and `--shop 1|2` the trader or the workshop for the picture;
 `--panel 0|1|2|3` shows the inventory, skills, character or map page, `--map` the map over the game; `--seed n` picks

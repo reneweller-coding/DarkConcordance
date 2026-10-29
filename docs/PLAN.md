@@ -376,7 +376,11 @@ Still to come, by first use:
    shot (start, a third, two thirds, end): fixed the prologue's pilot turning into another woman (n3), white warships
    painted as motor yachts (end C n2), Ysolde turning into another woman (end C s2), moons appearing from nowhere (end
    C n3), Corvin's doorway drifting into another room (tale s2) and the technician turning round mid-step (tale of
-   Ione n3), by a new motion, a new picture or a "turn".
+   Ione n3), by a new motion, a new picture or a "turn". Then (the user: did you check every animation, lest people
+   stalk about like the hero did?) the gaits seen from the side with a new `--parade`: the fleeing and Ilka bounded
+   in slow leaps exactly as the hero had (the jog clip played slower), so people now go as the heroes do, the walk
+   blended into the jog by speed and the cycle measured from each body's planted foot; strollers no longer use one
+   fixed walking speed for every body. The boarders (Figure, already per-figure cycles) charge and advance cleanly.
 
 ## Open decisions (the user's)
 

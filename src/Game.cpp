@@ -3414,6 +3414,24 @@ void Game::update( float dt, const GameInput &inRaw )
     updateShots( dt );
     updateCargo( dt );
     updateIlka( dt );
+    for ( auto &[i, speed] : m_parade )
+    {
+        Person &q = m_people[i];
+        if ( fabsf( q.m_pos.x + speed * dt - m_pos.x ) > 8.0f ) speed = -speed;
+        q.m_vel = { speed, 0.0f };
+        q.m_pos.x += speed * dt;
+        q.m_yaw = speed > 0.0f ? PI * 0.5f : -PI * 0.5f;
+    }
+    for ( auto &[k, speed] : m_paradeMen )
+    {
+        auto &[figure, p] = m_lined[k];
+        if ( fabsf( p.m_pos.x + speed * dt - m_pos.x ) > 8.0f ) speed = -speed;
+        p.m_pos.x += speed * dt;
+        p.m_vel = { speed, 0.0f };
+        p.m_yaw = speed > 0.0f ? PI * 0.5f : -PI * 0.5f;
+        p.m_time += dt;
+        figure->step( p, dt );
+    }
     updateRefugees( dt );
     updateSkins( dt );
 

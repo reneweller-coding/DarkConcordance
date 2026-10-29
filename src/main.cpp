@@ -96,6 +96,7 @@ struct Options
     int                      m_lootFilter = -1;   ///< tests: the loot filter (-1: as set)
     bool                     m_map = false;       ///< with --shot: the map over the game
     bool                     m_lineup = false;    ///< with --shot: a row of people in their animations before the hero
+    bool                     m_parade = false;    ///< with --shot: people walking and running to and fro (gaits)
     int                      m_creatures = -1;    ///< with --shot: the creatures in front of the hero (page 0 or 1)
     int                      m_figures = -1;   ///< with --shot: figures in their poses in front of the hero (page 0, 1)
     std::string              m_pad;   ///< keys, xbox, ps, deck: the buttons shown in the texts (else the device used)
@@ -227,6 +228,8 @@ Options parse( int argc, char **argv )
             o.m_map = true;
         else if ( a == "--lineup" )
             o.m_lineup = true;
+        else if ( a == "--parade" )
+            o.m_parade = true;
         else if ( a == "--creatures" )
             o.m_creatures = atoi( next().c_str() );
         else if ( a == "--figures" )
@@ -1174,6 +1177,7 @@ int runGame( const Options &o, Gfx &gfx )
     if ( o.m_camRise > 0.0f ) game->m_camRise = o.m_camRise;
     if ( o.m_hasAt ) game->putHero( o.m_x, o.m_z, o.m_face );
     if ( o.m_lineup ) game->lineup();
+    if ( o.m_parade ) game->parade();
     if ( o.m_creatures >= 0 ) game->creatureLineup( o.m_creatures );
     if ( o.m_figures >= 0 ) game->figureLineup( o.m_figures );
     if ( o.m_zoom > 0.0f ) game->m_zoom = o.m_zoom;

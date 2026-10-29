@@ -329,6 +329,13 @@ public:
 
     /** @brief Pictures: a row of people in front of the hero, each in another animation. */
     void lineup();
+    /** @brief Tests: people walking and running to and fro before the hero at the game's speeds (--parade). */
+    void parade();
+    std::vector<std::pair<int, float>>    m_parade;      ///< tests: who walks to and fro, at what speed (m/s, signed)
+    std::vector<std::pair<size_t, float>> m_paradeMen;   ///< tests: the same for figures of m_lined
+    /** @return how far a body's walk (x) and jog (y) cycles carry it (metres in its own space, measured once) */
+    Vector2 gaitCycle( const SkinModel &m );
+    std::map<const SkinModel *, Vector2> m_gaitCycle;
     /**
      * @brief Pictures: figures in front of the hero, each in another pose (held still).
      * @param[in] page  0 the hero standing, walking, running, shooting, striking, blocking, jumping, falling; 1 the
@@ -608,6 +615,8 @@ private:
         bool             m_crate = false;                     ///< sits on a crate (drawn where they sat, it stays)
         Vector3          m_cratePos = { 0.0f, 0.0f, 0.0f };   ///< the crate or the stool they sat on
         float            m_crateYaw = 0.0f;                   ///< facing so (from a crate, towards a table)
+        float            m_cycleT = 0.0f;   ///< 0..1 through a walk or run cycle (as far as their legs carry them)
+        float            m_move = 0.0f;     ///< 0..1 walking or running (over the clip they stand in)
     };
     /** @brief A ship braking far below (the view through the window). */
     struct Ship

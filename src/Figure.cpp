@@ -493,6 +493,11 @@ void Figure::step( FigurePose &p, float dt ) const
     if ( !p.m_air ) p.m_phase = fmodf( p.m_phase + speed * dt * 2.0f * PI / stride + 2.0f * PI, 2.0f * PI );
 }
 
+Vector2 Figure::gait( float speed )
+{
+    return gaits( speed );
+}
+
 FigurePose Figure::own() const
 {
     FigurePose p;

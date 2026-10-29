@@ -172,6 +172,14 @@ public:
      */
     void step( FigurePose &p, float dt ) const;
 
+    /**
+     * @brief How far a body's legs have gone from a walk into a jog (x) and from a jog into a sprint (y) at a speed:
+     *        the jog clip is the clip's own only at about 5 m/s, slower the walk shortens it.
+     * @param[in] speed  m/s
+     * @return the two shares 0..1
+     */
+    static Vector2 gait( float speed );
+
     /** @brief Kicks the rifle back (a shot). */
     void recoil() { m_recoil = 1.0f; }
 
