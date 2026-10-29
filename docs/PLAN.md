@@ -367,6 +367,16 @@ Still to come, by first use:
    become a sea ship), and so were the others FLUX had put on water (prologue s1 a barge's keel, s5 a motor yacht,
    act II n1 a red waterline, s5 a steamer's silhouette); prologue s2 from a tripod, and since LTX holds its many
    faces still only about 3.5 s, its start plays forward and back again (a shot's new "turn" in `films.json`).
+14. The people in a fight — done (29.10.2026, the user: in level one the ship is boarded and the people stay calmly in
+   their seats; check the other films, animations and people likewise). The refugees and the mess's guests are whole
+   people now (they were the old figures in one-coloured suits, Ilka too, though `ilkagirl` had been made), on crates
+   and stools until the alarm, then up, away to a hiding place and crouched with the hands over the head; on again
+   when a boarder comes close, a flinch at shots; the generated levels' market folk crouched from the start; the
+   crowds who stay by design (hearing, net, Unzu's settlement) watch and flinch. All 13 films looked through shot by
+   shot (start, a third, two thirds, end): fixed the prologue's pilot turning into another woman (n3), white warships
+   painted as motor yachts (end C n2), Ysolde turning into another woman (end C s2), moons appearing from nowhere (end
+   C n3), Corvin's doorway drifting into another room (tale s2) and the technician turning round mid-step (tale of
+   Ione n3), by a new motion, a new picture or a "turn".
 
 ## Open decisions (the user's)
 

@@ -21,7 +21,7 @@
       {"id": "s4", "picture": "View through a scratched round porthole into space: among the stars one point of light is unusually bright, a small white glare, with the red dwarf glowing at the edge of the frame.",
        "motion": "Very slow zoom towards the bright point of light, it pulses faintly.", "say": [["ilka", "f_pro6"]]},
       {"id": "n3", "picture": "Science fiction: The cramped cockpit of an old cargo spaceship, a woman pilot in her thirties in a worn grey flight suit with a faded patch of a fictional freight company and no flags or national insignia, headset on, at the controls, red warning lights blinking, radar screens with two small contacts, tense.",
-       "motion": "The pilot leans forward and works the controls, warning lights blink.", "say": [["pilot", "f_pro11"]], "seconds": 6},
+       "motion": "Static camera. The same woman stays in her seat with her hands on the controls, her eyes go from the radar screens to the window and back, warning lights blink.", "turn": 4.0, "say": [["pilot", "f_pro11"]], "seconds": 6},
       {"id": "s5", "picture": "Science fiction, in deep space, black starry void, no water: a sleek white patrol spacecraft of an advanced civilisation, a smooth seamless elongated shape like a polished stone, no windows, no masts, no decks, hanging motionless far away, cold soft lights along its hull, utterly clean, watching.",
        "motion": "The spacecraft hangs still, the camera slowly circles it, its lights glow steadily.", "say": [["patrol", "f_pro7"]], "seconds": 7},
       {"id": "n4", "picture": "Science fiction: The bridge of an advanced spaceship, pure white and empty, smooth curved walls, a single soft sphere of light hovering in the middle, a large window looking out into black deep space full of stars, far away in the darkness a small battered colony freighter spacecraft, a boxy rusty hull of riveted cargo modules with thruster nozzles and antenna masts. No water, no sea, no sky.",
@@ -154,12 +154,12 @@
        "refs": ["ilka39"], "motion": "The code streams flow in, she lays her hand on the console, people turn towards her.", "say": [["ilka39", "f_ec1"]]},
       {"id": "s1", "picture": "A colossal hollowed moon with engines in space, the glowing fan of ore in front of it fading out, the cutting beams switching off one by one.",
        "motion": "The ore fan fades, the beams go dark one after another.", "say": [["hero", "f_ec2"]], "seconds": 6},
-      {"id": "n2", "picture": "Science fiction: Rows of sleek white warships lining up at the edge of a star system, a blockade in deep space, distant red star.",
-       "motion": "The warships hold their line, lights blink along their hulls.", "say": [["hero", "f_ec6"]]},
+      {"id": "n2", "picture": "Science fiction, in deep space, black starry void, no water, no sea: rows of sleek white angular warships of an advanced civilisation, smooth seamless hulls without windows, decks or masts, holding a blockade line at the edge of a star system, a distant red star.",
+       "motion": "The spacecraft hold their line without moving, lights blink along their hulls, the camera stays still.", "say": [["hero", "f_ec6"]]},
       {"id": "n3", "picture": "Science fiction: The worn cockpit of an old survey spaceship, a small spherical sensor eye glowing amber on the dashboard, a colossal moon visible through the window.",
-       "motion": "The amber eye pulses, the moon drifts past the window.", "say": [["unzu", "f_ec7"]]},
+       "motion": "The amber eye pulses, the moon drifts past the window.", "turn": 3.8, "say": [["unzu", "f_ec7"]]},
       {"id": "s2", "picture": "An elegant woman in her mid-fifties with silver hair pinned up, dark coat, standing at a large window of a space station, looking up at a colossal moon in the sky, wry, tired smile.",
-       "refs": ["ysolde"], "motion": "Slow push-in, she smiles faintly and shakes her head.", "say": [["ysolde", "f_ec3"]], "seconds": 6},
+       "refs": ["ysolde"], "motion": "Slow push-in, she smiles faintly and shakes her head.", "turn": 4.5, "say": [["ysolde", "f_ec3"]], "seconds": 6},
       {"id": "n4", "picture": "Science fiction: A poor but busy street inside a rotating space station drum, people in worn colony clothes looking up at a colossal moon hanging peacefully in the sky.",
        "motion": "People stop and look up, the moon hangs still.", "say": [["hero", "f_ec8"]], "seconds": 6},
       {"id": "s3", "picture": "A colossal hollowed moon igniting its huge engines, blue-white flames blooming at its rim, beginning to move away into the dark.",
@@ -176,7 +176,7 @@
       {"id": "s1", "picture": "A handheld neural scanner with a glowing ring lying on a scratched metal table in a back room, next to stacks of cash chips, a single lamp.",
        "motion": "Slow push-in on the device, its ring glows softly.", "say": [["corvin", "f_tc2"]], "seconds": 7},
       {"id": "s2", "picture": "A man in his early thirties in a dark hooded coat standing in the rain at the door of a cramped family quarter, light from inside on his face, hesitating.",
-       "refs": ["corvin"], "motion": "He stands still in the rain, then lowers his eyes.", "say": [["corvin", "f_tc3"]]},
+       "refs": ["corvin"], "motion": "He stands still in the rain, then lowers his eyes.", "turn": 2.8, "say": [["corvin", "f_tc3"]]},
       {"id": "n2", "picture": "Science fiction: Close-up of a small child's hand clutching a tiny toy robot with one leg, in a cramped spaceship family quarter, dim warm light.",
        "motion": "The small hand tightens around the toy.", "say": [["corvin", "f_tc6"]]},
       {"id": "s3", "picture": "A man in a dark coat walking away down a rainy neon tunnel, seen from behind, a small device lying in a drain behind him.",
@@ -220,7 +220,7 @@
       {"id": "s3", "picture": "Close-up of a console with a large red reset button; above it a woman's gloved hand clenched into a fist, held back, clearly not touching the button, warning lights around.",
        "motion": "The clenched hand stays above the button, then slowly pulls back out of the frame.", "say": [["ione", "f_ti4"]]},
       {"id": "n3", "picture": "Science fiction: A woman in technician overalls walking out through a huge factory gate at dawn under a gas giant sky, the factory behind her still running.",
-       "motion": "She walks away, the gate stays open, steam rises.", "say": [["ione", "f_ti7"]]}
+       "motion": "She walks out through the gate towards the camera with steady steps, the factory keeps running behind her, steam rises.", "say": [["ione", "f_ti7"]]}
     ]
   },
   "tale_unzu": {

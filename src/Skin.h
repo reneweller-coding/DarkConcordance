@@ -95,6 +95,13 @@ public:
     void pose( const SkinState &s, std::vector<Matrix> &bones ) const;
 
     /**
+     * @brief Where a figure is in its clips, bone by bone (the crossfade done), to change before skin() makes it.
+     * @param[in]  s    the figure
+     * @param[out] out  each bone's place in the model's space
+     */
+    void posed( const SkinState &s, std::vector<Transform> &out ) const;
+
+    /**
      * @brief A clip's pose at a time: each bone's place in the model's space (interpolated between frames).
      * @param[in]  clip  the clip
      * @param[in]  time  seconds into it (a loop wraps, else it holds its ends)

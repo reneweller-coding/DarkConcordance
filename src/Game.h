@@ -595,6 +595,19 @@ private:
         std::vector<Matrix> m_bones;                              ///< this frame's skin matrices (alive until drawn)
         int                 m_dressed = -1;                       ///< a whole person of m_dressed (else m_body's)
         Vector3             m_dressTint = { 1.0f, 1.0f, 1.0f };   ///< over that one's clothes
+        // Where fighting reaches them (updateRefugees): sitting, getting up, running, crouched with the hands over
+        // the head (-2 not yet decided, -1 nothing ever threatens them, -3 they stay where they are and watch).
+        int              m_fear = -1;
+        float            m_fearTimer = 0.0f;                  ///< till they act (getting up), or before they run again
+        float            m_cower = 0.0f;                      ///< 0..1 the hands over the head
+        float            m_startle = 0.0f;                    ///< 1 just startled by a shot or a blast nearby .. 0
+        int              m_hideCell = -1;                     ///< the cell they run to, or crouch in
+        std::vector<int> m_route;                             ///< the cells still to run through
+        Vector3          m_goal = { 0.0f, 0.0f, 0.0f };       ///< then this spot (the back to a wall, off the crate)
+        float            m_goalYaw = 0.0f;                    ///< facing so there
+        bool             m_crate = false;                     ///< sits on a crate (drawn where they sat, it stays)
+        Vector3          m_cratePos = { 0.0f, 0.0f, 0.0f };   ///< the crate or the stool they sat on
+        float            m_crateYaw = 0.0f;                   ///< facing so (from a crate, towards a table)
     };
     /** @brief A ship braking far below (the view through the window). */
     struct Ship
@@ -1329,6 +1342,8 @@ private:
     Vector3 thrust() const { return Vector3Scale( m_thrustDir, m_thrustAmt ); }
     void updateCargo( float dt );
     void updateIlka( float dt );
+    void updateRefugees( float dt );   // the people where a fight is: they get up, run, hide, flinch
+    bool hideFrom( Person &q, const std::vector<Vector3> &threats );
     void updateScene( float dt, GameInput &in );
     void drawView( Gfx &gfx );
     void drawPlumes( Gfx &gfx );
@@ -1479,7 +1494,7 @@ private:
     Figure                m_boarderBaton, m_boarderGun;   ///< the boarders (one figure draws them all)
     static constexpr int  FolkCount = 9;
     Figure                m_folk[FolkCount];   ///< worn clothes 0-2, Ilka, Ysolde, Kiri, more clothes 6-7, a child
-    Mesh                  m_cargoMesh = {}, m_cargoBand = {}, m_scannerMesh = {};
+    Mesh                  m_cargoMesh = {}, m_cargoBand = {}, m_scannerMesh = {}, m_seatMesh = {};
 
     // The ship.
     int               m_thrustState = 0;   ///< 0 calm, 1 warning, 2 pushing

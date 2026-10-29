@@ -129,6 +129,14 @@ Enter cuts it short).
   container. Then the crew corridor with its cabins (doors, lockers, the captain's log on a terminal), the hall with
   heat exchangers for cover and loose cargo, the observation blister with a window in the floor, the bridge, the east
   corridor with its bulkhead, and only then hold four with its container stacks, the refugees and Ilka's nook.
+- **The refugees** sit on crates against the walls and at the mess's tables until the alarm; then they get up (not
+  all at once), look where it comes from and run to a hiding place within nine cells, as far from every boarder as
+  can be, against a wall, in a room rather than a corridor or a doorway, clear of crates and barrels; there they
+  crouch, head down, hands over it, trembling. A boarder coming within six metres sends them on; a shot or a blast
+  close by makes them flinch. In the generated levels the market folk who did not get away are crouched already when
+  the fighting starts; the crowds who stay where they are (the hearing, the net, Unzu's settlement) turn to watch a
+  fight that comes near and flinch at shots (`Game::updateRefugees`, `hideFrom`). Ilka is the girl MPFB made
+  (`ilkagirl`), and lies emptied in her nook at the end.
 - **Wonder:** through the window, the red dwarf and the chain of fusion flames of the other refugee ships braking
   before it. **Wound:** the Concordance patrol *Not Our Concern* answers the distress call and declines.
 - **The end:** Ilka found too late, the scanner still warm, the shot from behind, the dark, and the charity clinic on

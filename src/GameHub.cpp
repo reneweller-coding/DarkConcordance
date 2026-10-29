@@ -72,6 +72,9 @@ void Game::loadHub( Gfx &gfx, const std::string &assets )
             q.m_down = 0.0f;
             q.m_chair = 1.0f;
             q.m_seat = s.m_height;
+            q.m_fear = -2;   // in a ship's mess they get up when it is boarded (updateRefugees)
+            q.m_cratePos = s.m_pos;
+            q.m_crateYaw = q.m_yaw;
             m_people.push_back( q );
         }
     }

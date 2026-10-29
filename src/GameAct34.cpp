@@ -313,6 +313,7 @@ void Game::loadAct34()
         q.m_look = (int)( rnd() * 3.0f ) == 0 ? 6 : ( rnd() < 0.5f ? 7 : 0 );
         q.m_sit = 0.0f;
         q.m_down = 0.0f;
+        q.m_fear = -3;   // they do not run, but they look, and flinch (updateRefugees)
         dressPerson( q, (unsigned)( t * 977u + 31u ) );
         m_people.push_back( q );
         m_blocked.insert( r * m_level.cols() + c );

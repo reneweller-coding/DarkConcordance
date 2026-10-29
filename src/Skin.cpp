@@ -369,15 +369,21 @@ void SkinModel::layer( std::vector<Transform> &a, const std::vector<Transform> &
 
 void SkinModel::pose( const SkinState &s, std::vector<Matrix> &bones ) const
 {
-    static thread_local std::vector<Transform> a, b;
+    static thread_local std::vector<Transform> a;
+    posed( s, a );
+    skin( a, bones );
+}
+
+void SkinModel::posed( const SkinState &s, std::vector<Transform> &out ) const
+{
+    static thread_local std::vector<Transform> b;
     int                                        n = this->bones();
-    sample( s.m_clip, s.m_time, a );
+    sample( s.m_clip, s.m_time, out );
     if ( s.m_prev >= 0 && s.m_fade < 1.0f )
     {
         sample( s.m_prev, s.m_prevTime, b );
-        for ( int i = 0; i < n; ++i ) a[i] = blend( b[i], a[i], s.m_fade );
+        for ( int i = 0; i < n; ++i ) out[i] = blend( b[i], out[i], s.m_fade );
     }
-    skin( a, bones );
 }
 
 void SkinModel::skin( const std::vector<Transform> &a, std::vector<Matrix> &bones ) const

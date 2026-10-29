@@ -68,8 +68,17 @@ void Game::loadShip( Gfx &gfx, const std::string &assets )
             q.m_pos = Vector3Subtract( m.m_pos, Vector3Scale( dir, 0.4f ) );
             q.m_yaw = atan2f( dir.x, dir.z ) + ( rnd() - 0.5f ) * 0.6f;
             q.m_look = m.m_kind == 'I' ? 3 : adults[( m.m_row * 7 + m.m_col * 3 ) % 5];
-            q.m_sit = 1.0f;
+            q.m_sit = m.m_kind == 'I' ? 1.0f : 0.0f;   // Ilka huddled in her nook, the others on a crate
             q.m_down = 0.0f;
+            if ( m.m_kind == 'N' )
+            {
+                q.m_chair = 1.0f;
+                q.m_seat = 0.4f;
+                q.m_crate = true;
+                q.m_cratePos = q.m_pos;
+                q.m_crateYaw = q.m_yaw;
+                q.m_fear = -2;
+            }
             if ( m.m_kind == 'I' )
             {
                 m_ilka = (int)m_people.size();
@@ -113,6 +122,9 @@ void Game::loadShip( Gfx &gfx, const std::string &assets )
     band.box( place( { 0.0f, 0.45f, 0.0f } ), { 0.52f, 0.46f, 0.05f } );
     band.box( place( { 0.0f, 0.45f, 0.0f } ), { 0.05f, 0.46f, 0.52f } );
     m_cargoBand = band.build().front();
+    MeshBuilder seat;
+    seat.roundedBox( place( { 0.0f, 0.2f, 0.0f } ), { 0.27f, 0.2f, 0.23f }, 0.03f, 2 );
+    m_seatMesh = seat.build().front();
     MeshBuilder scan;
     scan.lathe(
         place( { 0.0f, 0.02f, 0.0f } ),
@@ -246,6 +258,7 @@ void Game::updateCargo( float dt )
 
 void Game::updateIlka( float dt )
 {
+    if ( m_ilka >= 0 && m_fired.count( "bridgeclear" ) ) m_people[m_ilka].m_sit = 0.0f, m_people[m_ilka].m_down = 1.0f;
     if ( m_ilkaRun < 0 || m_ilkaGone ) return;
     Person &q = m_people[m_ilkaRun];
     // She looks at the hero while they talk; once the alarm has been said, she runs, and is gone at the last point.
@@ -272,7 +285,7 @@ void Game::updateIlka( float dt )
         ++m_ilkaStep;
         return;
     }
-    q.m_vel = Vector2Scale( d, 2.6f / len );
+    q.m_vel = Vector2Scale( d, 3.0f / len );
     q.m_pos.x += q.m_vel.x * dt;
     q.m_pos.z += q.m_vel.y * dt;
     q.m_yaw = atan2f( d.x, d.y );
@@ -282,6 +295,218 @@ void Game::updateIlka( float dt )
     p.m_phase = q.m_phase;
     m_folk[q.m_look].step( p, dt );
     q.m_phase = p.m_phase;
+}
+
+void Game::updateRefugees( float dt )
+{
+    if ( m_people.empty() ) return;
+    std::vector<Vector3> threats;
+    for ( const Foe &f : m_foes )
+        if ( f.m_alive && !f.m_hidden ) threats.push_back( f.m_pos );
+    bool      alarm = m_level.m_thrust && m_fired.count( "alarm" ) > 0;
+    const int cols = m_level.cols();
+    for ( size_t i = 0; i < m_people.size(); ++i )
+    {
+        Person &q = m_people[i];
+        if ( q.m_fear == -2 )
+        {
+            // Where nothing threatens they stay as they are; aboard the lighter they sit until the alarm; elsewhere
+            // (a market in a fight) they have hidden already.
+            q.m_fear = threats.empty() ? -1 : ( m_level.m_thrust ? 0 : 3 );
+            if ( q.m_fear == 3 ) q.m_chair = 0.0f, q.m_crate = false, q.m_cower = 1.0f;
+        }
+        if ( q.m_fear < 0 && q.m_fear != -3 ) continue;
+        // The nearest enemy up and about; a shot or a blast close by startles.
+        float   near = 1e9f;
+        Vector3 from = q.m_pos;
+        for ( const Foe &f : m_foes )
+            if ( f.m_alive && !f.m_hidden && f.m_awake )
+            {
+                float d = Vector2Distance( { f.m_pos.x, f.m_pos.z }, { q.m_pos.x, q.m_pos.z } );
+                if ( d < near ) near = d, from = f.m_pos;
+            }
+        q.m_startle = fmaxf( 0.0f, q.m_startle - dt * 2.5f );
+        for ( const Flash &l : m_flashes )
+            if ( l.m_life > l.m_max - dt * 1.5f && Vector3Distance( l.m_pos, q.m_pos ) < 6.0f ) q.m_startle = 1.0f;
+        q.m_fearTimer -= dt;
+        unsigned h = (unsigned)i * 2654435761u;
+        if ( q.m_fear == -3 )
+        {
+            // Those who stay: they turn to the fight while it is near (and stand still for it).
+            if ( near < 14.0f )
+            {
+                q.m_fearTimer = 2.5f;
+                q.m_yaw += Clamp( angleTo( q.m_yaw, atan2f( from.x - q.m_pos.x, from.z - q.m_pos.z ) ), -1.5f * dt,
+                                  1.5f * dt );
+            }
+            continue;
+        }
+        if ( q.m_fear == 0 )
+        {
+            // Sitting: the alarm gets them up, not all at once; an enemy close by at once.
+            if ( alarm || near < 9.0f )
+            {
+                q.m_fear = 1;
+                q.m_fearTimer = ( near < 9.0f ? 0.2f : 0.3f + (float)( ( h >> 20 ) % 100 ) * 0.02f ) + 0.7f;
+            }
+        }
+        else if ( q.m_fear == 1 )
+        {
+            // Up, looking where it comes from; then away to somewhere it is not.
+            if ( q.m_fearTimer < 0.7f ) q.m_chair = 0.0f;
+            if ( near < 1e8f )
+                q.m_yaw += Clamp( angleTo( q.m_yaw, atan2f( from.x - q.m_pos.x, from.z - q.m_pos.z ) ), -4.0f * dt,
+                                  4.0f * dt );
+            if ( q.m_fearTimer <= 0.0f )
+            {
+                hideFrom( q, threats );
+                q.m_fear = 2;
+                q.m_fearTimer = 8.0f;
+            }
+        }
+        else if ( q.m_fear == 2 )
+        {
+            // Running from cell to cell (a child slower), then to the spot; there, or stuck, they crouch.
+            Vector3 to = q.m_goal;
+            if ( !q.m_route.empty() )
+            {
+                int k = q.m_route.front();
+                to = m_level.centre( k / cols, k % cols );
+            }
+            Vector2 d = { to.x - q.m_pos.x, to.z - q.m_pos.z };
+            float   len = Vector2Length( d );
+            if ( ( !q.m_route.empty() || len > 0.15f ) && q.m_fearTimer > 0.0f )
+            {
+                if ( len < ( q.m_route.empty() ? 0.15f : 0.4f ) )
+                    q.m_route.erase( q.m_route.begin() );
+                else
+                {
+                    // The last steps slow (no one stops dead from a run).
+                    float speed = ( q.m_look == 8 ? 3.0f : 4.2f ) * ( q.m_route.empty() ? fminf( 1.0f, len ) : 1.0f );
+                    q.m_vel = Vector2Scale( d, fmaxf( speed, 0.8f ) / len );
+                    q.m_pos.x += q.m_vel.x * dt;
+                    q.m_pos.z += q.m_vel.y * dt;
+                    m_level.collide( q.m_pos, 0.3f, 0.45f );
+                    float g = groundAt( q.m_pos );
+                    if ( g > -100.0f ) q.m_pos.y = g;
+                    q.m_yaw += Clamp( angleTo( q.m_yaw, atan2f( d.x, d.y ) ), -9.0f * dt, 9.0f * dt );
+                    FigurePose p;
+                    p.m_yaw = q.m_yaw;
+                    p.m_vel = q.m_vel;
+                    p.m_phase = q.m_phase;
+                    m_folk[q.m_look].step( p, dt );
+                    q.m_phase = p.m_phase;
+                }
+            }
+            else
+            {
+                q.m_yaw = q.m_goalYaw;
+                q.m_vel = { 0.0f, 0.0f };
+                q.m_route.clear();
+                q.m_fear = 3;
+                q.m_fearTimer = 3.0f;
+            }
+        }
+        else if ( near < 6.0f && q.m_fearTimer <= 0.0f )
+        {
+            // Crouched, and an enemy comes close: up and away again.
+            q.m_fear = 1;
+            q.m_fearTimer = 0.25f;
+        }
+        q.m_cower = Clamp( q.m_cower + ( q.m_fear == 3 ? 3.0f : -4.0f ) * dt, 0.0f, 1.0f );
+    }
+}
+
+bool Game::hideFrom( Person &q, const std::vector<Vector3> &threats )
+{
+    // Somewhere within nine cells, as far from every enemy as can be, against a wall, in a room (not a corridor or a
+    // doorway, where they would be in the way), not where another crouches; nearer is better.
+    const int rows = m_level.rows(), cols = m_level.cols();
+    const int DR[4] = { 1, 0, 0, -1 }, DC[4] = { 0, 1, -1, 0 };
+    int       r0, c0;
+    m_level.cellOf( q.m_pos, r0, c0 );
+    if ( r0 < 0 || c0 < 0 || r0 >= rows || c0 >= cols ) return false;
+    auto far = [&]( Vector3 p )
+    {
+        float d = 30.0f;
+        for ( const Vector3 &t : threats ) d = fminf( d, Vector2Distance( { p.x, p.z }, { t.x, t.z } ) );
+        return d;
+    };
+    // The spot in a cell: half a cell towards a wall; not where a crate, a barrel or a plant stands.
+    auto spotIn = [&]( int r, int c )
+    {
+        Vector3 at = m_level.centre( r, c );
+        for ( int d = 0; d < 4; ++d )
+            if ( m_level.cell( r + DR[d], c + DC[d] ).m_kind == CellE::ROCK )
+                return Vector3Add( at, { 0.45f * DC[d], 0.0f, 0.45f * DR[d] } );
+        return at;
+    };
+    auto propAt = [&]( Vector3 at )
+    {
+        for ( const Prop &pr : m_level.m_props )
+            if ( Vector2Distance( { at.x, at.z }, { pr.m_pos.x, pr.m_pos.z } ) < pr.m_radius + 0.45f ) return true;
+        return false;
+    };
+    std::set<int> taken;
+    for ( const Person &o : m_people )
+        if ( &o != &q && o.m_fear >= 2 && o.m_hideCell >= 0 ) taken.insert( o.m_hideCell );
+    std::vector<int> from( (size_t)rows * cols, -2 ), depth( (size_t)rows * cols, 0 );
+    std::deque<int>  open = { r0 * cols + c0 };
+    from[r0 * cols + c0] = -1;
+    int   best = -1;
+    float bestScore = far( q.m_pos ) + 1.5f;   // staying, unless somewhere is clearly better
+    while ( !open.empty() )
+    {
+        int k = open.front(), r = k / cols, c = k % cols;
+        open.pop_front();
+        CellE kind = m_level.cell( r, c ).m_kind;
+        if ( depth[k] > 0 && ( kind == CellE::FLOOR || kind == CellE::GRATE || kind == CellE::GLASS ) &&
+             !taken.count( k ) && !m_blocked.count( k ) )
+        {
+            int room = 0, walls = 0;
+            for ( int dr = -1; dr <= 1; ++dr )
+                for ( int dc = -1; dc <= 1; ++dc ) room += m_level.walkable( r + dr, c + dc ) ? 1 : 0;
+            for ( int d = 0; d < 4; ++d ) walls += m_level.cell( r + DR[d], c + DC[d] ).m_kind == CellE::ROCK ? 1 : 0;
+            float score = far( m_level.centre( r, c ) ) + 1.2f * (float)std::min( walls, 2 ) - 0.35f * depth[k];
+            if ( room >= 6 && walls > 0 && score > bestScore && !propAt( spotIn( r, c ) ) ) bestScore = score, best = k;
+        }
+        if ( depth[k] >= 9 ) continue;
+        for ( int d = 0; d < 4; ++d )
+        {
+            int nr = r + DR[d], nc = c + DC[d], nk = nr * cols + nc;
+            if ( nr < 0 || nc < 0 || nr >= rows || nc >= cols || from[nk] != -2 || !m_level.walkable( nr, nc ) )
+                continue;
+            from[nk] = k;
+            depth[nk] = depth[k] + 1;
+            open.push_back( nk );
+        }
+    }
+    q.m_route.clear();
+    if ( best < 0 )
+    {
+        // Nowhere better: where they are, off the crate (in front of it) or the stool (back from the table).
+        q.m_hideCell = r0 * cols + c0;
+        q.m_goalYaw = q.m_yaw;
+        q.m_goal = q.m_pos;
+        if ( Vector3Distance( q.m_pos, q.m_cratePos ) < 0.3f )
+        {
+            float off = q.m_crate ? 0.65f : -0.6f;
+            q.m_goal = Vector3Add( q.m_cratePos, { sinf( q.m_crateYaw ) * off, 0.0f, cosf( q.m_crateYaw ) * off } );
+        }
+        return false;
+    }
+    for ( int k = best; k >= 0 && from[k] >= 0; k = from[k] ) q.m_route.insert( q.m_route.begin(), k );
+    q.m_hideCell = best;
+    int r = best / cols, c = best % cols;
+    q.m_goal = spotIn( r, c );
+    q.m_goalYaw = q.m_yaw;
+    for ( int d = 0; d < 4; ++d )
+        if ( m_level.cell( r + DR[d], c + DC[d] ).m_kind == CellE::ROCK )
+        {
+            q.m_goalYaw = atan2f( -(float)DC[d], -(float)DR[d] );
+            break;
+        }
+    return true;
 }
 
 void Game::updateScene( float dt, GameInput &in )
@@ -436,6 +661,15 @@ void Game::poseShip( std::vector<Drawable> &out )
     for ( size_t i = 0; i < m_people.size(); ++i )
     {
         Person &q = m_people[i];
+        if ( q.m_crate )
+        {
+            Drawable d;
+            d.m_transform = MatrixMultiply( MatrixRotateY( q.m_crateYaw ),
+                                            MatrixTranslate( q.m_cratePos.x, q.m_cratePos.y, q.m_cratePos.z ) );
+            d.m_mesh = m_seatMesh;
+            d.m_surface = S_CRATE;
+            out.push_back( d );
+        }
         if ( q.m_body >= 0 && q.m_pos.y > -50.0f )
         {
             poseSkin( q, out );

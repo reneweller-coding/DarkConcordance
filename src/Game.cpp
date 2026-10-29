@@ -643,9 +643,8 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     loadSwarm();
     loadVault();
     loadBreakables();
-    // Who stands, walks or sits on a stool is a skinned figure; those huddled on the floor and Ilka stay as they are.
-    for ( size_t i = 0; i < m_people.size(); ++i )
-        if ( m_people[i].m_sit < 0.5f ) dressPerson( m_people[i], (unsigned)( i * 7919u + 13u ) );
+    // Everyone a skinned figure, a whole person where one is made (Ilka too).
+    for ( size_t i = 0; i < m_people.size(); ++i ) dressPerson( m_people[i], (unsigned)( i * 7919u + 13u ) );
     if ( !m_level.m_intro.empty() ) m_intro = IntroTime;
     if ( m_progress.m_hasSpot && m_progress.m_level == m_levelFile )
     {
@@ -1017,7 +1016,11 @@ void Game::blockHero( Vector3 &p ) const
     for ( const Capsule &c : m_capsules ) pushOutCircle( p, HeroRadius, c.m_pos.x, c.m_pos.z, 0.75f );
     for ( const Marker &m : m_level.m_markers )
         if ( m.m_kind == 'K' ) pushOutCircle( p, HeroRadius, m.m_pos.x, m.m_pos.z - 0.2f, 1.0f );
-    for ( const Person &q : m_people ) pushOutCircle( p, HeroRadius, q.m_pos.x, q.m_pos.z, 0.45f );
+    for ( const Person &q : m_people )
+    {
+        pushOutCircle( p, HeroRadius, q.m_pos.x, q.m_pos.z, q.m_fear == 2 ? 0.25f : 0.45f );
+        if ( q.m_crate ) pushOutCircle( p, HeroRadius, q.m_cratePos.x, q.m_cratePos.z, 0.32f );
+    }
     for ( const Cargo &q : m_cargo ) pushOutCircle( p, HeroRadius, q.m_pos.x, q.m_pos.z, 0.55f );
     if ( m_doorHalf > 0.0f && m_doorOpen < 0.8f && fabsf( p.x - m_door.x ) < m_doorHalf + 0.5f )
         pushOutRect( p, HeroRadius, m_door.x - m_doorHalf - 0.5f, m_door.x + m_doorHalf + 0.5f, m_door.z - 0.2f,
@@ -2289,7 +2292,11 @@ void Game::updateFoes( float dt )
         f.m_pos = Vector3Add( f.m_pos, Vector3Scale( f.m_vel, dt ) );
         m_level.collide( f.m_pos, welder ? 0.7f : fminf( 0.9f, foeRadius( f ) ),
                          welder ? 0.6f : ( man ? StepUp : 1.1f ) );
-        for ( const Person &q : m_people ) pushOutCircle( f.m_pos, 0.4f, q.m_pos.x, q.m_pos.z, 0.45f );
+        for ( const Person &q : m_people )
+        {
+            pushOutCircle( f.m_pos, 0.4f, q.m_pos.x, q.m_pos.z, 0.45f );
+            if ( q.m_crate ) pushOutCircle( f.m_pos, 0.4f, q.m_cratePos.x, q.m_cratePos.z, 0.32f );
+        }
         for ( const Cargo &q : m_cargo ) pushOutCircle( f.m_pos, 0.4f, q.m_pos.x, q.m_pos.z, 0.55f );
         if ( m_doorHalf > 0.0f && m_doorOpen < 0.8f && fabsf( f.m_pos.x - m_door.x ) < m_doorHalf + 0.5f &&
              fabsf( f.m_pos.z - m_door.z ) < 1.2f )
@@ -3407,6 +3414,7 @@ void Game::update( float dt, const GameInput &inRaw )
     updateShots( dt );
     updateCargo( dt );
     updateIlka( dt );
+    updateRefugees( dt );
     updateSkins( dt );
 
     // The door opens with the level's event (the press dead, the bridge clear).

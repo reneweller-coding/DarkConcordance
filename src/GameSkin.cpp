@@ -231,7 +231,14 @@ void Game::bodyFigures()
 
 void Game::dressPerson( Person &q, unsigned seed )
 {
-    if ( !m_skins || q.m_look == 3 ) return;
+    if ( !m_skins ) return;
+    if ( q.m_look == 3 )
+    {
+        q.m_skin = SkinState();
+        q.m_skin.m_clip = m_clip["Idle_Loop"];
+        dressAs( q, "ilkagirl" );
+        return;
+    }
     // Ysolde and Kiri are women; the others by the seed. Clothes as their look, hair and skin by the seed.
     q.m_body = q.m_look == 4 || q.m_look == 5 ? 1 : (int)( seed % 2 );
     q.m_hair = (int)( ( seed / 2 ) % HairStyles );
@@ -417,14 +424,31 @@ void Game::updateSkins( float dt )
         unsigned         h = (unsigned)i * 2654435761u;
         if ( q.m_force >= 0 )
             clip = q.m_force;
+        else if ( q.m_down > 0.5f )
+        {
+            // Lying (Ilka, emptied): where the fall ends.
+            clip = m_clip["Death01"];
+            if ( q.m_skin.m_clip != clip ) m.play( q.m_skin, clip, 0.0f ), q.m_skin.m_time = m.length( clip );
+        }
+        else if ( q.m_cower > 0.3f || q.m_sit > 0.5f )
+            clip = m_clip["Crouch_Idle_Loop"];   // crouched (the hands go over the head in poseSkin), huddled
+        else if ( speed > 2.2f )
+        {
+            // Running away: the jog at its own pace for the body's legs (a child's are short).
+            clip = m_clip["Jog_Fwd_Loop"];
+            rate = speed / ( 5.0f * m.hipHeight( m_clip["Idle_Loop"] ) * q.m_scale / 0.95f );
+        }
         else if ( speed > 0.25f )
         {
             clip = m_clip["Walk_Loop"];
             rate = speed / WalkSpeed;
         }
         else if ( q.m_chair > 0.5f )
-            clip = ( ( h >> 8 ) + (unsigned)( m_time / 11.0f ) ) % 3 == 0 ? m_clip["Sitting_Talking_Loop"]
-                                                                          : m_clip["Sitting_Idle_Loop"];
+            clip = ( ( h >> 8 ) + (unsigned)( m_time / 11.0f ) ) % 3 == 0 && q.m_fear <= 0
+                       ? m_clip["Sitting_Talking_Loop"]
+                       : m_clip["Sitting_Idle_Loop"];
+        else if ( q.m_fear >= 1 || q.m_look == 3 || ( q.m_fear == -3 && q.m_fearTimer > 0.0f ) )
+            clip = m_clip["Idle_Loop"];   // alarmed, watching a fight, or Ilka by the hero
         else if ( !q.m_walks )
         {
             // Those who stand: talking, arms folded, on the phone, or just standing.
@@ -452,7 +476,40 @@ void Game::updateSkins( float dt )
 void Game::poseSkin( Person &q, std::vector<Drawable> &out )
 {
     const SkinModel &m = personModel( q );
-    m.pose( q.m_skin, q.m_bones );
+    if ( q.m_cower > 0.01f || q.m_startle > 0.01f )
+    {
+        // Crouched in a fight: the head down, the hands over it, a tremble; a shot close by ducks them deeper.
+        static thread_local std::vector<Transform> pose;
+        m.posed( q.m_skin, pose );
+        int   neck = m.bone( "neck_01" ), spine = m.bone( "spine_02" ), head = m.head();
+        float w = fmaxf( q.m_cower, 0.6f * q.m_startle );
+        if ( spine >= 0 )
+            m.turn( pose, spine,
+                    QuaternionFromAxisAngle( { 0.0f, 1.0f, 0.0f },
+                                             0.03f * q.m_cower * sinf( m_time * 23.0f + q.m_pos.x * 7.0f ) ),
+                    pose[spine].translation );
+        if ( neck >= 0 )
+            m.turn( pose, neck, QuaternionFromAxisAngle( { 1.0f, 0.0f, 0.0f }, 0.45f * q.m_cower + 0.3f * q.m_startle ),
+                    pose[neck].translation );
+        Vector3     top = pose[head].translation;
+        Vector3     up = neck >= 0 ? Vector3Normalize( Vector3Subtract( top, pose[neck].translation ) )
+                                   : Vector3{ 0.0f, 1.0f, 0.0f };
+        Vector3     back = Vector3Normalize( Vector3CrossProduct( up, { 1.0f, 0.0f, 0.0f } ) );
+        const char *arm[2][3] = { { "upperarm_l", "lowerarm_l", "hand_l" }, { "upperarm_r", "lowerarm_r", "hand_r" } };
+        for ( int s = 0; s < 2; ++s )
+        {
+            int a = m.bone( arm[s][0] ), b = m.bone( arm[s][1] ), c = m.bone( arm[s][2] );
+            if ( a < 0 || b < 0 || c < 0 ) continue;
+            float   side = s == 0 ? 1.0f : -1.0f;   // the left hand on the left (+x)
+            Vector3 goal =
+                Vector3Add( top, Vector3Add( Vector3Scale( up, 0.13f ), Vector3Add( Vector3Scale( back, 0.05f ),
+                                                                                    { 0.075f * side, 0.0f, 0.0f } ) ) );
+            m.reach( pose, a, b, c, Vector3Lerp( pose[c].translation, goal, w ), { 0.6f * side, 0.0f, 1.0f } );
+        }
+        m.skin( pose, q.m_bones );
+    }
+    else
+        m.pose( q.m_skin, q.m_bones );
     // On a stool the pelvis sits on the seat.
     float y = q.m_pos.y;
     if ( q.m_chair > 0.5f ) y = q.m_seat + 0.1f - m.hipHeight( m_clip["Sitting_Idle_Loop"] ) * q.m_scale;
