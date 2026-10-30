@@ -7,8 +7,10 @@
 
 #include <raymath.h>
 
+#include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <map>
 
 namespace spaceopera
 {
@@ -343,6 +345,57 @@ std::vector<Mesh> MeshBuilder::build()
     }
     m_done.clear();
     return meshes;
+}
+
+std::vector<Mesh> MeshBuilder::build( float tile )
+{
+    reserve( ChunkVertices + 1 );   // closes the open chunk
+    std::map<std::pair<int, int>, std::vector<Chunk>> tiles;
+    for ( const Chunk &c : m_done )
+    {
+        // The chunk's triangles by tile, then each tile's share copied with its own vertex numbers.
+        std::map<std::pair<int, int>, std::vector<size_t>> byTile;
+        for ( size_t t = 0; t + 2 < c.m_idx.size(); t += 3 )
+        {
+            Vector3 a = c.m_pos[c.m_idx[t]], b = c.m_pos[c.m_idx[t + 1]], d = c.m_pos[c.m_idx[t + 2]];
+            int     x = (int)floorf( ( a.x + b.x + d.x ) / ( 3.0f * tile ) );
+            int     z = (int)floorf( ( a.z + b.z + d.z ) / ( 3.0f * tile ) );
+            byTile[{ x, z }].push_back( t );
+        }
+        std::vector<int> remap( c.m_pos.size(), -1 );
+        for ( auto &[key, triangles] : byTile )
+        {
+            std::vector<Chunk> &out = tiles[key];
+            if ( out.empty() ) out.emplace_back();
+            std::fill( remap.begin(), remap.end(), -1 );
+            for ( size_t t : triangles )
+            {
+                if ( out.back().m_pos.size() + 3 > ChunkVertices )
+                {
+                    out.emplace_back();
+                    std::fill( remap.begin(), remap.end(), -1 );
+                }
+                Chunk &o = out.back();
+                for ( size_t k = 0; k < 3; ++k )
+                {
+                    unsigned short i = c.m_idx[t + k];
+                    if ( remap[i] < 0 )
+                    {
+                        remap[i] = (int)o.m_pos.size();
+                        o.m_pos.push_back( c.m_pos[i] );
+                        o.m_nrm.push_back( c.m_nrm[i] );
+                        o.m_uv.push_back( c.m_uv[i] );
+                        o.m_col.push_back( c.m_col[i] );
+                    }
+                    o.m_idx.push_back( (unsigned short)remap[i] );
+                }
+            }
+        }
+    }
+    m_done.clear();
+    for ( auto &[key, chunks] : tiles )
+        for ( Chunk &c : chunks ) m_done.push_back( std::move( c ) );
+    return build();
 }
 
 }   // namespace spaceopera

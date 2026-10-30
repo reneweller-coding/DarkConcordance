@@ -796,9 +796,9 @@ bool Game::updateHub( float dt, GameInput &in )
         return true;
     }
     if ( m_talk ) return talkStep( step, ok, back );
-    // Not talking: A or E near someone starts a conversation (instead of a jump).
+    // Not talking: use (E, X on the pad) near someone starts a conversation.
     int near = nearNpc();
-    if ( near >= 0 && ( in.m_jump || in.m_use ) )
+    if ( near >= 0 && in.m_use )
     {
         openTalk( near );
         return true;
@@ -883,7 +883,7 @@ void Game::poseHub( std::vector<Drawable> &out )
 {
     for ( NpcState &n : m_npcs )
     {
-        if ( n.m_hidden ) continue;
+        if ( n.m_hidden || !posed( n.m_pos ) ) continue;
         if ( n.m_figure.m_body >= 0 )
         {
             n.m_figure.m_pos = n.m_pos;

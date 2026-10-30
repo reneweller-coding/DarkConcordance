@@ -503,15 +503,17 @@ void Game::panelAction( int tab, int row, int action )
 
 void Game::drawPanel( int w, int h, int tab, int sel )
 {
-    float       s = h / 1080.0f;
+    float       s = textScale( h );
     const Font &font = m_font;
     DrawRectangle( 0, 0, w, h, { 3, 5, 8, 248 } );
     // The tabs, the help line.
     const char *tabs[PanelTabs] = { "panel.inventory", "panel.skills", "panel.character",
                                     "panel.map",       "panel.codex",  "panel.awards" };
+    // As wide as the screen allows (a Steam Deck's larger texts on its narrower screen).
+    float step = fminf( 290.0f * s, w * 0.96f / PanelTabs );
     for ( int i = 0; i < PanelTabs; ++i )
     {
-        float x = w * 0.5f + ( i - ( PanelTabs - 1 ) * 0.5f ) * 290.0f * s;
+        float x = w * 0.5f + ( i - ( PanelTabs - 1 ) * 0.5f ) * step;
         bool  on = i == tab;
         label( font, tr( tabs[i] ), x, 48.0f * s, 30.0f * s,
                on ? Color{ 255, 200, 130, 255 } : Color{ 150, 150, 150, 220 }, 1 );

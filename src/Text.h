@@ -60,4 +60,17 @@ std::string systemLanguage( const std::string &assets );
 /** @return every character the loaded texts use (for the font), Latin-1, dashes, quotes and arrows included */
 std::vector<int> textCodepoints();
 
+/**
+ * @brief How large the interface is drawn: the picture's height against 1080 lines, times the chosen text size.
+ * @param[in] height  the picture's height in pixels
+ * @return the factor for sizes given at 1080 lines
+ */
+float textScale( int height );
+
+/**
+ * @brief Sets the chosen text size (the options' "Schriftgröße"; a Steam Deck's small screen starts larger).
+ * @param[in] size  1 as the game came
+ */
+void setTextSize( float size );
+
 }   // namespace spaceopera

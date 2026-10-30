@@ -28,7 +28,8 @@ Spielstände, Einstellungen und das Spielprotokoll liegen unter %APPDATA%\DarkCo
 neuen Lauf mitnehmen (auch auf einer anderen Schwierigkeit).
 
 Systemanforderungen: Windows 10/11 oder Linux (glibc 2.35 oder neuer, z. B. Ubuntu 22.04, SteamOS), OpenGL 3.3,
-eine Grafikkarte der letzten zehn Jahre; auf dem Steam Deck startet die Grafik auf "Niedrig".
+eine Grafikkarte der letzten zehn Jahre; auf dem Steam Deck startet die Grafik auf "Niedrig" mit höchstens 40
+Bildern pro Sekunde (im Schnellmenü des Decks den Bildschirm auf 40 Hz stellen; "Sparsam (Akku)" schont ihn mehr).
 
 Stürzt das Spiel ab, liegt ein Bericht unter crashes/ im Spielstand-Ordner; der Titel weist beim nächsten Start
 darauf hin.
@@ -60,7 +61,8 @@ Saves, settings and the play log are in %APPDATA%\DarkConcordance (Windows) or ~
 too).
 
 Requirements: Windows 10/11 or Linux (glibc 2.35 or newer, e.g. Ubuntu 22.04, SteamOS), OpenGL 3.3, a graphics card
-of the last ten years; on the Steam Deck the graphics start at "Low".
+of the last ten years; on the Steam Deck the graphics start at "Low" with at most 40 frames a second (set the
+screen to 40 Hz in the Deck's quick menu; "Frugal (battery)" spares the battery more).
 
 If the game crashes, a report is written to crashes/ in the save folder, and the title says so on the next start.
 

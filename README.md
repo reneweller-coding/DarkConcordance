@@ -20,10 +20,13 @@ played last (the first is `save.txt`, the others `save2.txt` … `save4.txt`).
 
 **Steam Deck:** everything plays with the pad (the menus, the inventory, the conversations, the shops and the lift
 with the cross or the left stick, A to choose, B back). On the Deck (Steam sets `SteamDeck=1`) the window takes its
-1280x800 screen and the graphics start at „Niedrig“; „Grafik“ in the menus switches at once between three steps:
+1280x800 screen, the graphics start at „Niedrig“ and the frames at 40 a second (with the screen at 40 Hz in the
+Deck's quick menu they come evenly; „Bilder pro Sekunde höchstens“ under „Anzeige“: unlimited, 30, 40, 60, 90, 120,
+144, and the limit holds with the wait for the screen too); „Grafik“ in the menus switches at once between four steps:
 
 | Grafik | Scene drawn at | Fog steps | Shadow samples | Shadow maps (sun, lamp) |
 |---|---|---|---|---|
+| Sparsam (Akku) | 2/3 of the picture | 5 | 2 | 1024, 512 |
 | Niedrig (Steam Deck) | 3/4 of the picture | 8 | 4 | 2048, 1024 |
 | Mittel | the picture's size | 20 | 8 | 4096, 2048 |
 | Hoch (the PC's) | 1.5 times (supersampled) | 40 | 12 | 4096, 2048 |
@@ -34,6 +37,16 @@ RTX 5090; now 5-6 ms at 1600x900 high and 1.5-3 ms at 1280x800 low, with picture
 on the 5090 at 3840x2400, „Niedrig“ costs less than half as much per pixel as „Hoch“ and draws a quarter of its
 pixels; reckoned onto the Deck's GPU (fifty to sixty-five times slower) that is 20-30 ms a frame, 30-50 frames a
 second. Not tried on a Deck yet.
+
+On the Deck the game ate its battery (the user, 30.10.2026), so: the level's walls and floors are built in tiles of
+eight cells (`MeshBuilder::build( tile )`; before, chunks of 65,000 vertices in the order they were made ran across
+the level and were drawn whole wherever a corner of one was seen). At 1280x800 low that cut what goes through the GPU
+in a frame from 0.5-5.0 million vertices (Mühle: 1.9 million for the sun's shadow, 1.4 for the lamp's, 1.7 for the
+picture) to 0.3-0.9 million, 82-92 % less, pictures the same to the pixel; the tiles keep their bounding spheres in
+the drawable, so the thousands of them cost the processor little. In the menus, the inventory and the title the game
+waits, so its picture is drawn once and shown still (again when a setting changes it, four times a second behind the
+inventory) at 30 frames a second at most. Figures that cannot show (outside the camera's view by more than a shadow's
+length) are not posed: their bones cost the processor every frame, most in the hubs.
 
 Where Windows' fonts are missing (Proton on the Deck, Linux) the game writes in Barlow, which comes with it
 (`assets/fonts`, SIL Open Font License); on Windows it keeps Bahnschrift.
@@ -49,8 +62,17 @@ the subtitles' size (small, normal, large), colour vision (red-green or blue-yel
 moved into colours it can, in the last pass), the camera's shake (off, half, full), the pad's vibration (off, weak,
 strong), the loot filter (keep everything; salvage common finds at once; common and magic ones – never what fills an
 empty slot, never a module), the controls and the display: a window (1280x720 up to 3840x2160, only sizes the screen
-holds) or borderless over the whole screen, vertical sync on or off and then at most 30, 60, 120, 144 frames a second
-or no limit, the HUD's size (80 to 140 %) and the minimap. Long menus write smaller.
+holds) or borderless over the whole screen, vertical sync on or off, at most 30, 40, 60, 90, 120, 144 frames a second
+or no limit (40 on a Steam Deck), the text size of the whole interface (100 to 145 %, 130 % on a Steam Deck: its seven
+inches at 800 lines made the texts small; `textScale()` in Text.h), the HUD's size (80 to 140 %) and the minimap. Long
+menus write smaller. Use and talk have their own button on the pad (X); before, A jumped and used whatever was near,
+so one used a terminal where one meant to jump (settings from before get X for it where X is free).
+
+**Loading:** a level shows a loading screen with the place's name and a bar while it loads (the picture stood still
+before, as if the game had crashed). The log says what took how long (`LOAD: <level> in … ms: map … surfaces …
+build … skins … people …`). The animation libraries are read once per run (`animations()` in Skin.cpp): every
+figure of every level read them again before, 7-15 s a level on the PC, now 3.6-4.3 s for the first and less for
+the ones after.
 
 **Vibration** (`src/Rumble.cpp`; raylib's desktop build has none): XInput on Windows (Xbox pads, the Steam Deck through
 Steam Input and Proton), evdev force feedback on Linux. The heavy motor goes with the camera's jolts (blasts, stomps),

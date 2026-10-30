@@ -602,7 +602,7 @@ void Game::poseCrew( std::vector<Drawable> &out )
     }
     for ( const Foe &f : m_foes )
     {
-        if ( f.m_hidden || !human( f ) || !f.m_alive ) continue;
+        if ( f.m_hidden || !human( f ) || !f.m_alive || !posed( f.m_pos ) ) continue;
         FigurePose p;
         p.m_pos = f.m_pos;
         p.m_yaw = f.m_yaw;

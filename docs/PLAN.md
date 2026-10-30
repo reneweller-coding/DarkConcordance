@@ -410,6 +410,14 @@ Still to come, by first use:
    own fully (the campaign test keeps the best of each kind), counts a waypoint on a crate from beside it, goes round a
    wandering component's track, closes in when a weak point is out of reach. Campaign test afterwards on Leicht,
    Normal and Schwer: 225 of 225 places, no stall (deaths 1/0/0, 2/9/7, 24/43/17 for Corvin, Dorra, Ione).
+16. The Steam Deck's battery — done (30.10.2026, the user: the game eats the Deck's power). The level's meshes in tiles
+   of eight cells, so the frustum leaves out what lies elsewhere (82-92 % fewer vertices a frame at the Deck's
+   settings, pictures unchanged); a frame limit that holds with the wait for the screen, 40 by default on the Deck;
+   the menus show a still of the game at 30 frames at most; figures out of view are not posed; a fourth graphics step
+   „Sparsam (Akku)“. Measured on the PC; the Deck's own watts are the user's to read. Also (the user: the texts are
+   small on the Deck, a level loads long and still, use and jump on one button is awkward): a text size for the whole
+   interface (130 % on the Deck), a loading screen with the place's name and a bar, the animation libraries read once
+   per run (a level 7-15 s on the PC before, 3.6-4.3 s now), use and talk on X (A only jumps).
 
 ## Open decisions (the user's)
 

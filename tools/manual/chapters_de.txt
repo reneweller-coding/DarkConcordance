@@ -14,7 +14,7 @@ Dieses Handbuch erklärt die Steuerung, den Bildschirm, die Helden, die Ausrüst
 
 - **Windows**: `DarkConcordance-<Version>-windows-x64.zip` irgendwohin entpacken und `DarkConcordance.exe` starten. Beim ersten Start warnt Windows („Der Computer wurde durch Windows geschützt“), weil das Spiel nicht signiert ist: „Weitere Informationen“, dann „Trotzdem ausführen“.
 - **Linux**: `DarkConcordance-<Version>-linux-x86_64.tar.gz` entpacken und `./DarkConcordance` starten. Alles Nötige liegt bei, auch die Bibliothek für die Filme.
-- **Steam Deck**: die Linux-Fassung auf das Deck kopieren und in Steam als Nicht-Steam-Spiel hinzufügen. Auf dem Deck nimmt das Fenster den ganzen Bildschirm ein und die Grafik beginnt auf „Niedrig“.
+- **Steam Deck**: die Linux-Fassung auf das Deck kopieren und in Steam als Nicht-Steam-Spiel hinzufügen. Auf dem Deck nimmt das Fenster den ganzen Bildschirm ein, die Grafik beginnt auf „Niedrig“ und das Spiel zeigt höchstens 40 Bilder pro Sekunde. Stell im Schnellmenü des Decks den Bildschirm auf 40 Hz, dann laufen sie gleichmäßig; „Sparsam (Akku)“ schont den Akku noch mehr.
 
 Der Ordner `assets` muss neben dem Programm bleiben. Das Spiel braucht OpenGL 3.3 und eine Grafikkarte der letzten zehn Jahre; unter Linux glibc 2.35 oder neuer (Ubuntu 22.04, SteamOS).
 
@@ -181,7 +181,7 @@ Der Aufzug führt auch hinab in die Tiefen: Orte, die bei jedem Besuch neu entst
 | Option | Was sie tut |
 |---|---|
 | Schwierigkeit | Leicht, Normal, Schwer, Albtraum (siehe „Kampf“) |
-| Helligkeit, Grafik | Grafik in drei Stufen: Niedrig (Steam Deck), Mittel, Hoch |
+| Helligkeit, Grafik | Grafik in vier Stufen: Sparsam (Akku), Niedrig (Steam Deck), Mittel, Hoch |
 | Musik, Stimmen, Effekte | Die Lautstärken |
 | Sprache | Deutsch oder Englisch: Menüs, Untertitel, Schilder und Stimmen |
 | Untertitel | Klein, normal, groß |
@@ -190,7 +190,7 @@ Der Aufzug führt auch hinab in die Tiefen: Orte, die bei jedem Besuch neu entst
 | Vibration | Aus, schwach, stark |
 | Beutefilter | Alles behalten, gewöhnliche Funde zerlegen, gewöhnliche und magische zerlegen |
 | Tastenbelegung | Jede Aktion umbelegen (siehe „Steuerung“) |
-| Anzeige | Fenster oder randlos, Fenstergröße, vertikale Synchronisation, Bildratenbegrenzung, Größe der Anzeigen (80 bis 140 %), Minikarte |
+| Anzeige | Fenster oder randlos, Fenstergröße, vertikale Synchronisation, Bildratenbegrenzung, Schriftgröße (100 bis 145 %, auf dem Steam Deck 130 %), Größe der Anzeigen (80 bis 140 %), Minikarte |
 
 # Fotomodus
 

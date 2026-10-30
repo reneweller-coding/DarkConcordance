@@ -14,7 +14,7 @@ This manual explains the controls, the screen, the heroes, the gear and the stat
 
 - **Windows**: unpack `DarkConcordance-<version>-windows-x64.zip` anywhere and start `DarkConcordance.exe`. On the first start Windows warns ("Windows protected your PC") because the game is not signed: "More info", then "Run anyway".
 - **Linux**: unpack `DarkConcordance-<version>-linux-x86_64.tar.gz` and start `./DarkConcordance`. Everything it needs comes along, the library for the films too.
-- **Steam Deck**: copy the Linux version onto the Deck and add it to Steam as a non-Steam game. On the Deck the window takes the whole screen and the graphics start at "Low".
+- **Steam Deck**: copy the Linux version onto the Deck and add it to Steam as a non-Steam game. On the Deck the window takes the whole screen, the graphics start at "Low" and the game shows at most 40 frames a second. Set the screen to 40 Hz in the Deck's quick menu and they come evenly; "Frugal (battery)" spares the battery more.
 
 The `assets` folder must stay beside the program. The game needs OpenGL 3.3 and a graphics card of the last ten years; on Linux glibc 2.35 or newer (Ubuntu 22.04, SteamOS).
 
@@ -181,7 +181,7 @@ The lift also goes down into the Depths: places made anew on every visit, with a
 | Option | What it does |
 |---|---|
 | Difficulty | Easy, Normal, Hard, Nightmare (see "Combat") |
-| Brightness, graphics | Graphics in three steps: Low (Steam Deck), Medium, High |
+| Brightness, graphics | Graphics in four steps: Frugal (battery), Low (Steam Deck), Medium, High |
 | Music, voices, effects | The volumes |
 | Language | German or English: menus, subtitles, signs and voices |
 | Subtitles | Small, normal, large |
@@ -190,7 +190,7 @@ The lift also goes down into the Depths: places made anew on every visit, with a
 | Vibration | Off, weak, strong |
 | Loot filter | Keep everything, salvage common finds, salvage common and magic ones |
 | Controls | Rebind every action (see "Controls") |
-| Display | Window or borderless, window size, vertical sync, frame rate cap, size of the HUD (80 to 140 %), minimap |
+| Display | Window or borderless, window size, vertical sync, frame rate cap, text size (100 to 145 %, 130 % on the Steam Deck), size of the HUD (80 to 140 %), minimap |
 
 # Photo mode
 

@@ -20,13 +20,13 @@ enum class BindE : int
     LEFT,        ///< walk left
     RIGHT,       ///< walk right
     FIRE,        ///< fire / strike (held)
-    JUMP,        ///< jump (and talk, use where there is something)
+    JUMP,        ///< jump
     DODGE,       ///< a dodge roll
     SPECIAL,     ///< the special (Dorra's blast bolt, Corvin's grenade ...)
     SKILL2,      ///< the second skill
     SKILL3,      ///< the third skill
     STIM,        ///< a stim
-    USE,         ///< use, talk
+    USE,         ///< use, talk (X on the pad: on A with the jump, one jumped where one meant to use)
     STRAFE,      ///< keep facing (Dorra: the shield up)
     MAP,         ///< the map over the game
     INVENTORY,   ///< the inventory
@@ -65,6 +65,9 @@ void bind( BindE b, bool pad, int code );
 
 /** @brief Back to the keys and buttons the game comes with. */
 void resetBindings();
+
+/** @brief After old settings: an action without a pad button takes the one it comes with now, if that is free. */
+void completeBindings();
 
 /** @brief Once a frame, before the input is read: the triggers' states (they may be axes). */
 void updateBindings();

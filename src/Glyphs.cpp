@@ -149,7 +149,6 @@ std::vector<Part> partsOf( ActionE a, DeviceE d )
         const Binding &k = binding( (BindE)bound );
         if ( d == DeviceE::KEYBOARD ) return { keyPart( k.m_key ) };
         int button = k.m_pad;
-        if ( a == ActionE::USE && button == 0 ) button = binding( BindE::JUMP ).m_pad;
         return { padPart( button ) };
     }
     if ( a == ActionE::MOVE && d == DeviceE::KEYBOARD )

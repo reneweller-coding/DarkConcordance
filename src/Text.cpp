@@ -159,4 +159,19 @@ std::vector<int> textCodepoints()
     return std::vector<int>( cps.begin(), cps.end() );
 }
 
+namespace
+{
+float s_textSize = 1.0f;   ///< the chosen text size
+}
+
+float textScale( int height )
+{
+    return height / 1080.0f * s_textSize;
+}
+
+void setTextSize( float size )
+{
+    s_textSize = size;
+}
+
 }   // namespace spaceopera

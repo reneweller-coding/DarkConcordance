@@ -75,6 +75,10 @@ struct Drawable
     int           m_boneCount = 0;                ///< how many
     Vector4       m_tint = { 1, 1, 1, 0 };   ///< clothed surfaces: the clothes' colour, the height the skin shows above
     Vector4 m_cloth = { -1, 0, 0, 0 };   ///< clothed: the trousers' colour (x < 0: as m_tint); w the cut (Shaders.h)
+    // The mesh's sphere, kept by Gfx in what stays put (the level's tiles), so the frustum needs no look-up there.
+    mutable Vector4      m_sphere = { 0, 0, 0, -1 };   ///< middle and radius in the mesh's space
+    mutable const float *m_sphereOf = nullptr;         ///< the vertices it was measured for
+    mutable int          m_sphereCount = -1;           ///< and their count (-1: not measured)
 };
 
 /** @brief The renderer. */
@@ -201,9 +205,17 @@ public:
     float   m_cutRadius = 2.2f;                       ///< radius of that hole at the hero's distance (m)
     int     m_width = 0;                              ///< picture width
     int     m_height = 0;                             ///< picture height
-    int     m_quality = 2;                            ///< 0 low, 1 middle, 2 high
+    int     m_quality = 2;                            ///< 0 low, 1 middle, 2 high, 3 frugal
     float   m_scale = 1.5f;                           ///< the scene's size against the picture's
     float   m_scaleAsked = -1.0f;                     ///< the scale asked for (negative: the quality's)
+
+    /** @brief The six planes of a frustum (a point is inside where all of them are >= 0). */
+    struct Frustum
+    {
+        Vector4 m_planes[6];
+    };
+    /** @brief The frustum of a view-projection matrix (raylib's order: the view, then the projection). */
+    static Frustum frustum( const Matrix &vp );
 
 private:
     /** @brief Uniform locations every lit shader shares. */
@@ -238,13 +250,6 @@ private:
     /** @brief Finds them. */
     DrawLocs drawLocs( Shader s );
 
-    /** @brief The six planes of a frustum (a point is inside where all of them are >= 0). */
-    struct Frustum
-    {
-        Vector4 m_planes[6];
-    };
-    /** @brief The frustum of a view-projection matrix (raylib's order: the view, then the projection). */
-    static Frustum frustum( const Matrix &vp );
     /** @brief Whether a drawable can show in a frustum (its mesh's sphere, moved by its transform). */
     bool inside( const Frustum &f, const Drawable &d );
 

@@ -36,7 +36,7 @@ const Binding Defaults[(int)BindE::COUNT] = { { KEY_W, 0 },
                                               { KEY_R, GAMEPAD_BUTTON_LEFT_TRIGGER_1 },
                                               { KEY_G, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 },
                                               { KEY_Q, GAMEPAD_BUTTON_RIGHT_FACE_UP },
-                                              { KEY_E, 0 },
+                                              { KEY_E, GAMEPAD_BUTTON_RIGHT_FACE_LEFT },
                                               { KEY_LEFT_SHIFT, GAMEPAD_BUTTON_LEFT_TRIGGER_2 },
                                               { KEY_M, GAMEPAD_BUTTON_LEFT_FACE_UP },
                                               { KEY_I, GAMEPAD_BUTTON_MIDDLE_LEFT },
@@ -104,6 +104,20 @@ void bind( BindE b, bool pad, int code )
         if ( j != i && placeOf( j ) == placeOf( i ) && theirs == code ) theirs = mine;
     }
     mine = code;
+}
+
+void completeBindings()
+{
+    Binding *t = table();
+    for ( int i = 0; i < (int)BindE::COUNT; ++i )
+    {
+        int want = Defaults[i].m_pad;
+        if ( t[i].m_pad != 0 || want == 0 ) continue;
+        bool taken = false;
+        for ( int j = 0; j < (int)BindE::COUNT; ++j )
+            taken = taken || ( j != i && placeOf( j ) == placeOf( i ) && t[j].m_pad == want );
+        if ( !taken ) t[i].m_pad = want;
+    }
 }
 
 void resetBindings()

@@ -670,6 +670,7 @@ void Game::poseShip( std::vector<Drawable> &out )
             d.m_surface = S_CRATE;
             out.push_back( d );
         }
+        if ( !posed( q.m_pos ) ) continue;
         if ( q.m_body >= 0 && q.m_pos.y > -50.0f )
         {
             poseSkin( q, out );

@@ -242,10 +242,12 @@ void Gfx::setQuality( int quality, float ss )
         float m_ss;
         int   m_fogSteps, m_shadowTaps, m_sunSize, m_spotSize;
     };
-    static const Level Levels[3] = { { 0.75f, 8, 4, 2048, 1024 },
+    // Low, middle, high, and frugal for a Steam Deck on its battery (below low in the menu).
+    static const Level Levels[4] = { { 0.75f, 8, 4, 2048, 1024 },
                                      { 1.0f, 20, 8, 4096, 2048 },
-                                     { 1.5f, 40, 12, 4096, 2048 } };
-    m_quality = std::clamp( quality, 0, 2 );
+                                     { 1.5f, 40, 12, 4096, 2048 },
+                                     { 0.67f, 5, 2, 1024, 512 } };
+    m_quality = std::clamp( quality, 0, 3 );
     m_scaleAsked = ss;
     const Level &q = Levels[m_quality];
     m_scale = ss > 0.0f ? ss : q.m_ss;
@@ -323,27 +325,42 @@ Gfx::Frustum Gfx::frustum( const Matrix &vp )
 
 bool Gfx::inside( const Frustum &f, const Drawable &d )
 {
-    const Mesh   &m = d.m_mesh;
-    std::uint64_t key = (std::uint64_t)(std::uintptr_t)m.vertices * 31u + m.vaoId;
-    Sphere       &s = m_spheres[key];
-    if ( s.m_count != m.vertexCount || s.m_sphere.w == 0.0f )
+    const Mesh &m = d.m_mesh;
+    if ( d.m_sphereCount != m.vertexCount || d.m_sphereOf != m.vertices )
     {
-        // Measured once per mesh: the middle and half the diagonal of its box.
-        s = { { 0.0f, 0.0f, 0.0f, -1.0f }, m.vertexCount };
-        if ( m.vertices && m.vertexCount > 0 )
+        std::uint64_t key = (std::uint64_t)(std::uintptr_t)m.vertices * 31u + m.vaoId;
+        Sphere       &s = m_spheres[key];
+        if ( s.m_count != m.vertexCount || s.m_sphere.w == 0.0f )
         {
-            BoundingBox b = GetMeshBoundingBox( m );
-            Vector3     mid = Vector3Scale( Vector3Add( b.min, b.max ), 0.5f );
-            s.m_sphere = { mid.x, mid.y, mid.z, std::max( Vector3Distance( b.min, b.max ) * 0.5f, 0.01f ) };
+            // Measured once per mesh: the middle and half the diagonal of its box.
+            s = { { 0.0f, 0.0f, 0.0f, -1.0f }, m.vertexCount };
+            if ( m.vertices && m.vertexCount > 0 )
+            {
+                BoundingBox b = GetMeshBoundingBox( m );
+                Vector3     mid = Vector3Scale( Vector3Add( b.min, b.max ), 0.5f );
+                s.m_sphere = { mid.x, mid.y, mid.z, std::max( Vector3Distance( b.min, b.max ) * 0.5f, 0.01f ) };
+            }
         }
+        d.m_sphere = s.m_sphere;
+        d.m_sphereOf = m.vertices;
+        d.m_sphereCount = m.vertexCount;
     }
-    if ( s.m_sphere.w < 0.0f ) return true;
+    if ( d.m_sphere.w < 0.0f ) return true;
     const Matrix &t = d.m_transform;
-    Vector3       c = Vector3Transform( { s.m_sphere.x, s.m_sphere.y, s.m_sphere.z }, t );
-    float scale = sqrtf( std::max( { t.m0 * t.m0 + t.m1 * t.m1 + t.m2 * t.m2, t.m4 * t.m4 + t.m5 * t.m5 + t.m6 * t.m6,
-                                     t.m8 * t.m8 + t.m9 * t.m9 + t.m10 * t.m10 } ) );
-    // A skinned figure's limbs reach past its rest pose.
-    float r = s.m_sphere.w * scale * ( d.m_bones ? 1.6f : 1.0f );
+    Vector3       c = { d.m_sphere.x, d.m_sphere.y, d.m_sphere.z };
+    float         r = d.m_sphere.w;
+    // The level's tiles stand where they were built (thousands of them, three times a frame): no transform there.
+    bool still = t.m0 == 1.0f && t.m5 == 1.0f && t.m10 == 1.0f && t.m12 == 0.0f && t.m13 == 0.0f && t.m14 == 0.0f &&
+                 t.m1 == 0.0f && t.m2 == 0.0f && t.m4 == 0.0f && t.m6 == 0.0f && t.m8 == 0.0f && t.m9 == 0.0f;
+    if ( !still )
+    {
+        c = Vector3Transform( c, t );
+        float scale =
+            sqrtf( std::max( { t.m0 * t.m0 + t.m1 * t.m1 + t.m2 * t.m2, t.m4 * t.m4 + t.m5 * t.m5 + t.m6 * t.m6,
+                               t.m8 * t.m8 + t.m9 * t.m9 + t.m10 * t.m10 } ) );
+        // A skinned figure's limbs reach past its rest pose.
+        r *= scale * ( d.m_bones ? 1.6f : 1.0f );
+    }
     for ( const Vector4 &p : f.m_planes )
         if ( p.x * c.x + p.y * c.y + p.z * c.z + p.w < -r ) return false;
     return true;

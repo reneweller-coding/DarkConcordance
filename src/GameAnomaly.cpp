@@ -96,7 +96,7 @@ void Game::updateAnomalies( float dt )
 void Game::drawAnomalies( int w, int h, float y, unsigned char alpha )
 {
     if ( m_level.m_anomalies.empty() ) return;
-    float s = h / 1080.0f;
+    float s = textScale( h );
     auto  line = [&]( const std::string &t, float at, float size, Color c )
     {
         Vector2 m = MeasureTextEx( m_font, t.c_str(), size * s, 1.0f );

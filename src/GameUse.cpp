@@ -113,9 +113,8 @@ bool Game::updateUse( float dt, GameInput &in )
         float d = Vector2Distance( { m_pos.x, m_pos.z }, { u.m_pos.x, u.m_pos.z } );
         if ( d < ( u.m_kind == 0 ? DoorReach : UseReach ) && d < best ) best = d, m_near = (int)i;
     }
-    if ( m_near < 0 || !( in.m_use || in.m_jump ) || !m_ground ) return false;
+    if ( m_near < 0 || !in.m_use || !m_ground ) return false;
     in.m_use = false;
-    in.m_jump = false;
     Usable &u = m_usables[m_near];
     if ( u.m_kind == 0 )
     {

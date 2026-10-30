@@ -53,11 +53,11 @@ namespace
 /** @brief The command line. */
 struct Options
 {
-    int                      m_width = 0;                     ///< picture width (0: 1600, on a Steam Deck 1280)
-    int                      m_height = 0;                    ///< picture height (0: 900, on a Steam Deck 800)
-    float                    m_ss = -1.0f;                    ///< supersampling (negative: the quality's)
-    int                      m_quality = -1;                  ///< 0 low, 1 middle, 2 high (negative: the setting's)
-    std::string              m_shot;                          ///< render this picture and exit
+    int                      m_width = 0;      ///< picture width (0: 1600, on a Steam Deck 1280)
+    int                      m_height = 0;     ///< picture height (0: 900, on a Steam Deck 800)
+    float                    m_ss = -1.0f;     ///< supersampling (negative: the quality's)
+    int                      m_quality = -1;   ///< 0 low, 1 middle, 2 high, 3 frugal (negative: the setting's)
+    std::string              m_shot;           ///< render this picture and exit
     std::string              m_level = "gute_hoffnung.txt";   ///< the level (the prologue starts the game)
     bool                     m_hasAt = false;                 ///< --at was given
     float                    m_x = 0.0f;                      ///< where to put the hero (east)
@@ -157,7 +157,7 @@ Options parse( int argc, char **argv )
         else if ( a == "--quality" )
         {
             std::string q = next();
-            o.m_quality = q == "low" ? 0 : ( q == "middle" ? 1 : ( q == "high" ? 2 : atoi( q.c_str() ) ) );
+            o.m_quality = q == "low" ? 0 : q == "middle" ? 1 : q == "high" ? 2 : q == "frugal" ? 3 : atoi( q.c_str() );
         }
         else if ( a == "--at" )
             o.m_hasAt = sscanf( next().c_str(), "%f,%f", &o.m_x, &o.m_z ) == 2;
@@ -446,33 +446,55 @@ struct Settings
     float       m_music = 0.7f;                       ///< music volume 0..1
     float       m_voices = 0.9f;                      ///< voices' volume 0..1
     float       m_effects = 0.8f;                     ///< effects' and backgrounds' volume 0..1
-    int         m_quality = -1;                       ///< the graphics: 0 low, 1 middle, 2 high (-1: not chosen yet)
-    int         m_subtitles = 1;                      ///< 0 small, 1 normal, 2 large
-    int         m_colours = 0;                        ///< colour vision: 0 as it is, 1 red-green, 2 blue-yellow
-    int         m_shake = 2;                          ///< the camera's shake: 0 off, 1 half, 2 full
-    int         m_loot = 0;                           ///< the loot filter: 0 keep all, 1 salvage common, 2 and magic
-    int         m_slot = 1;                           ///< the save played last
-    int         m_display = 0;                        ///< 0 a window, 1 borderless over the whole screen
-    int         m_size = 1;                           ///< the window's size (WindowSizes)
-    int         m_vsync = 1;                          ///< the picture waits for the screen
-    int         m_fps = 1;                            ///< without that: at most so many frames (FpsSteps)
-    int         m_hud = 1;                            ///< the HUD's size (HudSteps)
-    int         m_rumble = 2;                         ///< the pad's motors: 0 still, 1 weak, 2 strong
-    int         m_minimap = 1;                        ///< the map round the hero in the HUD
-    bool        m_nightmare = false;                  ///< Albtraum may be chosen (the game is through once)
-    std::string m_language;                           ///< the texts' language
+    int         m_quality = -1;        ///< the graphics: 0 low, 1 middle, 2 high, 3 frugal (-1: not chosen yet)
+    int         m_subtitles = 1;       ///< 0 small, 1 normal, 2 large
+    int         m_colours = 0;         ///< colour vision: 0 as it is, 1 red-green, 2 blue-yellow
+    int         m_shake = 2;           ///< the camera's shake: 0 off, 1 half, 2 full
+    int         m_loot = 0;            ///< the loot filter: 0 keep all, 1 salvage common, 2 and magic
+    int         m_slot = 1;            ///< the save played last
+    int         m_display = 0;         ///< 0 a window, 1 borderless over the whole screen
+    int         m_size = 1;            ///< the window's size (WindowSizes)
+    int         m_vsync = 1;           ///< the picture waits for the screen
+    int         m_fps = -1;            ///< at most so many frames a second (0: no limit, -1: not chosen)
+    int         m_hud = 1;             ///< the HUD's size (HudSteps)
+    int         m_text = -1;           ///< the text size (TextSteps; -1: not chosen, larger on a Steam Deck)
+    int         m_rumble = 2;          ///< the pad's motors: 0 still, 1 weak, 2 strong
+    int         m_minimap = 1;         ///< the map round the hero in the HUD
+    bool        m_nightmare = false;   ///< Albtraum may be chosen (the game is through once)
+    std::string m_language;            ///< the texts' language
 };
 
 /** @brief The window's sizes to choose from (larger ones than the screen are passed over). */
 const int   WindowSizes[5][2] = { { 1280, 720 }, { 1600, 900 }, { 1920, 1080 }, { 2560, 1440 }, { 3840, 2160 } };
-const int   FpsSteps[5] = { 30, 60, 120, 144, 0 };   ///< 0: as fast as it goes
+const int   FpsSteps[7] = { 0, 30, 40, 60, 90, 120, 144 };   ///< the frame limits (0: as many as the screen takes)
 const float HudSteps[4] = { 0.8f, 1.0f, 1.2f, 1.4f };
+const float TextSteps[4] = { 1.0f, 1.15f, 1.3f, 1.45f };   ///< the whole interface's text sizes
 
 /** @brief Whether the game runs on a Steam Deck (Steam sets SteamDeck=1 there). */
 bool steamDeck()
 {
     const char *deck = getenv( "SteamDeck" );
     return deck && atoi( deck ) == 1;
+}
+
+/**
+ * @brief The frame limit: the chosen one, else 40 on a Steam Deck (its battery; with the screen at 40 Hz in the quick
+ *        menu the frames come even) and none elsewhere.
+ * @return frames a second, 0 for no limit
+ */
+int fpsOf( const Settings &s )
+{
+    return s.m_fps >= 0 ? s.m_fps : ( steamDeck() ? 40 : 0 );
+}
+
+/**
+ * @brief The text size: the chosen one, else 130 % on a Steam Deck (its seven inches at 800 lines made the texts
+ *        small) and as it came elsewhere.
+ * @return an index into TextSteps
+ */
+int textOf( const Settings &s )
+{
+    return s.m_text >= 0 ? s.m_text : ( steamDeck() ? 2 : 0 );
 }
 
 /** @brief The graphics' quality to start with: the chosen one, else low on a Steam Deck and high elsewhere. */
@@ -514,7 +536,7 @@ Settings loadSettings()
         else if ( !strcmp( key, "effects" ) )
             s.m_effects = Clamp( (float)atof( value ), 0.0f, 1.0f );
         else if ( !strcmp( key, "graphics" ) )
-            s.m_quality = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
+            s.m_quality = (int)Clamp( (float)atoi( value ), 0.0f, 3.0f );
         else if ( !strcmp( key, "subtitles" ) )
             s.m_subtitles = (int)Clamp( (float)atoi( value ), 0.0f, 2.0f );
         else if ( !strcmp( key, "colours" ) )
@@ -529,8 +551,10 @@ Settings loadSettings()
             s.m_size = (int)Clamp( (float)atoi( value ), 0.0f, 4.0f );
         else if ( !strcmp( key, "vsync" ) )
             s.m_vsync = atoi( value ) ? 1 : 0;
-        else if ( !strcmp( key, "fps" ) )
-            s.m_fps = (int)Clamp( (float)atoi( value ), 0.0f, 4.0f );
+        else if ( !strcmp( key, "framerate" ) )
+            s.m_fps = (int)Clamp( (float)atoi( value ), 0.0f, 1000.0f );
+        else if ( !strcmp( key, "textsize" ) )
+            s.m_text = (int)Clamp( (float)atoi( value ), 0.0f, 3.0f );
         else if ( !strcmp( key, "minimap" ) )
             s.m_minimap = atoi( value ) ? 1 : 0;
         else if ( !strcmp( key, "rumble" ) )
@@ -543,6 +567,7 @@ Settings loadSettings()
             s.m_nightmare = atoi( value ) != 0;
     }
     fclose( f );
+    completeBindings();
     return s;
 }
 
@@ -667,8 +692,10 @@ void saveSettings( const Settings &s )
     if ( s.m_quality >= 0 ) fprintf( f, "graphics %d\n", s.m_quality );
     fprintf( f, "subtitles %d\ncolours %d\nshake %d\nloot %d\nslot %d\nnightmare %d\n", s.m_subtitles, s.m_colours,
              s.m_shake, s.m_loot, s.m_slot, s.m_nightmare ? 1 : 0 );
-    fprintf( f, "display %d\nsize %d\nvsync %d\nfps %d\nhud %d\nrumble %d\nminimap %d\n", s.m_display, s.m_size,
-             s.m_vsync, s.m_fps, s.m_hud, s.m_rumble, s.m_minimap );
+    fprintf( f, "display %d\nsize %d\nvsync %d\nhud %d\nrumble %d\nminimap %d\n", s.m_display, s.m_size, s.m_vsync,
+             s.m_hud, s.m_rumble, s.m_minimap );
+    if ( s.m_fps >= 0 ) fprintf( f, "framerate %d\n", s.m_fps );
+    if ( s.m_text >= 0 ) fprintf( f, "textsize %d\n", s.m_text );
     for ( int b = 0; b < (int)BindE::COUNT; ++b ) fprintf( f, "bind %s\n", bindingLine( (BindE)b ).c_str() );
     endWrite( f, settingsPath() );
 }
@@ -748,12 +775,50 @@ MenuKeys menuKeys( float dt )
     return k;
 }
 
+/**
+ * @brief A frame of the loading screen, drawn while a level loads (the game stood still before and seemed to have
+ *        crashed): the place's name, "Lädt …", a bar.
+ * @param[in] share  how far the loading is (0 to 1)
+ * @param[in] place  the place's name ("" while it is not known)
+ */
+void drawLoading( float share, const char *place )
+{
+    // Its own font: the game's is made anew with each level, at the end of its loading.
+    static Font font = {};
+    if ( font.texture.id == 0 )
+    {
+        std::string      own = assetsDir() + "/fonts/Barlow-Regular.ttf";
+        std::string      path = FileExists( "C:/Windows/Fonts/bahnschrift.ttf" ) && !getenv( "SPACEOPERA_BARLOW" )
+                                    ? std::string( "C:/Windows/Fonts/bahnschrift.ttf" )
+                                    : own;
+        std::vector<int> cps = textCodepoints();
+        font = LoadFontEx( path.c_str(), 48, cps.data(), (int)cps.size() );
+        SetTextureFilter( font.texture, TEXTURE_FILTER_BILINEAR );
+    }
+    int   w = GetScreenWidth(), h = GetScreenHeight();
+    float s = textScale( h );
+    BeginDrawing();
+    ClearBackground( { 6, 6, 8, 255 } );
+    auto line = [&]( const char *t, float y, float size, Color c )
+    {
+        Vector2 m = MeasureTextEx( font, t, size * s, 1.0f );
+        DrawTextEx( font, t, { w * 0.5f - m.x * 0.5f, y }, size * s, 1.0f, c );
+    };
+    if ( place && *place ) line( place, h * 0.4f, 52, { 245, 236, 222, 255 } );
+    line( tr( "loading" ), h * 0.4f + 72 * s, 26, { 255, 190, 120, 220 } );
+    float bw = w * 0.36f, by = h * 0.4f + 120 * s;
+    DrawRectangle( (int)( w * 0.5f - bw * 0.5f ), (int)by, (int)bw, (int)( 6 * s ), { 60, 52, 44, 255 } );
+    DrawRectangle( (int)( w * 0.5f - bw * 0.5f ), (int)by, (int)( bw * Clamp( share, 0.0f, 1.0f ) ), (int)( 6 * s ),
+                   { 255, 170, 80, 255 } );
+    EndDrawing();
+}
+
 /** @brief Draws a menu over the frame: a title, a subtitle, items, the chosen one marked. */
 void drawMenu( const Font &font, const char *title, const char *subtitle, const std::vector<std::string> &items,
                int chosen )
 {
     int   w = GetScreenWidth(), h = GetScreenHeight();
-    float s = h / 1080.0f;
+    float s = textScale( h );
     DrawRectangle( 0, 0, w, h, { 0, 0, 0, 150 } );
     auto text = [&]( const char *t, float y, float size, Color c )
     {
@@ -776,7 +841,9 @@ void drawMenu( const Font &font, const char *title, const char *subtitle, const 
     }
     else
         text( subtitle, h * 0.2f + 96 * s, 28, { 255, 190, 120, 230 } );
-    float step = fminf( 46.0f, 520.0f / items.size() ), size = fminf( 34.0f, step * 0.86f );
+    // The list ends above the hints at the bottom, however large the texts are.
+    float step = fminf( fminf( 46.0f, 520.0f / items.size() ), h * 0.52f / ( s * items.size() ) );
+    float size = fminf( 34.0f, step * 0.86f );
     for ( size_t i = 0; i < items.size(); ++i )
     {
         bool  on = (int)i == chosen;
@@ -798,7 +865,7 @@ void drawMenu( const Font &font, const char *title, const char *subtitle, const 
 void drawControls( const Font &font, int chosen, bool waiting )
 {
     int   w = GetScreenWidth(), h = GetScreenHeight();
-    float s = h / 1080.0f;
+    float s = textScale( h );
     DrawRectangle( 0, 0, w, h, { 0, 0, 0, 200 } );
     auto text = [&]( const std::string &t, float x, float y, float size, Color c, int align )
     {
@@ -808,31 +875,33 @@ void drawControls( const Font &font, int chosen, bool waiting )
         DrawTextEx( font, t.c_str(), { at, y }, size * s, 1.0f, c );
     };
     text( tr( "menu.controls" ), w * 0.5f, 50 * s, 60, { 245, 236, 222, 255 }, 1 );
-    float name = w * 0.5f - 430 * s, key = w * 0.5f + 150 * s, pad = w * 0.5f + 400 * s, top = 150 * s, row = 34 * s;
+    float name = w * 0.5f - 430 * s, key = w * 0.5f + 150 * s, pad = w * 0.5f + 400 * s, top = 150 * s;
+    // The rows close up where larger texts would run into the help line.
+    int   count = (int)BindE::COUNT + 2;
+    float row = fminf( 34 * s, ( h - 110 * s - top ) / count ), size = fminf( 26.0f, row / s * 0.78f );
     text( tr( "controls.key" ), key, top - 40 * s, 22, { 255, 170, 90, 230 }, 1 );
     text( tr( "controls.pad" ), pad, top - 40 * s, 22, { 255, 170, 90, 230 }, 1 );
-    int count = (int)BindE::COUNT + 2;
     for ( int i = 0; i < count; ++i )
     {
         float y = top + i * row + ( i >= (int)BindE::COUNT ? 16 * s : 0.0f );
         bool  on = i == chosen;
         if ( on )
-            DrawRectangle( (int)( name - 16 * s ), (int)( y - 4 * s ), (int)( pad - name + 140 * s ), (int)( 32 * s ),
-                           { 255, 170, 80, 40 } );
+            DrawRectangle( (int)( name - 16 * s ), (int)( y - 4 * s ), (int)( pad - name + 140 * s ),
+                           (int)( row * 0.94f ), { 255, 170, 80, 40 } );
         Color c = on ? Color{ 255, 205, 140, 255 } : Color{ 200, 200, 200, 220 };
         if ( i >= (int)BindE::COUNT )
         {
-            text( tr( i == (int)BindE::COUNT ? "controls.defaults" : "menu.back" ), name, y, 26, c, 0 );
+            text( tr( i == (int)BindE::COUNT ? "controls.defaults" : "menu.back" ), name, y, size, c, 0 );
             continue;
         }
         const Binding &b = binding( (BindE)i );
-        text( tr( std::string( "bind." ) + bindName( (BindE)i ) ), name, y, 26, c, 0 );
+        text( tr( std::string( "bind." ) + bindName( (BindE)i ) ), name, y, size, c, 0 );
         if ( on && waiting )
-            text( tr( "controls.press" ), ( key + pad ) * 0.5f, y, 26, { 255, 220, 120, 255 }, 1 );
+            text( tr( "controls.press" ), ( key + pad ) * 0.5f, y, size, { 255, 220, 120, 255 }, 1 );
         else
         {
-            text( keyLabel( b.m_key ), key, y, 26, c, 1 );
-            text( padLabel( b.m_pad ), pad, y, 26, c, 1 );
+            text( keyLabel( b.m_key ), key, y, size, c, 1 );
+            text( padLabel( b.m_pad ), pad, y, size, c, 1 );
         }
     }
     text( tr( "controls.help" ), w * 0.5f, h - 70 * s, 20, { 150, 150, 150, 200 }, 1 );
@@ -885,6 +954,7 @@ enum class RowE
     SIZE,
     VSYNC,
     FPS,
+    TEXTSIZE,
     HUD,
     RUMBLE,
     MINIMAP,
@@ -903,7 +973,7 @@ enum class RowE
 std::vector<RowE> menuRows( int menu, bool saved, bool plus, bool any = false )
 {
     using R = RowE;
-    if ( menu == 3 ) return { R::WINDOW, R::SIZE, R::VSYNC, R::FPS, R::HUD, R::MINIMAP, R::BACK };
+    if ( menu == 3 ) return { R::WINDOW, R::SIZE, R::VSYNC, R::FPS, R::TEXTSIZE, R::HUD, R::MINIMAP, R::BACK };
     if ( menu == 2 )
         return { R::DIFFICULTY, R::BRIGHTNESS, R::GRAPHICS, R::DISPLAY, R::MUSIC, R::VOICES,   R::EFFECTS, R::LANGUAGE,
                  R::SUBTITLES,  R::COLOURS,    R::SHAKE,    R::RUMBLE,  R::LOOT,  R::CONTROLS, R::BACK };
@@ -955,7 +1025,10 @@ std::string rowText( RowE r, const Settings &s, int cycle )
     case RowE::VSYNC: return pick( "menu.vsync", s.m_vsync ? "on" : "off" );
     case RowE::FPS:
         return std::string( tr( "menu.fps" ) ) + "  " +
-               ( FpsSteps[s.m_fps] ? std::to_string( FpsSteps[s.m_fps] ) : std::string( tr( "fps.free" ) ) );
+               ( fpsOf( s ) ? std::to_string( fpsOf( s ) ) : std::string( tr( "fps.free" ) ) );
+    case RowE::TEXTSIZE:
+        return std::string( tr( "menu.textsize" ) ) + "  " +
+               std::to_string( (int)roundf( TextSteps[textOf( s )] * 100 ) ) + " %";
     case RowE::HUD:
         return std::string( tr( "menu.hud" ) ) + "  " + std::to_string( (int)( HudSteps[s.m_hud] * 100 ) ) + " %";
     default: return tr( "menu.back" );
@@ -1145,6 +1218,7 @@ int runGame( const Options &o, Gfx &gfx )
                                                                : o.m_difficulty == "albtraum" ? DifficultyE::NIGHTMARE
                                                                                               : DifficultyE::NORMAL );
     game->setDifficulty( settings.m_difficulty );   // before the load: the places keep up by it
+    if ( o.m_shot.empty() ) game->m_loading = drawLoading;
     if ( !game->load( gfx, assetsDir(), level, sound ) )
     {
         TraceLog( LOG_ERROR, "LEVEL: %s not found", level.c_str() );
@@ -1168,6 +1242,7 @@ int runGame( const Options &o, Gfx &gfx )
         game->m_shakeScale = settings.m_shake * 0.5f;
         game->m_lootFilter = settings.m_loot;
         game->m_hudScale = HudSteps[settings.m_hud];
+        setTextSize( TextSteps[textOf( settings )] );
         game->m_minimap = settings.m_minimap != 0;
         gfx.m_colourVision = settings.m_colours;
         // The shared stash: only for real play (tests keep theirs in memory).
@@ -1391,7 +1466,7 @@ int runGame( const Options &o, Gfx &gfx )
             SetWindowState( FLAG_VSYNC_HINT );
         else
             ClearWindowState( FLAG_VSYNC_HINT );
-        SetTargetFPS( settings.m_vsync ? 0 : FpsSteps[settings.m_fps] );
+        SetTargetFPS( fpsOf( settings ) );
         gfx.resize( GetScreenWidth(), GetScreenHeight() );
     };
     applyDisplay();
@@ -1412,14 +1487,22 @@ int runGame( const Options &o, Gfx &gfx )
     int         chosen = 0;
     int         panelTab = 0, panelRow = 0;   ///< the inventory, character and map pages: which, and the chosen row
     bool        quit = false;
-    auto        restart = [&]()
+    // Outside play the game waits, so its picture is drawn once and shown behind the menus: again when a setting
+    // changes it, and four times a second behind the inventory, where gear changes the hero's looks.
+    RenderTexture2D still = {};
+    bool            stillValid = false;
+    float           stillAge = 0.0f;
+    auto            restart = [&]()
     {
+        stillValid = false;
         float zoom = game->m_zoom;
         game->shutdown();
         game = std::make_unique<Game>();
         game->m_heroKind = hero;
         game->m_progress = progress;
         game->setDifficulty( settings.m_difficulty );
+        if ( o.m_shot.empty() ) game->m_loading = drawLoading;
+        SetTargetFPS( 0 );   // the loading screen's frames wait for nothing
         game->load( gfx, assetsDir(), level, sound );
         apply();
         game->m_autoplay = o.m_autoplay;
@@ -1746,6 +1829,7 @@ int runGame( const Options &o, Gfx &gfx )
             chosen = ( chosen % count + k.m_move + count ) % count;
             RowE row = rows[chosen];
             int  step = k.m_change != 0 ? k.m_change : ( k.m_confirm ? 1 : 0 );
+            if ( step ) stillValid = false;
             auto cycle = [&]( int &v, int n ) { v = ( v + step + n ) % n; };
             auto volume = [&]( float &v ) { v = Clamp( roundf( v * 10.0f + k.m_change ) / 10.0f, 0.0f, 1.0f ); };
             bool changed = true;
@@ -1764,8 +1848,11 @@ int runGame( const Options &o, Gfx &gfx )
             case RowE::GRAPHICS:
                 if ( step )
                 {
-                    settings.m_quality = qualityOf( settings );
-                    cycle( settings.m_quality, 3 );
+                    // In the order frugal, low, middle, high.
+                    const int order[4] = { 3, 0, 1, 2 };
+                    int       i = (int)( std::find( order, order + 4, qualityOf( settings ) ) - order ) % 4;
+                    cycle( i, 4 );
+                    settings.m_quality = order[i];
                     gfx.setQuality( settings.m_quality );
                 }
                 break;
@@ -1821,7 +1908,22 @@ int runGame( const Options &o, Gfx &gfx )
                 if ( step ) cycle( settings.m_vsync, 2 ), applyDisplay();
                 break;
             case RowE::FPS:
-                if ( step ) cycle( settings.m_fps, 5 ), applyDisplay();
+                if ( step )
+                {
+                    int i = (int)( std::find( FpsSteps, FpsSteps + 7, fpsOf( settings ) ) - FpsSteps ) % 7;
+                    cycle( i, 7 );
+                    settings.m_fps = FpsSteps[i];
+                    applyDisplay();
+                }
+                break;
+            case RowE::TEXTSIZE:
+                if ( step )
+                {
+                    int i = textOf( settings );
+                    cycle( i, 4 );
+                    settings.m_text = i;
+                    setTextSize( TextSteps[i] );
+                }
                 break;
             case RowE::HUD:
                 if ( step ) cycle( settings.m_hud, 4 );
@@ -1924,7 +2026,25 @@ int runGame( const Options &o, Gfx &gfx )
         if ( IsKeyPressed( KEY_F12 ) )
             savePicture( gfx, std::string( GetApplicationDirectory() ) + TextFormat( "shot_%03d.png", ++shots ), draw );
         BeginDrawing();
-        game->render( gfx, nullptr );
+        stillAge += dt;
+        if ( mode == PLAY || mode == PHOTO )
+        {
+            stillValid = false;
+            game->render( gfx, nullptr );
+        }
+        else
+        {
+            int w = GetScreenWidth(), h = GetScreenHeight();
+            if ( still.id == 0 || still.texture.width != w || still.texture.height != h )
+            {
+                if ( still.id ) UnloadRenderTexture( still );
+                still = LoadRenderTexture( w, h );
+                stillValid = false;
+            }
+            if ( mode == PANEL && stillAge > 0.25f ) stillValid = false;
+            if ( !stillValid ) game->render( gfx, &still ), stillValid = true, stillAge = 0.0f;
+            DrawTextureRec( still.texture, { 0.0f, 0.0f, (float)w, -(float)h }, { 0.0f, 0.0f }, WHITE );
+        }
         if ( mode == PANEL ) game->drawPanel( GetScreenWidth(), GetScreenHeight(), panelTab, panelRow );
         if ( mode == CHOOSE )
         {
@@ -1968,7 +2088,7 @@ int runGame( const Options &o, Gfx &gfx )
         {
             // Its help at the bottom (the picture saved is taken without it), what was saved.
             int   w = GetScreenWidth(), h = GetScreenHeight();
-            float s = h / 1080.0f;
+            float s = textScale( h );
             auto  line = [&]( const std::string &t, float y, float size, Color c )
             {
                 Vector2 m = MeasureTextEx( game->font(), t.c_str(), size * s, 1.0f );
@@ -1993,7 +2113,7 @@ int runGame( const Options &o, Gfx &gfx )
             if ( mode == TITLE && !crashed.empty() )
             {
                 const char *t = TextFormat( tr( "crash.before" ), crashed.c_str() );
-                float       s = GetScreenHeight() / 1080.0f;
+                float       s = textScale( GetScreenHeight() );
                 Vector2     m = MeasureTextEx( game->font(), t, 20 * s, 1.0f );
                 DrawTextEx( game->font(), t, { GetScreenWidth() * 0.5f - m.x * 0.5f, GetScreenHeight() - 110 * s },
                             20 * s, 1.0f, { 255, 170, 120, 220 } );
@@ -2001,7 +2121,7 @@ int runGame( const Options &o, Gfx &gfx )
             if ( mode == TITLE )
             {
                 // The version, small in the corner.
-                float   s = GetScreenHeight() / 1080.0f;
+                float   s = textScale( GetScreenHeight() );
                 Vector2 m = MeasureTextEx( game->font(), SPACEOPERA_VERSION, 18 * s, 1.0f );
                 DrawTextEx( game->font(), SPACEOPERA_VERSION,
                             { GetScreenWidth() - m.x - 28 * s, GetScreenHeight() - 44 * s }, 18 * s, 1.0f,
@@ -2020,8 +2140,15 @@ int runGame( const Options &o, Gfx &gfx )
             UnloadImage( img );
             g_scriptShot.clear();
         }
+        // A still behind a menu needs no more than 30 frames (the battery of a Steam Deck).
+        if ( o.m_shot.empty() )
+        {
+            int fps = fpsOf( settings );
+            SetTargetFPS( mode == PLAY || mode == PHOTO ? fps : ( fps ? std::min( fps, 30 ) : 30 ) );
+        }
         EndDrawing();
     }
+    if ( still.id ) UnloadRenderTexture( still );
     rumble::stop();
     game->shutdown();
     score.shutdown();

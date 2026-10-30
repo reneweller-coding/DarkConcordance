@@ -29,6 +29,7 @@
 
 #include <algorithm>
 #include <deque>
+#include <functional>
 #include <map>
 #include <set>
 #include <string>
@@ -134,6 +135,8 @@ public:
      * @return false if the level cannot be read
      */
     bool load( Gfx &gfx, const std::string &assets, const std::string &level, bool sound );
+    /** @brief Called while load() works: how far it is (0 to 1) and the place's name once known (a loading screen). */
+    std::function<void( float, const char * )> m_loading;
 
     /**
      * @brief Advances the game.
@@ -1382,8 +1385,16 @@ private:
     void dressPerson( Person &q, unsigned seed );
     void updateSkins( float dt );
     void poseSkin( Person &q, std::vector<Drawable> &out );
-    bool      m_skins = false;   ///< the bodies are there
-    SkinModel m_body[2];         ///< a man, a woman
+    /**
+     * @brief Whether a figure standing there can show: in the picture or near enough to its edge to lay a shadow
+     *        into it. The ones that cannot are not posed (their bones cost the processor every frame).
+     * @param[in] at  the figure's feet
+     * @return true if it is to be posed
+     */
+    bool posed( Vector3 at ) const;
+    Gfx::Frustum m_poseView = {};   ///< this frame's camera, for posed()
+    bool         m_skins = false;   ///< the bodies are there
+    SkinModel    m_body[2];         ///< a man, a woman
     /** @brief A whole person made by tools/make_heroes.py: the body with the clips, a surface per mesh. */
     struct Dressed
     {

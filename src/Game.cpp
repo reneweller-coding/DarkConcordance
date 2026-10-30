@@ -325,6 +325,19 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
 {
     m_assets = assets;
     m_levelFile = level;
+    // How long each part takes, into the log (a level that loads slowly on a Steam Deck says where).
+    double      start = GetTime(), mark = start;
+    std::string laps;
+    int         done = 0;
+    auto        lap = [&]( const char *what )
+    {
+        double now = GetTime();
+        laps += TextFormat( " %s %.0f", what, ( now - mark ) * 1000.0 );
+        mark = now;
+        // The loading screen: ten steps; the place's name as soon as the level is read.
+        if ( m_loading ) m_loading( ++done / 10.0f, m_level.m_name.empty() ? "" : tr( m_level.m_name ) );
+    };
+    if ( m_loading ) m_loading( 0.0f, "" );
     crash::context( level + " hero " + heroKey( m_heroKind ) + " level " + std::to_string( m_progress.m_heroLevel ) +
                     " cycle " + std::to_string( m_progress.m_cycle ) );
     // A generated level: the same seed builds the same layout (by default from the progress, so it differs per game).
@@ -337,6 +350,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     // The Depths' tier: from the fourth two anomalies at least, from the seventh three.
     m_level.m_anomalyMin = level == "tiefen.txt" ? 1 + ( std::clamp( m_progress.m_depthTier, 1, 10 ) - 1 ) / 3 : 0;
     if ( !m_level.load( assets + "/levels/" + level, seed ) ) return false;
+    lap( "map" );
     loadTale();
     // "area 0": as deep as the hero is strong (the depths).
     if ( m_level.m_area <= 0 ) m_level.m_area = std::max( 2, ( m_progress.m_heroLevel + 4 ) / 2 );
@@ -352,6 +366,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     m_areaHit = ( 1.0f + 0.12f * ( m_level.m_area - 1 ) ) * ( 1.0f + 0.05f * std::max( 0, m_level.m_area - 8 ) );
     applyAnomalies();
     loadSurfaces( gfx, assets );
+    lap( "surfaces" );
     // The lift's cell is part of its well.
     for ( const Marker &m : m_level.m_markers )
         if ( m.m_kind == 'X' ) m_level.setVoid( m.m_row, m.m_col );
@@ -363,6 +378,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     m_level.build( ls, m_static );
     buildDecals();
     freeUnusedTextures();
+    lap( "build" );
 
     // Signs: each picture its own surface, lit a little from within so it reads in the dark.
     for ( const Sign &sign : m_level.m_signs )
@@ -404,6 +420,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     m_welder.build( S_RUST, S_METAL, S_GLOW, true );
     buildFoes();
     buildFoes2();
+    lap( "figures" );
 
     MeshBuilder chunk;
     chunk.box( MatrixIdentity(), { 0.07f, 0.04f, 0.09f } );
@@ -631,8 +648,10 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     buildFamilies();
     spawnNatives();
     assignEscorts();
+    lap( "foes" );
     loadSkins( gfx );
     bodyFigures();
+    lap( "skins" );
     loadShip( gfx, assets );
     loadHub( gfx, assets );
     loadUsables();
@@ -644,8 +663,10 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     loadSwarm();
     loadVault();
     loadBreakables();
+    lap( "places" );
     // Everyone a skinned figure, a whole person where one is made (Ilka too).
     for ( size_t i = 0; i < m_people.size(); ++i ) dressPerson( m_people[i], (unsigned)( i * 7919u + 13u ) );
+    lap( "people" );
     if ( !m_level.m_intro.empty() ) m_intro = IntroTime;
     if ( m_progress.m_hasSpot && m_progress.m_level == m_levelFile )
     {
@@ -667,9 +688,12 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     loadStory();
 
     loadFont();
+    lap( "font" );
     renderBoard();
     m_audio.init( sound, m_level.m_ambience, assets );
     putHero( m_pos.x, m_pos.z, 0.0f );
+    lap( "rest" );
+    TraceLog( LOG_WARNING, "LOAD: %s in %.0f ms:%s", level.c_str(), ( GetTime() - start ) * 1000.0, laps.c_str() );
     return true;
 }
 
@@ -3111,7 +3135,7 @@ void Game::autopilot( float dt, GameInput &in )
             if ( dist > 1.8f )
                 in.m_move = Vector2Scale( to, 1.0f / dist );
             else if ( m_level.m_peaceful )
-                in.m_jump = true;
+                in.m_use = true;
             else
                 in.m_use = true, m_autoTalkTo = (int)( &n - m_npcs.data() );
             return;
@@ -3831,8 +3855,21 @@ void Game::drawParticles( Gfx &gfx )
     gfx.endParticles();
 }
 
+bool Game::posed( Vector3 at ) const
+{
+    // A figure's height and a shadow's length round it.
+    Vector3 c = Vector3Add( at, { 0.0f, 1.0f, 0.0f } );
+    for ( const Vector4 &p : m_poseView.m_planes )
+        if ( p.x * c.x + p.y * c.y + p.z * c.z + p.w < -8.0f ) return false;
+    return true;
+}
+
 void Game::render( Gfx &gfx, const RenderTexture2D *out )
 {
+    float  aspect = out ? (float)out->texture.width / out->texture.height : (float)GetScreenWidth() / GetScreenHeight();
+    Matrix view = MatrixLookAt( m_cam.position, m_cam.target, m_cam.up );
+    m_poseView =
+        Gfx::frustum( MatrixMultiply( view, MatrixPerspective( m_cam.fovy * DEG2RAD, aspect, 0.5, 30000.0 ) ) );
     m_dynamic.clear();
     Figure::frame();
     Figure::ground( [this]( float x, float z ) { return groundAt( { x, 0.0f, z } ); } );
@@ -4014,7 +4051,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
 
 void Game::drawHud( int w, int h )
 {
-    float s = h / 1080.0f * m_hudScale;
+    float s = textScale( h ) * m_hudScale;
     auto  text = [&]( const char *t, float x, float y, float size, Color c, bool centre = false )
     {
         Vector2 m = MeasureTextEx( m_font, t, size * s, 1.0f );

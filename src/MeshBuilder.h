@@ -94,6 +94,15 @@ public:
      */
     std::vector<Mesh> build();
 
+    /**
+     * @brief The meshes cut into square tiles on the ground plan, uploaded to the GPU; the builder is empty
+     *        afterwards. A level's walls as one long run of chunks would be drawn whole wherever a corner of them is
+     *        seen (and into both shadow maps); tiles let the frustum leave out what lies elsewhere.
+     * @param[in] tile  the tiles' edge in metres (a triangle goes to the tile of its middle)
+     * @return one mesh per tile and 65000 vertices
+     */
+    std::vector<Mesh> build( float tile );
+
     /** @return true if nothing has been added */
     bool empty() const { return m_pos.empty() && m_done.empty(); }
 

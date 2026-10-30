@@ -2782,9 +2782,10 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 if ( ( r + c ) % 2 == 0 ) m_lights.push_back( { at( 0.0f, gh - 0.3f, 0.7f ), colour, 4.5f, 0.0f } );
             }
     dress( s, kit );
+    // In tiles of eight cells: the frustum then leaves out what lies elsewhere, in the picture and in both shadow maps.
     auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f } )
     {
-        for ( Mesh mesh : b.build() )
+        for ( Mesh mesh : b.build( 8.0f * CellSize ) )
         {
             Drawable d;
             d.m_mesh = mesh;

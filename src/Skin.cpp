@@ -20,6 +20,27 @@ namespace
 
 constexpr float FrameRate = 1000.0f / 17.0f;   ///< raylib samples glTF animations every 17 ms
 
+/**
+ * @brief An animation file's clips as raylib reads them, read once and kept while the game runs: every figure of every
+ *        level read the two libraries again before, seconds at each level's start.
+ * @param[in]  file   the file
+ * @param[out] count  how many clips
+ * @return the clips (nullptr if there are none)
+ */
+const ModelAnimation *animations( const std::string &file, int &count )
+{
+    static std::map<std::string, std::pair<ModelAnimation *, int>> files;
+    auto                                                           it = files.find( file );
+    if ( it == files.end() )
+    {
+        int             n = 0;
+        ModelAnimation *anims = LoadModelAnimations( file.c_str(), &n );
+        it = files.emplace( file, std::make_pair( anims, n ) ).first;
+    }
+    count = it->second.second;
+    return it->second.first;
+}
+
 /** @brief The Rigify name (the first animation library's rig) of a bone of the Unreal-style rig, or "". */
 std::string rigify( const std::string &n )
 {
@@ -105,8 +126,8 @@ bool SkinModel::load( const std::string &body, const std::string &tpose )
     for ( int i = 0; i < m_body.meshCount; ++i ) m_skinned.push_back( m_body.meshes[i].boneWeights != nullptr );
     // The reference: the T-pose on this rig (else the rest pose).
     m_ref = m_bind;
-    int             count = 0;
-    ModelAnimation *anims = LoadModelAnimations( tpose.c_str(), &count );
+    int                   count = 0;
+    const ModelAnimation *anims = animations( tpose, count );
     for ( int a = 0; a < count; ++a )
     {
         if ( strcmp( anims[a].name, "A_TPose" ) != 0 ) continue;
@@ -114,14 +135,13 @@ bool SkinModel::load( const std::string &body, const std::string &tpose )
             for ( int s = 0; s < anims[a].boneCount; ++s )
                 if ( m_names[b] == anims[a].bones[s].name ) m_ref[b] = anims[a].framePoses[0][s];
     }
-    if ( anims ) UnloadModelAnimations( anims, count );
     return true;
 }
 
 int SkinModel::addClips( const std::string &file, const std::vector<std::string> &names )
 {
-    int             count = 0;
-    ModelAnimation *anims = LoadModelAnimations( file.c_str(), &count );
+    int                   count = 0;
+    const ModelAnimation *anims = animations( file, count );
     if ( !anims || count == 0 ) return 0;
     const ModelAnimation *refAnim = &anims[0];
     for ( int a = 0; a < count; ++a )
@@ -218,7 +238,6 @@ int SkinModel::addClips( const std::string &file, const std::vector<std::string>
         m_clips.push_back( std::move( c ) );
         ++added;
     }
-    UnloadModelAnimations( anims, count );
     return added;
 }
 
