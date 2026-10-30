@@ -55,6 +55,7 @@ struct GameInput
     bool    m_strafe = false;           ///< keep facing where the hero looks (left trigger, Shift; Dorra: shield up)
     bool    m_cameraReset = false;      ///< camera back behind the start's view (right stick click)
     bool    m_dodge = false;            ///< a dodge roll (left stick click, Ctrl) pressed this frame
+    bool    m_swap = false;             ///< the second weapon into the hand (T, the pad's cross) pressed this frame
     int     m_navStep = 0;              ///< the pad's cross up (-1) or down (1) pressed: a step in the game's menus
     float   m_cameraTurn = 0.0f;        ///< camera turn this frame (radians; right stick, right mouse button)
     Vector2 m_mouse = { 0.0f, 0.0f };   ///< mouse position (window pixels)
@@ -98,6 +99,8 @@ struct Progress
     std::vector<Item>     m_bag;                     ///< what is carried
     Item                  m_gear[EquipSlots];        ///< what is worn: weapon, armour, helmet, gloves, boots, implants
     bool                  m_worn[EquipSlots] = {};   ///< whether a slot holds something
+    Item                  m_spare;                   ///< the second weapon: a swap away (T, the pad's cross)
+    bool                  m_hasSpare = false;        ///< whether there is one
     int                   m_seed = 1;                ///< the random generator's state for items (and generated levels)
     int                   m_deaths = 0;              ///< deaths since the prologue (Ysolde knows the number)
     int                   m_cycle = 0;               ///< a new game+: how often the game has been begun again
@@ -232,7 +235,11 @@ public:
 
     /** @return the HUD's font (the menus use it too) */
     const Font &font() const { return m_font; }
-    static constexpr int PanelTabs = 6;   ///< the inventory's pages: inventory, skills, character, map, codex, awards
+    /// The inventory's pages: four of gear (weapons, armour, the suit's technology, modules), then skills, the
+    /// figure, notes, the map, the codex and the awards.
+    static constexpr int PanelTabs = 10;
+    static constexpr int GearTabs = 4;
+    static constexpr int TabSkills = 4, TabCharacter = 5, TabNotes = 6, TabMap = 7, TabCodex = 8, TabAwards = 9;
     /** @brief Builds the font anew (its buttons show the device now in hand). */
     void refreshFont() { loadFont(); }
 
@@ -268,10 +275,21 @@ public:
      * @brief Draws the inventory, the character page or the map over the frame (the game waits meanwhile).
      * @param[in] w    width (pixels)
      * @param[in] h    height (pixels)
-     * @param[in] tab  0 inventory, 1 skills, 2 character, 3 map
+     * @param[in] tab  the page (PanelTabs: 0-3 gear, then skills, the figure, notes, the map, codex, awards)
      * @param[in] sel  the chosen row
      */
     void drawPanel( int w, int h, int tab, int sel );
+
+    /**
+     * @brief Draws the hero for a gear page (in 3D where they stand, close in front of them), again only when they
+     *        turn or wear something else. Before drawPanel, outside any other target.
+     * @param[in] gfx   the renderer
+     * @param[in] tab   the page
+     * @param[in] turn  how far the view is turned round the hero (radians; the right stick)
+     * @param[in] w     the picture's width
+     * @param[in] h     and height
+     */
+    void preparePanel( Gfx &gfx, int tab, float turn, int w, int h );
 
     /**
      * @param[in] tab  the page
@@ -1139,6 +1157,10 @@ private:
     void equip( int bagIndex );
     void unequip( int slot );
     void salvage( int bagIndex );
+    /** @brief The second weapon into the hand and the one there into its place (Dark Alliance's quick swap). */
+    void swapWeapon();
+    /** @brief The second weapon into the bag (if there is room). */
+    void unequipSpare();
     int rank( int skill ) const;
     HeroStats         m_stats;
     std::vector<Loot> m_loot;
@@ -1203,6 +1225,8 @@ private:
         int         m_skill = -1;                       ///< a skill
         int         m_stash = -1;                       ///< an item in the stash
         Color       m_color = { 210, 205, 195, 230 };   ///< the value's colour
+        bool        m_spare = false;                    ///< the second weapon
+        bool        m_free = false;                     ///< a header that lists free places (drawn dim)
     };
     std::vector<PanelRow> skillRows() const;
     /** @return the item a row shows (nullptr: none) */
@@ -1236,8 +1260,20 @@ private:
     void drawMap( Rectangle area, float alpha, float s );
     /** @brief The map round the hero in the HUD's top right corner (what has been seen, eleven cells each way). */
     void drawMinimap( int w, int h, float s );
-    std::vector<PanelRow> inventory() const;
-    std::vector<uint8_t> m_seen;   ///< cells the hero has seen
+    /** @return a gear page's cards: what is worn there (the second weapon after the hand's), the bag's, the stash's */
+    std::vector<PanelRow> gearRows( int tab ) const;
+    /** @return the jobs and the notes read on terminals */
+    std::vector<PanelRow> notesRows() const;
+    /** @return an item's main numbers in a line (damage and rate and kind, armour, shield, or its first property) */
+    std::string itemSummary( const Item &it ) const;
+    /** @brief A gear page: the cards on the left, the hero (preparePanel) and a few numbers on the right. */
+    void drawGear( int w, int h, int tab, int sel, float s, float top );
+    /** @brief The scene from the photo mode's camera close in front of the hero, the HUD off, a little more light. */
+    void renderHero( Gfx &gfx, const RenderTexture2D *out, float turn );
+    RenderTexture2D      m_heroShot = {};   ///< the hero for the gear pages
+    std::string          m_heroShotSig;     ///< what it shows (the turn, what is worn): drawn again when that changes
+    float                m_viewLight = 1.0f;   ///< the exposure's factor (the hero's picture is lit a little more)
+    std::vector<uint8_t> m_seen;               ///< cells the hero has seen
     float                m_seenTimer = 0.0f;
     bool                 m_showMap = false;   ///< the map over the game (M, Tab, the pad's up)
     int                  m_mapR0 = 0, m_mapR1 = 0, m_mapC0 = 0, m_mapC1 = 0;   ///< the map's open part

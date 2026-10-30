@@ -72,6 +72,107 @@ std::vector<std::string> wrap( const Font &font, const std::string &t, float siz
     return lines;
 }
 
+/** @brief Shortened with an ellipsis until it fits `width`. */
+std::string fit( const Font &font, const std::string &t, float size, float width )
+{
+    if ( MeasureTextEx( font, t.c_str(), size, 1.0f ).x <= width ) return t;
+    std::string s = t;
+    while ( !s.empty() && MeasureTextEx( font, ( s + "…" ).c_str(), size, 1.0f ).x > width )
+    {
+        unsigned char last;
+        do
+        {
+            last = (unsigned char)s.back();
+            s.pop_back();
+        } while ( !s.empty() && ( last & 0xC0 ) == 0x80 );
+    }
+    return s + "…";
+}
+
+/** @return the gear page an item belongs on: 0 weapons, 1 armour, 2 the suit's technology, 3 modules */
+int gearPage( SlotE slot )
+{
+    switch ( slot )
+    {
+    case SlotE::WEAPON: return 0;
+    case SlotE::ARMOR:
+    case SlotE::HELMET:
+    case SlotE::GLOVES:
+    case SlotE::BOOTS: return 1;
+    case SlotE::MODULE: return 3;
+    default: return 2;
+    }
+}
+
+/** @return the gear page a worn slot belongs on */
+int slotPage( int slot )
+{
+    return slot == 0 ? 0 : slot <= 4 ? 1 : 2;
+}
+
+/** @brief A page's sign on its tab, drawn in lines (no pictures needed, any size). */
+void tabSign( int tab, Rectangle r, Color c )
+{
+    Vector2 m = { r.x + r.width * 0.5f, r.y + r.height * 0.5f };
+    float   u = r.width * 0.3f, t = fmaxf( 1.5f, r.width * 0.045f );
+    auto    at = [&]( float x, float y ) { return Vector2{ m.x + x * u, m.y + y * u }; };
+    auto    line = [&]( float ax, float ay, float bx, float by ) { DrawLineEx( at( ax, ay ), at( bx, by ), t, c ); };
+    auto    ring = [&]( float x, float y, float rad )
+    { DrawRing( at( x, y ), rad * u - t * 0.5f, rad * u + t * 0.5f, 0, 360, 24, c ); };
+    switch ( tab )
+    {
+    case 0:   // crossed blades
+        line( -0.9f, 0.9f, 0.8f, -0.8f ), line( 0.9f, 0.9f, -0.8f, -0.8f );
+        line( -0.8f, 0.3f, -0.3f, 0.8f ), line( 0.8f, 0.3f, 0.3f, 0.8f );
+        break;
+    case 1:   // a breastplate
+        line( -0.8f, -0.85f, 0.8f, -0.85f ), line( 0.8f, -0.85f, 0.8f, 0.1f ), line( 0.8f, 0.1f, 0.0f, 0.95f );
+        line( 0.0f, 0.95f, -0.8f, 0.1f ), line( -0.8f, 0.1f, -0.8f, -0.85f );
+        break;
+    case 2:   // a chip with its pins
+        DrawRectangleLinesEx( { m.x - 0.6f * u, m.y - 0.6f * u, 1.2f * u, 1.2f * u }, t, c );
+        for ( float k : { -0.3f, 0.0f, 0.3f } )
+            line( k, -0.6f, k, -0.95f ), line( k, 0.6f, k, 0.95f ), line( -0.6f, k, -0.95f, k ),
+                line( 0.6f, k, 0.95f, k );
+        break;
+    case 3:   // a module
+        DrawPolyLinesEx( m, 6, 0.9f * u, 30.0f, t, c );
+        DrawCircleV( m, 0.25f * u, c );
+        break;
+    case 4:   // a star
+        for ( int i = 0; i < 5; ++i )
+        {
+            float a = -PI * 0.5f + i * 2.0f * PI / 5.0f, b = a + 4.0f * PI / 5.0f;
+            line( cosf( a ) * 0.95f, sinf( a ) * 0.95f, cosf( b ) * 0.95f, sinf( b ) * 0.95f );
+        }
+        break;
+    case 5:   // a figure
+        ring( 0.0f, -0.65f, 0.28f );
+        line( 0.0f, -0.37f, 0.0f, 0.35f ), line( -0.8f, -0.1f, 0.8f, -0.1f );
+        line( 0.0f, 0.35f, -0.55f, 0.95f ), line( 0.0f, 0.35f, 0.55f, 0.95f );
+        break;
+    case 6:   // a page of notes
+        DrawRectangleLinesEx( { m.x - 0.7f * u, m.y - 0.9f * u, 1.4f * u, 1.8f * u }, t, c );
+        for ( float y : { -0.45f, -0.1f, 0.25f, 0.6f } ) line( -0.4f, y, 0.4f, y );
+        break;
+    case 7:   // a folded map
+        line( -0.95f, -0.7f, -0.3f, -0.9f ), line( -0.3f, -0.9f, 0.3f, -0.7f ), line( 0.3f, -0.7f, 0.95f, -0.9f );
+        line( 0.95f, -0.9f, 0.95f, 0.7f ), line( 0.95f, 0.7f, 0.3f, 0.9f ), line( 0.3f, 0.9f, -0.3f, 0.7f );
+        line( -0.3f, 0.7f, -0.95f, 0.9f ), line( -0.95f, 0.9f, -0.95f, -0.7f );
+        line( -0.3f, -0.9f, -0.3f, 0.7f ), line( 0.3f, -0.7f, 0.3f, 0.9f );
+        break;
+    case 8:   // an open book
+        line( 0.0f, -0.6f, 0.0f, 0.85f );
+        for ( float k : { -1.0f, 1.0f } )
+            line( 0.0f, -0.6f, 0.95f * k, -0.8f ), line( 0.95f * k, -0.8f, 0.95f * k, 0.65f ),
+                line( 0.95f * k, 0.65f, 0.0f, 0.85f );
+        break;
+    default:   // a medal on its ribbon
+        line( -0.35f, -0.95f, 0.0f, -0.2f ), line( 0.35f, -0.95f, 0.0f, -0.2f );
+        ring( 0.0f, 0.35f, 0.5f );
+    }
+}
+
 /** @brief The jobs and the event that ends each. */
 const char *const Jobs[][2] = { { "job1", "done.kuehlgedaerme" }, { "job2", "done.knochenmarkt" } };
 
@@ -210,63 +311,73 @@ void Game::drawMinimap( int w, int h, float s )
     (void)h;
 }
 
-std::vector<Game::PanelRow> Game::inventory() const
+std::vector<Game::PanelRow> Game::gearRows( int tab ) const
+{
+    std::vector<PanelRow> rows;
+    auto                  card = [&]( const Item &it )
+    {
+        PanelRow r;
+        r.m_title = itemName( it );
+        r.m_color = rarityColor( it.m_rarity );
+        r.m_detail = itemDetail( it );
+        return r;
+    };
+    // What is worn on this page (the second weapon after the hand's); the free places named in a line above.
+    std::string free;
+    for ( int i = 0; i < EquipSlots; ++i )
+    {
+        if ( slotPage( i ) != tab ) continue;
+        if ( !m_progress.m_worn[i] )
+        {
+            free += ( free.empty() ? "" : ", " ) + std::string( tr( TextFormat( "slot.%d", i ) ) );
+            continue;
+        }
+        PanelRow r = card( m_progress.m_gear[i] );
+        r.m_slot = i;
+        rows.push_back( r );
+        if ( i == 0 && m_progress.m_hasSpare )
+        {
+            PanelRow spare = card( m_progress.m_spare );
+            spare.m_spare = true;
+            rows.push_back( spare );
+        }
+    }
+    if ( !free.empty() )
+    {
+        PanelRow f;
+        f.m_header = f.m_free = true;
+        f.m_title = TextFormat( tr( "inv.free" ), free.c_str() );
+        rows.insert( rows.begin(), f );
+    }
+    // What is carried of this kind, and in a hub what the stash holds of it.
+    for ( size_t i = 0; i < m_progress.m_bag.size(); ++i )
+    {
+        if ( gearPage( itemSlot( m_progress.m_bag[i] ) ) != tab ) continue;
+        PanelRow r = card( m_progress.m_bag[i] );
+        r.m_bag = (int)i;
+        rows.push_back( r );
+    }
+    if ( atStash() )
+    {
+        bool header = false;
+        for ( size_t i = 0; i < m_stash.size(); ++i )
+        {
+            if ( gearPage( itemSlot( m_stash[i] ) ) != tab ) continue;
+            if ( !header )
+                rows.push_back( { TextFormat( tr( "inv.stash" ), (int)m_stash.size(), StashSize ), "", "", true } ),
+                    header = true;
+            PanelRow r = card( m_stash[i] );
+            r.m_stash = (int)i;
+            rows.push_back( r );
+        }
+    }
+    return rows;
+}
+
+std::vector<Game::PanelRow> Game::notesRows() const
 {
     std::vector<PanelRow> rows;
     auto has = [&]( const std::string &flag ) { return m_progress.m_flags.count( flag ) || m_fired.count( flag ); };
-    // What is worn, slot by slot.
-    rows.push_back( { tr( "inv.gear" ), "", "", true } );
-    for ( int i = 0; i < EquipSlots; ++i )
-    {
-        PanelRow row;
-        row.m_title = tr( TextFormat( "slot.%d", i ) );
-        row.m_slot = i;
-        if ( m_progress.m_worn[i] )
-        {
-            const Item &it = m_progress.m_gear[i];
-            row.m_value = itemName( it );
-            row.m_color = rarityColor( it.m_rarity );
-            row.m_detail = itemDetail( it );
-        }
-        else
-        {
-            row.m_value = "-";
-            row.m_detail = tr( "inv.empty" );
-        }
-        rows.push_back( row );
-    }
-    // What is carried.
-    rows.push_back( { TextFormat( tr( "inv.bag" ), (int)m_progress.m_bag.size(), BagSize ), "", "", true } );
-    for ( size_t i = 0; i < m_progress.m_bag.size(); ++i )
-    {
-        const Item &it = m_progress.m_bag[i];
-        PanelRow    row;
-        row.m_title = itemName( it );
-        row.m_value = TextFormat( tr( "item.ilevel" ), it.m_level );
-        row.m_color = rarityColor( it.m_rarity );
-        row.m_bag = (int)i;
-        row.m_detail = itemDetail( it );
-        rows.push_back( row );
-    }
-    // In a hub: the stash, shared by every game.
-    if ( atStash() )
-    {
-        rows.push_back( { TextFormat( tr( "inv.stash" ), (int)m_stash.size(), StashSize ), "", "", true } );
-        for ( size_t i = 0; i < m_stash.size(); ++i )
-        {
-            const Item &it = m_stash[i];
-            PanelRow    row;
-            row.m_title = itemName( it );
-            row.m_value = TextFormat( tr( "item.ilevel" ), it.m_level );
-            row.m_color = rarityColor( it.m_rarity );
-            row.m_stash = (int)i;
-            row.m_detail = itemDetail( it );
-            rows.push_back( row );
-        }
-    }
-    rows.push_back( { tr( "inv.supplies" ), "", "", true } );
-    rows.push_back( { tr( "item.stims" ), TextFormat( "%d", m_stims ), tr( "item.stims.about" ) } );
-    rows.push_back( { tr( "item.scrap" ), TextFormat( "%d", m_scrap ), tr( "item.scrap.about" ) } );
     bool header = false;
     for ( const auto &job : Jobs )
     {
@@ -283,7 +394,25 @@ std::vector<Game::PanelRow> Game::inventory() const
         std::string key = flag.substr( 5 );
         rows.push_back( { tr( key + ".title" ), "", tr( key ) } );
     }
+    if ( rows.empty() ) rows.push_back( { tr( "inv.nonotes" ), "", "", true } );
     return rows;
+}
+
+std::string Game::itemSummary( const Item &it ) const
+{
+    const ItemBase &b = itemBases()[it.m_base];
+    if ( b.m_slot == SlotE::WEAPON )
+    {
+        std::string t = TextFormat( tr( "item.dmg" ), (int)roundf( itemDamage( it ) ) );
+        if ( b.m_pellets > 1 ) t += TextFormat( " x %d", b.m_pellets );
+        if ( b.m_hero != 1 ) t += std::string( " · " ) + TextFormat( tr( "item.rate" ), 1.0f / b.m_interval );
+        return t;
+    }
+    if ( b.m_slot == SlotE::EMITTER ) return TextFormat( tr( "item.shieldval" ), (int)roundf( itemShield( it ) ) );
+    if ( b.m_armor > 0.0f ) return TextFormat( tr( "item.armorval" ), (int)roundf( itemArmor( it ) ) );
+    if ( !it.m_affixes.empty() ) return affixText( it.m_affixes[0] );
+    if ( b.m_bonus != StatE::COUNT && b.m_bonusValue != 0.0f ) return affixText( { b.m_bonus, b.m_bonusValue } );
+    return "";
 }
 
 std::string Game::itemDetail( const Item &it ) const
@@ -373,7 +502,7 @@ std::vector<Game::PanelRow> Game::skillRows() const
 
 int Game::panelRows( int tab ) const
 {
-    if ( tab != 0 && tab != 1 && tab != 4 && tab != 5 ) return 0;
+    if ( tab == TabCharacter || tab == TabMap ) return 0;
     int n = 0;
     for ( const PanelRow &row : rowsOf( tab ) ) n += row.m_header ? 0 : 1;
     return n;
@@ -381,13 +510,19 @@ int Game::panelRows( int tab ) const
 
 std::vector<Game::PanelRow> Game::rowsOf( int tab ) const
 {
-    return tab == 0 ? inventory() : tab == 1 ? skillRows() : tab == 4 ? codexRows() : awardRows();
+    return tab < GearTabs     ? gearRows( tab )
+           : tab == TabSkills ? skillRows()
+           : tab == TabNotes  ? notesRows()
+           : tab == TabCodex  ? codexRows()
+           : tab == TabAwards ? awardRows()
+                              : std::vector<PanelRow>();
 }
 
 const Item *Game::rowItem( const PanelRow &row ) const
 {
     if ( row.m_bag >= 0 && row.m_bag < (int)m_progress.m_bag.size() ) return &m_progress.m_bag[row.m_bag];
     if ( row.m_stash >= 0 && row.m_stash < (int)m_stash.size() ) return &m_stash[row.m_stash];
+    if ( row.m_spare && m_progress.m_hasSpare ) return &m_progress.m_spare;
     if ( row.m_slot >= 0 && m_progress.m_worn[row.m_slot] ) return &m_progress.m_gear[row.m_slot];
     return nullptr;
 }
@@ -461,7 +596,8 @@ void Game::take( int stash )
 
 void Game::panelAction( int tab, int row, int action )
 {
-    std::vector<PanelRow> rows = tab == 0 ? inventory() : tab == 1 ? skillRows() : std::vector<PanelRow>();
+    if ( tab >= GearTabs && tab != TabSkills ) return;
+    std::vector<PanelRow> rows = rowsOf( tab );
     int                   index = 0;
     for ( const PanelRow &r : rows )
     {
@@ -481,6 +617,13 @@ void Game::panelAction( int tab, int row, int action )
                 take( r.m_stash );
                 salvage( (int)m_progress.m_bag.size() - 1 );
             }
+        }
+        else if ( r.m_spare && action == 0 )
+            unequipSpare();
+        else if ( r.m_slot == 0 && action == 0 )
+        {
+            // The hand's weapon off: the second one takes its place (the hand is never empty).
+            if ( m_progress.m_hasSpare ) swapWeapon(), unequipSpare();
         }
         else if ( r.m_slot >= 0 && action == 0 )
             unequip( r.m_slot );
@@ -506,34 +649,45 @@ void Game::drawPanel( int w, int h, int tab, int sel )
     float       s = textScale( h );
     const Font &font = m_font;
     DrawRectangle( 0, 0, w, h, { 3, 5, 8, 248 } );
-    // The tabs, the help line.
-    const char *tabs[PanelTabs] = { "panel.inventory", "panel.skills", "panel.character",
-                                    "panel.map",       "panel.codex",  "panel.awards" };
-    // As wide as the screen allows (a Steam Deck's larger texts on its narrower screen).
-    float step = fminf( 290.0f * s, w * 0.96f / PanelTabs );
+    // As in Dark Alliance: what is carried at the top, the pages as signs, the page's name.
+    float x0 = w * 0.03f, x1 = w * 0.485f;
+    label( font, TextFormat( tr( "inv.bag" ), (int)m_progress.m_bag.size(), BagSize ), x0, 20.0f * s, 22.0f * s,
+           { 255, 190, 120, 235 } );
+    label( font, TextFormat( "%s %d   ·   %s %d", tr( "stat.scrap" ), m_scrap, tr( "stat.stims" ), m_stims ), x1,
+           20.0f * s, 22.0f * s, { 235, 230, 220, 240 }, 2 );
+    const char *names[PanelTabs] = { "panel.weapons",   "panel.armour", "panel.tech", "panel.modules", "panel.skills",
+                                     "panel.character", "panel.notes",  "panel.map",  "panel.codex",   "panel.awards" };
+    float       gap = 6.0f * s, tile = fminf( 64.0f * s, ( x1 - x0 - gap * ( PanelTabs - 1 ) ) / PanelTabs );
+    float       ty = 58.0f * s;
     for ( int i = 0; i < PanelTabs; ++i )
     {
-        float x = w * 0.5f + ( i - ( PanelTabs - 1 ) * 0.5f ) * step;
-        bool  on = i == tab;
-        label( font, tr( tabs[i] ), x, 48.0f * s, 30.0f * s,
-               on ? Color{ 255, 200, 130, 255 } : Color{ 150, 150, 150, 220 }, 1 );
-        if ( on )
-            DrawRectangle( (int)( x - 90.0f * s ), (int)( 92.0f * s ), (int)( 180.0f * s ), (int)( 3.0f * s ),
-                           { 255, 170, 80, 220 } );
+        Rectangle r = { x0 + i * ( tile + gap ), ty, tile, tile };
+        bool      on = i == tab;
+        DrawRectangleRec( r, on ? Color{ 120, 70, 30, 235 } : Color{ 24, 26, 30, 235 } );
+        DrawRectangleLinesEx( r, 2.0f * s, on ? Color{ 255, 170, 80, 240 } : Color{ 70, 70, 74, 220 } );
+        tabSign( i, r, on ? Color{ 255, 215, 160, 255 } : Color{ 165, 165, 160, 230 } );
     }
-    label( font,
-           tr( tab == 0 && atStash() ? "panel.help.stash"
-               : tab == 0            ? "panel.help.inventory"
-               : tab == 1            ? "panel.help.skills"
-                                     : "panel.help" ),
-           w * 0.5f, h - 56.0f * s, 20.0f * s, { 150, 150, 150, 220 }, 1 );
-    float left = w * 0.08f, right = w * 0.92f, top = 140.0f * s;
+    label( font, tr( names[tab] ), x0, ty + tile + 10.0f * s, 26.0f * s, { 255, 200, 130, 255 } );
+    const char *help = tab < GearTabs && atStash() ? "panel.help.gear.stash"
+                       : tab < GearTabs            ? "panel.help.gear"
+                       : tab == TabSkills          ? "panel.help.skills"
+                                                   : "panel.help";
+    float       top = ty + tile + 52.0f * s;
+    if ( tab < GearTabs )
+    {
+        drawGear( w, h, tab, sel, s, top );
+        DrawRectangle( 0, (int)( h - 64.0f * s ), w, (int)( 64.0f * s ) + 1, { 3, 5, 8, 235 } );
+        label( font, tr( help ), w * 0.5f, h - 46.0f * s, 20.0f * s, { 165, 165, 160, 230 }, 1 );
+        return;
+    }
+    label( font, tr( help ), w * 0.5f, h - 46.0f * s, 20.0f * s, { 150, 150, 150, 220 }, 1 );
+    float left = w * 0.08f, right = w * 0.94f;
 
-    if ( tab == 0 || tab == 1 || tab == 4 || tab == 5 )
+    if ( tab == TabSkills || tab == TabNotes || tab == TabCodex || tab == TabAwards )
     {
         // The list on the left (scrolled so the chosen row shows), what it is on the right.
         std::vector<PanelRow> rows = rowsOf( tab );
-        float                 listW = w * 0.4f, rowH = 38.0f * s, bottom = h - 100.0f * s;
+        float                 listW = w * 0.4f, rowH = 38.0f * s, bottom = h - 80.0f * s;
         // Where the chosen row would sit, to scroll.
         float y = 0.0f, chosenY = 0.0f;
         int   index = 0;
@@ -618,7 +772,7 @@ void Game::drawPanel( int w, int h, int tab, int sel )
         }
         return;
     }
-    if ( tab == 2 )
+    if ( tab == TabCharacter )
     {
         // The portrait, the name, what they are; then their numbers as they stand.
         float x = left;
@@ -678,6 +832,226 @@ void Game::drawPanel( int w, int h, int tab, int sel )
     // The map: the whole of what has been seen, the place's name over it.
     label( font, tr( m_level.m_name ), w * 0.5f, top - 10.0f * s, 28.0f * s, { 245, 236, 222, 255 }, 1 );
     drawMap( { left, top + 40.0f * s, right - left, h - top - 140.0f * s }, 1.0f, s );
+}
+
+void Game::drawGear( int w, int h, int tab, int sel, float s, float top )
+{
+    const Font &font = m_font;
+    float       x0 = w * 0.03f, x1 = w * 0.485f, bottom = h - 80.0f * s;
+    // The right half: the hero where they stand, in what they wear; their name above, a few numbers below.
+    if ( m_heroShot.id > 0 )
+    {
+        float sw = (float)m_heroShot.texture.width, sh = (float)m_heroShot.texture.height;
+        DrawTexturePro( m_heroShot.texture, { sw * 0.25f, 0.0f, sw * 0.5f, -sh },
+                        { w * 0.5f, 0.0f, w * 0.5f, (float)h }, { 0, 0 }, 0.0f, WHITE );
+        DrawRectangleGradientH( (int)( w * 0.5f ), 0, (int)( 60 * s ), h, { 3, 5, 8, 248 }, { 3, 5, 8, 0 } );
+        DrawRectangleGradientV( (int)( w * 0.5f ), 0, (int)( w * 0.5f ) + 1, (int)( 110 * s ), { 3, 5, 8, 200 },
+                                { 3, 5, 8, 0 } );
+    }
+    float cx = w * 0.75f;
+    label( font, tr( std::string( "hero." ) + heroKey( m_heroKind ) ), cx, 20.0f * s, 32.0f * s, { 245, 236, 222, 255 },
+           1 );
+    label( font, TextFormat( tr( "hud.level" ), m_progress.m_heroLevel ), cx, 60.0f * s, 22.0f * s,
+           { 255, 210, 140, 240 }, 1 );
+    {
+        bool  dorra = m_heroKind == HeroE::DORRA;
+        float perSecond = dorra ? 1.0f / ( 0.55f * m_stats.m_interval ) : 1.0f / m_stats.m_interval;
+        std::vector<std::pair<const char *, std::string>> nums = {
+            { "stat.health", TextFormat( "%d / %d", (int)ceilf( m_hp ), (int)hpMax() ) },
+            { "stat.armor", TextFormat( "%d", (int)m_stats.m_armor ) },
+            { "stat.brief.damage", TextFormat( m_stats.m_pellets > 1 ? "%d x %d" : "%d",
+                                               (int)roundf( m_stats.m_damage ), m_stats.m_pellets ) },
+            { "stat.brief.speed", TextFormat( "%.1f", perSecond ) }
+        };
+        if ( m_stats.m_shield > 0.0f ) nums.push_back( { "stat.shield", TextFormat( "%d", (int)m_stats.m_shield ) } );
+        float bw = w * 0.44f, bx = cx - bw * 0.5f, by = h - 150.0f * s, colW = bw / nums.size();
+        DrawRectangle( (int)bx, (int)by, (int)bw, (int)( 62 * s ), { 0, 0, 0, 150 } );
+        for ( size_t i = 0; i < nums.size(); ++i )
+        {
+            float x = bx + colW * ( i + 0.5f );
+            label( font, fit( font, tr( nums[i].first ), 16.0f * s, colW - 8 * s ).c_str(), x, by + 6 * s, 16.0f * s,
+                   { 255, 190, 120, 230 }, 1 );
+            label( font, nums[i].second.c_str(), x, by + 28 * s, 24.0f * s, { 240, 235, 225, 255 }, 1 );
+        }
+    }
+    // The cards: the chosen one opened with all it is.
+    std::vector<PanelRow>                 rows = gearRows( tab );
+    float                                 cardH = 96.0f * s, pic = cardH - 14.0f * s, textW = x1 - x0 - pic - 30.0f * s;
+    std::vector<std::vector<std::string>> details( rows.size() );
+    float                                 y = 0.0f, chosenTop = 0.0f, chosenBottom = 0.0f;
+    int                                   index = 0;
+    for ( size_t i = 0; i < rows.size(); ++i )
+    {
+        const PanelRow &row = rows[i];
+        if ( row.m_header )
+        {
+            y += row.m_free ? 34.0f * s : 46.0f * s;
+            continue;
+        }
+        float hgt = cardH;
+        if ( index++ == sel )
+        {
+            std::vector<std::string> parts;
+            for ( size_t at = 0;; )
+            {
+                size_t next = row.m_detail.find( " | ", at );
+                parts.push_back( row.m_detail.substr( at, next == std::string::npos ? std::string::npos : next - at ) );
+                if ( next == std::string::npos ) break;
+                at = next + 3;
+            }
+            const Item *it = rowItem( row );
+            bool        numbers =
+                it && ( itemBases()[it->m_base].m_slot == SlotE::WEAPON ||
+                        itemBases()[it->m_base].m_slot == SlotE::EMITTER || itemBases()[it->m_base].m_armor > 0.0f );
+            for ( size_t p = numbers ? 2 : 1; p + 1 < parts.size(); ++p )
+                for ( const std::string &line : wrap( font, parts[p], 19.0f * s, x1 - x0 - 24.0f * s ) )
+                    details[i].push_back( line );
+            hgt += details[i].size() * 25.0f * s + 10.0f * s;
+            chosenTop = y, chosenBottom = y + hgt;
+        }
+        y += hgt + 8.0f * s;
+    }
+    float view = bottom - top, scroll = 0.0f;
+    if ( chosenBottom - scroll > view ) scroll = chosenBottom - view;
+    if ( chosenTop < scroll ) scroll = chosenTop;
+    BeginScissorMode( (int)( x0 - 4 ), (int)( top - 4 ), (int)( x1 - x0 + 8 ), (int)( view + 8 ) );
+    y = top - scroll;
+    index = 0;
+    const char *kinds[4] = { "dmg.kinetic", "dmg.heat", "dmg.shock", "dmg.acid" };
+    const Color kindColor[4] = {
+        { 205, 205, 200, 255 }, { 255, 140, 70, 255 }, { 120, 185, 255, 255 }, { 150, 230, 90, 255 }
+    };
+    if ( rows.empty() ) label( font, tr( "inv.none" ), x0, y, 22.0f * s, { 150, 150, 150, 220 } );
+    for ( size_t i = 0; i < rows.size(); ++i )
+    {
+        const PanelRow &row = rows[i];
+        if ( row.m_header )
+        {
+            label( font, row.m_title.c_str(), x0 + 4 * s, y + ( row.m_free ? 4.0f : 14.0f ) * s,
+                   ( row.m_free ? 18.0f : 22.0f ) * s,
+                   row.m_free ? Color{ 150, 150, 145, 220 } : Color{ 255, 170, 90, 230 } );
+            y += row.m_free ? 34.0f * s : 46.0f * s;
+            continue;
+        }
+        bool        on = index++ == sel;
+        const Item *item = rowItem( row );
+        float       hgt = cardH + ( on ? details[i].size() * 25.0f * s + 10.0f * s : 0.0f );
+        bool        worn = row.m_slot >= 0;
+        Color       bg = on                 ? Color{ 150, 118, 40, 228 }
+                         : worn             ? Color{ 44, 86, 50, 220 }
+                         : row.m_spare      ? Color{ 38, 70, 96, 220 }
+                         : row.m_stash >= 0 ? Color{ 34, 36, 46, 220 }
+                                            : Color{ 24, 26, 30, 230 };
+        DrawRectangleRec( { x0, y, x1 - x0, hgt }, bg );
+        DrawRectangleLinesEx( { x0, y, x1 - x0, hgt }, 1.5f * s, { 255, 255, 255, (unsigned char)( on ? 90 : 30 ) } );
+        if ( item )
+        {
+            if ( const Texture2D *p = pictureOf( *item ) )
+                DrawTexturePro( *p, { 0, 0, (float)p->width, (float)p->height },
+                                { x1 - pic - 7 * s, y + 7 * s, pic, pic }, { 0, 0 }, 0.0f, WHITE );
+            const ItemBase &b = itemBases()[item->m_base];
+            Color           name = on ? Color{ 255, 245, 225, 255 } : row.m_color;
+            label( font, fit( font, row.m_title, 24.0f * s, textW ).c_str(), x0 + 12 * s, y + 8 * s, 24.0f * s, name );
+            std::string sum = itemSummary( *item );
+            label( font, fit( font, sum, 19.0f * s, textW ).c_str(), x0 + 12 * s, y + 40 * s, 19.0f * s,
+                   { 225, 220, 210, 240 } );
+            // A weapon's kind of damage, in its colour, after the numbers.
+            if ( b.m_slot == SlotE::WEAPON )
+            {
+                int   k = weaponDamage( *item );
+                float after = MeasureTextEx( font, ( sum + "  " ).c_str(), 19.0f * s, 1.0f ).x;
+                if ( after + 60 * s < textW )
+                    label( font, tr( kinds[k] ), x0 + 12 * s + after, y + 40 * s, 19.0f * s, kindColor[k] );
+            }
+            // What it is (worn, the second weapon, in the stash), its level, its scrap; against what is worn there.
+            std::string status = row.m_spare        ? tr( "inv.spare" )
+                                 : worn             ? tr( "inv.worn" )
+                                 : row.m_stash >= 0 ? tr( "inv.instash" )
+                                                    : "";
+            if ( !status.empty() ) status += "  ·  ";
+            status += std::string( tr( TextFormat( "rarity.%d", (int)item->m_rarity ) ) ) + "  ·  ";
+            status += std::string( TextFormat( tr( "item.ilevel" ), item->m_level ) ) + "  ·  " +
+                      TextFormat( tr( "item.scrapval" ), std::max( 1, itemValue( *item ) / 5 ) );
+            label( font, fit( font, status, 17.0f * s, textW ).c_str(), x0 + 12 * s, y + 68 * s, 17.0f * s,
+                   worn          ? Color{ 170, 235, 170, 240 }
+                   : row.m_spare ? Color{ 160, 205, 255, 240 }
+                                 : Color{ 175, 175, 170, 230 } );
+            if ( !worn && !row.m_spare )
+            {
+                int         slot = gearIndex( *item );
+                const Item *now = slot >= 0 && m_progress.m_worn[slot] ? &m_progress.m_gear[slot] : nullptr;
+                float       mine = 0.0f, theirs = 0.0f;
+                bool        has = true;
+                auto        rate = [&]( const Item &it )
+                {
+                    const ItemBase &ib = itemBases()[it.m_base];
+                    return itemDamage( it ) * std::max( 1, ib.m_pellets ) / fmaxf( 0.05f, ib.m_interval );
+                };
+                if ( b.m_slot == SlotE::WEAPON )
+                    mine = rate( *item ), theirs = now ? rate( *now ) : 0.0f;
+                else if ( b.m_slot == SlotE::EMITTER )
+                    mine = itemShield( *item ), theirs = now ? itemShield( *now ) : 0.0f;
+                else if ( b.m_armor > 0.0f )
+                    mine = itemArmor( *item ), theirs = now ? itemArmor( *now ) : 0.0f;
+                else
+                    has = false;
+                int delta = (int)roundf( mine - theirs );
+                if ( has && delta != 0 )
+                    label( font, TextFormat( "%+d", delta ), x1 - pic - 16 * s, y + 40 * s, 22.0f * s,
+                           delta > 0 ? Color{ 120, 230, 120, 255 } : Color{ 240, 110, 100, 255 }, 2 );
+            }
+        }
+        if ( on )
+        {
+            float dy = y + cardH;
+            for ( const std::string &line : details[i] )
+            {
+                label( font, line.c_str(), x0 + 12 * s, dy, 19.0f * s, { 245, 238, 225, 250 } );
+                dy += 25.0f * s;
+            }
+        }
+        y += hgt + 8.0f * s;
+    }
+    EndScissorMode();
+}
+
+void Game::preparePanel( Gfx &gfx, int tab, float turn, int w, int h )
+{
+    if ( tab >= GearTabs ) return;
+    if ( m_heroShot.id == 0 || m_heroShot.texture.width != w || m_heroShot.texture.height != h )
+    {
+        if ( m_heroShot.id ) UnloadRenderTexture( m_heroShot );
+        m_heroShot = LoadRenderTexture( w, h );
+        m_heroShotSig.clear();
+    }
+    // Drawn again only when the view turns or the hero wears something else.
+    std::string sig = TextFormat( "%.3f", turn );
+    for ( int i = 0; i < EquipSlots; ++i ) sig += m_progress.m_worn[i] ? saveItem( m_progress.m_gear[i] ) : "-";
+    if ( sig == m_heroShotSig ) return;
+    m_heroShotSig = sig;
+    renderHero( gfx, &m_heroShot, turn );
+}
+
+void Game::renderHero( Gfx &gfx, const RenderTexture2D *out, float turn )
+{
+    // The photo mode's camera close in front of the hero (the picture's middle half shows them), the HUD off.
+    Camera3D cam = m_cam;
+    bool     photo = m_photo;
+    Vector3  target = m_photoTarget;
+    m_photo = true;
+    m_photoTarget = Vector3Add( m_pos, { 0.0f, 0.95f, 0.0f } );
+    float yaw = m_yaw + turn;
+    m_cam.target = m_photoTarget;
+    m_cam.position = Vector3Add( m_photoTarget, { sinf( yaw ) * 3.6f, 0.5f, cosf( yaw ) * 3.6f } );
+    m_cam.up = { 0.0f, 1.0f, 0.0f };
+    m_cam.fovy = 38.0f;
+    m_cam.projection = CAMERA_PERSPECTIVE;
+    m_viewLight = 1.35f;
+    render( gfx, out );
+    m_viewLight = 1.0f;
+    m_cam = cam;
+    m_photo = photo;
+    m_photoTarget = target;
 }
 
 }   // namespace spaceopera

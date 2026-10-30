@@ -91,7 +91,7 @@ struct Options
     std::string              m_talk;                    ///< with --shot: a conversation open in the picture
     std::string              m_film;                    ///< a film played over the level (assets/films/<name>)
     int                      m_shop = 0;                ///< with --shot: Ottla's (1) or Kiri's (2) menu open
-    int                      m_panel = -1;        ///< with --shot: the inventory (0), character (1) or map (2) page
+    int                      m_panel = -1;        ///< with --shot: a page of the inventory (Game::PanelTabs: 0 weapons)
     int                      m_stash = 0;         ///< with --shot: the first items of the bag into the stash
     int                      m_lootFilter = -1;   ///< tests: the loot filter (-1: as set)
     bool                     m_map = false;       ///< with --shot: the map over the game
@@ -339,6 +339,15 @@ GameInput readInput( Vector2 &lastMouse, float dt )
     in.m_stim = pressed( BindE::STIM );
     in.m_special = pressed( BindE::SPECIAL );
     in.m_use = pressed( BindE::USE );
+    // The swap: as bound, and on the cross's other side too where nothing else is bound (Dark Alliance's way).
+    in.m_swap = pressed( BindE::SWAP );
+    if ( IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_LEFT ) )
+    {
+        bool free = true;
+        for ( int b = 0; b < (int)BindE::SALVAGE; ++b )
+            free = free && binding( (BindE)b ).m_pad != GAMEPAD_BUTTON_LEFT_FACE_LEFT;
+        in.m_swap = in.m_swap || free;
+    }
     in.m_map = pressed( BindE::MAP );
     in.m_skill2 = pressed( BindE::SKILL2 );
     in.m_skill3 = pressed( BindE::SKILL3 );
@@ -609,6 +618,8 @@ bool loadProgress( Progress &p, const std::string &path = savePath() )
             Item it;
             if ( loadItem( rest, it ) ) p.m_bag.push_back( it );
         }
+        else if ( !strcmp( key, "spare" ) )
+            p.m_hasSpare = loadItem( rest, p.m_spare );
         else if ( !strcmp( key, "rank" ) )
         {
             int skill = 0, rank = 0;
@@ -676,6 +687,7 @@ void saveProgress( const Progress &p, const std::string &path = savePath() )
         if ( p.m_ranks[i] > 0 ) fprintf( f, "rank %d %d\n", (int)i, p.m_ranks[i] );
     for ( int i = 0; i < EquipSlots; ++i )
         if ( p.m_worn[i] ) fprintf( f, "gear %d %s\n", i, saveItem( p.m_gear[i] ).c_str() );
+    if ( p.m_hasSpare ) fprintf( f, "spare %s\n", saveItem( p.m_spare ).c_str() );
     for ( const Item &it : p.m_bag ) fprintf( f, "bag %s\n", saveItem( it ).c_str() );
     for ( const std::string &flag : p.m_flags ) fprintf( f, "flag %s\n", flag.c_str() );
     fprintf( f, "when %lld\n", (long long)time( nullptr ) );   // for the list of saves
@@ -1376,6 +1388,7 @@ int runGame( const Options &o, Gfx &gfx )
                          [&]( const RenderTexture2D *rt )
                          {
                              game->render( gfx, rt );
+                             game->preparePanel( gfx, o.m_panel, 0.0f, rt->texture.width, rt->texture.height );
                              BeginTextureMode( *rt );
                              game->drawPanel( rt->texture.width, rt->texture.height, o.m_panel, 0 );
                              EndTextureMode();
@@ -1486,6 +1499,7 @@ int runGame( const Options &o, Gfx &gfx )
     auto        optionsFrom = TITLE;                                 // where the options go back to
     int         chosen = 0;
     int         panelTab = 0, panelRow = 0;   ///< the inventory, character and map pages: which, and the chosen row
+    float       heroTurn = 0.0f;              ///< the gear pages: how far the view is turned round the hero
     bool        quit = false;
     // Outside play the game waits, so its picture is drawn once and shown behind the menus: again when a setting
     // changes it, and four times a second behind the inventory, where gear changes the hero's looks.
@@ -1542,7 +1556,8 @@ int runGame( const Options &o, Gfx &gfx )
             else if ( ( inventory || character ) && !game->finished() )
             {
                 mode = PANEL;
-                panelTab = character ? 2 : 0;
+                panelTab = character ? Game::TabCharacter : 0;
+                heroTurn = 0.0f;
                 panelRow = 0;
             }
             else
@@ -1588,6 +1603,12 @@ int runGame( const Options &o, Gfx &gfx )
             if ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_TRIGGER_1 ) ) turn = -1;
             if ( pad && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1 ) ) turn = 1;
             if ( turn ) panelTab = ( panelTab + turn + Game::PanelTabs ) % Game::PanelTabs, panelRow = 0;
+            // The hero on a gear page turns with the right stick, Q and E, or the right mouse button held.
+            float spin = pad ? GetGamepadAxisMovement( 0, GAMEPAD_AXIS_RIGHT_X ) : 0.0f;
+            if ( fabsf( spin ) < 0.2f ) spin = 0.0f;
+            spin += ( IsKeyDown( KEY_E ) ? 1.0f : 0.0f ) - ( IsKeyDown( KEY_Q ) ? 1.0f : 0.0f );
+            heroTurn += spin * 2.4f * dt;
+            if ( IsMouseButtonDown( MOUSE_BUTTON_RIGHT ) ) heroTurn += GetMouseDelta().x * 0.01f;
             int rows = game->panelRows( panelTab );
             if ( rows > 0 ) panelRow = ( panelRow + k.m_move + rows ) % rows;
             // A or Enter: put on, take off, learn; X or Delete: salvage.
@@ -2041,11 +2062,20 @@ int runGame( const Options &o, Gfx &gfx )
                 still = LoadRenderTexture( w, h );
                 stillValid = false;
             }
-            if ( mode == PANEL && stillAge > 0.25f ) stillValid = false;
-            if ( !stillValid ) game->render( gfx, &still ), stillValid = true, stillAge = 0.0f;
-            DrawTextureRec( still.texture, { 0.0f, 0.0f, (float)w, -(float)h }, { 0.0f, 0.0f }, WHITE );
+            // Behind the inventory nothing: its pages cover the screen (and show the hero themselves).
+            if ( mode == PANEL )
+                ClearBackground( BLACK );
+            else
+            {
+                if ( !stillValid ) game->render( gfx, &still ), stillValid = true, stillAge = 0.0f;
+                DrawTextureRec( still.texture, { 0.0f, 0.0f, (float)w, -(float)h }, { 0.0f, 0.0f }, WHITE );
+            }
         }
-        if ( mode == PANEL ) game->drawPanel( GetScreenWidth(), GetScreenHeight(), panelTab, panelRow );
+        if ( mode == PANEL )
+        {
+            game->preparePanel( gfx, panelTab, heroTurn, GetScreenWidth(), GetScreenHeight() );
+            game->drawPanel( GetScreenWidth(), GetScreenHeight(), panelTab, panelRow );
+        }
         if ( mode == CHOOSE )
         {
             const char              *keys[3] = { "dorra", "corvin", "ione" };

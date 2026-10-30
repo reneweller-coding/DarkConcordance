@@ -418,6 +418,10 @@ Still to come, by first use:
    small on the Deck, a level loads long and still, use and jump on one button is awkward): a text size for the whole
    interface (130 % on the Deck), a loading screen with the place's name and a bar, the animation libraries read once
    per run (a level 7-15 s on the PC before, 3.6-4.3 s now), use and talk on X (A only jumps).
+17. The inventory as in Dark Alliance — done (30.10.2026, the user showed Dark Alliance's screens): gear pages with
+   item cards (picture, numbers, worn/second/locker, the difference to what is worn) on the left and the hero in 3D on
+   the right, ten pages as signs, notes on a page of their own; a second weapon with a quick swap (T, the pad's cross)
+   and its box in the HUD.
 
 ## Open decisions (the user's)
 

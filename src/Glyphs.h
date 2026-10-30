@@ -53,6 +53,7 @@ enum class ActionE
     DODGE,
     STORE,
     PHOTO,
+    SWAP,
     COUNT
 };
 

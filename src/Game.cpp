@@ -857,6 +857,7 @@ void Game::shutdown()
 {
     m_audio.shutdown();
     if ( m_ownFont ) UnloadFont( m_font );
+    if ( m_heroShot.id ) UnloadRenderTexture( m_heroShot );
 }
 
 const char *difficultyName( DifficultyE d )
@@ -1775,6 +1776,7 @@ void Game::updateHero( float dt, const GameInput &in )
     // Health that comes back by itself (gear, Nanoheilung).
     if ( stat( StatE::REGEN ) > 0.0f ) m_hp = fminf( hpMax(), m_hp + stat( StatE::REGEN ) * dt );
 
+    if ( in.m_swap ) swapWeapon();
     if ( in.m_stim && m_stims > 0 && m_hp < hpMax() )
     {
         m_hp = fminf( hpMax(), m_hp + StimHeal * ( 1.0f + stat( StatE::STIMS ) / 100.0f ) * m_stimScale );
@@ -4026,7 +4028,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     gfx.m_sunShadows = m_skyTex.id > 0 || m_ringMesh.vertexCount > 0;
     gfx.m_cutCentre = Vector3Add( m_photo ? m_photoTarget : m_pos, { 0.0f, m_photo ? 0.2f : 1.2f, 0.0f } );
     gfx.m_cutRadius = 2.6f;
-    gfx.m_exposure = 1.7f * m_brightness;
+    gfx.m_exposure = 1.7f * m_brightness * m_viewLight;
     gradeFor( gfx );
     gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );
     gfx.beginScene( m_cam, L, m_time, m_skyTex.id > 0 ? m_skyTex : ( m_skyColorTex.id > 0 ? m_skyColorTex : m_dot ) );

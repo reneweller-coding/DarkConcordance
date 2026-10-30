@@ -33,6 +33,7 @@ enum class BindE : int
     CHARACTER,   ///< the character page
     CAMRESET,    ///< the camera back behind the start's view
     PHOTO,       ///< the photo mode
+    SWAP,        ///< the second weapon into the hand (Dark Alliance's cross)
     SALVAGE,     ///< in the inventory: salvage
     STORE,       ///< in the inventory: into the stash and out of it
     COUNT        ///< how many

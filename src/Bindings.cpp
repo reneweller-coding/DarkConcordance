@@ -19,10 +19,10 @@ namespace spaceopera
 namespace
 {
 
-const char *const Names[(int)BindE::COUNT] = { "up",        "down",     "left",    "right",   "fire",
-                                               "jump",      "dodge",    "special", "skill2",  "skill3",
-                                               "stim",      "use",      "strafe",  "map",     "inventory",
-                                               "character", "camreset", "photo",   "salvage", "store" };
+const char *const Names[(int)BindE::COUNT] = { "up",     "down",    "left",      "right",     "fire",     "jump",
+                                               "dodge",  "special", "skill2",    "skill3",    "stim",     "use",
+                                               "strafe", "map",     "inventory", "character", "camreset", "photo",
+                                               "swap",   "salvage", "store" };
 
 /** @brief What the game comes with (the pad's triggers are buttons 10 and 12, also read as axes). */
 const Binding Defaults[(int)BindE::COUNT] = { { KEY_W, 0 },
@@ -43,6 +43,7 @@ const Binding Defaults[(int)BindE::COUNT] = { { KEY_W, 0 },
                                               { KEY_C, 0 },
                                               { KEY_BACKSPACE, GAMEPAD_BUTTON_RIGHT_THUMB },
                                               { KEY_P, 0 },
+                                              { KEY_T, GAMEPAD_BUTTON_LEFT_FACE_RIGHT },
                                               { KEY_X, GAMEPAD_BUTTON_RIGHT_FACE_LEFT },
                                               { KEY_F, GAMEPAD_BUTTON_RIGHT_FACE_UP } };
 

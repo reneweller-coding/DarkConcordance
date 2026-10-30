@@ -9,9 +9,9 @@ ione        | --level kuehlgedaerme.txt --hero ione --warm 7 --photo 2.6,-0.5,-0
 hud         | --level knochenmarkt.txt --hero dorra --herolevel 5 --autoplay --warm 45
 fight       | --level aussenhaut.txt --hero corvin --herolevel 7 --autoplay --warm 70
 inventory   | --level velm.txt --hero corvin --herolevel 9 --loot 14 --warm 3 --panel 0
-skills      | --level velm.txt --hero corvin --herolevel 9 --warm 3 --panel 1
-character   | --level velm.txt --hero corvin --herolevel 9 --loot 14 --warm 3 --panel 2
-map         | --level knochenmarkt.txt --hero corvin --herolevel 5 --autoplay --warm 120 --panel 3
+skills      | --level velm.txt --hero corvin --herolevel 9 --warm 3 --panel 4
+character   | --level velm.txt --hero corvin --herolevel 9 --loot 14 --warm 3 --panel 5
+map         | --level knochenmarkt.txt --hero corvin --herolevel 5 --autoplay --warm 120 --panel 7
 hub         | --level velm.txt --hero dorra --warm 8 --photo 1.2,-0.7,-0.3
 talk        | --level velm.txt --hero dorra --warm 9 --talk ysolde
 trader      | --level velm.txt --hero corvin --warm 9 --shop 1

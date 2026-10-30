@@ -134,6 +134,7 @@ bind.inventory    = Inventar
 bind.character    = Figur
 bind.camreset     = Kamera zurück
 bind.photo        = Fotomodus
+bind.swap         = Waffe wechseln
 bind.salvage      = Inventar: zerlegen
 bind.store        = Inventar: in den Spind
 

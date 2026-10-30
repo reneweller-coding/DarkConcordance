@@ -23,11 +23,11 @@ namespace spaceopera
 namespace
 {
 
-const char *const ActionNames[(int)ActionE::COUNT] = { "use",      "jump",   "special",   "fire",      "stim",
-                                                       "skill2",   "skill3", "strafe",    "confirm",   "back",
-                                                       "pause",    "map",    "inventory", "character", "salvage",
-                                                       "page",     "choose", "change",    "move",      "camera",
-                                                       "camreset", "next",   "dodge",     "store",     "photo" };
+const char *const ActionNames[(int)ActionE::COUNT] = { "use",       "jump",      "special",  "fire", "stim",   "skill2",
+                                                       "skill3",    "strafe",    "confirm",  "back", "pause",  "map",
+                                                       "inventory", "character", "salvage",  "page", "choose", "change",
+                                                       "move",      "camera",    "camreset", "next", "dodge",  "store",
+                                                       "photo",     "swap" };
 
 DeviceE g_device = DeviceE::KEYBOARD;
 bool    g_known = false;    ///< the first look has been taken
@@ -102,6 +102,7 @@ int boundOf( ActionE a )
     case ActionE::DODGE: return (int)BindE::DODGE;
     case ActionE::STORE: return (int)BindE::STORE;
     case ActionE::PHOTO: return (int)BindE::PHOTO;
+    case ActionE::SWAP: return (int)BindE::SWAP;
     default: return -1;
     }
 }

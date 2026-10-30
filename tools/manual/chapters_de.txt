@@ -121,7 +121,11 @@ Waffe, Anzug, Helm, Handschuhe, Stiefel, zwei Implantate und drei Dinge des Saum
 - **Sockel** nehmen Module auf; Module fallen für sich allein und kommen im Inventar in einen freien Sockel.
 - **Zerlegen** gibt Schrott für ein Fünftel des Werts. Der **Beutefilter** in den Optionen kann gewöhnliche (und magische) Funde gleich zerlegen – nie, was einen leeren Platz füllen würde, und nie ein Modul.
 
-[shot inventory] Das Inventar: links die getragenen Plätze, rechts die Tasche, unten der Vergleich mit dem, was du trägst.
+Das **Inventar** (View, I) ist aufgebaut wie in Dark Alliance: oben die Tasche, Schrott und Stims, darunter die Seiten als Zeichen – Waffen, Rüstung, Technik, Module, Fähigkeiten, Figur, Notizen, Karte, Kodex, Auszeichnungen (LB/RB oder Pfeiltasten blättern). Auf den Ausrüstungsseiten steht links jeder Gegenstand als Karte: Bild, Name in der Farbe seiner Seltenheit, die wichtigsten Werte und der Unterschied zu dem, was du dort trägst. Angelegtes ist grün, die Zweitwaffe blau, die gewählte Karte gelb und aufgeklappt. Rechts steht dein Held in 3D, so wie er gerade aussieht; der rechte Stick (Q/E, rechte Maustaste) dreht ihn. A legt an oder ab, X zerlegt, Y bringt in Stationen etwas in den Spind.
+
+**Zweitwaffe**: Legst du eine Waffe an, wird die bisherige zur Zweitwaffe (ist der Platz schon belegt, wandert sie in die Tasche). Im Spiel wechselt das Steuerkreuz (rechts oder links, Taste T) zwischen beiden – etwa zu einer Hitzewaffe, wenn ein Gegner Kinetik verträgt. Das HUD zeigt die Zweitwaffe links neben den Fähigkeiten.
+
+[shot inventory] Das Inventar: links die Karten der Waffenseite, rechts der Held mit seinen Werten.
 
 [shot character] Die Charakterseite: alle Werte auf einen Blick.
 

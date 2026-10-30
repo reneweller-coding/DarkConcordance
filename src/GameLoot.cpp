@@ -461,7 +461,11 @@ void Game::equip( int i )
         return;
     }
     m_progress.m_bag.erase( m_progress.m_bag.begin() + i );
-    if ( m_progress.m_worn[slot] ) m_progress.m_bag.push_back( m_progress.m_gear[slot] );
+    // The weapon in the hand becomes the second one if there is none yet (a swap away), else it goes into the bag.
+    if ( m_progress.m_worn[slot] && slot == 0 && !m_progress.m_hasSpare )
+        m_progress.m_spare = m_progress.m_gear[0], m_progress.m_hasSpare = true;
+    else if ( m_progress.m_worn[slot] )
+        m_progress.m_bag.push_back( m_progress.m_gear[slot] );
     m_progress.m_gear[slot] = it;
     m_progress.m_worn[slot] = true;
     float part = m_hp / fmaxf( 1.0f, hpMax() );
@@ -482,6 +486,31 @@ void Game::unequip( int slot )
     m_hp = fminf( m_hp, hpMax() );
     m_shield = fminf( m_shield, m_stats.m_shield );
     dressHero();
+}
+
+void Game::swapWeapon()
+{
+    if ( !m_progress.m_hasSpare || m_dead || m_finished ) return;
+    std::swap( m_progress.m_gear[0], m_progress.m_spare );
+    m_progress.m_hasSpare = m_progress.m_worn[0];
+    m_progress.m_worn[0] = true;
+    float part = m_hp / fmaxf( 1.0f, hpMax() );
+    refreshStats();
+    m_hp = fminf( hpMax(), part * hpMax() );
+    m_shield = fminf( m_shield, m_stats.m_shield );
+    dressHero();
+    m_toast = itemName( m_progress.m_gear[0] );
+    m_toastColor = rarityColor( m_progress.m_gear[0].m_rarity );
+    m_toastTimer = 1.4f;
+    m_audio.play( SfxE::PICKUP, m_pos, m_camTarget, 0.5f );
+    playlog::line( "swap %s", itemName( m_progress.m_gear[0] ).c_str() );
+}
+
+void Game::unequipSpare()
+{
+    if ( !m_progress.m_hasSpare || (int)m_progress.m_bag.size() >= BagSize ) return;
+    m_progress.m_bag.push_back( m_progress.m_spare );
+    m_progress.m_hasSpare = false;
 }
 
 void Game::salvage( int i )
@@ -674,6 +703,18 @@ void Game::drawLootHud( int w, int h, float s )
             text( tr( keys[slot] ), x + 5 * s, y + 2 * s, 26.0f, WHITE );   // the button, as the device has it
             text( tr( std::string( skillDefs()[k].m_key ) + ".short" ), x + size * 0.5f, y + size - 24 * s, 15.0f,
                   known ? Color{ 240, 230, 210, 240 } : Color{ 120, 120, 120, 200 }, true );
+        }
+        // The second weapon left of them: its picture and the button that brings it into the hand.
+        if ( m_progress.m_hasSpare )
+        {
+            float size = 64.0f * s, x = w - 4 * ( size + 10 * s ) - 20 * s, y = h - size - 40 * s;
+            DrawRectangle( (int)x, (int)y, (int)size, (int)size, { 10, 12, 14, 200 } );
+            if ( const Texture2D *pic = pictureOf( m_progress.m_spare ) )
+                DrawTexturePro( *pic, { 0, 0, (float)pic->width, (float)pic->height }, { x, y, size, size }, { 0, 0 },
+                                0.0f, { 255, 255, 255, 210 } );
+            Color c = rarityColor( m_progress.m_spare.m_rarity );
+            DrawRectangleLinesEx( { x, y, size, size }, 2.0f * s, { c.r, c.g, c.b, 200 } );
+            text( tr( "hud.keyswap" ), x + 5 * s, y + 2 * s, 26.0f, WHITE );
         }
     }
     // A level reached.

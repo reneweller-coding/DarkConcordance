@@ -134,6 +134,7 @@ bind.inventory    = Inventory
 bind.character    = Character
 bind.camreset     = Camera back
 bind.photo        = Photo mode
+bind.swap         = Swap weapon
 bind.salvage      = Inventory: salvage
 bind.store        = Inventory: into the locker
 

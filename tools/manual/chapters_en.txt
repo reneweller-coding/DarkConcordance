@@ -121,7 +121,11 @@ Weapon, suit, helmet, gloves, boots, two implants and three things of the Fringe
 - **Sockets** take modules; modules drop on their own and go into a free socket from the inventory.
 - **Salvaging** gives scrap for a fifth of the worth. The **loot filter** in the options can salvage common (and magic) finds at once – never what would fill an empty slot, never a module.
 
-[shot inventory] The inventory: on the left the slots worn, on the right the bag, below the comparison with what you wear.
+The **inventory** (View, I) is laid out as in Dark Alliance: at the top the bag, scrap and stims, below them the pages as signs – weapons, armour, technology, modules, skills, figure, notes, map, codex, awards (LB/RB or the arrow keys turn them). On the gear pages every item is a card on the left: picture, name in its rarity's colour, its main numbers and the difference to what you wear there. What is worn is green, the second weapon blue, the chosen card yellow and opened. On the right your hero stands in 3D as they look now; the right stick (Q/E, the right mouse button) turns them. A wears or takes off, X salvages, Y puts things into the locker in a station.
+
+**Second weapon**: put on a weapon and the one you held becomes your second weapon (if that place is taken, it goes into the bag). In play the pad's cross (right or left, key T) swaps between the two – to a heat weapon, say, when a foe shrugs off kinetic hits. The HUD shows the second weapon left of the skills.
+
+[shot inventory] The inventory: the weapons page's cards on the left, the hero and their numbers on the right.
 
 [shot character] The character page: every value at a glance.
 

@@ -83,7 +83,7 @@ way out) in the HUD's top right corner; hidden while the big map, a conversation
 
 **Controls** („Tastenbelegung“, `src/Bindings.cpp`): every action of play (the four ways to walk, fire, jump, the
 roll, the special, the two skills, the stim, use, keep facing, the map, the inventory, the character page, the
-camera back, the photo mode) and the inventory's two (salvage, into the locker) has a key or mouse button and a pad
+camera back, the photo mode, the weapon swap) and the inventory's two (salvage, into the locker) has a key or mouse button and a pad
 button of its own; choose a row, press what it is to be (Esc: as it was). Taken from another action of the same place,
 that one gets the old one; „Wie ab Werk“ brings back the game's own. They are kept in the settings (`bind` lines), and
 the buttons in the texts show them. The menus keep their own keys (the arrows, Enter, Esc; the pad's cross, A, B,
@@ -497,6 +497,21 @@ quake R/LB, charge G/RB; Ione: takeover B/F, first aid R/LB, cutting storm G/RB)
 `tools/make_items.py` (Gemini's image model; `--reverse` runs a second pass from the end of the list).
 
 ## Map, inventory, character
+
+The inventory is built after Baldur's Gate: Dark Alliance's (the user's wish, 30.10.2026): at the top the bag's
+places, scrap and stims, then ten pages as signs drawn in lines (weapons, armour, the suit's technology, modules,
+skills, the figure, notes, the map, codex, awards). A gear page lists cards on the left – each item's picture, name in
+its rarity's colour, its main numbers (a weapon's kind of damage in its colour), worn (green), the second weapon
+(blue) or in the locker, its rarity, level and scrap, and against what is worn there the difference (damage a
+second, armour, shield) – the chosen card open with all it does; on the right the hero in 3D where they stand, in
+what they wear, drawn with the photo mode's camera close in front of them (`Game::renderHero`, again only when the
+view turns – the right stick, Q/E, the right mouse button – or the gear changes), their main numbers below. The
+free places are named above the cards; the jobs and notes have a page of their own.
+
+**The second weapon** (Dark Alliance's quick swap): a weapon put on moves the one in the hand to the second place if
+that is free (else into the bag); T or the pad's cross (right, or left where nothing else is bound) swaps them in
+play, the HUD shows the second one left of the skills. A on it takes it off; A on the hand's weapon puts the second
+one into the hand and the old one into the bag. Saved as a `spare` line.
 
 ![Inventory](docs/screenshots/ui_inventory.jpg)
 ![Character](docs/screenshots/ui_character.jpg)

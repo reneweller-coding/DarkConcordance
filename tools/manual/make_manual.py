@@ -102,13 +102,14 @@ PAD = {'GAMEPAD_BUTTON_RIGHT_TRIGGER_2': 'RT', 'GAMEPAD_BUTTON_LEFT_TRIGGER_2': 
        'GAMEPAD_BUTTON_RIGHT_FACE_DOWN': 'A', 'GAMEPAD_BUTTON_RIGHT_FACE_RIGHT': 'B',
        'GAMEPAD_BUTTON_RIGHT_FACE_LEFT': 'X', 'GAMEPAD_BUTTON_RIGHT_FACE_UP': 'Y',
        'GAMEPAD_BUTTON_LEFT_THUMB': 'L3', 'GAMEPAD_BUTTON_RIGHT_THUMB': 'R3', 'GAMEPAD_BUTTON_LEFT_FACE_UP': 'D-pad up',
+       'GAMEPAD_BUTTON_LEFT_FACE_RIGHT': 'D-pad right',
        'GAMEPAD_BUTTON_MIDDLE_LEFT': 'View', '0': ''}
 
 # The keys' and buttons' names as each language writes them.
 WORDS = {'de': {'Mouse 1': 'linke Maustaste', 'Space': 'Leertaste', 'Ctrl': 'Strg', 'Shift': 'Umschalt',
-                'Backspace': 'Rücktaste', 'D-pad up': 'Steuerkreuz hoch', 'L3': 'linken Stick drücken (L3)',
+                'Backspace': 'Rücktaste', 'D-pad up': 'Steuerkreuz hoch', 'D-pad right': 'Steuerkreuz rechts', 'L3': 'linken Stick drücken (L3)',
                 'R3': 'rechten Stick drücken (R3)'},
-         'en': {'Mouse 1': 'left mouse button', 'D-pad up': 'd-pad up', 'L3': 'left stick click (L3)',
+         'en': {'Mouse 1': 'left mouse button', 'D-pad up': 'd-pad up', 'D-pad right': 'd-pad right', 'L3': 'left stick click (L3)',
                 'R3': 'right stick click (R3)'}}
 
 
