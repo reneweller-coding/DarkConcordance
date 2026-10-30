@@ -25,7 +25,6 @@ namespace
 
 constexpr float DoorReach = 2.3f;   ///< from a door's middle
 constexpr float UseReach = 1.2f;    ///< from where one stands before a locker or a terminal
-constexpr int   StimLimit = 9;
 
 }   // namespace
 
@@ -160,7 +159,7 @@ bool Game::updateUse( float dt, GameInput &in )
             m_scrap += scrap;
             m_toast = TextFormat( tr( "use.scrap" ), scrap );
         }
-        else if ( h < 9 && m_stims < StimLimit )
+        else if ( h < 9 && m_stims < maxStims() )
         {
             ++m_stims;
             m_toast = tr( "use.stim" );

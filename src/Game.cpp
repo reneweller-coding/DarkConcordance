@@ -682,7 +682,7 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     m_hero.animate( 0.0f, m_pos, { 0, 0 }, 0.0f, false, 0.0f, 0.0f );
     m_yaw = m_aimYaw = 0.0f;
     // What the hero brings along; what has happened (it opens doors and changes what people say, quietly).
-    m_stims = m_progress.m_stims;
+    m_stims = std::min( m_progress.m_stims, maxStims() );   // a save from before the belt's limit held more
     m_scrap = m_progress.m_scrap;
     for ( const std::string &f : m_progress.m_flags ) m_fired.insert( f );
     loadStory();
@@ -693,7 +693,8 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     m_audio.init( sound, m_level.m_ambience, assets );
     putHero( m_pos.x, m_pos.z, 0.0f );
     lap( "rest" );
-    TraceLog( LOG_WARNING, "LOAD: %s in %.0f ms:%s", level.c_str(), ( GetTime() - start ) * 1000.0, laps.c_str() );
+    m_loadMs = (float)( ( GetTime() - start ) * 1000.0 );
+    TraceLog( LOG_WARNING, "LOAD: %s in %.0f ms:%s", level.c_str(), m_loadMs, laps.c_str() );
     return true;
 }
 
@@ -1975,7 +1976,9 @@ void Game::moveHero( float dt )
         if ( dist < 2.6f && ( p.m_kind != 1 || m_stims < maxStims() ) &&
              ( p.m_kind != 2 || m_oxygen < m_oxygenMax - 5.0f ) )
             p.m_pos = Vector3Add( p.m_pos, Vector3Scale( d, fminf( 1.0f, dt * 6.0f ) ) );
-        if ( dist < 0.8f )
+        // A stim only while there is room for it: with the belt full it stays on the floor (walking over it took it,
+        // and heroes carried 30 to 90 of them by the last act).
+        if ( dist < 0.8f && ( p.m_kind != 1 || m_stims < maxStims() ) )
         {
             p.m_alive = false;
             if ( p.m_kind == 0 )
@@ -3011,7 +3014,9 @@ void Game::plan()
             {
                 int nr = cr + DR[d], nc = cc + DC[d];
                 int n = -1;
+                auto stuck = m_stuckCells.find( nr * cols + nc );
                 if ( passable( nr, nc ) && !m_blocked.count( nr * cols + nc ) &&
+                     ( stuck == m_stuckCells.end() || stuck->second < m_time ) &&
                      m_level.centre( nr, nc ).y - h <= StepUp && ( pass == 1 || !m_propCells[(size_t)nr * cols + nc] ) )
                     n = nr * cols + nc;
                 else if ( m_level.cell( nr, nc ).m_kind == CellE::VOID && !m_noJump.count( cur ) )
@@ -3272,13 +3277,15 @@ void Game::autopilot( float dt, GameInput &in )
         if ( m_stuckTimer > 2.5f )
         {
             // Some way with floor under it (never off an edge). Stuck three times at one place on the way: that
-            // cell is no way through (a centrifuge or a prop in a narrow passage), the planner looks for another.
+            // cell is no way through for half a minute (a centrifuge, a prop in a narrow passage, a foe standing
+            // there; for good, a few such cut a hero off in part 2), the planner looks for another.
             bool stuck = Vector3Distance( m_pos, m_lastPos ) < 0.4f && Vector2Length( in.m_move ) > 0.1f;
             if ( stuck )
             {
                 m_stuckCount = Vector3Distance( m_pos, m_stuckAt ) < 1.5f ? m_stuckCount + 1 : 1;
                 m_stuckAt = m_pos;
-                if ( m_stuckCount >= 3 && !m_path.empty() ) m_blocked.insert( m_path.front() ), m_stuckCount = 0;
+                if ( m_stuckCount >= 3 && !m_path.empty() )
+                    m_stuckCells[m_path.front()] = m_time + 30.0f, m_stuckCount = 0;
             }
             if ( stuck )
                 for ( int k = 0; k < 8; ++k )
@@ -3297,6 +3304,16 @@ void Game::autopilot( float dt, GameInput &in )
             in.m_move = m_unstickDir;
         }
     };
+    // A frame's stomp about to come down within its reach: a roll out of it (the roll's moment untouchable takes it),
+    // as a player who sees the leg go up does (part 2's autopilot stood in every one).
+    for ( const Foe &f : m_foes )
+        if ( f.m_alive && f.m_kind == FoeE::TAXATOR && f.m_state == FoeStateE::WINDUP && f.m_timer < 0.3f &&
+             Vector3Distance( f.m_pos, m_pos ) < 5.5f && fabsf( m_pos.y - f.m_pos.y ) < 1.5f )
+        {
+            in.m_move = Vector2Normalize( { m_pos.x - f.m_pos.x + 1e-3f, m_pos.z - f.m_pos.z } );
+            in.m_dodge = true;
+            return;
+        }
     bool flee = m_seekAir || ( m_flareState >= 1 && exposed( m_pos ) );   // air or cover first
     if ( m_heroKind == HeroE::DORRA && !flee && autopilotMelee( in, best, bestDist ) )
     {
@@ -3305,16 +3322,23 @@ void Game::autopilot( float dt, GameInput &in )
     }
     if ( best.m_kind == 0 && bestDist < 2.5f && m_ground && m_heroKind != HeroE::DORRA && !motherLinked() )
     {
-        // Back off, but never towards a shaft.
+        // Back off, but never towards a shaft nor into a wall (in part 2 a shield bearer held a hero against a
+        // sluice gate for good that way, its shield taking every shot): else aside, rolling past it.
         Vector3 f = m_foes[best.m_index].m_pos;
         Vector2 away = Vector2Normalize( { m_pos.x - f.x, m_pos.z - f.z } );
-        if ( groundAt( { m_pos.x + away.x * 1.2f, 0.0f, m_pos.z + away.y * 1.2f } ) > -100.0f )
+        Vector2 ways[3] = { away, { -away.y, away.x }, { away.y, -away.x } };
+        Vector3 waist = Vector3Add( m_pos, { 0.0f, 1.0f, 0.0f } );
+        for ( int k = 0; k < 3; ++k )
         {
-            in.m_move = away;
+            Vector3 to = { m_pos.x + ways[k].x * 1.2f, waist.y, m_pos.z + ways[k].y * 1.2f };
+            if ( groundAt( to ) < -100.0f || !los( waist, to ) ) continue;
+            in.m_move = ways[k];
+            in.m_dodge = k > 0;
             return;
         }
     }
     if ( m_seekAir && m_path.empty() )
+    {
         for ( const Vector3 &post : m_airPosts )
         {
             // At the air: the last steps right up to the post (its cell's middle can be just out of its reach).
@@ -3324,6 +3348,14 @@ void Game::autopilot( float dt, GameInput &in )
             in.m_move = d > 1.2f ? Vector2Scale( to, 1.0f / d ) : Vector2{ 0.0f, 0.0f };
             return;
         }
+        // In the lee already (out of the dose, the cold, the star): it waits there until the suit is full. On along
+        // the way it went back into the open, and to the lee again, for minutes (part 2's Hedda in Lohe).
+        if ( !m_metering )
+        {
+            in.m_move = { 0.0f, 0.0f };
+            return;
+        }
+    }
     if ( m_path.empty() )
     {
         if ( liftOpen() && ( m_doorHalf <= 0.0f || m_doorOpen > 0.9f ) && Vector3Distance( m_pos, m_lift ) < 6.0f )

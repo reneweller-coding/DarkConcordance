@@ -1254,6 +1254,11 @@ private:
     bool                       m_logStarted = false;   ///< the level's first line is written
     float                      m_logT = 10.0f;         ///< until the next place
     std::map<std::string, int> m_logUses;              ///< skills, rolls, stims used in the level
+    float                      m_loadMs = 0.0f;        ///< how long the level took to load
+    std::vector<float>         m_frameMs;              ///< the play log: every frame's time in play (ms)
+    size_t                     m_frameMark = 0;        ///< where the last minute's frames begin
+    float                      m_perfT = 60.0f;        ///< until the next minute's frame times
+    void logFrames( const char *what, size_t from );
     std::string itemDetail( const Item &it ) const;
     void loadPanel();
     void updateMap( float dt );
@@ -1714,6 +1719,7 @@ private:
     int               m_jumpFrom = -1;           ///< the cell the autopilot last jumped from
     float             m_jumpTime = -100.0f;      ///< and when
     std::set<int>     m_noJump;                  ///< cells it jumped from and fell: no jumps from there
+    std::map<int, float> m_stuckCells;              ///< cells stuck at three times: no way through until then
     double            m_stallMark = 0.0;         ///< what progress looked like then
     int               m_stalls = 0;              ///< how often the hero was put on
     int               m_meleeFoe = -1;           ///< the foe Dorra's autopilot goes for

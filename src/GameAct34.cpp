@@ -643,6 +643,9 @@ void Game::updateAct34( float dt, GameInput &in )
                       3 } );
             m_audio.play( SfxE::SIZZLE, m_pos, m_camTarget, 1.0f );
             m_hurtBy = "lava";
+            // The autopilot went in soon after a jump: no more jumps from where it took off (as after a fall; it
+            // jumped short over the same lava again and again, Kasimir eight times in Lohe).
+            if ( m_autoplay && m_jumpFrom >= 0 && m_time - m_jumpTime < 8.0f ) m_noJump.insert( m_jumpFrom );
             drainHero( hpMax() * 0.32f );
             m_pos = m_lavaSafe;
             m_vel = { 0.0f, 0.0f, 0.0f };

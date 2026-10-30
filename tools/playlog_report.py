@@ -4,7 +4,7 @@ the hero died (the maps the game put beside the log, "maps/<level>_<time>.txt").
 
     python tools/playlog_report.py [playlog.txt] [report.html]
 
-Without arguments: the log in the player's folder (%APPDATA%/SpaceOpera on Windows, ~/.local/share/SpaceOpera
+Without arguments: the log in the player's folder (%APPDATA%/DarkConcordance2 on Windows, ~/.local/share/DarkConcordance2
 elsewhere), the page beside it.
 """
 import base64
@@ -26,9 +26,9 @@ PIXELS = 6     # pixels per cell on the maps
 
 def default_log():
     if os.name == "nt":
-        return os.path.join(os.environ.get("APPDATA", "."), "SpaceOpera", "playlog.txt")
+        return os.path.join(os.environ.get("APPDATA", "."), "DarkConcordance2", "playlog.txt")
     base = os.environ.get("XDG_DATA_HOME") or os.path.join(os.path.expanduser("~"), ".local", "share")
-    return os.path.join(base, "SpaceOpera", "playlog.txt")
+    return os.path.join(base, "DarkConcordance2", "playlog.txt")
 
 
 class Visit:
@@ -50,6 +50,10 @@ class Visit:
         self.anomalies = ""
         self.uses = ""
         self.events = collections.Counter()
+        self.load_ms = 0.0
+        self.setup = ""         # screen, quality and scale
+        self.minutes = []       # (t, mean ms, p99 ms, worst ms) a minute at a time
+        self.frames = None      # (mean, p99, worst) over the whole visit (when it was finished)
 
 
 def parse(path):
@@ -87,6 +91,19 @@ def parse(path):
                 v.time, v.kills, v.uses, v.done = float(d.group(1)), int(d.group(2)), d.group(3).strip(), True
         elif kind == "anomalies":
             v.anomalies = " ".join(words[1:])
+        elif kind == "load":
+            d = re.match(r"load \S+ ms (\d+) screen (\S+) quality (-?\d+) scale (\S+)", text)
+            if d:
+                v.load_ms = float(d.group(1))
+                v.setup = "%s, Stufe %s, Skala %s" % (d.group(2), d.group(3), d.group(4))
+        elif kind in ("frames", "framesall"):
+            d = re.match(r"\S+ \S+ t (\d+) n \d+ mean (\S+) p99 (\S+) worst (\S+)", text)
+            if d:
+                f = tuple(float(g) for g in d.groups())
+                if kind == "frames":
+                    v.minutes.append(f)
+                else:
+                    v.frames = f[1:]
         else:
             v.events[kind] += 1
     return visits
@@ -161,6 +178,21 @@ def page(visits, folder):
                                          sum(v.kills for v in vs), deaths / (t / 3600) if t > 0 else 0,
                                          esc(", ".join("%s %d" % kv for kv in causes.most_common(4)))))
     out.append("</table>")
+    # How the machine coped: the load, the frames' mean, the slowest hundredth and the worst minute's.
+    timed = [v for v in visits if v.load_ms or v.minutes]
+    if timed:
+        out.append("<h2>Leistung</h2><table><tr><th>Level</th><th>Laden</th><th>Bild im Mittel</th>"
+                   "<th>Langsamstes Hundertstel</th><th>Schlechteste Minute (p99)</th><th>Einstellung</th></tr>")
+        for v in timed:
+            mean = v.frames[0] if v.frames else (sum(m[1] for m in v.minutes) / len(v.minutes) if v.minutes else 0)
+            p99 = v.frames[1] if v.frames else max((m[2] for m in v.minutes), default=0)
+            worst = max(v.minutes, key=lambda m: m[2]) if v.minutes else None
+            out.append("<tr><td>%s</td><td>%.1f s</td><td>%.1f ms (%.0f fps)</td><td>%.1f ms</td><td>%s</td>"
+                       "<td class='small'>%s</td></tr>" % (
+                           esc(v.level), v.load_ms / 1000.0, mean, 1000.0 / mean if mean else 0, p99,
+                           "%.1f ms bei %d:%02d" % (worst[2], int(worst[0]) // 60, int(worst[0]) % 60) if worst
+                           else "-", esc(v.setup)))
+        out.append("</table>")
     killers = collections.Counter(k for v in visits for d in v.deaths for k in d[3].split() if k != "-")
     if killers:
         out.append("<h2>Wer dabei war, wenn der Held starb</h2><p>%s</p>" %

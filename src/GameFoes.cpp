@@ -365,14 +365,15 @@ void Game::updateTaxator( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
             helpVariant = stage == 1 ? 1 : 0;
         for ( size_t i = 0; i < help.size(); ++i )
         {
-            // From the room's edges, where there is floor.
+            // From the room's edges, where there is floor at the boss's own height (not on top of a show piece, where
+            // one stood out of reach and shot down).
             for ( int t = 0; t < 12; ++t )
             {
                 float   a = rnd() * 6.283f;
                 Vector3 p = Vector3Add(
                     f.m_pos, { cosf( a ) * ( 8.0f + rnd() * 4.0f ), 0.0f, sinf( a ) * ( 8.0f + rnd() * 4.0f ) } );
                 float floor = groundAt( p );
-                if ( floor < -100.0f || floor > 100.0f ||
+                if ( floor < -100.0f || floor > 100.0f || fabsf( floor - f.m_pos.y ) > 1.0f ||
                      !los( Vector3Add( f.m_pos, { 0, 1.5f, 0 } ), Vector3Add( p, { 0, 1.5f, 0 } ) ) )
                     continue;
                 p.y = floor;

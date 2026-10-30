@@ -140,7 +140,7 @@ void MeshBuilder::roundedBox( const Matrix &m, Vector3 half, float radius, int s
                     vertex( Vector3Transform( p, m ), rotate( m, n ), { 0.0f, 0.0f } );
                 }
             unsigned short w = (unsigned short)cb.size();
-            for ( unsigned short j = 0; j + 1 < cc.size(); ++j )
+            for ( unsigned short j = 0; j + 1u < cc.size(); ++j )
                 for ( unsigned short i = 0; i + 1 < w; ++i )
                 {
                     unsigned short a = first + j * w + i;

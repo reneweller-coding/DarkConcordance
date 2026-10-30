@@ -29,11 +29,20 @@ NUMBER = re.compile(r"^(?:\d+|(?:und|ein|eine|eins|einen|zwei|drei|vier|fünf|se
                     r"millionen|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|thirteen|fifteen|"
                     r"twenty|thirty|forty|fifty|sixty|seventy|eighty|ninety|teen|hundred|thousand|millions?)+)$")
 
+# The game's names: a voice may say them well and Whisper still write a word it knows (Tamar "Tama", Siel "Seal",
+# Concordance "concordant"), so they and what is heard in their place are left out of the comparison.
+NAMES = {"corvin", "corvins", "dorra", "dorras", "ione", "iones", "velm", "ysolde", "kiri", "ottla", "ilka", "okafor",
+         "lamm", "brask", "josse", "mira", "pell", "ruul", "unzu", "siel", "hale", "lance", "seren", "hesper",
+         "halden", "arche", "tesh", "kael", "brannt", "langmut", "concordance", "konkordanz", "sevenfold"}
+
 
 def words(text):
     """Lower case words, numbers left out, one space between them (umlauts kept)."""
     text = unicodedata.normalize("NFKC", text).lower().replace("ß", "ss")
     text = re.sub(r"(?<=\d)[.,](?=\d)", "", text)
+    # "94%" is heard for "ninety-four per cent", "1,112" for "one thousand one hundred and twelve".
+    text = text.replace("%", " percent ").replace("per cent", "percent").replace("prozent", "percent")
+    text = re.sub(r"\b(hundred|thousand)\s+and\b", r"\1", text)
     return " ".join(w for w in re.sub(r"[^\wäöü ]+", " ", text).split() if not NUMBER.match(w))
 
 
@@ -44,8 +53,19 @@ def hear(model, path, lang):
 
 
 def likeness(text, heard):
-    """0..1, word by word (by letters a long line would lose its common letters to the matcher's junk heuristic)."""
-    return difflib.SequenceMatcher(None, words(text).split(), words(heard).split(), autojunk=False).ratio()
+    """0..1, word by word; a short line letter by letter where that is better, since there a compound written apart
+    ("Gefangenen Kahn"), a contraction ("I'm") or a spelling ("authorized", "Mom") weighs too much (in a long line the
+    letters would hide a word that went wrong)."""
+    want, got = words(text).split(), words(heard).split()
+    names = [w for w in want if w in NAMES]
+    if names:
+        want = [w for w in want if w not in NAMES]
+        got = [w for w in got if len(w) < 3 or w in want or
+               all(difflib.SequenceMatcher(None, w, n).ratio() <= 0.6 for n in names)]
+    by_words = difflib.SequenceMatcher(None, want, got, autojunk=False).ratio()
+    if len(want) > 6:
+        return by_words
+    return max(by_words, difflib.SequenceMatcher(None, "".join(want), "".join(got), autojunk=False).ratio())
 
 
 def ends_alike(text, heard):
@@ -60,6 +80,7 @@ def main():
     ap.add_argument("--lang", nargs="*", default=list(LANGS))
     ap.add_argument("--below", type=float, default=0.8, help="a take whose likeness to its text is lower is redone")
     ap.add_argument("--refs", action="store_true", help="only the voices in tools/voices against their texts")
+    ap.add_argument("--only", nargs="*", default=[], help="only these takes (key or key.hero; the redo lists stay)")
     a = ap.parse_args()
     os.environ.setdefault("HF_HUB_OFFLINE", "1")   # the model is in the cache; asking the hub hangs without a network
     from faster_whisper import WhisperModel
@@ -74,7 +95,7 @@ def main():
     voices = {k: v for k, v in json.load(open(os.path.join(make_voices.ROOT, "tools", "voices.json"),
                                               encoding="utf-8")).items() if k != "_"}
     # A voice whose clip says less than its text makes every clone say the rest first: such a text is cut.
-    for lang in a.lang:
+    for lang in a.lang if not a.only else []:
         for ref in sorted(glob.glob(os.path.join(make_voices.REFS, "*_%s.flac" % lang))):
             text = open(ref[:-5] + ".txt", encoding="utf-8").read().strip()
             heard = hear(model, ref, lang)
@@ -87,7 +108,7 @@ def main():
         bad, n = [], 0
         for (l, file), (v, who, text) in sorted(jobs.items()):
             raw = os.path.join(make_voices.WORK, l, file + ".wav")
-            if l != lang or not os.path.exists(raw):
+            if l != lang or not os.path.exists(raw) or (a.only and file not in a.only):
                 continue
             heard = hear(model, raw, lang)
             like = likeness(text, heard)
@@ -95,8 +116,9 @@ def main():
             if like < a.below:
                 bad.append(file)
                 print("%.2f  %-24s %s\n      heard: %s" % (like, file, text, heard), flush=True)
-        with open(os.path.join(make_voices.WORK, "redo_%s.txt" % lang), "w", encoding="utf-8") as f:
-            f.write("\n".join(bad) + ("\n" if bad else ""))
+        if not a.only:
+            with open(os.path.join(make_voices.WORK, "redo_%s.txt" % lang), "w", encoding="utf-8") as f:
+                f.write("\n".join(bad) + ("\n" if bad else ""))
         print("%s: %d of %d below %.2f" % (lang, len(bad), n, a.below), flush=True)
 
 

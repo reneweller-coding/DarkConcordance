@@ -108,6 +108,19 @@ void Game::logDeath()
                    m_time, m_hurtBy, hpMax(), foesNear().c_str() );
 }
 
+void Game::logFrames( const char *what, size_t from )
+{
+    // The frames since `from`: how many, the mean, the slowest hundredth (the stutter one feels) and the worst.
+    if ( from >= m_frameMs.size() ) return;
+    std::vector<float> ms( m_frameMs.begin() + (long)from, m_frameMs.end() );
+    double             sum = 0.0;
+    for ( float f : ms ) sum += f;
+    std::sort( ms.begin(), ms.end() );
+    float p99 = ms[std::min( ms.size() - 1, ms.size() * 99 / 100 )];
+    playlog::line( "%s %s t %.0f n %d mean %.1f p99 %.1f worst %.1f", what, m_levelFile.c_str(), m_time, (int)ms.size(),
+                   sum / ms.size(), p99, ms.back() );
+}
+
 void Game::updateJournal( float dt )
 {
     // The play log: the level's start, where the hero is every ten seconds.
@@ -136,6 +149,10 @@ void Game::updateJournal( float dt )
         playlog::line( "level %s hero %s level %d difficulty %d cycle %d map %s%s", m_levelFile.c_str(),
                        heroKey( m_heroKind ), m_progress.m_heroLevel, (int)m_difficulty, m_progress.m_cycle,
                        map.c_str(), gear.c_str() );
+        // How the machine copes: the load, the picture's size, the graphics' quality and scale.
+        playlog::line( "load %s ms %.0f screen %dx%d quality %d scale %.2f", m_levelFile.c_str(), m_loadMs,
+                       GetScreenWidth(), GetScreenHeight(), m_gfx ? m_gfx->m_quality : -1,
+                       m_gfx ? m_gfx->m_scale : 0.0f );
         if ( !m_level.m_anomalies.empty() )
         {
             std::string keys;
@@ -148,6 +165,18 @@ void Game::updateJournal( float dt )
         m_logT = 10.0f;
         playlog::line( "at %s %.0f %.0f t %.0f hp %.0f/%.0f kills %d foes%s", m_levelFile.c_str(), m_pos.x, m_pos.z,
                        m_time, m_hp, hpMax(), m_kills, foesNear().c_str() );
+    }
+    // Every frame's time (the real one, not the game's clamped step; the first two seconds after the load left out),
+    // a minute's summary at a time: where a place stutters shows beside the hero's positions.
+    if ( playlog::on() && !m_finished && m_time > 2.0f )
+    {
+        m_frameMs.push_back( GetFrameTime() * 1000.0f );
+        if ( ( m_perfT -= dt ) <= 0.0f )
+        {
+            m_perfT = 60.0f;
+            logFrames( "frames", m_frameMark );
+            m_frameMark = m_frameMs.size();
+        }
     }
     // The foes awake near the hero are met (once a second).
     m_journalT -= dt;
@@ -174,6 +203,7 @@ void Game::updateJournal( float dt )
         const int *t = m_tacticFrames;
         playlog::line( "tactics %s wait %d tocover %d cover %d ledge %d flank %d", m_levelFile.c_str(), t[1] / 60,
                        t[2] / 60, t[3] / 60, t[4] / 60, t[5] / 60 );
+        if ( playlog::on() ) logFrames( "framesall", 0 );
         journal::flush();
     }
     // New awards, one banner after the other.

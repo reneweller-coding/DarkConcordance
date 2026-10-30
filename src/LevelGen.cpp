@@ -767,13 +767,13 @@ private:
                 }
             for ( int k = m_rng.range( 2, 4 ); k > 0; --k )
             {
-                int y, x;
+                int y = 0, x = 0;
                 if ( wallCell( r, y, x ) ) m_g[y][x] = 'M';
             }
             // Market folk who did not get away, crouched against the walls.
             for ( int k = m_rng.range( 0, 2 ); k > 0; --k )
             {
-                int y, x;
+                int y = 0, x = 0;
                 if ( wallCell( r, y, x ) ) m_g[y][x] = 'N';
             }
         }
@@ -910,7 +910,7 @@ private:
     /** @brief An enemy pack: the leader in a free cell, the others round it, a cell apart. */
     void pack( const Rect &room, const std::string &letters, float cr, float cc, bool elite, bool boss = false )
     {
-        int r0, c0;
+        int r0 = 0, c0 = 0;
         if ( !nearest( room, cr, cc, r0, c0, [&]( int y, int x ) { return apart( y, x ); } ) ) return;
         std::deque<int> q = { key( r0, c0 ) };
         std::set<int>   seen = { key( r0, c0 ) };
@@ -1015,7 +1015,7 @@ private:
         for ( int at : { n / 3, 2 * n / 3 } )
         {
             const Rect m = mouth( m_halls[m_rooms[at].m_in], true, 1 );
-            int        r, c;
+            int        r = 0, c = 0;
             if ( nearest( m_rooms[at].m_r, ( m.m_r0 + m.m_r1 ) * 0.5f, ( m.m_c0 + m.m_c1 ) * 0.5f, r, c,
                           []( int, int ) { return true; } ) )
                 m_g[r][c] = 'C';
@@ -1023,7 +1023,7 @@ private:
         {
             const Hall &last = m_halls[m_rooms[n - 1].m_in];
             const Rect  m = mouth( last, false, 1 );
-            int         r, c;
+            int         r = 0, c = 0;
             if ( nearest( m_rooms[last.m_from].m_r, ( m.m_r0 + m.m_r1 ) * 0.5f, ( m.m_c0 + m.m_c1 ) * 0.5f, r, c,
                           []( int, int ) { return true; } ) )
                 m_g[r][c] = 'C';
@@ -1045,7 +1045,7 @@ private:
                 // Two air posts on the deck: the fight is long.
                 for ( float f : { 0.3f, 0.7f } )
                 {
-                    int y, x;
+                    int y = 0, x = 0;
                     if ( nearest( r, r.m_r0 + ( r.m_r1 - r.m_r0 ) * f, ( r.m_c0 + r.m_c1 ) * 0.5f, y, x,
                                   []( int, int ) { return true; } ) )
                         m_g[y][x] = ';';
@@ -1058,7 +1058,7 @@ private:
                 const float spots[3][2] = { { 0.25f, 0.2f }, { 0.25f, 0.8f }, { 0.8f, 0.5f } };
                 for ( const auto &sp : spots )
                 {
-                    int y, x;
+                    int y = 0, x = 0;
                     // In the open: every cell round it free, so it can be reached from all sides.
                     auto open = [&]( int yy, int xx )
                     {
@@ -1075,7 +1075,7 @@ private:
                 for ( int k = 0; k < 7; ++k )
                 {
                     float ang = k * 2.0f * 3.14159f / 7.0f;
-                    int   y, x;
+                    int   y = 0, x = 0;
                     if ( !nearest( r, cr + sinf( ang ) * 3.0f, cc + cosf( ang ) * 3.5f, y, x,
                                    [&]( int yy, int xx ) { return apart( yy, xx ); } ) )
                         continue;
@@ -1087,7 +1087,7 @@ private:
             else if ( m_rc.m_arena == "hydraulic" )
             {
                 // The Hydrauliker in his flooded hall: two balls of water to fight round.
-                int y, x;
+                int y = 0, x = 0;
                 if ( nearest( r, br, bc, y, x, []( int, int ) { return true; } ) )
                     m_g[y][x] = '>', m_foes.insert( key( y, x ) );
                 for ( float f : { 0.3f, 0.7f } )
@@ -1098,7 +1098,7 @@ private:
             }
             else if ( m_rc.m_arena == "taxator" )
             {
-                int y, x;
+                int y = 0, x = 0;
                 if ( nearest( r, br, bc, y, x, []( int, int ) { return true; } ) )
                     m_g[y][x] = '@', m_foes.insert( key( y, x ) );
             }
@@ -1135,12 +1135,12 @@ private:
             int lockers = room.m_kind == SIDE ? m_rng.range( 2, 3 ) : ( m_rng.chance( 0.3f ) ? 1 : 0 );
             for ( int k = 0; k < lockers; ++k )
             {
-                int y, x;
+                int y = 0, x = 0;
                 if ( wallCell( r, y, x ) ) m_g[y][x] = '&';
             }
             if ( note < m_rc.m_notes.size() && ( room.m_kind == SIDE || m_rng.chance( 0.25f ) ) )
             {
-                int y, x;
+                int y = 0, x = 0;
                 if ( wallCell( r, y, x ) )
                 {
                     m_g[y][x] = '!';
@@ -1152,7 +1152,7 @@ private:
             if ( m_rng.chance( 0.35f ) ) put( r, 'H' );
             if ( room.m_kind == SIDE && m_rng.chance( 0.25f ) )
             {
-                int y, x;
+                int y = 0, x = 0;
                 if ( wallCell( r, y, x ) ) m_g[y][x] = 'K';
             }
             if ( ( room.m_theme == "works" || room.m_theme == "exchanger" ) && m_rng.chance( 0.4f ) ) put( r, 'V' );
@@ -1323,7 +1323,7 @@ private:
             add( mouth( m_halls[h], true, 1 ) );
         }
         const Rect &a = m_rooms[m_rc.m_rooms - 1].m_r;
-        int         y, x;
+        int         y = 0, x = 0;
         if ( nearest( a, ( a.m_r0 + a.m_r1 ) * 0.5f, ( a.m_c0 + a.m_c1 ) * 0.5f, y, x,
                       []( int, int ) { return true; } ) )
             route += "  " + cellText( y, x );

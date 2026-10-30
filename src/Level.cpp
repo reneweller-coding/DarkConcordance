@@ -1400,8 +1400,10 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         }
     };
 
-#pragma warning( push )
-#pragma warning( disable : 4456 )   // the builders below stand in for the common ones
+#ifdef _MSC_VER
+  #pragma warning( push )
+  #pragma warning( disable : 4456 )   // the builders below stand in for the common ones
+#endif
     for ( int r = 0; r < m_rows; ++r )
         for ( int c = 0; c < m_cols; ++c )
         {
@@ -2686,7 +2688,9 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         m_signs.push_back( sign );
     }
 
-#pragma warning( pop )
+#ifdef _MSC_VER
+  #pragma warning( pop )
+#endif
     // A railing along every edge of a floor that drops more than a man's knee to the floor beside it.
     for ( int r = 0; r < m_rows; ++r )
         for ( int c = 0; c < m_cols; ++c )

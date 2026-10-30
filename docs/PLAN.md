@@ -422,6 +422,17 @@ Still to come, by first use:
    item cards (picture, numbers, worn/second/locker, the difference to what is worn) on the left and the hero in 3D on
    the right, ten pages as signs, notes on a page of their own; a second weapon with a quick swap (T, the pad's cross)
    and its box in the HUD.
+18. Part 2's fixes — done (30.10.2026, the user: take part 2's fixes back into part 1). The autopilot rolls out of a
+   frame's stomp, backs off only where no wall is (else aside with a roll), waits in the lee until the suit is full,
+   and a cell it stuck at three times is no way through for 30 s, not for good; a boss's helpers come only onto floor
+   at its own height. A stim is only picked up while there is room for it (walking over one took it past the belt's
+   nine: heroes carried 30 to 90 by the last act; crates' stims by the same limit). The play log keeps each place's
+   loading time and frame rates (`load`, `frames`, `framesall`; `tools/playlog_report.py` shows them). The Quaternius
+   people no longer ask for textures they never came with (`tools/fix_gltf_refs.py`); GCC builds without a warning.
+   `tools/check_voices.py` as part 2's (names, numbers, short lines letter by letter, `--only`), with part 1's names.
+   Campaign on Normal afterwards (before the stim limit): all 75 places, no stall, deaths Corvin 7, Dorra 0, Ione 2;
+   with the limit Corvin 7. A dip in lava soon after a jump bans jumps from there for the autopilot (part 2's Kasimir
+   jumped short over the same lava eight times); a save holding more stims than the belt is cut to it on loading.
 
 ## Open decisions (the user's)
 
