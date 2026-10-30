@@ -74,6 +74,7 @@ const std::vector<AwardDef> &awards()
         { "grabbed", nullptr, 0 },
         { "plus", nullptr, 0 },
         { "nightmare_level", nullptr, 0 },
+        { "one_life", nullptr, 0 },
     };
     return all;
 }

@@ -31,6 +31,7 @@
 #include <deque>
 #include <functional>
 #include <map>
+#include <memory>
 #include <set>
 #include <string>
 #include <vector>
@@ -171,6 +172,11 @@ public:
 
     /** @return true once the level is over */
     bool finished() const { return m_finished; }
+
+    /** @return true once a hero with one life (the flag "hardcore") has died: the run is over, the save closed */
+    bool fallen() const { return m_fallen; }
+    /** @return how long the fallen hero has lain (the card asks to go on after a while) */
+    float fallenFor() const { return m_fallen ? m_deadTimer : 0.0f; }
 
     /** @return the level that follows ("" none): the level's own, or where the hub's lift goes */
     const std::string &next() const { return m_exitTo.empty() ? m_level.m_next : m_exitTo; }
@@ -322,6 +328,37 @@ public:
     void campaignPrep();
     /** @return the place's line for the test: hero level, area, time, deaths, kills, scrap, the gear's worth */
     std::string campaignLine() const;
+
+    /**
+     * @brief The day's challenge (main.cpp): an item of the day in every slot at the hero's level, the points spent as
+     *        the autopilot spends them, five stims; the same for everyone who plays on that day.
+     * @param[in] seed  the day's
+     */
+    void challengePrep( unsigned seed );
+    /** @return the level's time so far (s) */
+    float playTime() const { return m_time; }
+    /** @return the deaths in the level */
+    int levelDeaths() const { return m_deaths; }
+    /** @return the foes felled in the level */
+    int levelKills() const { return m_kills; }
+
+    // GameCoop.cpp: two at one screen. A second player on a second pad plays one of the other two heroes beside the
+    // first: at the first one's level, an item of their kind in every slot, the points spent; the first one leads
+    // (talks, loot, doors), the camera holds both, the enemies go for the nearer, a fallen partner is up again beside
+    // the leader. Its state is the hero's own set of members, swapped in for its turns (swapPartner).
+    /**
+     * @brief The second player joins, or changes hero.
+     * @param[in] kind       who they play (not the first player's hero)
+     * @param[in] autopilot  the autopilot plays them (tests: --coop)
+     */
+    void joinPartner( HeroE kind, bool autopilot = false );
+    /** @brief The second player leaves. */
+    void leavePartner();
+    /** @return whether a second player plays */
+    bool partner() const { return m_partner != nullptr; }
+    /** @return who they play (meaningful with partner()) */
+    HeroE partnerKind() const;
+    GameInput m_partnerIn;   ///< the second player's input this frame (main.cpp; camera-relative as the first's)
     /** @brief Moves the camera. */
     void photo( float dt, const PhotoInput &in );
     /** @brief Ends it. */
@@ -437,6 +474,8 @@ private:
         Vector3   m_pos = { 0, 0, 0 };
         Vector3   m_vel = { 0, 0, 0 };
         float     m_yaw = 0.0f;
+        bool      m_onPartner = false;   ///< co-op: it goes for the second hero (the nearer, chosen now and then)
+        float     m_pickT = 0.0f;        ///< ... until it chooses again
         float     m_hp = 1.0f;
         FoeStateE m_state = FoeStateE::CHASE;
         float     m_timer = 0.0f;
@@ -667,6 +706,8 @@ private:
      * @return the texture (a grey checker if it is missing)
      */
     Texture2D sharedTexture( const std::string &path );
+    /** @return the file a shared texture was loaded from ("" none) */
+    static std::string sharedPath( unsigned id );
     /** @brief Frees the shared textures this load has not asked for. */
     void freeUnusedTextures();
     Gfx                       *m_gfx = nullptr;   ///< the renderer (surfaces made after loading)
@@ -1398,6 +1439,35 @@ private:
     bool updateEpilogue( float dt, GameInput &in );
     void startEpilogue();
     void drawEndCard( int w, int h, float s );
+    // Co-op (GameCoop.cpp).
+    struct PartnerState;                                   ///< the second hero's own set of the hero's members
+    std::shared_ptr<PartnerState> m_partner;               ///< there is a second player
+    bool                          m_partnerTurn = false;   ///< its state is swapped in (its turn, a foe after it)
+    bool                          m_partnerAuto = false;   ///< the autopilot plays it (tests)
+    int                           m_partnerXp = 0;         ///< experience won in its turns (the leader's)
+    void swapPartner();                                    ///< the partner's members for the hero's, or back
+    void partnerTurn( float dt );                          ///< it moves, fights, falls and comes back
+    void gearPartner();                                    ///< at the leader's level: its items and points
+    bool foeOnPartner( Foe &f, float dt );                 ///< whether a foe goes for the partner now (the nearer hero)
+    void posePartner( std::vector<Drawable> &out );
+    void drawPartnerHud( int w, int h, float s );
+    Vector3 partnerPos() const;   ///< where the partner is (the leader's place without one)
+    /**
+     * @brief Runs a check against the hero for the partner too (a bolt, a blob, a ring that the leader escaped).
+     * @param[in] hit  the check; true when it struck
+     * @return whether it struck the partner
+     */
+    template <class F>
+    bool asPartner( F hit )
+    {
+        if ( !m_partner || m_partnerTurn ) return false;
+        swapPartner();
+        bool struck = !m_dead && hit();
+        swapPartner();
+        return struck;
+    }
+    void fall();                                                    ///< a hero with one life dies: the run ends
+    void drawFallenCard( int w, int h, float s );                   ///< and the card that says so
     TalkNode                                         m_shown;       ///< the step on screen, its answers as they apply
     std::vector<std::pair<std::string, std::string>> m_cards;       ///< the epilogue's cards: title, text
     int                                              m_card = -1;   ///< the card on screen (-1 none yet)
@@ -1509,6 +1579,7 @@ private:
     bool    m_overheat = false, m_firing = false;
     int     m_stims = 1, m_scrap = 0, m_deaths = 0, m_kills = 0, m_shots = 0;
     bool    m_dead = false;
+    bool    m_fallen = false;   ///< one life, and it is spent (fallen())
     float   m_deadTimer = 0.0f;
     Vector3 m_respawn = { 0, 0, 0 };
     Target  m_target;
@@ -1719,12 +1790,12 @@ private:
     int               m_jumpFrom = -1;           ///< the cell the autopilot last jumped from
     float             m_jumpTime = -100.0f;      ///< and when
     std::set<int>     m_noJump;                  ///< cells it jumped from and fell: no jumps from there
-    std::map<int, float> m_stuckCells;              ///< cells stuck at three times: no way through until then
-    double            m_stallMark = 0.0;         ///< what progress looked like then
-    int               m_stalls = 0;              ///< how often the hero was put on
-    int               m_meleeFoe = -1;           ///< the foe Dorra's autopilot goes for
-    float             m_meleeHp = 0.0f;          ///< its health when she last hurt it
-    float             m_meleeSince = 0.0f;       ///< since when no blow of hers has landed on it
+    std::map<int, float> m_stuckCells;           ///< cells stuck at three times: no way through until then
+    double               m_stallMark = 0.0;      ///< what progress looked like then
+    int                  m_stalls = 0;           ///< how often the hero was put on
+    int                  m_meleeFoe = -1;        ///< the foe Dorra's autopilot goes for
+    float                m_meleeHp = 0.0f;       ///< its health when she last hurt it
+    float                m_meleeSince = 0.0f;    ///< since when no blow of hers has landed on it
     std::map<int, float> m_meleeSkip;            ///< foes she cannot get at, left to the bolts until then
     unsigned             m_seed = 4242;
 };

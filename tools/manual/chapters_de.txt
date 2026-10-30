@@ -28,6 +28,7 @@ Der Ordner `assets` muss neben dem Programm bleiben. Das Spiel braucht OpenGL 3.
 | Neues Spiel | Einen Helden wählen und von vorn beginnen |
 | Spielstand laden | Einen der vier Speicherplätze laden |
 | Neues Spiel+ | Erscheint, wenn ein Spielstand durchgespielt ist: die Geschichte noch einmal, mit allem Erreichten |
+| Tagesherausforderung | Die Tiefen, jeden Tag mit einem anderen Helden, einer anderen Stufe und Tiefe – für alle gleich; daneben der Bestwert des Tages |
 | Optionen | Schwierigkeit, Grafik, Ton, Sprache, Tastenbelegung, Anzeige |
 | Beenden | Das Spiel beenden |
 
@@ -40,6 +41,14 @@ Ein neues Spiel fragt zuerst, wer du bist: **Dorra Vask** (Nahkampf), **Corvin A
 Das Spiel speichert von selbst, am Anfang jedes Ortes und an jeder Rettungskapsel, die du weckst. Es gibt vier Speicherplätze: „Neues Spiel“ fragt, wo gespeichert werden soll, „Spielstand laden“ zeigt sie mit Held, Ort und Zeit. Ein belegter Platz wird erst nach einer zweiten Bestätigung überschrieben.
 
 [shot slots] Die vier Speicherplätze.
+
+Unter den Plätzen eines neuen Spiels steht **Ein Leben (Hardcore)**. Eingeschaltet beendet der erste Tod den Lauf: Der Held bleibt liegen, der Spielstand bleibt als Erinnerung in der Liste stehen und lässt sich nicht mehr fortsetzen. Wer so durchkommt, erhält die Auszeichnung „Ein Leben“.
+
+## Zu zweit
+
+Mit einem zweiten Gamepad spielt ein zweiter Spieler am selben Bildschirm mit, wie in Dark Alliance. **Start** auf dem zweiten Pad holt einen der beiden anderen Helden dazu, noch einmal **Start** wechselt zum anderen, **Ansicht** anderthalb Sekunden gehalten lässt ihn wieder gehen. Der zweite Held kommt auf der Stufe des ersten, mit Ausrüstung seiner Art und verteilten Fähigkeiten, und wächst mit ihm.
+
+Der erste Spieler führt: Gespräche, Beute, Türen und Aufzüge sind seine, was der zweite erlegt, bringt ihm die Erfahrung. Wer sich zu weit entfernt, steht wieder neben dem ersten. Die Gegner gehen auf den, der ihnen näher ist. Stürzt der zweite, steht er nach ein paar Sekunden beim ersten wieder auf. Der Koop bleibt von Ort zu Ort bestehen, bis der zweite geht.
 
 Spielstände, Einstellungen, das Tagebuch (Kodex und Auszeichnungen), der Spind und deine Fotos liegen im Spielerordner: `%APPDATA%\DarkConcordance` unter Windows, `~/.local/share/DarkConcordance` unter Linux.
 

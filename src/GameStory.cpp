@@ -6,15 +6,18 @@
  *        choice and per figure), and the Collegium's mark on every respawn once one knows who prints the bodies.
  * @author Rene Weller
  */
+#include "Files.h"
 #include "Game.h"
 #include "GameShared.h"
 #include "Journal.h"
-
+#include "PlayLog.h"
 #include "Text.h"
 
 #include <raymath.h>
 
 #include <cmath>
+#include <ctime>
+#include <filesystem>
 #include <string>
 #include <vector>
 
@@ -243,12 +246,46 @@ bool Game::updateEpilogue( float dt, GameInput &in )
             journal::win( "act4" );
             journal::win( "ending_" + m_ending );
             journal::win( std::string( "hero_" ) + heroKey( m_heroKind ) );
+            if ( m_progress.m_flags.count( "hardcore" ) ) journal::win( "one_life" );
             if ( journal::won( "ending_a" ) && journal::won( "ending_b" ) && journal::won( "ending_c" ) )
                 journal::win( "all_endings" );
             m_finished = true;
         }
     }
     return true;
+}
+
+void Game::fall()
+{
+    // One life, and it is spent: the hero stays where they fell, the save is closed (main.cpp), and the journal keeps
+    // a plaque for every later game's epilogue: when, who, how far, where.
+    m_fallen = true;
+    std::string place = m_level.m_name.empty() ? m_levelFile : m_level.m_name;
+    journal::meet( TextFormat( "fallen.%lld.%s.%d.%s", (long long)time( nullptr ), heroKey( m_heroKind ),
+                               m_progress.m_heroLevel, place.c_str() ) );
+    journal::count( "fallen" );
+    journal::flush();
+    playlog::line( "fallen %s hero %s level %d cause %s", m_levelFile.c_str(), heroKey( m_heroKind ),
+                   m_progress.m_heroLevel, m_hurtBy );
+}
+
+void Game::drawFallenCard( int w, int h, float s )
+{
+    // Over the black of the death: who fell where; after a while, how to go on (to the title).
+    float a = Clamp( ( m_deadTimer - 1.7f ) / 1.2f, 0.0f, 1.0f );
+    if ( a <= 0.0f ) return;
+    auto text = [&]( const std::string &t, float y, float size, Color c )
+    {
+        Vector2 m = MeasureTextEx( m_font, t.c_str(), size * s, 1.0f );
+        DrawTextEx( m_font, t.c_str(), { w * 0.5f - m.x * 0.5f, y }, size * s, 1.0f, c );
+    };
+    unsigned char ta = (unsigned char)( 255 * a );
+    text( tr( "fallen.title" ), h * 0.3f, 60, { 230, 120, 100, ta } );
+    text( TextFormat( tr( "fallen.line" ), tr( std::string( "hero." ) + heroKey( m_heroKind ) ), m_progress.m_heroLevel,
+                      tr( m_level.m_name ) ),
+          h * 0.3f + 84 * s, 26, { 240, 235, 230, ta } );
+    text( tr( "fallen.about" ), h * 0.3f + 130 * s, 20, { 190, 190, 195, ta } );
+    if ( m_deadTimer > 4.0f ) text( tr( "hud.next" ), h * 0.62f, 22, { 150, 150, 155, ta } );
 }
 
 void Game::drawEndCard( int w, int h, float s )

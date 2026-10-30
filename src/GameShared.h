@@ -119,17 +119,39 @@ inline Vector3 turnYaw( Vector3 v, float a )
 
 constexpr float SlugSpeed = 90.0f;   ///< how fast a slug is taken to fly where Coriolis bends it (m/s)
 
-/** @brief Loads a texture with mipmaps and anisotropic filtering (a grey checker if it is missing). */
+/** @brief Whether the DDS beside a PNG is taken (tools/make_dds.py; --png leaves them, to compare). */
+inline bool &useDds()
+{
+    static bool use = true;
+    return use;
+}
+
+/** @return whether a texture is there, as its PNG or as the DDS that stands for it (the packages carry only that) */
+inline bool textureExists( const std::string &png )
+{
+    return FileExists( png.c_str() ) ||
+           ( png.size() > 4 && FileExists( ( png.substr( 0, png.size() - 4 ) + ".dds" ).c_str() ) );
+}
+
+/**
+ * @brief Loads a texture with mipmaps and anisotropic filtering (a grey checker if it is missing). A DXT1 DDS beside
+ *        the PNG is taken instead where there is one (its mips made already, an eighth of the memory).
+ */
 inline Texture2D loadTexture( const std::string &path )
 {
-    Texture2D t = FileExists( path.c_str() ) ? LoadTexture( path.c_str() ) : Texture2D{};
+    std::string dds = path.size() > 4 && path.compare( path.size() - 4, 4, ".png" ) == 0
+                          ? path.substr( 0, path.size() - 4 ) + ".dds"
+                          : std::string();
+    Texture2D   t = {};
+    if ( useDds() && !dds.empty() && FileExists( dds.c_str() ) ) t = LoadTexture( dds.c_str() );
+    if ( t.id == 0 && FileExists( path.c_str() ) ) t = LoadTexture( path.c_str() );
     if ( t.id == 0 )
     {
         Image i = GenImageChecked( 64, 64, 8, 8, GRAY, DARKGRAY );
         t = LoadTextureFromImage( i );
         UnloadImage( i );
     }
-    GenTextureMipmaps( &t );
+    if ( t.mipmaps <= 1 ) GenTextureMipmaps( &t );
     SetTextureFilter( t, TEXTURE_FILTER_TRILINEAR );
     SetTextureFilter( t, TEXTURE_FILTER_ANISOTROPIC_16X );
     return t;

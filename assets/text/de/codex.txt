@@ -165,3 +165,5 @@ award.plus             = Noch einmal
 award.plus.about       = Ein Neues Spiel+ begonnen.
 award.nightmare_level  = Albträume
 award.nightmare_level.about = Ein Kampflevel auf Albtraum beendet.
+award.one_life         = Ein Leben
+award.one_life.about   = Das Spiel mit einem einzigen Leben durchgespielt.

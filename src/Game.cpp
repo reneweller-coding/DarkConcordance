@@ -31,6 +31,17 @@
 namespace spaceopera
 {
 
+/** @brief Runs a function when it goes out of scope (the co-op's swap back, whichever way a loop's turn ends). */
+template <class F>
+struct Finally
+{
+    F m_f;
+    explicit Finally( F f ) : m_f( f ) {}
+    ~Finally() { m_f(); }
+    Finally( const Finally & ) = delete;
+    Finally &operator=( const Finally & ) = delete;
+};
+
 using namespace play;
 
 float Game::rnd()
@@ -75,7 +86,7 @@ void Game::themeSurfaces( LevelSurfaces &ls )
     {
         auto known = m_ownSurfaces.find( name );
         if ( known != m_ownSurfaces.end() ) return known->second;
-        if ( !FileExists( ( dir + name + "_albedo.png" ).c_str() ) || !m_gfx ) return -1;
+        if ( !textureExists( dir + name + "_albedo.png" ) || !m_gfx ) return -1;
         Surface surf =
             m_gfx->surface( sharedTexture( dir + name + "_albedo.png" ), sharedTexture( dir + name + "_orm.png" ),
                             sharedTexture( dir + name + "_normal.png" ), Texture2D{} );
@@ -107,7 +118,7 @@ void Game::themeSurfaces( LevelSurfaces &ls )
         for ( int n = 1; n <= 4; ++n )
         {
             std::string v = dir + name + "_v" + std::to_string( n );
-            if ( !FileExists( ( v + "_albedo.png" ).c_str() ) ) break;
+            if ( !textureExists( v + "_albedo.png" ) ) break;
             Surface surf = m_surfaces[base];
             surf.m_material = m_gfx
                                   ->surface( sharedTexture( v + "_albedo.png" ), sharedTexture( v + "_orm.png" ),
@@ -145,6 +156,13 @@ Texture2D Game::sharedTexture( const std::string &path )
         it = SharedTextures.emplace( path, SharedTexture{ loadTexture( path ), 0 } ).first;
     it->second.m_round = LoadRound;
     return it->second.m_tex;
+}
+
+std::string Game::sharedPath( unsigned id )
+{
+    for ( const auto &[path, t] : SharedTextures )
+        if ( t.m_tex.id == id ) return path;
+    return "";
 }
 
 void Game::freeUnusedTextures()
@@ -1174,6 +1192,7 @@ void Game::hurtHero( float amount, Vector3 push, Vector3 from )
         if ( !m_autoplay ) journal::count( "deaths" );
         logDeath();
         m_stings.push_back( "death" );
+        if ( m_progress.m_flags.count( "hardcore" ) && !m_level.num( "gentle", 0.0f ) && !m_partnerTurn ) fall();
         if ( m_autoplay )
         {
             // Who stood near: what killed the autopilot.
@@ -1683,7 +1702,7 @@ void Game::updateHero( float dt, const GameInput &in )
         m_swing = -1;
         m_hero.m_swing = -1;
         m_hero.animate( dt, m_pos, { 0, 0 }, m_yaw, false, fminf( 1.0f, m_deadTimer / 0.5f ), m_time );
-        if ( m_deadTimer > 2.4f )
+        if ( m_deadTimer > 2.4f && !m_fallen )
         {
             // Back at the last capsule.
             m_dead = false;
@@ -1909,6 +1928,7 @@ void Game::moveHero( float dt )
         if ( !m_autoplay ) journal::count( "deaths" );
         logDeath();
         m_stings.push_back( "death" );
+        if ( m_progress.m_flags.count( "hardcore" ) && !m_partnerTurn ) fall();
         if ( m_autoplay ) TraceLog( LOG_WARNING, "DEATH: fall at %.1f,%.1f t=%.0f", m_pos.x, m_pos.z, m_time );
         // The autopilot fell soon after a jump: no more jumps from where it took off.
         if ( m_autoplay && m_jumpFrom >= 0 && m_time - m_jumpTime < 8.0f ) m_noJump.insert( m_jumpFrom );
@@ -2074,8 +2094,7 @@ void Game::updateFoes( float dt )
         m_flowR = hr, m_flowC = hc;
         m_flowTimer = 1.0f;
     }
-    Vector3 chest = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
-    float   g = m_level.m_gravity;
+    float g = m_level.m_gravity;
     for ( Foe &f : m_foes )
     {
         if ( f.m_hidden ) continue;
@@ -2090,6 +2109,15 @@ void Game::updateFoes( float dt )
             }
             continue;
         }
+        // Co-op: one that goes for the partner sees the partner as the hero (its state swapped in until the next).
+        bool mate = foeOnPartner( f, dt );
+        if ( mate ) swapPartner();
+        Finally swapBack(
+            [&]()
+            {
+                if ( mate ) swapPartner();
+            } );
+        Vector3 chest = Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } );
         // Burning eats away at it; stunned, it stands.
         if ( f.m_burnTime > 0.0f )
         {
@@ -2684,11 +2712,14 @@ void Game::updateEffects( float dt )
         b.m_life -= dt;
         Vector3 hit, n;
         bool    done = b.m_life <= 0.0f;
-        if ( !done && Vector3Distance( b.m_pos, Vector3Add( m_pos, { 0, 1.0f, 0 } ) ) < 0.75f && !m_dead )
+        // The hero, and in co-op the partner too.
+        auto strikes = [&]()
         {
+            if ( Vector3Distance( b.m_pos, Vector3Add( m_pos, { 0, 1.0f, 0 } ) ) >= 0.75f || m_dead ) return false;
             hurtHero( 14.0f, { b.m_vel.x * 0.15f, 0.5f, b.m_vel.z * 0.15f }, Vector3Subtract( b.m_pos, b.m_vel ) );
-            done = true;
-        }
+            return true;
+        };
+        if ( !done ) done = strikes() || asPartner( strikes );
         if ( !done && m_level.raycast( prev, b.m_pos, hit, n ) )
         {
             sparks( hit, n, 14, { 255, 140, 50, 255 }, 2.0f );
@@ -3012,8 +3043,8 @@ void Game::plan()
             float h = m_level.centre( cr, cc ).y;
             for ( int d = 0; d < 4; ++d )
             {
-                int nr = cr + DR[d], nc = cc + DC[d];
-                int n = -1;
+                int  nr = cr + DR[d], nc = cc + DC[d];
+                int  n = -1;
                 auto stuck = m_stuckCells.find( nr * cols + nc );
                 if ( passable( nr, nc ) && !m_blocked.count( nr * cols + nc ) &&
                      ( stuck == m_stuckCells.end() || stuck->second < m_time ) &&
@@ -3513,6 +3544,7 @@ void Game::update( float dt, const GameInput &inRaw )
     updateAct34( dt, in );
     useSkills( dt, in );
     updateHero( dt, in );
+    partnerTurn( dt );
     updateBoreHoles();
     updateFoes( dt * m_foeTempo );
     updateAnomalies( dt );
@@ -3553,6 +3585,12 @@ void Game::update( float dt, const GameInput &inRaw )
     }
     updateRefugees( dt );
     updateSkins( dt );
+    if ( m_partnerXp > 0 )
+    {
+        int xp = m_partnerXp;
+        m_partnerXp = 0;
+        gainXp( xp );
+    }
 
     // The door opens with the level's event (the press dead, the bridge clear).
     // (Where the level ends otherwise - the white-out, the endings - the gate opens once the boss is down.)
@@ -3603,7 +3641,16 @@ void Game::update( float dt, const GameInput &inRaw )
     // The camera follows a little ahead of where Corvin aims.
     // Ahead of where Corvin aims and runs. In the press's arena (only while he is inside it) it draws back and takes
     // the press into the picture -- but never so far that he would leave it.
-    Vector3 hero = Vector3Add( m_pos, { 0.0f, 1.0f, 0.0f } );
+    // Two at one screen: the middle between them, drawn back as they part.
+    Vector3 focus = m_pos;
+    float   apart = 0.0f;
+    if ( m_partner && !m_dead )
+    {
+        Vector3 mate = partnerPos();
+        apart = Vector3Distance( mate, m_pos );
+        focus = Vector3Lerp( m_pos, mate, 0.5f );
+    }
+    Vector3 hero = Vector3Add( focus, { 0.0f, 1.0f, 0.0f } );
     Vector3 lead = { Clamp( m_vel.x * 0.35f, -1.5f, 1.5f ), 0.0f, Clamp( m_vel.z * 0.35f, -1.5f, 1.5f ) };
     Vector3 want = Vector3Add( Vector3Add( hero, Vector3Scale( m_aimDir, 1.2f ) ), lead );
     Vector3 o = m_pressModel.m_origin;
@@ -3620,6 +3667,7 @@ void Game::update( float dt, const GameInput &inRaw )
     float   keep = arena ? 8.0f : 4.0f;
     if ( Vector3Length( lag ) > keep ) m_camTarget = Vector3Add( hero, Vector3Scale( Vector3Normalize( lag ), keep ) );
     float pull = arena ? 1.45f : ( m_scene == 1 || m_scene == 2 ? 0.7f : 1.0f );
+    pull *= 1.0f + fmaxf( 0.0f, apart - 5.0f ) / 12.0f;
     m_camPull += ( pull - m_camPull ) * fminf( 1.0f, dt * 1.5f );
     float   jolt = m_shake * m_shakeScale;
     Vector3 shake = { ( rnd() - 0.5f ) * jolt * 0.5f, ( rnd() - 0.5f ) * jolt * 0.3f, ( rnd() - 0.5f ) * jolt * 0.5f };
@@ -3675,6 +3723,8 @@ Lighting Game::lighting() const
 
     std::vector<PointLight> all;
     all.push_back( { Vector3Add( m_pos, { 0.4f, 3.2f, 1.2f } ), 11.0f, { 13.0f, 11.5f, 10.0f }, 0.0f } );
+    if ( m_partner )
+        all.push_back( { Vector3Add( partnerPos(), { 0.4f, 3.2f, 1.2f } ), 9.0f, { 10.0f, 9.0f, 8.0f }, 0.0f } );
     // The ship's warning lights while it dodges; the scanner by Ilka, still warm.
     if ( m_thrustState > 0 && fmodf( m_time, 0.5f ) < 0.3f )
         all.push_back( { Vector3Add( m_pos, { 0.0f, 4.5f, 0.0f } ), 12.0f, { 16.0f, 7.0f, 1.0f }, 0.6f } );
@@ -3911,6 +3961,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
         poseUnzu( m_dynamic );
     else
         m_hero.pose( m_dynamic );
+    posePartner( m_dynamic );
     for ( auto &[figure, pose] : m_lined ) figure->pose( pose, { -1.0f, 0.0f, 0.0f, 0.0f }, m_dynamic );
     poseCrew( m_dynamic );
     poseShip( m_dynamic );
@@ -4236,6 +4287,7 @@ void Game::drawHud( int w, int h )
 
     drawFoeHud( w, h, s );
     drawWorldHud( w, h, s );
+    drawPartnerHud( w, h, s );
     drawElementsHud( w, h, s );
     drawAct34Hud( w, h, s );
     drawTaleHud( w, h, s );
@@ -4290,6 +4342,7 @@ void Game::drawHud( int w, int h )
     {
         float a = Clamp( ( m_deadTimer - 0.5f ) / 1.2f, 0.0f, 1.0f );
         DrawRectangle( 0, 0, w, h, { 0, 0, 0, (unsigned char)( 255 * a ) } );
+        if ( m_fallen ) drawFallenCard( w, h, s );
     }
     if ( m_liftGoing && !m_finished )
     {

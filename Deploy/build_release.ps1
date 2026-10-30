@@ -4,22 +4,28 @@
     Linux archive.
 
 .DESCRIPTION
-    .\Deploy\build_release.ps1 [-NoBuild] [-NoLinux]
+    .\Deploy\build_release.ps1 [-NoBuild] [-NoLinux] [-NoTest]
 
     Builds the Release (build.ps1), stages the game as DarkConcordance.exe with its assets (without assets\raw, the
     sources the textures were made from), the player's readme, the manual (Handbuch.pdf, Manual.pdf), the licence
     and the credits in work\release and zips them into dist. The Linux archive comes from Deploy/build_linux.sh in WSL (GCC 12, glibc 2.35 and newer, the
     Steam Deck included; dav1d travels along in lib/); without WSL it is skipped.
 
+    The colour and ORM maps travel as DXT1 (tools/make_dds.py makes what is missing or older than its PNG); the PNGs
+    they stand for stay behind. Each package is unpacked and started once, muted (Deploy/test_package.ps1, through WSL
+    Deploy/test_package.sh): it must run, draw a picture and miss no file of its own.
+
     -NoBuild   pack what bin\msvc holds
     -NoLinux   only the Windows archive
+    -NoTest    no start of the packages
 
 .EXAMPLE
     .\Deploy\build_release.ps1
 #>
 param(
     [switch]$NoBuild,
-    [switch]$NoLinux
+    [switch]$NoLinux,
+    [switch]$NoTest
 )
 $ErrorActionPreference = "Stop"
 $root = Split-Path $PSScriptRoot -Parent
@@ -31,6 +37,10 @@ if (-not $NoBuild) {
     if ($LASTEXITCODE -ne 0) { throw "build failed" }
 }
 
+# The colour and ORM maps as DXT1 (what is missing or older than its PNG).
+& py -3 (Join-Path $root "tools\make_dds.py")
+if ($LASTEXITCODE -ne 0) { throw "make_dds failed" }
+
 # Windows: the exe (static runtime, dav1d inside) and the assets beside it.
 $name = "DarkConcordance-$version-windows-x64"
 $stage = Join-Path $root "work\release\$name"
@@ -39,6 +49,11 @@ New-Item -ItemType Directory -Force $stage | Out-Null
 Copy-Item (Join-Path $root "bin\msvc\SpaceOpera.exe") (Join-Path $stage "DarkConcordance.exe")
 & robocopy (Join-Path $root "assets") (Join-Path $stage "assets") /E /XD (Join-Path $root "assets\raw") /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "copying the assets failed" }
+# A texture with its DDS needs no PNG.
+Get-ChildItem (Join-Path $stage "assets\textures") -Filter *.dds | ForEach-Object {
+    $png = [IO.Path]::ChangeExtension($_.FullName, ".png")
+    if (Test-Path $png) { Remove-Item -Force $png }
+}
 Copy-Item (Join-Path $root "docs\README-player.txt") (Join-Path $stage "README.txt")
 foreach ($doc in "LICENSE", "docs\CREDITS.txt") { Copy-Item (Join-Path $root $doc) $stage }
 # The manual in both languages (tools/manual/make_manual.py), where it is made.
@@ -55,6 +70,10 @@ if (Test-Path $zip) { Remove-Item -Force $zip }
 & (Join-Path $env:SystemRoot "System32\tar.exe") -a -c -f $zip -C (Join-Path $root "work\release") $name
 if ($LASTEXITCODE -ne 0) { throw "zip failed" }
 Write-Host ("{0}  {1:N0} MB" -f $zip, ((Get-Item $zip).Length / 1MB))
+if (-not $NoTest) {
+    & (Join-Path $PSScriptRoot "test_package.ps1") $zip
+    if ($LASTEXITCODE -ne 0) { throw "the Windows package does not start" }
+}
 
 # Linux through WSL: the source is reached as /mnt/<drive>/...
 if (-not $NoLinux) {
@@ -67,5 +86,9 @@ if (-not $NoLinux) {
         if ($LASTEXITCODE -ne 0) { throw "Linux build failed" }
         $tgz = Join-Path $dist "DarkConcordance-$version-linux-x86_64.tar.gz"
         Write-Host ("{0}  {1:N0} MB" -f $tgz, ((Get-Item $tgz).Length / 1MB))
+        if (-not $NoTest) {
+            & wsl.exe -- bash "$wslRoot/Deploy/test_package.sh" "$wslRoot/dist/DarkConcordance-$version-linux-x86_64.tar.gz"
+            if ($LASTEXITCODE -ne 0) { throw "the Linux package does not start" }
+        }
     }
 }

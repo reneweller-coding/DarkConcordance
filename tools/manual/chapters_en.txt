@@ -28,6 +28,7 @@ The `assets` folder must stay beside the program. The game needs OpenGL 3.3 and 
 | New game | Choose a hero and begin from the start |
 | Load game | Load one of the four save slots |
 | New Game+ | Appears once a save is through: the story again, with everything gained |
+| Daily challenge | The Depths, every day with another hero, level and tier – the same for everyone; beside it the day's best |
 | Options | Difficulty, graphics, sound, language, controls, display |
 | Quit | Leave the game |
 
@@ -40,6 +41,14 @@ A new game first asks who you are: **Dorra Vask** (melee), **Corvin Aske** (rang
 The game saves by itself, at the start of every place and at every rescue capsule you wake. There are four save slots: "New game" asks where to save, "Load game" shows them with hero, place and time. A slot in use is overwritten only after a second confirmation.
 
 [shot slots] The four save slots.
+
+Below the slots of a new game is **One life (hardcore)**. Switched on, the first death ends the run: the hero stays down, the save stays in the list as a memory and cannot be continued. Whoever gets through that way earns the award "One Life".
+
+## Two players
+
+With a second gamepad a second player joins at the same screen, as in Dark Alliance. **Start** on the second pad brings in one of the other two heroes, **Start** again changes to the other one, **View** held for a second and a half lets them go. The second hero comes at the first one's level, with gear of their kind and their skills spent, and grows with them.
+
+The first player leads: talks, loot, doors and lifts are theirs, and what the second one fells gives them its experience. Whoever strays too far stands beside the first one again. The enemies go for whoever is nearer. If the second one falls, they get up beside the first one after a few seconds. The co-op stays from place to place until the second one leaves.
 
 Saves, settings, the journal (codex and awards), the locker and your photos are in the player's folder: `%APPDATA%\DarkConcordance` on Windows, `~/.local/share/DarkConcordance` on Linux.
 

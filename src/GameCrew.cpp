@@ -465,16 +465,18 @@ void Game::updateShots( float dt )
         s.m_life -= dt;
         Vector3 hit, n;
         bool    done = s.m_life <= 0.0f;
-        float   flat = Vector2Distance( { s.m_pos.x, s.m_pos.z }, { m_pos.x, m_pos.z } );
-        if ( !done && !m_dead && flat < 0.45f && s.m_pos.y > m_pos.y + 0.2f && s.m_pos.y < m_pos.y + 1.9f )
+        auto    strikes = [&]()
         {
+            float flat = Vector2Distance( { s.m_pos.x, s.m_pos.z }, { m_pos.x, m_pos.z } );
+            if ( m_dead || flat >= 0.45f || s.m_pos.y <= m_pos.y + 0.2f || s.m_pos.y >= m_pos.y + 1.9f ) return false;
             m_hurtBy = "bolt";
             if ( s.m_kind != 4 )
                 hurtHero( s.m_hurt > 0.0f ? s.m_hurt : ShotHurt, Vector3Scale( Vector3Normalize( s.m_vel ), 0.6f ),
                           Vector3Subtract( s.m_pos, s.m_vel ) );
             shotEffect( s );
-            done = true;
-        }
+            return true;
+        };
+        if ( !done ) done = strikes() || asPartner( strikes );
         if ( !done && m_level.raycast( prev, s.m_pos, hit, n ) )
         {
             sparks( hit, n, 6, { 255, 140, 80, 255 }, 2.0f );

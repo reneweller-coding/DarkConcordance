@@ -416,10 +416,33 @@ Vector3 Game::surfaceColour( int surface )
 {
     auto known = m_surfaceColour.find( surface );
     if ( known != m_surfaceColour.end() ) return known->second;
-    Vector3 c = { 1.0f, 1.0f, 1.0f };
-    if ( surface >= 0 && surface < (int)m_surfaces.size() )
+    Vector3          c = { 1.0f, 1.0f, 1.0f };
+    const Texture2D &albedo = surface >= 0 && surface < (int)m_surfaces.size()
+                                  ? m_surfaces[surface].m_material.maps[MATERIAL_MAP_ALBEDO].texture
+                                  : Texture2D{};
+    std::string      path = albedo.format >= PIXELFORMAT_COMPRESSED_DXT1_RGB ? sharedPath( albedo.id ) : "";
+    if ( path.size() > 4 )
     {
-        Image  img = LoadImageFromTexture( m_surfaces[surface].m_material.maps[MATERIAL_MAP_ALBEDO].texture );
+        // A compressed one (tools/make_dds.py) cannot be read back; its last mip, one block of one colour, is the mean.
+        unsigned char block[8] = {};
+        std::string   dds = path.substr( 0, path.size() - 4 ) + ".dds";
+        if ( FILE *f = fopen( dds.c_str(), "rb" ) )
+        {
+            if ( fseek( f, -8, SEEK_END ) == 0 && fread( block, 1, 8, f ) == 8 )
+            {
+                unsigned c0 = block[0] | ( block[1] << 8 );
+                Color    t = m_surfaces[surface].m_tint;
+                Vector3  mean = { ( c0 >> 11 & 31 ) / 31.0f * t.r / 255.0f, ( c0 >> 5 & 63 ) / 63.0f * t.g / 255.0f,
+                                  ( c0 & 31 ) / 31.0f * t.b / 255.0f };
+                float    top = fmaxf( 0.02f, fmaxf( mean.x, fmaxf( mean.y, mean.z ) ) );
+                c = Vector3Scale( mean, Clamp( top * 2.2f, 0.3f, 1.0f ) / top );
+            }
+            fclose( f );
+        }
+    }
+    else if ( surface >= 0 && surface < (int)m_surfaces.size() )
+    {
+        Image  img = LoadImageFromTexture( albedo );
         Color *px = LoadImageColors( img );
         double sum[3] = { 0, 0, 0 };
         int    n = 0;

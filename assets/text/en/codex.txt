@@ -165,3 +165,5 @@ award.plus             = Once More
 award.plus.about       = Began a New Game+.
 award.nightmare_level  = Nightmares
 award.nightmare_level.about = Finished a fighting level on Nightmare.
+award.one_life         = One life
+award.one_life.about   = Played the game through with a single life.

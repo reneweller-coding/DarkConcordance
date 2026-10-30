@@ -422,6 +422,9 @@ Still to come, by first use:
    item cards (picture, numbers, worn/second/locker, the difference to what is worn) on the left and the hero in 3D on
    the right, ten pages as signs, notes on a page of their own; a second weapon with a quick swap (T, the pad's cross)
    and its box in the HUD.
+18. From part 2 — done (30.10.2026, the user: take over what makes sense here too): two players at one screen
+   (GameCoop.cpp), one life, the day's challenge in the Depths, textures as DXT1 (make_dds.py) and a start test of
+   each package in the release script; not taken: part 2's balance, enemies and places, and its file for a third part.
 18. Part 2's fixes — done (30.10.2026, the user: take part 2's fixes back into part 1). The autopilot rolls out of a
    frame's stomp, backs off only where no wall is (else aside with a roll), waits in the lee until the suit is full,
    and a cell it stuck at three times is no way through for 30 s, not for good; a boss's helpers come only onto floor

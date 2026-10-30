@@ -171,6 +171,11 @@ int Game::xpFor( const Foe &f ) const
 
 void Game::gainXp( int xp )
 {
+    if ( m_partnerTurn )
+    {
+        m_partnerXp += xp;   // the partner's kills are the leader's experience (update() hands it over)
+        return;
+    }
     if ( m_progress.m_heroLevel >= MaxLevel ) return;
     if ( m_tale ) m_taleXp += xp;
     m_progress.m_xp += (int)( xp * ( 1.0f + stat( StatE::XP ) / 100.0f ) * m_xpScale );

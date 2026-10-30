@@ -621,6 +621,27 @@ void Game::campaignPrep()
     m_menu = menu;
 }
 
+void Game::challengePrep( unsigned seed )
+{
+    int hero = heroIndex(), level = m_progress.m_heroLevel;
+    m_progress.m_bag.clear();
+    for ( int i = 0; i < EquipSlots; ++i ) m_progress.m_worn[i] = false;
+    for ( int slot = 0; slot <= (int)SlotE::CELL; ++slot )
+    {
+        Item it = makeItem( level, hero, seed, 2.0f, slot );
+        int  at = gearIndex( it );
+        if ( at >= 0 ) m_progress.m_gear[at] = it, m_progress.m_worn[at] = true;
+    }
+    if ( !m_progress.m_worn[0] )
+        m_progress.m_gear[0] = taleItem( hero, SlotE::WEAPON, level ), m_progress.m_worn[0] = true;
+    m_progress.m_ranks.assign( skillDefs().size(), 0 );
+    m_progress.m_points = level;
+    m_progress.m_stims = m_stims = 5;
+    spendPoints();
+    m_hp = hpMax();
+    m_shield = m_stats.m_shield;
+}
+
 std::string Game::campaignLine() const
 {
     int worth = 0;

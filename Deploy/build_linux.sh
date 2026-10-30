@@ -23,6 +23,8 @@ rm -rf "$build/release"
 mkdir -p "$stage/lib" "$stage/assets"
 cp "$build/SpaceOpera" "$stage/DarkConcordance"
 (cd "$root/assets" && tar --exclude=./raw -cf - .) | (cd "$stage/assets" && tar -xf -)
+# A texture with its DDS (tools/make_dds.py) needs no PNG.
+for dds in "$stage"/assets/textures/*.dds; do [ -e "$dds" ] && rm -f "${dds%.dds}.png"; done
 dav1d="$(ldd "$build/SpaceOpera" | awk '/libdav1d/ { print $3 }')"
 cp -L "$dav1d" "$stage/lib/$(basename "$dav1d")"
 cp "$root/docs/README-player.txt" "$stage/README.txt"

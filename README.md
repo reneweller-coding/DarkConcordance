@@ -508,6 +508,24 @@ what they wear, drawn with the photo mode's camera close in front of them (`Game
 view turns – the right stick, Q/E, the right mouse button – or the gear changes), their main numbers below. The
 free places are named above the cards; the jobs and notes have a page of their own.
 
+**Two players** (`src/GameCoop.cpp`, from part 2): a second pad's Start brings in one of the other two heroes,
+Start again changes to the other, View held 1.5 s lets them go. The partner is the hero's own set of members (place,
+health, skills, gear, the autopilot's memory) swapped in for its turn each frame and for each enemy that goes for it;
+the first player leads (talks, loot, doors, lifts), the partner follows on a 13 m leash, comes at the leader's level
+with an item of its kind in every slot and its points spent, and is up again beside the leader after a fall. Enemies
+go for the nearer hero. `--coop dorra|ione|corvin` puts the autopilot beside the first hero in tests (with
+`--campaign` too).
+
+**One life** (hardcore, chosen below the slots of a new game): the first death ends the run, the save stays in the
+list as „gefallen“ and cannot go on; through that way the award „Ein Leben“. **Daily challenge** (title): the Depths
+with the day's hero, level and tier, the same for everyone, on Normal, nothing saved but the times
+(`challenge.txt`, score = time + 30 s per death); `--daily` starts it.
+
+**Textures as DXT1** (`tools/make_dds.py`, from part 2): the colour and ORM maps once more as DDS beside their PNGs (all
+mips, an eighth of the graphics memory, nothing to decode); the game takes the DDS where there is one (`--png`
+compares), the normal maps stay PNG. The release script makes what is missing and packs the DDS instead of their
+PNGs (389 MB of PNG become 172 MB); `Deploy/test_package.ps1`/`.sh` unpack each package and start it once, muted.
+
 **The second weapon** (Dark Alliance's quick swap): a weapon put on moves the one in the hand to the second place if
 that is free (else into the bag); T or the pad's cross (right, or left where nothing else is bound) swaps them in
 play, the HUD shows the second one left of the skills. A on it takes it off; A on the hand's weapon puts the second

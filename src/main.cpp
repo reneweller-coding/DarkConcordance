@@ -16,6 +16,7 @@
  * @author Rene Weller
  */
 #include "Game.h"
+#include "GameShared.h"
 #include "Bindings.h"
 #include "Crash.h"
 #include "Files.h"
@@ -87,10 +88,12 @@ struct Options
     float                    m_camRise = 0.0f;          ///< tests: the camera's height (0: as in play, 11.5)
     Vector2                  m_move = { 0.0f, 0.0f };   ///< with --shot: the left stick held during the warm-up
     std::string              m_hero;                    ///< corvin, dorra (else the choice in the menu)
-    std::string              m_flags;                   ///< what has happened already (comma-separated; tests)
-    std::string              m_talk;                    ///< with --shot: a conversation open in the picture
-    std::string              m_film;                    ///< a film played over the level (assets/films/<name>)
-    int                      m_shop = 0;                ///< with --shot: Ottla's (1) or Kiri's (2) menu open
+    std::string              m_coop;                    ///< tests: a second hero beside the first, the autopilot's
+    bool                     m_daily = false;     ///< the day's challenge at once (tests: with --autoplay, then end)
+    std::string              m_flags;             ///< what has happened already (comma-separated; tests)
+    std::string              m_talk;              ///< with --shot: a conversation open in the picture
+    std::string              m_film;              ///< a film played over the level (assets/films/<name>)
+    int                      m_shop = 0;          ///< with --shot: Ottla's (1) or Kiri's (2) menu open
     int                      m_panel = -1;        ///< with --shot: a page of the inventory (Game::PanelTabs: 0 weapons)
     int                      m_stash = 0;         ///< with --shot: the first items of the bag into the stash
     int                      m_lootFilter = -1;   ///< tests: the loot filter (-1: as set)
@@ -207,6 +210,12 @@ Options parse( int argc, char **argv )
             o.m_language = next();
         else if ( a == "--hero" )
             o.m_hero = next();
+        else if ( a == "--coop" )
+            o.m_coop = next();
+        else if ( a == "--daily" )
+            o.m_daily = true;
+        else if ( a == "--png" )
+            play::useDds() = false;   // the PNGs, not the DDS beside them (to compare)
         else if ( a == "--flags" )
             o.m_flags = next();
         else if ( a == "--talk" )
@@ -378,6 +387,49 @@ GameInput readInput( Vector2 &lastMouse, float dt )
         if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_UP ) ) in.m_navStep = -1;
         if ( IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_LEFT_FACE_DOWN ) ) in.m_navStep = 1;
     }
+    return in;
+}
+
+/**
+ * @brief The second player's input from their pad (the first player's bindings, its buttons only; the right stick
+ *        and the menus stay the first player's).
+ * @param[in] pad  the pad
+ * @return what it asks for this frame
+ */
+GameInput readPartner( int pad )
+{
+    GameInput in;
+    if ( pad < 0 || !IsGamepadAvailable( pad ) ) return in;
+    static bool was[2] = {};
+    bool        now[2] = { GetGamepadAxisMovement( pad, GAMEPAD_AXIS_LEFT_TRIGGER ) > 0.3f,
+                           GetGamepadAxisMovement( pad, GAMEPAD_AXIS_RIGHT_TRIGGER ) > 0.3f };
+    auto        trigger = []( int button )
+    {
+        return button == GAMEPAD_BUTTON_LEFT_TRIGGER_2 ? 0 : button == GAMEPAD_BUTTON_RIGHT_TRIGGER_2 ? 1 : -1;
+    };
+    auto down = [&]( BindE b )
+    {
+        int button = binding( b ).m_pad, t = trigger( button );
+        return button > 0 && ( IsGamepadButtonDown( pad, button ) || ( t >= 0 && now[t] ) );
+    };
+    auto hit = [&]( BindE b )
+    {
+        int button = binding( b ).m_pad, t = trigger( button );
+        return button > 0 && ( IsGamepadButtonPressed( pad, button ) || ( t >= 0 && now[t] && !was[t] ) );
+    };
+    Vector2 stick = { GetGamepadAxisMovement( pad, GAMEPAD_AXIS_LEFT_X ),
+                      GetGamepadAxisMovement( pad, GAMEPAD_AXIS_LEFT_Y ) };
+    if ( Vector2Length( stick ) > 0.2f ) in.m_move = stick;
+    in.m_fire = down( BindE::FIRE );
+    in.m_jump = hit( BindE::JUMP );
+    in.m_stim = hit( BindE::STIM );
+    in.m_special = hit( BindE::SPECIAL );
+    in.m_skill2 = hit( BindE::SKILL2 );
+    in.m_skill3 = hit( BindE::SKILL3 );
+    in.m_strafe = down( BindE::STRAFE );
+    in.m_dodge = hit( BindE::DODGE );
+    in.m_swap = hit( BindE::SWAP );
+    was[0] = now[0], was[1] = now[1];
     return in;
 }
 
@@ -938,6 +990,110 @@ std::string volumeBar( const char *key, float v )
 }
 
 /** @brief What a menu row does. */
+/**
+ * @brief The day's challenge in the Depths: by the local date the same hero, level, tier and layout for everyone who
+ *        plays on that day; nothing of it is saved but its times (challenge.txt in the player's folder).
+ */
+struct Daily
+{
+    int   m_date = 0;               ///< YYYYMMDD, the seed too
+    HeroE m_hero = HeroE::CORVIN;   ///< who is played
+    int   m_level = 10;             ///< the hero's level (10 to 30)
+    int   m_tier = 3;               ///< the Depths' tier (3 to 8)
+};
+
+/** @return today's challenge */
+Daily today()
+{
+    time_t      now = time( nullptr );
+    struct tm   t = *localtime( &now );
+    Daily       d;
+    unsigned    h = (unsigned)( t.tm_year * 366 + t.tm_yday ) * 2654435761u;
+    const HeroE heroes[3] = { HeroE::CORVIN, HeroE::DORRA, HeroE::IONE };
+    d.m_date = ( t.tm_year + 1900 ) * 10000 + ( t.tm_mon + 1 ) * 100 + t.tm_mday;
+    d.m_hero = heroes[h % 3];
+    d.m_level = 10 + 5 * (int)( h / 3 % 5 );
+    d.m_tier = 3 + (int)( h / 15 % 6 );
+    return d;
+}
+
+/** @return a run's score: its time with half a minute more for each death (lower is better) */
+float dailyScore( float seconds, int deaths )
+{
+    return seconds + 30.0f * deaths;
+}
+
+/** @return a time as minutes and seconds */
+std::string clockOf( float seconds )
+{
+    return TextFormat( "%d:%02d", (int)seconds / 60, (int)seconds % 60 );
+}
+
+/**
+ * @brief The best score of a day's runs so far.
+ * @param[in]  date  the day
+ * @param[out] runs  how many
+ * @return the best score (negative: none)
+ */
+float dailyBest( int date, int &runs )
+{
+    float best = -1.0f;
+    runs = 0;
+    if ( FILE *f = fopen( ( userDir() + "challenge.txt" ).c_str(), "r" ) )
+    {
+        int   day, level, tier, deaths, kills;
+        char  hero[32];
+        float seconds;
+        while ( fscanf( f, "%d %31s %d %d %f %d %d", &day, hero, &level, &tier, &seconds, &deaths, &kills ) == 7 )
+            if ( day == date )
+            {
+                float score = dailyScore( seconds, deaths );
+                if ( best < 0.0f || score < best ) best = score;
+                ++runs;
+            }
+        fclose( f );
+    }
+    return best;
+}
+
+std::string g_dailyRow;    ///< the title's row for the challenge (refreshDaily)
+std::string g_dailyLang;   ///< ... in this language
+int         g_dailyDate;   ///< ... for this day
+
+/** @brief The title's row for today's challenge: who, how strong, how deep, the best run so far. */
+void refreshDaily()
+{
+    Daily d = today();
+    int   runs = 0;
+    float best = dailyBest( d.m_date, runs );
+    g_dailyLang = language();
+    g_dailyDate = d.m_date;
+    g_dailyRow =
+        TextFormat( tr( "menu.daily" ), tr( std::string( "hero." ) + heroKey( d.m_hero ) ), d.m_level, d.m_tier );
+    g_dailyRow += "  ·  " + ( runs ? std::string( TextFormat( tr( "daily.best" ), clockOf( best ).c_str(), runs ) )
+                                   : std::string( tr( "daily.none" ) ) );
+}
+
+/**
+ * @brief A run of the challenge through: written to the list, the row refreshed.
+ * @return what the title says about it (the time, the deaths, the score, whether it is the day's best)
+ */
+std::string recordDaily( const Daily &d, float seconds, int deaths, int kills )
+{
+    int   runs = 0;
+    float best = dailyBest( d.m_date, runs );
+    if ( FILE *f = fopen( ( userDir() + "challenge.txt" ).c_str(), "a" ) )
+    {
+        fprintf( f, "%d %s %d %d %.1f %d %d\n", d.m_date, heroKey( d.m_hero ), d.m_level, d.m_tier, seconds, deaths,
+                 kills );
+        fclose( f );
+    }
+    refreshDaily();
+    float score = dailyScore( seconds, deaths );
+    return TextFormat( tr( best < 0.0f || score < best ? "daily.record" : "daily.done" ), clockOf( seconds ).c_str(),
+                       deaths, clockOf( score ).c_str() );
+}
+
 enum class RowE
 {
     CONTINUE,
@@ -961,6 +1117,7 @@ enum class RowE
     CONTROLS,
     PHOTO,
     LOAD,
+    DAILY,
     DISPLAY,
     WINDOW,
     SIZE,
@@ -995,6 +1152,7 @@ std::vector<RowE> menuRows( int menu, bool saved, bool plus, bool any = false )
     if ( plus ) rows.push_back( R::PLUS );
     rows.push_back( R::START );
     if ( any ) rows.push_back( R::LOAD );
+    rows.push_back( R::DAILY );
     for ( R r : { R::OPTIONS, R::QUIT } ) rows.push_back( r );
     return rows;
 }
@@ -1027,6 +1185,9 @@ std::string rowText( RowE r, const Settings &s, int cycle )
     case RowE::CONTROLS: return tr( "menu.controls" );
     case RowE::PHOTO: return tr( "menu.photo" );
     case RowE::LOAD: return tr( "menu.load" );
+    case RowE::DAILY:
+        if ( g_dailyRow.empty() || g_dailyLang != language() || g_dailyDate != today().m_date ) refreshDaily();
+        return g_dailyRow;
     case RowE::DISPLAY: return tr( "menu.display" );
     case RowE::RUMBLE: return pick( "menu.rumble", "rumble." + std::to_string( s.m_rumble ) );
     case RowE::MINIMAP: return pick( "menu.minimap", s.m_minimap ? "on" : "off" );
@@ -1060,7 +1221,7 @@ Progress carriedFrom( const Progress &done, const std::string &start )
     p.m_cycle += 1;
     std::set<std::string> kept;
     for ( const std::string &f : p.m_flags )
-        if ( f.compare( 0, 5, "note:" ) == 0 || f == "gamedone" ) kept.insert( f );
+        if ( f.compare( 0, 5, "note:" ) == 0 || f == "gamedone" || f == "hardcore" ) kept.insert( f );
     p.m_flags = kept;
     p.m_deaths = 0;
     p.m_hasSpot = false;
@@ -1094,6 +1255,13 @@ std::string placeName( const std::string &level )
  * @param[out] used whether there is a save
  * @return the line
  */
+/** @return whether the save in a slot is a fallen hero's (one life, spent): it shows, but does not go on */
+bool fallenIn( int slot )
+{
+    Progress p;
+    return loadProgress( p, slotPath( slot ) ) && p.m_flags.count( "fallen" );
+}
+
 std::string slotLine( int slot, bool &used )
 {
     Progress p;
@@ -1110,8 +1278,11 @@ std::string slotLine( int slot, bool &used )
     char   stamp[32] = "";
     time_t t = (time_t)when;
     if ( when > 0 ) strftime( stamp, sizeof( stamp ), "%d.%m. %H:%M", localtime( &t ) );
-    std::string line = TextFormat( tr( "slot.line" ), slot, tr( std::string( "hero." ) + heroKey( p.m_hero ) ),
-                                   p.m_heroLevel, placeName( p.m_level ).c_str() );
+    std::string line =
+        TextFormat( tr( p.m_flags.count( "fallen" ) ? "slot.fallen" : "slot.line" ), slot,
+                    tr( std::string( "hero." ) + heroKey( p.m_hero ) ), p.m_heroLevel, placeName( p.m_level ).c_str() );
+    if ( p.m_flags.count( "hardcore" ) && !p.m_flags.count( "fallen" ) )
+        line += std::string( "  ·  " ) + tr( "slot.onelife" );
     return when > 0 ? line + "  ·  " + stamp : line;
 }
 
@@ -1197,7 +1368,7 @@ int runGame( const Options &o, Gfx &gfx )
     HeroE       hero = o.m_hero == "dorra" ? HeroE::DORRA : ( o.m_hero == "ione" ? HeroE::IONE : HeroE::CORVIN );
     std::string level = o.m_level;
     Progress    progress, saved;
-    bool        hasSave = o.m_shot.empty() && loadProgress( saved );
+    bool        hasSave = o.m_shot.empty() && loadProgress( saved ) && !saved.m_flags.count( "fallen" );
     progress.m_hero = hero;
     progress.m_level = level;
     for ( size_t at = 0; at < o.m_flags.size(); )
@@ -1242,12 +1413,23 @@ int runGame( const Options &o, Gfx &gfx )
         score.keep( pieces );
     }
     if ( o.m_silent ) SetMasterVolume( 0.0f );
+    // Tests: a second hero beside the first, played by the autopilot.
+    HeroE coopHero = o.m_coop == "dorra" ? HeroE::DORRA : ( o.m_coop == "ione" ? HeroE::IONE : HeroE::CORVIN );
+    bool  coop = !o.m_coop.empty();
+    auto  partnerFor = [&]( HeroE leader )
+    {
+        // The one asked for, else the next of the other two.
+        if ( coopHero != leader ) return coopHero;
+        return leader == HeroE::CORVIN ? HeroE::DORRA : HeroE::CORVIN;
+    };
+    if ( coop ) game->joinPartner( partnerFor( hero ), o.m_autoplay );
     if ( !o.m_dumpGen.empty() && !game->generated().empty() )
         SaveFileText( o.m_dumpGen.c_str(), const_cast<char *>( game->generated().c_str() ) );
     // What the settings ask of a game and the renderer.
+    bool challengeOn = false;   ///< apply() keeps the day's challenge on Normal (set from the loop's challenge)
     auto apply = [&]()
     {
-        game->setDifficulty( settings.m_difficulty );
+        game->setDifficulty( challengeOn ? DifficultyE::NORMAL : settings.m_difficulty );
         game->m_brightness = settings.m_brightness;
         game->setVolumes( settings.m_voices, settings.m_effects );
         game->m_subtitleScale = settings.m_subtitles == 0 ? 0.8f : ( settings.m_subtitles == 2 ? 1.3f : 1.0f );
@@ -1308,6 +1490,7 @@ int runGame( const Options &o, Gfx &gfx )
                 game->m_progress = carried;
                 game->setDifficulty( settings.m_difficulty );
                 if ( !game->load( gfx, assetsDir(), Path[k], sound ) ) break;
+                if ( coop ) game->joinPartner( partnerFor( hero ), true );
                 if ( o.m_silent ) SetMasterVolume( 0.0f );   // each place's sound sets its volume again
                 apply();
             }
@@ -1322,7 +1505,7 @@ int runGame( const Options &o, Gfx &gfx )
             game->m_unstall = true;
             game->campaignPrep();
             const float dt = 1.0f / 60.0f;
-            for ( int i = 0; i < (int)( o.m_warm * 60.0f ) && !game->finished(); ++i )
+            for ( int i = 0; i < (int)( o.m_warm * 60.0f ) && !game->finished() && !game->fallen(); ++i )
             {
                 GameInput in;
                 game->update( dt, in );
@@ -1331,6 +1514,11 @@ int runGame( const Options &o, Gfx &gfx )
                     TraceLog( LOG_WARNING, "TRACE: %s %s", Path[k], game->report().c_str() );
             }
             TraceLog( LOG_WARNING, "CAMPAIGN: %s", game->campaignLine().c_str() );
+            if ( game->fallen() )
+            {
+                TraceLog( LOG_WARNING, "FALLEN: %s", Path[k] );   // one life (--flags hardcore): the run ends here
+                break;
+            }
             carried = game->progress();
             carried.m_hasSpot = false;
             carried.m_fired.clear();
@@ -1483,7 +1671,14 @@ int runGame( const Options &o, Gfx &gfx )
         gfx.resize( GetScreenWidth(), GetScreenHeight() );
     };
     applyDisplay();
+    float       leaveHeld = 0.0f;    ///< the second pad's View held this long (to leave the co-op)
+    bool        challenge = false;   ///< the day's challenge is played (nothing is saved)
+    Daily       daily;               ///< which
+    std::string notice;              ///< the title's line about the last challenge
+    refreshDaily();
     bool slotNew = false;   ///< the slots' list: for a new game (else to load one)
+    bool oneLife = false;   ///< a new game with one life (the slots' list for a new game asks)
+    bool closed = false;    ///< a hero with one life fell: their save is closed
     int  armed = -1;        ///< a used slot chosen for a new game once: confirmed again, it is overwritten
     auto anySave = [&]()
     {
@@ -1509,21 +1704,42 @@ int runGame( const Options &o, Gfx &gfx )
     auto            restart = [&]()
     {
         stillValid = false;
+        closed = false;
         float zoom = game->m_zoom;
         game->shutdown();
         game = std::make_unique<Game>();
         game->m_heroKind = hero;
         game->m_progress = progress;
-        game->setDifficulty( settings.m_difficulty );
+        game->setDifficulty( challenge ? DifficultyE::NORMAL
+                                       : settings.m_difficulty );   // the challenge: alike for all
         if ( o.m_shot.empty() ) game->m_loading = drawLoading;
         SetTargetFPS( 0 );   // the loading screen's frames wait for nothing
         game->load( gfx, assetsDir(), level, sound );
+        if ( challenge ) game->challengePrep( (unsigned)daily.m_date );
+        if ( coop ) game->joinPartner( partnerFor( hero ), o.m_autoplay && !o.m_coop.empty() );
         apply();
         game->m_autoplay = o.m_autoplay;
         game->m_zoom = zoom;
         score.keep( game->musicPieces() );
         if ( o.m_silent ) SetMasterVolume( 0.0f );
     };
+    // The day's challenge: the day's hero at the day's level in the Depths at the day's tier, on Normal.
+    auto startDaily = [&]()
+    {
+        daily = today();
+        challenge = true;
+        notice.clear();
+        progress = Progress();
+        progress.m_hero = hero = daily.m_hero;
+        progress.m_heroLevel = daily.m_level;
+        progress.m_depthTier = daily.m_tier;
+        progress.m_depthBest = daily.m_tier - 1;
+        progress.m_seed = daily.m_date;
+        progress.m_level = level = "tiefen.txt";
+        restart();
+        mode = PLAY;
+    };
+    if ( o.m_daily ) startDaily();
     while ( !WindowShouldClose() && !quit && !g_scriptQuit )
     {
         // The pad's motors while it is played (still in the menus, the inventory, the photo mode).
@@ -1539,10 +1755,28 @@ int runGame( const Options &o, Gfx &gfx )
         if ( mode == PLAY )
         {
             GameInput in = readInput( lastMouse, dt );
-            bool      pause = IsKeyPressed( KEY_ESCAPE ) ||
-                              ( IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT ) );
+            challengeOn = challenge;
+            // Two at one screen: the second pad's Start joins (or changes the hero), its View held leaves.
+            if ( IsGamepadAvailable( 1 ) && !game->finished() )
+            {
+                if ( IsGamepadButtonPressed( 1, GAMEPAD_BUTTON_MIDDLE_RIGHT ) )
+                {
+                    HeroE next = game->partner() ? game->partnerKind() : hero;
+                    do next = (HeroE)( ( (int)next + 1 ) % 3 );
+                    while ( next == hero );
+                    coop = true, coopHero = next;
+                    game->joinPartner( next );
+                }
+                leaveHeld = IsGamepadButtonDown( 1, GAMEPAD_BUTTON_MIDDLE_LEFT ) ? leaveHeld + dt : 0.0f;
+                if ( leaveHeld > 1.5f && game->partner() ) game->leavePartner(), coop = false;
+            }
+            if ( game->partner() && !o.m_autoplay ) game->m_partnerIn = readPartner( 1 );
+            bool pause = IsKeyPressed( KEY_ESCAPE ) ||
+                         ( IsGamepadAvailable( 0 ) && IsGamepadButtonPressed( 0, GAMEPAD_BUTTON_MIDDLE_RIGHT ) );
             // The inventory, the character page (as bound); the game waits meanwhile.
             bool inventory = pressed( BindE::INVENTORY ), character = pressed( BindE::CHARACTER );
+            if ( game->fallen() )
+                pause = inventory = character = false;   // one life spent: nothing left but the way to the title
             if ( pause && !game->finished() )
             {
                 mode = PAUSE;
@@ -1564,7 +1798,7 @@ int runGame( const Options &o, Gfx &gfx )
             {
                 game->update( dt, in );
                 // A capsule woke: the game is saved there.
-                if ( game->takeCheckpoint() && o.m_hero.empty() )
+                if ( game->takeCheckpoint() && o.m_hero.empty() && !challenge )
                 {
                     progress = game->checkpoint();
                     saveProgress( progress );
@@ -1573,7 +1807,26 @@ int runGame( const Options &o, Gfx &gfx )
                 }
                 game->m_zoom = Clamp( game->m_zoom * ( 1.0f + zoomStep( dt ) ), 0.55f, 1.7f );
                 bool onward = game->autoAdvance() ? game->finishedFor() > 1.2f : in.m_confirm;
-                if ( game->finished() && onward )
+                // One life spent: the save is closed at once (quitting now changes nothing), the title after the card.
+                if ( game->fallen() && !closed )
+                {
+                    closed = true;
+                    if ( o.m_hero.empty() && loadProgress( saved ) )
+                        saved.m_flags.insert( "fallen" ), saveProgress( saved );
+                    hasSave = false;
+                    if ( o.m_autoplay ) TraceLog( LOG_WARNING, "FALLEN: %s", level.c_str() ), quit = true;
+                }
+                if ( game->fallen() && game->fallenFor() > 4.0f && in.m_confirm ) mode = TITLE, chosen = 0;
+                if ( game->finished() && onward && challenge )
+                {
+                    // The day's challenge through: its time into the list, the title again (nothing is saved).
+                    notice = recordDaily( daily, game->playTime(), game->levelDeaths(), game->levelKills() );
+                    challenge = challengeOn = false;
+                    restart();
+                    mode = TITLE, chosen = 0;
+                    if ( o.m_autoplay ) TraceLog( LOG_WARNING, "DAILY: %s", notice.c_str() ), quit = true;
+                }
+                else if ( game->finished() && onward )
                 {
                     // On to the next level with the same hero and what was gained; saved at its start. "end <level>":
                     // an act is over; saved where the story goes on, and back to the title.
@@ -1645,11 +1898,12 @@ int runGame( const Options &o, Gfx &gfx )
             }
             if ( k.m_confirm )
             {
-                // A new game: from the prologue, with nothing.
+                // A new game: from the prologue, with nothing (and with one life if the slots' list said so).
                 level = o.m_level;
                 progress = Progress();
                 progress.m_hero = hero;
                 progress.m_level = level;
+                if ( oneLife ) progress.m_flags.insert( "hardcore" );
                 saveProgress( progress );
                 hasSave = true;
                 restart();
@@ -1687,6 +1941,7 @@ int runGame( const Options &o, Gfx &gfx )
                     progress = Progress();
                     progress.m_hero = hero;
                     progress.m_level = level;
+                    if ( oneLife ) progress.m_flags.insert( "hardcore" );
                 }
                 else
                 {
@@ -1765,11 +2020,13 @@ int runGame( const Options &o, Gfx &gfx )
         {
             // The four saves and back. A new game in a free one at once, in a used one on a second confirm.
             MenuKeys k = menuKeys( dt );
-            int      count = Slots + 1;
+            int      count = Slots + ( slotNew ? 2 : 1 );   // a new game: the row for one life before back
             int      before = chosen;
             chosen = ( chosen + k.m_move + count ) % count;
             if ( chosen != before ) armed = -1;
-            if ( k.m_confirm && chosen == Slots )
+            if ( slotNew && chosen == Slots && ( k.m_confirm || k.m_change ) )
+                oneLife = !oneLife;
+            else if ( k.m_confirm && chosen == count - 1 )
                 k.m_back = true;
             else if ( k.m_confirm )
             {
@@ -1784,7 +2041,7 @@ int runGame( const Options &o, Gfx &gfx )
                 }
                 else if ( slotNew )
                     armed = chosen;
-                else if ( used )
+                else if ( used && !fallenIn( chosen + 1 ) )   // a fallen hero's save only shows
                 {
                     g_slot = settings.m_slot = chosen + 1;
                     saveSettings( settings );
@@ -1973,6 +2230,8 @@ int runGame( const Options &o, Gfx &gfx )
                     restart();
                     mode = PLAY;
                 }
+                else if ( row == RowE::DAILY )
+                    startDaily();
                 else if ( row == RowE::PLUS )
                 {
                     // A new game+: the hero as they are (level, gear, skills, scrap), the story from the prologue,
@@ -2110,6 +2369,7 @@ int runGame( const Options &o, Gfx &gfx )
                 if ( slotNew && used && armed == i - 1 ) line = TextFormat( tr( "slot.overwrite" ), i );
                 items.push_back( line );
             }
+            if ( slotNew ) items.push_back( tr( oneLife ? "slot.onelife.on" : "slot.onelife.off" ) );
             items.push_back( tr( "menu.back" ) );
             drawMenu( game->font(), "DARK CONCORDANCE", tr( slotNew ? "menu.slots.new" : "menu.slots.load" ), items,
                       chosen );
@@ -2140,6 +2400,14 @@ int runGame( const Options &o, Gfx &gfx )
             std::vector<RowE> rows = menuRows( menuOf(), hasSave, plus, mode == TITLE && anySave() );
             drawMenu( game->font(), mode == PAUSE ? tr( "menu.pause" ) : "DARK CONCORDANCE", subtitle.c_str(),
                       rowTexts( rows, settings, saved.m_cycle ), chosen % (int)rows.size() );
+            if ( mode == TITLE && !notice.empty() && crashed.empty() )
+            {
+                float   s = textScale( GetScreenHeight() );
+                Vector2 m = MeasureTextEx( game->font(), notice.c_str(), 22 * s, 1.0f );
+                DrawTextEx( game->font(), notice.c_str(),
+                            { GetScreenWidth() * 0.5f - m.x * 0.5f, GetScreenHeight() - 110 * s }, 22 * s, 1.0f,
+                            { 160, 255, 190, 230 } );
+            }
             if ( mode == TITLE && !crashed.empty() )
             {
                 const char *t = TextFormat( tr( "crash.before" ), crashed.c_str() );
