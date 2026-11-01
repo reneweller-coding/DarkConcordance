@@ -139,10 +139,12 @@ void Game::buildRing()
     SetTextureWrap( m_ringTex, TEXTURE_WRAP_REPEAT );
 
     // The band round its axis (east to west through the level's middle), its bottom just under the level, and the
-    // rim walls at both edges.
+    // rim walls at both edges. It rises towards the north and the south, so it hangs as much lower as it rises over
+    // half the level: a long level stands on it, not in it (the Sterbegaerten's 400 m stood up to 8 m deep in its
+    // land, which filled the picture).
     const int                   N = 720, M = 4;
     float                       cx = m_level.cols() * CellSize * 0.5f, cz = m_level.rows() * CellSize * 0.5f;
-    float                       cy = RingRadius - 0.8f;
+    float                       cy = sqrtf( RingRadius * RingRadius - cz * cz ) - 0.8f;
     std::vector<float>          pos, nor, uv;
     std::vector<unsigned short> idx;
     auto                        vertex = [&]( Vector3 p, Vector3 n, float tu, float tv )
