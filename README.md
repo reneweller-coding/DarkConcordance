@@ -22,9 +22,9 @@ and voices.
 
 ## Download
 
-**[DarkConcordance-1.0.0-windows-x64.zip](https://github.com/reneweller-coding/DarkConcordance/releases/download/v1.0.0/DarkConcordance-1.0.0-windows-x64.zip)**
+**[DarkConcordance-1.1.0-windows-x64.zip](https://github.com/reneweller-coding/DarkConcordance/releases/download/v1.1.0/DarkConcordance-1.1.0-windows-x64.zip)**
 (about 1 GB) for Windows 10 and 11: unpack it anywhere and start `DarkConcordance.exe`, nothing to install. The
-**[Linux archive](https://github.com/reneweller-coding/DarkConcordance/releases/download/v1.0.0/DarkConcordance-1.0.0-linux-x86_64.tar.gz)**
+**[Linux archive](https://github.com/reneweller-coding/DarkConcordance/releases/download/v1.1.0/DarkConcordance-1.1.0-linux-x86_64.tar.gz)**
 runs on any x86-64 distribution with glibc 2.35 or newer, SteamOS included (add `DarkConcordance` to Steam as a
 non-Steam game). Both carry the manual (English and German PDF), the player's readme, the credits and the licence.
 The same packages are on **[itch.io](https://reneweller-coding.itch.io/dark-concordance)**.
