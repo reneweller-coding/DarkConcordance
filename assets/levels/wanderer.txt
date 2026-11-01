@@ -31,6 +31,7 @@ genrooms      15
 genside       6
 gensize       12 18 10 15
 gentheme      snow snow snow works service
+genwild       snow
 genoutdoor    snow
 genstarttheme works
 genarenatheme service

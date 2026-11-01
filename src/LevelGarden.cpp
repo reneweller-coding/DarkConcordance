@@ -266,6 +266,17 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
     const Vector3  mid = { ( c + 0.5f ) * CellSize, 0.0f, ( r + 0.5f ) * CellSize };
     const unsigned h = hashCell( r, c, 501 );
     Dice           dice{ h };
+    // A wall standing behind the garden (a house's, the street's beyond): ivy down from its top now and then.
+    for ( int d = 0; d < 4; ++d )
+    {
+        int nr = r + DR[d], nc = c + DC[d];
+        if ( nr < 0 || nc < 0 || nr >= m_rows || nc >= m_cols || cell( nr, nc ).m_kind != CellE::ROCK || garden( nr, nc ) )
+            continue;
+        unsigned hv = hashCell( r, c * 4 + d, 553 );
+        if ( hv % 5 >= 3 ) continue;
+        Vector3 rim = { mid.x + DC[d] * CellSize * 0.5f, m_wallHeight, mid.z + DR[d] * CellSize * 0.5f };
+        creeper( rim, { (float)-DC[d], 0.0f, (float)-DR[d] }, m_wallHeight * ( 0.45f + 0.12f * ( hv % 4 ) ), hv, kit );
+    }
     if ( depth == 1 )
     {
         // The garden's edge by the paths, as out in the wild: stretches of rock (boulders heaped, now and then a crag)
@@ -450,6 +461,60 @@ void Level::groundTop( int r, int c, float h, GardenKit &kit )
         tuft( kit.m_blades, p, dice.in( 0.5f, 0.8f ), dice.in( 0.35f, 0.65f ), dice.in( 0.0f, 6.28f ), colour( p.x, p.z ) );
     }
 }
+
+void Level::creeper( Vector3 rim, Vector3 n, float drop, unsigned h, GardenKit &kit )
+{
+    Dice         dice{ h * 747796405u + 2891336453u };
+    MeshBuilder &leaf = kit.m_foliage;
+    Vector3      along = { n.z, 0.0f, -n.x };
+    if ( drop < 0.2f ) return;
+    // Clumps over the rim, half over the edge.
+    int clumps = 2 + dice.pick( 2 );
+    for ( int i = 0; i < clumps; ++i )
+    {
+        Vector3 p = Vector3Add( rim, Vector3Add( Vector3Scale( along, dice.in( -0.75f, 0.75f ) ),
+                                                 Vector3Scale( n, dice.in( -0.1f, 0.12f ) ) ) );
+        p.y += dice.in( 0.0f, 0.1f );
+        leaf.m_color = dice() < 0.15f ? Exotics[dice.pick( 5 )] : Greens[dice.pick( 5 )];
+        leaf.blob( place( p, { 0.0f, dice.in( 0.0f, 6.28f ), 0.0f } ),
+                   { dice.in( 0.3f, 0.5f ), dice.in( 0.2f, 0.32f ), dice.in( 0.3f, 0.45f ) }, 0.35f, h + i, 4 );
+    }
+    // Ivy flat on the face below it.
+    int ivy = 1 + dice.pick( 2 );
+    for ( int i = 0; i < ivy; ++i )
+    {
+        float   len = dice.in( 0.45f, 1.0f ) * std::min( drop, 3.0f );
+        Vector3 p = Vector3Add( rim, Vector3Add( Vector3Scale( along, dice.in( -0.6f, 0.6f ) ), Vector3Scale( n, 0.05f ) ) );
+        p.y -= len * 0.5f;
+        leaf.m_color = Greens[dice.pick( 5 )];
+        leaf.blob( frame( along, up( 1.0f ), n, p ), { dice.in( 0.3f, 0.55f ), len * 0.5f, 0.1f }, 0.4f, h + 11u * i, 4 );
+    }
+    // Strands hanging lower, leaves along them.
+    int strands = dice.pick( 3 );
+    for ( int i = 0; i < strands; ++i )
+    {
+        Vector3              a = Vector3Add( rim, Vector3Add( Vector3Scale( along, dice.in( -0.8f, 0.8f ) ),
+                                                              Vector3Scale( n, 0.08f ) ) );
+        float                len = dice.in( 0.5f, 1.0f ) * std::min( drop * 1.4f, 3.5f );
+        std::vector<Vector3> path;
+        for ( int k = 0; k <= 3; ++k )
+        {
+            float t = k / 3.0f;
+            path.push_back( Vector3Add( a, Vector3Add( Vector3Scale( n, 0.06f + 0.1f * sinf( t * PI ) ), up( -len * t ) ) ) );
+        }
+        leaf.m_color = Greens[dice.pick( 5 )];
+        leaf.tube( path, { 0.03f, 0.025f, 0.02f, 0.015f }, 4 );
+        for ( int k = 1; k <= 3; ++k )
+        {
+            float rr = dice.in( 0.09f, 0.15f );
+            leaf.blob( place( Vector3Add( path[k], Vector3Scale( n, 0.05f ) ) ), { rr, rr * 1.3f, rr * 0.7f }, 0.3f,
+                       h + 101u * i + k, 3 );
+        }
+    }
+    leaf.m_color = WHITE;
+}
+
+
 
 void Level::hedgeFoot( int r, int c, int d, GardenKit &kit )
 {

@@ -386,6 +386,8 @@ public:
      * @return true if something was hit before `to`
      */
     bool raycast( Vector3 from, Vector3 to, Vector3 &hit, Vector3 &normal ) const;
+    /** @return whether the cell is raw rock (outside, in a shaft): its corners all cut or filled, half a cell deep */
+    bool natural( int r, int c ) const;
     /**
      * @brief Whether something seen stands between two points (for the camera): walls, rocks and bushes from the floor
      *        up, crowns and lintels between their heights, as the build left them per cell.
@@ -652,6 +654,15 @@ private:
      * @param[in] s  the surfaces (the decals there are)
      */
     void gardenPaths( const LevelSurfaces &s );
+    /**
+     * @brief Leaves hanging over an edge (LevelGarden.cpp): clumps over the rim, ivy flat on the face below, strands.
+     * @param[in]     rim   the middle of the edge, at its height
+     * @param[in]     n     out of the face (level)
+     * @param[in]     drop  how far down the face they reach at most
+     * @param[in]     h     a hash: their shapes
+     * @param[in,out] kit   the builders
+     */
+    void creeper( Vector3 rim, Vector3 n, float drop, unsigned h, GardenKit &kit );
     /**
      * @brief Now and then low plants at the foot of a garden's edge, on the floor in front of it (LevelGarden.cpp).
      * @param[in]     r    the floor cell's row

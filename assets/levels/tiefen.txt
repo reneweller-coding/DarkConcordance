@@ -20,6 +20,7 @@ genrooms      9
 genside       3
 gensize       10 16 8 13
 gentheme      service exchanger shaft coldstore works cargo gangway
+genwild       shaft
 genarenatheme shaft
 genarena      guardian
 genguard      %$WT

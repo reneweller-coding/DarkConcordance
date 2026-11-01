@@ -248,7 +248,9 @@ Recipe parse( const std::string &text, std::string &head, std::string &tail )
 class Gen
 {
 public:
-    Gen( const Recipe &r, unsigned seed ) : m_rc( r ), m_rng{ seed * 2654435761u + 12345u } {}
+    Gen( const Recipe &r, unsigned seed ) : m_rc( r ), m_rng{ seed * 2654435761u + 12345u }, m_wildRng{ seed * 7919u + 17u }
+    {
+    }
 
     /** @return false if the rooms would not fit (another seed then) */
     bool run()
@@ -257,6 +259,8 @@ public:
         normalise();
         carve();
         for ( size_t i = 0; i < m_rooms.size(); ++i ) dress( (int)i );
+        for ( const Room &room : m_rooms )
+            if ( wild( room ) ) soften( room.m_r );
         populate();
         crownLeader();
         return true;
@@ -291,6 +295,7 @@ public:
 private:
     const Recipe             m_rc;
     Rng                      m_rng;
+    Rng                      m_wildRng;   ///< the wild shapes' own dice: the rest of the level stays as without them
     std::vector<Room>        m_rooms;
     std::vector<Hall>        m_halls;
     Rect                     m_exit = { 0, 0, 0, 0 };
@@ -569,11 +574,12 @@ private:
     void wilden()
     {
         if ( m_rc.m_wild.empty() ) return;
-        unsigned seed = m_rng.next();
+        unsigned seed = m_wildRng.next();
         for ( size_t i = 0; i < m_rooms.size(); ++i )
         {
             if ( !wild( m_rooms[i] ) ) continue;
             const Rect   &a = m_rooms[i].m_r;
+            const char    cut = '#';   // what is cut off goes back to rock
             std::set<int> keep;
             for ( const Hall &h : m_halls )
             {
@@ -596,7 +602,7 @@ private:
                     float rho = powf( powf( u, 2.6f ) + powf( v, 2.6f ), 1.0f / 2.6f );
                     float rim = 0.93f + 0.22f * noise2( c * 0.33f, r * 0.33f, seed ) +
                                 0.08f * noise2( c * 0.9f, r * 0.9f, seed + 7u );
-                    if ( rho > rim ) m_g[r][c] = '#';
+                    if ( rho > rim ) m_g[r][c] = cut;
                 }
             // What no longer reaches the middle goes back to rock.
             std::set<int>   seen = { key( mr, mc ) };
@@ -614,7 +620,7 @@ private:
             }
             for ( int r = a.m_r0; r <= a.m_r1; ++r )
                 for ( int c = a.m_c0; c <= a.m_c1; ++c )
-                    if ( m_g[r][c] == '.' && !seen.count( key( r, c ) ) ) m_g[r][c] = '#';
+                    if ( m_g[r][c] == '.' && !seen.count( key( r, c ) ) ) m_g[r][c] = cut;
         }
         for ( const Hall &h : m_halls )
         {
@@ -658,17 +664,47 @@ private:
     }
 
     /**
+     * @brief The blocks the dressing set into a wild room (ridges, boulders, mounds) lose their square corners: a
+     *        corner with open floor on both its sides and between them goes, now and then one more cell along an
+     *        edge. Only floor is opened, so the room stays whole.
+     */
+    void soften( const Rect &room )
+    {
+        auto solid = [&]( int r, int c ) { char ch = m_g[r][c]; return ch == '#' || ch == '1' || ch == '2'; };
+        for ( int pass = 0; pass < 2; ++pass )
+        {
+            std::vector<int> open;
+            for ( int r = room.m_r0 + 1; r < room.m_r1; ++r )
+                for ( int c = room.m_c0 + 1; c < room.m_c1; ++c )
+                {
+                    if ( !solid( r, c ) ) continue;
+                    int sides = 0;
+                    for ( int k = 0; k < 4; ++k )
+                    {
+                        int d = k, e = ( k + 1 ) % 4;
+                        bool a = m_g[r + DR[d]][c + DC[d]] == '.', b = m_g[r + DR[e]][c + DC[e]] == '.',
+                             x = m_g[r + DR[d] + DR[e]][c + DC[d] + DC[e]] == '.';
+                        if ( a && b && x ) ++sides;
+                    }
+                    if ( sides >= 1 && m_wildRng.chance( pass == 0 ? 0.75f : 0.3f ) ) open.push_back( key( r, c ) );
+                }
+            for ( int k : open ) m_g[k / 1000][k % 1000] = '.';
+        }
+    }
+
+    /**
      * @brief A rock standing in a wild room (or a mound, `ch` a height): a few cells grown together, never cutting the
      *        room.
      */
     void islet( const Rect &room, char ch = '#', int least = 3, int most = 6 )
     {
-        Rect             at = anywhere( room, 1, 1 );
-        int              n = m_rng.range( least, most );
-        std::vector<int> cells = { key( at.m_r0, at.m_c0 ) };
+        int              r0 = m_wildRng.range( room.m_r0 + 1, std::max( room.m_r0 + 1, room.m_r1 - 1 ) );
+        int              c0 = m_wildRng.range( room.m_c0 + 1, std::max( room.m_c0 + 1, room.m_c1 - 1 ) );
+        int              n = m_wildRng.range( least, most );
+        std::vector<int> cells = { key( r0, c0 ) };
         for ( int t = 0; t < 60 && (int)cells.size() < n; ++t )
         {
-            int pick = cells[m_rng.next() % cells.size()], d = m_rng.range( 0, 3 );
+            int pick = cells[m_wildRng.next() % cells.size()], d = m_wildRng.range( 0, 3 );
             int r = pick / 1000 + DR[d], c = pick % 1000 + DC[d];
             if ( r <= room.m_r0 || r >= room.m_r1 || c <= room.m_c0 || c >= room.m_c1 ) continue;
             if ( std::find( cells.begin(), cells.end(), key( r, c ) ) == cells.end() ) cells.push_back( key( r, c ) );
@@ -795,17 +831,19 @@ private:
         if ( t == "park" )
         {
             // Gardens: hedges (in the wild rocks grown together), a raised lawn, benches along a path.
+            // (The draws as for a straight block either way: the rest of the level stays as it was.)
             for ( int k = m_rng.range( 2, 4 ); k > 0; --k )
+            {
+                Rect spot = anywhere( r, 1, m_rng.range( 2, 4 ) );
                 if ( wild( room ) )
                     islet( r );
                 else
-                    block( r, anywhere( r, 1, m_rng.range( 2, 4 ) ), '#' );
+                    block( r, spot, '#' );
+            }
             if ( big && m_rng.chance( 0.6f ) )
             {
-                if ( wild( room ) )
-                    islet( r, '1', 7, 13 );   // a mound grown as the rocks are
-                else
-                    block( r, anywhere( r, m_rng.range( 3, 4 ), m_rng.range( 3, 5 ) ), '1' );
+                Rect spot = anywhere( r, m_rng.range( 3, 4 ), m_rng.range( 3, 5 ) );
+                if ( !wild( room ) ) block( r, spot, '1' );   // (in the wild none: its edge would be the grid's steps)
             }
             for ( int k = m_rng.range( 1, 3 ); k > 0; --k ) block( r, anywhere( r, 1, 1 ), '+' );
             return;
@@ -848,10 +886,21 @@ private:
         }
         if ( t == "ice" || t == "dusk" || t == "snow" || t == "moon" )
         {
-            // Out in the open: ridges of pressure ice, boulders, black rock; mounds one can stand on.
+            // Out in the open: ridges of pressure ice, boulders, black rock; mounds one can stand on (in the wild
+            // grown together, not squared).
             for ( int k = m_rng.range( 1, 3 ); k > 0; --k )
-                block( r, m_rng.chance( 0.5f ) ? anywhere( r, 2, 2 ) : anywhere( r, 1, m_rng.range( 2, 4 ) ), '#' );
-            if ( big && m_rng.chance( 0.5f ) ) block( r, anywhere( r, m_rng.range( 3, 4 ), m_rng.range( 3, 5 ) ), '1' );
+            {
+                Rect spot = m_rng.chance( 0.5f ) ? anywhere( r, 2, 2 ) : anywhere( r, 1, m_rng.range( 2, 4 ) );
+                if ( wild( room ) )
+                    islet( r );
+                else
+                    block( r, spot, '#' );
+            }
+            if ( big && m_rng.chance( 0.5f ) )
+            {
+                Rect spot = anywhere( r, m_rng.range( 3, 4 ), m_rng.range( 3, 5 ) );
+                if ( !wild( room ) ) block( r, spot, '1' );
+            }
             return;
         }
         if ( t == "pods" || t == "hold" )

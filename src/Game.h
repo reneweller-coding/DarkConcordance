@@ -1406,6 +1406,7 @@ private:
     };
     Mesh                  m_ringMesh = {}, m_cutMesh = {}, m_spinMesh = {}, m_lavaMesh = {};
     Texture2D             m_ringTex = {};
+    Vector3               m_ringSky = { -1.0f, 0.0f, 0.0f };   ///< the sky's mean colour (linear) for the ring's haze
     float                 m_vistaT = 0.0f, m_vistaMax = 0.0f;   ///< the look up at the sky when one arrives
     float                 m_fuel = 0.0f, m_fuelMax = 0.0f;      ///< the jets' bursts
     float                 m_cutTimer = 0.0f;                    ///< until the next line glows

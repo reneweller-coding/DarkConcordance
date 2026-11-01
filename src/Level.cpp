@@ -81,6 +81,7 @@ const int CC[4] = { -1, 1, 1, -1 };
 
 constexpr float CutSize = 0.75f;      ///< an outer corner cut off this far along both its edges
 constexpr float FillSize = 0.55f;     ///< an inner corner filled this far
+constexpr float Natural = 0.98f;      ///< ... both in raw rock: a step of the grid becomes a slope of 45 degrees
 constexpr float NicheDepth = 0.35f;   ///< how far a niche stands back
 
 /** @brief How a theme dresses its cells. */
@@ -930,6 +931,13 @@ void Level::openDoor( int r, int c )
     m_cells[(size_t)r * m_cols + c].m_open = true;
 }
 
+bool Level::natural( int r, int c ) const
+{
+    if ( cell( r, c ).m_kind != CellE::ROCK || Looks[(int)theme( r, c )].m_walls != 0 ) return false;
+    ThemeE t = theme( r, c );
+    return t == ThemeE::DUSK || t == ThemeE::SNOW || t == ThemeE::ICE || t == ThemeE::MOON || t == ThemeE::SHAFT;
+}
+
 bool Level::outdoor( int r, int c ) const
 {
     return m_outdoorThemes.count( (int)theme( r, c ) ) > 0;
@@ -1169,6 +1177,9 @@ void Level::planShapes()
     auto kind = [&]( int r, int c ) { return cell( r, c ).m_kind; };
     auto at = [&]( int r, int c ) { return (size_t)r * m_cols + c; };
     // Rock and bulkheads take shapes; stacked containers and house fronts stay square.
+    // Raw rock (outside, in a shaft): every corner cut or filled, half a cell deep, so that the steps of the grid
+    // run together into slopes.
+    auto raw = [&]( int r, int c ) { return natural( r, c ); };
     auto shaped = [&]( int r, int c )
     {
         int walls = Looks[(int)theme( r, c )].m_walls;
@@ -1181,14 +1192,17 @@ void Level::planShapes()
                 // An outer corner of a wall (floor on both sides of it and beyond it): most are cut off. An inner
                 // corner of a room (walls on both sides and beyond): more than half are filled.
                 CellE side1 = kind( r + CR[k], c ), side2 = kind( r, c + CC[k] ), beyond = kind( r + CR[k], c + CC[k] );
+                // (A window in the floor, a moon's crust over its glow, counts as floor.)
+                auto flat = []( CellE e ) { return e == CellE::FLOOR || e == CellE::GLASS; };
                 // (A garden's hedges round off their own ends and corners.)
-                if ( kind( r, c ) == CellE::ROCK && shaped( r, c ) && !garden( r, c ) && side1 == CellE::FLOOR &&
-                     side2 == CellE::FLOOR && beyond == CellE::FLOOR && hash01( r, c, 300 + k ) < 0.75f )
+                if ( kind( r, c ) == CellE::ROCK && shaped( r, c ) && !garden( r, c ) && flat( side1 ) && flat( side2 ) &&
+                     flat( beyond ) &&
+                     ( raw( r, c ) || hash01( r, c, 300 + k ) < 0.75f ) )
                     m_cut[at( r, c )] |= (unsigned char)( 1 << k );
-                if ( kind( r, c ) == CellE::FLOOR && shaped( r, c ) && side1 == CellE::ROCK && side2 == CellE::ROCK &&
+                if ( flat( kind( r, c ) ) && shaped( r, c ) && side1 == CellE::ROCK && side2 == CellE::ROCK &&
                      beyond == CellE::ROCK && shaped( r + CR[k], c ) && shaped( r, c + CC[k] ) &&
                      !garden( r + CR[k], c ) && !garden( r, c + CC[k] ) && !garden( r + CR[k], c + CC[k] ) &&
-                     hash01( r, c, 310 + k ) < 0.6f )
+                     ( raw( r + CR[k], c + CC[k] ) || hash01( r, c, 310 + k ) < 0.6f ) )
                     m_fill[at( r, c )] |= (unsigned char)( 1 << k );
             }
     // Niches: now and then a cell of a straight wall stands back (never two side by side, never by a cut corner).
@@ -1531,8 +1545,9 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     for ( int q = 0; q < 4; ++q )
                         if ( cut & ( 1 << q ) )
                         {
-                            outline.push_back( Vector2MoveTowards( corner[q], corner[( q + 3 ) % 4], CutSize ) );
-                            outline.push_back( Vector2MoveTowards( corner[q], corner[( q + 1 ) % 4], CutSize ) );
+                            float cs = natural( r, c ) ? Natural : CutSize;
+                            outline.push_back( Vector2MoveTowards( corner[q], corner[( q + 3 ) % 4], cs ) );
+                            outline.push_back( Vector2MoveTowards( corner[q], corner[( q + 1 ) % 4], cs ) );
                         }
                         else
                             outline.push_back( corner[q] );
@@ -1658,8 +1673,9 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     MeshBuilder &fb = natural ? ground : ( plated ? plate : floor );
                     float        h = cell( r + CR[q], c + CC[q] ).m_height;
                     Vector2      corner = { mid.x + CC[q] * CellSize * 0.5f, mid.z + CR[q] * CellSize * 0.5f };
-                    Vector2      a = { corner.x - CC[q] * ( CutSize + 0.02f ), corner.y };
-                    Vector2      b = { corner.x, corner.y - CR[q] * ( CutSize + 0.02f ) };
+                    float        cs = this->natural( r, c ) ? Natural : CutSize;
+                    Vector2      a = { corner.x - CC[q] * ( cs + 0.02f ), corner.y };
+                    Vector2      b = { corner.x, corner.y - CR[q] * ( cs + 0.02f ) };
                     fb.m_color = Looks[(int)th].m_floor;
                     fb.prism( MatrixIdentity(),
                               { { { corner.x, -0.5f, corner.y }, { a.x, -0.5f, a.y }, { b.x, -0.5f, b.y } },
@@ -1753,8 +1769,39 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 }
                 continue;
             }
+            auto fillCorners = [&]()
+            {
+                // A room's inner corners filled with a slanted block of its walls (seen from above the rooms lose their
+                // square corners).
+                unsigned char fill = k.m_kind == CellE::FLOOR || k.m_kind == CellE::GLASS ? m_fill[(size_t)r * m_cols + c] : 0;
+                for ( int q = 0; q < 4 && fill; ++q )
+                {
+                    if ( !( fill & ( 1 << q ) ) ) continue;
+                    MeshBuilder &wall = look.m_walls >= 2 ? hull : rock;
+                    Vector2      corner = { mid.x + CC[q] * CellSize * 0.5f, mid.z + CR[q] * CellSize * 0.5f };
+                    float   fs = natural( r + CR[q], c + CC[q] ) ? Natural : FillSize;
+                    Vector2 a = { corner.x - CC[q] * fs, corner.y }, b = { corner.x, corner.y - CR[q] * fs };
+                    float   bottom = nearVoid( r, c ) && !m_space ? -PitDepth : -0.5f;
+                    auto    wedge = [&]( float y0, float y1 )
+                    {
+                        wall.prism( MatrixIdentity(),
+                                    { { { corner.x, y0, corner.y }, { a.x, y0, a.y }, { b.x, y0, b.y } },
+                                      { { corner.x, y1, corner.y }, { a.x, y1, a.y }, { b.x, y1, b.y } } } );
+                    };
+                    wall.m_color = look.m_rock;
+                    wedge( bottom, m_wallHeight );
+                    wall.m_color = look.m_walls == 2              ? Color{ 92, 96, 104, 255 }
+                                   : theme( r, c ) < ThemeE::PARK ? Color{ 70, 66, 64, 255 }
+                                                                  : Color{ (unsigned char)( look.m_rock.r * 0.3f ),
+                                                                           (unsigned char)( look.m_rock.g * 0.3f ),
+                                                                           (unsigned char)( look.m_rock.b * 0.3f ), 255 };
+                    wedge( m_wallHeight, m_wallHeight + 0.02f );
+                    wall.m_color = WHITE;
+                }
+            };
             if ( k.m_kind == CellE::GLASS )
             {
+                fillCorners();
                 // A window in the floor: only its frame here (the game lays the panes over open space). Ice has no
                 // frame: only its broken edge, thick and pale, where open water begins.
                 m_glass.push_back( { r, c } );
@@ -1993,32 +2040,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 rock.box( place( { mid.x, ( -PitDepth - 0.5f ) * 0.5f, mid.z } ),
                           { CellSize * 0.5f, ( PitDepth - 0.5f ) * 0.5f, CellSize * 0.5f } );
 
-            // A room's inner corners filled with a slanted block of its walls (seen from above the rooms lose their
-            // square corners).
-            unsigned char fill = k.m_kind == CellE::FLOOR ? m_fill[(size_t)r * m_cols + c] : 0;
-            for ( int q = 0; q < 4 && fill; ++q )
-            {
-                if ( !( fill & ( 1 << q ) ) ) continue;
-                MeshBuilder &wall = look.m_walls >= 2 ? hull : rock;
-                Vector2      corner = { mid.x + CC[q] * CellSize * 0.5f, mid.z + CR[q] * CellSize * 0.5f };
-                Vector2 a = { corner.x - CC[q] * FillSize, corner.y }, b = { corner.x, corner.y - CR[q] * FillSize };
-                float   bottom = nearVoid( r, c ) && !m_space ? -PitDepth : -0.5f;
-                auto    wedge = [&]( float y0, float y1 )
-                {
-                    wall.prism( MatrixIdentity(),
-                                { { { corner.x, y0, corner.y }, { a.x, y0, a.y }, { b.x, y0, b.y } },
-                                  { { corner.x, y1, corner.y }, { a.x, y1, a.y }, { b.x, y1, b.y } } } );
-                };
-                wall.m_color = look.m_rock;
-                wedge( bottom, m_wallHeight );
-                wall.m_color = look.m_walls == 2              ? Color{ 92, 96, 104, 255 }
-                               : theme( r, c ) < ThemeE::PARK ? Color{ 70, 66, 64, 255 }
-                                                              : Color{ (unsigned char)( look.m_rock.r * 0.3f ),
-                                                                       (unsigned char)( look.m_rock.g * 0.3f ),
-                                                                       (unsigned char)( look.m_rock.b * 0.3f ), 255 };
-                wedge( m_wallHeight, m_wallHeight + 0.02f );
-                wall.m_color = WHITE;
-            }
+            fillCorners();
 
             float base = k.m_kind == CellE::FLOOR ? k.m_height : 0.0f;
             for ( int d = 0; d < 4; ++d )
@@ -2049,6 +2071,17 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     // A hedge: no panels, ribs, pipes, posters or planters; low plants at its foot.
                     if ( k.m_kind == CellE::FLOOR && k.m_height == 0.0f ) hedgeFoot( r, c, d, *m_gardenKit );
                     continue;
+                }
+                if ( m_gardenKit && k.m_kind == CellE::FLOOR && k.m_height == 0.0f && theme( r, c ) == ThemeE::PARK &&
+                     cell( nr, nc ).m_kind == CellE::ROCK )
+                {
+                    // A wall by a garden (a house's, the street's beyond): ivy down from its top now and then, low
+                    // plants at its foot.
+                    unsigned h = hashCell( r, c * 4 + d, 551 );
+                    Vector3  away = { (float)-DC[d], 0.0f, (float)-DR[d] };
+                    Vector3  rim = { mid.x + DC[d] * CellSize * 0.5f, m_wallHeight, mid.z + DR[d] * CellSize * 0.5f };
+                    if ( h % 5 < 3 ) creeper( rim, away, m_wallHeight * ( 0.4f + 0.12f * ( h % 4 ) ), h, *m_gardenKit );
+                    hedgeFoot( r, c, d, *m_gardenKit );
                 }
                 float yaw = DC[d] != 0 ? PI * 0.5f : 0.0f;   // a box's x along the face
                 float y0 = k.m_kind == CellE::VOID ? -PitDepth + 2.0f : base;

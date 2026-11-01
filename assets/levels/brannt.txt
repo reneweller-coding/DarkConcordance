@@ -37,6 +37,7 @@ genrooms      15
 genside       6
 gensize       12 18 10 14
 gentheme      moon moon moon works
+genwild       moon
 genoutdoor    moon
 genstarttheme works
 genarenatheme works

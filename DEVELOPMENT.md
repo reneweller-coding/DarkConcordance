@@ -394,9 +394,16 @@ darker light and a grade.
 their rectangles – a rounded rectangle whose rim a slow noise moves in and out, so the corners go and the edges
 wander – and the corridors between two of them swell and narrow (two to five cells, never into anything open but
 themselves); the corridors' mouths and the rooms' middles stay (route, start, capsules), what is cut off goes back to
-rock, and rocks grown together stand in the larger rooms instead of straight hedges, a raised lawn grown the same
-way instead of a rectangle. Still the 2 m grid: collision, the
-foes' ways, the maps and the build stay as they were. The autopilot fares the same on three seeds (wild 10, 9 and 12
+rock, and rocks grown together stand in the larger rooms instead of straight hedges (no raised lawn there: its edge
+was the grid's steps). Walls that stand by or behind a garden (a house's, the street's beyond) have ivy hanging
+from their top now and then and low plants at their foot. Still the 2 m grid: collision, the
+foes' ways, the maps and the build stay as they were. On 2.11.2026 also for the open places of dust, the moon, snow
+and the Depths' shafts (Halden, Brannt, Wanderer, the Depths, Dorra's tale); not where places float in
+open space (Seren's ice: their edges would be a staircase of plates over the void). Raw rock there (`Level::natural`) has all its
+corners cut or filled half a cell deep, so the grid's steps run together into slopes (a window in the floor, a
+moon's crust, counts as floor for it); blocks the dressing sets into a wild room lose their square corners. The
+wild shapes have their own dice (`m_wildRng`): a place is the same as without them apart from them. Checked on six
+seeds each (`--dumpgen`): every way point and marker reachable. The autopilot fares the same on three seeds (wild 10, 9 and 12
 deaths by way point 9, 10 and 12 of 31 in seven minutes; rectangular 8, 15 and 12 by 13, 8 and 7).
 
 **The camera** keeps clear of what stands in the way as Dark Alliance's engine does (the Snowblind rebuild
@@ -410,7 +417,7 @@ breathe a little, each in its own time (±7 %), the cold ones stay steady. Only 
 crown) the old cut-away round the hero opens, faded in. Leaves right at the camera dissolve. **The ring** is drawn
 at 6,000 m (it was 2,400: a kilometre ahead its land stood 200 m up and wider than the view, a ceiling over the level);
 it now runs on ahead and climbs into a thin arch, its haze the sky's colour by the air the sight line crosses (thick
-at the horizon, clear towards the arch), its rim walls 140 m. Cost, 1920x1080 on the RTX 5090: low 2.8 → 3.1 ms,
+at the horizon, clear towards the arch), its rim walls 140 m; where a place has a sky picture the haze takes its mean colour. Cost, 1920x1080 on the RTX 5090: low 2.8 → 3.1 ms,
 high 7.5 → 5.3-6.6 ms (the camera's pitch changes what is in the picture); loading the level 0.3 s longer.
 
 ## Act IV: the Mill

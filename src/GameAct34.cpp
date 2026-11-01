@@ -793,10 +793,28 @@ void Game::drawAct34( Gfx &gfx )
 {
     if ( m_ringMesh.vertexCount > 0 )
     {
-        // The sky's colour as the sky shader shows it (linear, 0.8 of it), for the haze on the land.
-        Vector3 sky = m_level.m_skyColor.x >= 0.0f ? m_level.m_skyColor : Vector3{ 0.42f, 0.58f, 0.85f };
-        sky = { powf( sky.x, 2.2f ) * 0.8f, powf( sky.y, 2.2f ) * 0.8f, powf( sky.z, 2.2f ) * 0.8f };
-        gfx.ring( m_ringMesh, m_ringTex, RingRadius, sky );
+        // The sky's colour as the sky shader shows it (linear, 0.8 of it), for the haze on the land: a picture's mean
+        // colour where the level has one (a free port's night, a habitat's own sky), else its colour.
+        if ( m_ringSky.x < 0.0f )
+        {
+            Vector3 sky = m_level.m_skyColor.x >= 0.0f ? m_level.m_skyColor : Vector3{ 0.42f, 0.58f, 0.85f };
+            sky = { powf( sky.x, 2.2f ), powf( sky.y, 2.2f ), powf( sky.z, 2.2f ) };
+            if ( m_skyTex.id > 0 )
+            {
+                Image img = LoadImageFromTexture( m_skyTex );
+                ImageFormat( &img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 );
+                ImageResize( &img, 32, 16 );
+                Color  *px = (Color *)img.data;
+                Vector3 sum = { 0.0f, 0.0f, 0.0f };
+                for ( int i = 0; i < 32 * 16; ++i )
+                    sum = Vector3Add( sum, { powf( px[i].r / 255.0f, 2.2f ), powf( px[i].g / 255.0f, 2.2f ),
+                                             powf( px[i].b / 255.0f, 2.2f ) } );
+                sky = Vector3Scale( sum, 1.0f / ( 32 * 16 ) );
+                UnloadImage( img );
+            }
+            m_ringSky = Vector3Scale( sky, 0.8f );
+        }
+        gfx.ring( m_ringMesh, m_ringTex, RingRadius, m_ringSky );
     }
 }
 
