@@ -3,6 +3,8 @@
 <p align="center">
 <a href="https://reneweller-coding.itch.io/dark-concordance"><b>itch.io</b></a> ·
 <a href="https://github.com/reneweller-coding/DarkConcordance/releases/latest"><b>Download</b></a> ·
+<a href="https://youtu.be/CMCLkFU-cRQ"><b>Trailer</b></a> ·
+<a href="https://youtu.be/YP7qZfRfDFk">Gameplay video</a> ·
 <a href="docs/manual/DarkConcordance-Manual.pdf">Manual</a> ·
 <a href="LICENSE">AGPL-3.0</a>
 </p>
@@ -30,6 +32,13 @@ The same packages are on **[itch.io](https://reneweller-coding.itch.io/dark-conc
 Requirements: OpenGL 3.3 and a graphics card of the last ten years. On the Steam Deck the graphics start at "Low"
 with at most 40 frames a second. The program is not code-signed: Windows' SmartScreen may warn once ("More info",
 "Run anyway").
+
+## Videos
+
+| | |
+|:---:|:---:|
+| [![Trailer](https://img.youtube.com/vi/CMCLkFU-cRQ/maxresdefault.jpg)](https://youtu.be/CMCLkFU-cRQ) | [![Gameplay video](https://img.youtube.com/vi/YP7qZfRfDFk/maxresdefault.jpg)](https://youtu.be/YP7qZfRfDFk) |
+| The trailer (one minute) | Gameplay (several minutes, the game's autopilot at the controls) |
 
 ## Pictures
 
