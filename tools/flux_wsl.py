@@ -2,7 +2,7 @@
 the prompts are encoded first by Mistral-3 in a process of their own (then the GPU memory is free), the transformer runs
 in 4 bits. Windows paths (G:/...) in the tasks are read as /mnt/g/... .
 
-    wsl -d Ubuntu-22.04 -- ~/miniconda3/envs/flux/bin/python /mnt/g/Tools/Games/SpaceOpera/tools/flux_wsl.py TASKS.json
+    wsl -d Ubuntu-22.04 -- ~/miniconda3/envs/flux/bin/python /mnt/g/Tools/Games/DarkConcordance/tools/flux_wsl.py TASKS.json
 
 TASKS.json: [{"prompt": ..., "out": "path.jpg", "width": 1024, "height": 1024, "seed": 1, "refs": [...]}, ...];
 existing outputs are skipped; "refs" are pictures FLUX.2 takes faces and things from (the films' portraits). make_textures.py, make_dress.py and make_items.py hand their jobs here with --local.

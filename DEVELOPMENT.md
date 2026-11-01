@@ -734,10 +734,10 @@ The first room: an observation deck with a glass floor over a gas giant and a ne
 and the system's dav1d (`sudo apt install g++-12 ninja-build libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev
 libasound2-dev libdav1d-dev`); built outside the Windows drive for speed, raylib's sources taken from the MSVC build:
 
-    cmake -S /mnt/g/Tools/Games/SpaceOpera -B ~/build/spaceopera -G Ninja -DCMAKE_BUILD_TYPE=Release \
+    cmake -S /mnt/g/Tools/Games/DarkConcordance -B ~/build/spaceopera -G Ninja -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_COMPILER=g++-12 -DCMAKE_C_COMPILER=gcc-12 \
-          -DFETCHCONTENT_SOURCE_DIR_RAYLIB=/mnt/g/Tools/Games/SpaceOpera/build/msvc/_deps/raylib-src \
-          -DSPACEOPERA_BIN_DIR=/mnt/g/Tools/Games/SpaceOpera/bin/linux
+          -DFETCHCONTENT_SOURCE_DIR_RAYLIB=/mnt/g/Tools/Games/DarkConcordance/build/msvc/_deps/raylib-src \
+          -DSPACEOPERA_BIN_DIR=/mnt/g/Tools/Games/DarkConcordance/bin/linux
     nice ninja -C ~/build/spaceopera -j 4      # bin/linux/SpaceOpera, reads assets/ from the source tree
 
 It plays under WSLg (the films too: dav1d 0.9's settings where 1.0's are missing). GCC builds with `-fwrapv`, so an
