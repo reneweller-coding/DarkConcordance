@@ -39,9 +39,9 @@ with at most 40 frames a second. The program is not code-signed: Windows' SmartS
 | The Drowned Quarter: Dorra's shield against the guards | Seren, the Glass Sea: ice that breaks |
 | ![The star lifter of Kael](docs/screenshots/en/star_lifter.jpg) | ![The Ore Stream](docs/screenshots/en/ore_stream.jpg) |
 | The star lifter of Kael | The Ore Stream: containers in open space |
-| ![The Wanderer](docs/screenshots/en/wanderer.jpg) | ![Ione in the Depths](docs/manual/shots/en/depths.png) |
+| ![The Wanderer](docs/screenshots/en/wanderer.jpg) | ![Ione in the Depths](docs/screenshots/en/depths.jpg) |
 | The Wanderer: a sniper's laser in the dark | Ione and her drones in the Depths |
-| ![Ysolde Varn](docs/manual/shots/en/talk.png) | ![The inventory](docs/manual/shots/en/inventory.png) |
+| ![Ysolde Varn](docs/screenshots/en/talk.jpg) | ![The inventory](docs/screenshots/en/inventory.jpg) |
 | Velm, the Third Drum: Ysolde Varn | The inventory |
 
 ## The game
