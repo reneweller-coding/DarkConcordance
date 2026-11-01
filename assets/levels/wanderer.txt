@@ -13,7 +13,7 @@ gravity  8.0
 fog      0.002 0.006 0.4 0.75
 fogcolor 0.0004 0.0005 0.0009
 ambient  0.012 0.014 0.02 0.006 0.007 0.01
-walls    5.0
+walls    3.2
 sky      nebula
 dark     1
 meter    warmth 140 0

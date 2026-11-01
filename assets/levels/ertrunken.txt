@@ -12,7 +12,7 @@ gravity  3.0
 fog      0.006 0.03 0.55 1.2
 fogcolor 0.0010 0.0030 0.0032
 ambient  0.03 0.05 0.055 0.022 0.032 0.036
-walls    5.0
+walls    3.2
 area     7
 next     velm.txt
 gate     bossdead

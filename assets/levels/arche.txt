@@ -14,7 +14,7 @@ gravity  7.0
 fog      0.003 0.011 0.55 0.9
 fogcolor 0.0008 0.0014 0.0026
 ambient  0.03 0.04 0.06 0.015 0.02 0.035
-walls    4.2
+walls    3.2
 meter    warmth 160 1
 faction  concession
 bossvariant 3

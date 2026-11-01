@@ -15,7 +15,7 @@ gravity  9.0
 fog      0.003 0.01 0.45 0.85
 fogcolor 0.004 0.0015 0.0015
 ambient  0.085 0.03 0.03 0.04 0.012 0.014
-walls    4.6
+walls    3.2
 sky      nebula
 faction  security
 bossvariant 2

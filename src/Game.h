@@ -914,6 +914,11 @@ private:
         m_salvagerFigure;         ///< Okafor's walker, the boarding leader's cutting exoskeleton
     LouseModel m_saw, m_bomber;   ///< the saw bots, the bombers
     Mesh       m_droneBody = {}, m_droneRotor = {}, m_droneEye = {}, m_blade = {}, m_sac = {}, m_ring = {};
+    Mesh       m_blobMesh = {};       ///< a soft dark spot on the ground under a figure (a unit quad)
+    int        m_blobSurface = -1;    ///< its surface: a radial shade that darkens what is under it
+    /** @brief Soft dark spots under the figures posed this frame (the skinned ones and the foes), as Dark Alliance
+     *         lays them: they stand on the ground, not over it. */
+    void poseBlobs( std::vector<Drawable> &out );
     float      m_hitScale = 1.0f;   ///< what the foe acting now does more (champions)
     float      m_areaHit = 1.0f;    ///< what enemies do more in a deeper area
     // The Depths' anomalies (GameAnomaly.cpp): what they make of the fight and the finds.

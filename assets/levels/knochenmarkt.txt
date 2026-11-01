@@ -23,7 +23,7 @@ birds    36
 fog      0.004 0.016 0.6 1.0
 fogcolor 0.0045 0.0032 0.0018
 ambient  0.045 0.038 0.03 0.03 0.024 0.02
-walls    5.0
+walls    3.2
 area     3
 next     velm.txt
 gate     bossdead

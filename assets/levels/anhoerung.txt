@@ -13,7 +13,7 @@ gravity  6.0
 fog      0.0015 0.005 0.4 0.75
 fogcolor 0.002 0.002 0.003
 ambient  0.08 0.08 0.09 0.04 0.04 0.045
-walls    5.0
+walls    3.2
 sky      nebula
 faction  collegium
 squad    drones

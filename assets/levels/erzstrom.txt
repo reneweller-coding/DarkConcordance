@@ -13,7 +13,7 @@ gravity  2.0
 fog      0.0012 0.004 0.4 0.7
 fogcolor 0.0008 0.0008 0.0011
 ambient  0.06 0.06 0.07 0.03 0.03 0.035
-walls    4.0
+walls    3.2
 sky      nebula
 space    1
 vacuum   1

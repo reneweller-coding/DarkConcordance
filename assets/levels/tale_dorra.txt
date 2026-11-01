@@ -13,7 +13,7 @@ gravity  14.0
 fog      0.004 0.012 0.5 0.9
 fogcolor 0.007 0.005 0.0025
 ambient  0.085 0.065 0.04 0.035 0.025 0.015
-walls    5.4
+walls    3.2
 sky      nebula
 faction  clearance
 bossvariant 2

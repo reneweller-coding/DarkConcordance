@@ -12,7 +12,7 @@ gravity  9.0
 fog      0.0008 0.003 0.4 0.75
 fogcolor 0.004 0.005 0.007
 ambient  0.16 0.17 0.19 0.08 0.085 0.09
-walls    3.6
+walls    3.2
 peaceful 1
 skycolor 0.42 0.58 0.85
 view     ring

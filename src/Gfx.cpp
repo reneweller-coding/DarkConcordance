@@ -456,6 +456,9 @@ void Gfx::beginScene( const Camera3D &cam, const Lighting &lights, float time, T
     {
         SetShaderValue( shader, locs.m_cutCentre, &m_cutCentre, SHADER_UNIFORM_VEC3 );
         SetShaderValue( shader, locs.m_cutRadius, &m_cutRadius, SHADER_UNIFORM_FLOAT );
+        // The fill light only for the figures (the skinned ones).
+        float fill = shader.id == m_litSkin.id ? m_fill : 0.0f;
+        SetShaderValue( shader, GetShaderLocation( shader, "fill" ), &fill, SHADER_UNIFORM_FLOAT );
     }
 
     Matrix view = MatrixLookAt( cam.position, cam.target, cam.up );

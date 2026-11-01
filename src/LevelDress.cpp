@@ -1430,7 +1430,7 @@ void Level::wallKit( int r, int c, int d, Vector3 face, Vector3 n, float base, i
             else if ( roll < 0.36f )
             {
                 // A vent: a grille in a frame, low or high.
-                float y = rnd( 15 ) < 0.5f ? 0.55f : 3.0f;
+                float y = rnd( 15 ) < 0.5f ? 0.55f : fminf( 3.0f, top - 0.45f );
                 paint( kit.m_metal, dark ).box( M( x, y, 0.03f ), { 0.3f, 0.22f, 0.01f } );
                 for ( float s = -0.16f; s < 0.2f; s += 0.08f )
                     paint( kit.m_metal, steel ).box( M( x, y + s, 0.05f ), { 0.29f, 0.012f, 0.02f } );
@@ -1610,9 +1610,10 @@ void Level::wallKit( int r, int c, int d, Vector3 face, Vector3 n, float base, i
         paint( kit.m_metal, steel ).box( M( 0.0f, 2.5f, 0.06f ), { 0.015f, 0.06f, 0.05f } );
         if ( hash01( r, c * 4 + d, 303 ) < 0.08f )
         {
-            paint( kit.m_metal, dark ).box( M( 0.0f, 3.2f, 0.18f ), { 0.16f, 0.1f, 0.12f } );
-            glow( 0.0f, 3.15f, 0.31f, { 0.13f, 0.07f, 0.01f }, { 7.0f, 6.5f, 5.0f, 0.0f } );
-            light( 0.0f, 3.0f, 0.8f, { 3.5f, 3.3f, 2.8f }, 6.0f );
+            float y = fminf( 3.2f, top - 0.3f );   // a lamp under the wall's top
+            paint( kit.m_metal, dark ).box( M( 0.0f, y, 0.18f ), { 0.16f, 0.1f, 0.12f } );
+            glow( 0.0f, y - 0.05f, 0.31f, { 0.13f, 0.07f, 0.01f }, { 7.0f, 6.5f, 5.0f, 0.0f } );
+            light( 0.0f, y - 0.2f, 0.8f, { 3.5f, 3.3f, 2.8f }, 6.0f );
         }
         break;
     }

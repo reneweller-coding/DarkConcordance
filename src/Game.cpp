@@ -978,6 +978,70 @@ float Game::runSpeed() const
            ( m_inWater ? 0.55f : 1.0f ) * ( m_chill > 0.0f ? 0.6f : 1.0f );
 }
 
+void Game::poseBlobs( std::vector<Drawable> &out )
+{
+    if ( !m_gfx ) return;
+    if ( m_blobSurface < 0 )
+    {
+        // A dark shade, densest in the middle and gone at the rim (it multiplies the ground under it, as the stains do).
+        const int S = 64;
+        Image     img = GenImageColor( S, S, BLANK );
+        Color    *px = (Color *)img.data;
+        for ( int y = 0; y < S; ++y )
+            for ( int x = 0; x < S; ++x )
+            {
+                float r = Vector2Length( { ( x + 0.5f ) / S * 2.0f - 1.0f, ( y + 0.5f ) / S * 2.0f - 1.0f } );
+                float a = Clamp( ( 1.0f - r ) / 0.6f, 0.0f, 1.0f );
+                px[y * S + x] = { 0, 0, 0, (unsigned char)( a * a * ( 3.0f - 2.0f * a ) * 255.0f ) };
+            }
+        Texture2D tex = LoadTextureFromImage( img );
+        UnloadImage( img );
+        SetTextureFilter( tex, TEXTURE_FILTER_BILINEAR );
+        Image     o = GenImageColor( 4, 4, { 255, 230, 0, 255 } );
+        Texture2D orm = LoadTextureFromImage( o );
+        UnloadImage( o );
+        Surface surf = m_gfx->surface( tex, orm, m_surfaces[S_METAL].m_material.maps[MATERIAL_MAP_NORMAL].texture,
+                                       Texture2D{} );
+        surf.m_uvScale = 1.0f;
+        surf.m_params = { 1.0f, 0.0f, 0.0f, 4.0f };
+        surf.m_variation = 0.0f;
+        surf.m_tint = WHITE;
+        m_surfaces.push_back( surf );
+        m_blobSurface = (int)m_surfaces.size() - 1;
+        MeshBuilder quad;
+        quad.card( { -1.0f, 0.0f, -1.0f }, { 1.0f, 0.0f, -1.0f }, { 1.0f, 0.0f, 1.0f }, { -1.0f, 0.0f, 1.0f },
+                   { 0.0f, 1.0f, 0.0f } );
+        m_blobMesh = quad.build().front();
+    }
+    // Where the figures stand: each skinned body once (its parts share its place), the foes drawn whole.
+    std::vector<Vector3> at;
+    std::vector<float>   size;
+    auto                 add = [&]( Vector3 p, float r )
+    {
+        for ( const Vector3 &q : at )
+            if ( Vector2Distance( { p.x, p.z }, { q.x, q.z } ) < 0.35f ) return;
+        at.push_back( p );
+        size.push_back( r );
+    };
+    for ( const Drawable &d : out )
+        if ( d.m_bones && d.m_visible ) add( { d.m_transform.m12, d.m_transform.m13, d.m_transform.m14 }, 0.8f );
+    for ( const Foe &f : m_foes )
+        if ( f.m_alive && !f.m_hidden && f.m_kind != FoeE::DRONE ) add( f.m_pos, Clamp( foeRadius( f ) * 1.7f, 0.7f, 2.6f ) );
+    for ( size_t i = 0; i < at.size(); ++i )
+    {
+        // On the ground beneath, smaller and fainter the higher the figure is above it (a leap, a flight).
+        float ground = groundAt( at[i] ), above = at[i].y - ground;
+        if ( above > 3.0f || above < -1.0f ) continue;
+        float    r = size[i] * ( 1.0f - 0.15f * fmaxf( 0.0f, above ) );
+        Drawable d;
+        d.m_mesh = m_blobMesh;
+        d.m_surface = m_blobSurface;
+        d.m_transform = MatrixMultiply( MatrixScale( r, 1.0f, r ), MatrixTranslate( at[i].x, ground + 0.03f, at[i].z ) );
+        d.m_sunShadow = d.m_spotShadow = false;
+        out.push_back( d );
+    }
+}
+
 float Game::foeRadius( const Foe &f ) const
 {
     switch ( f.m_kind )
@@ -3800,7 +3864,17 @@ Lighting Game::lighting() const
         const LevelLight &l = m_level.m_lights[i];
         float             f = 1.0f;
         if ( l.m_flicker > 0.0f && hash1( (int)( m_time * 11.0f ) + (int)i * 31 ) > 0.72f ) f = 0.12f;
-        all.push_back( { l.m_pos, l.m_radius, Vector3Scale( l.m_color, f ), 1.0f } );
+        // Warm lights (lamps with a flame's colour, fires) breathe a little, each in its own time, as Dark Alliance's
+        // torches do; the cold ones (screens, strips) stay steady.
+        float reach = l.m_radius;
+        if ( l.m_color.x > l.m_color.z * 1.8f )
+        {
+            float t = m_time * 2.3f + i * 1.7f;
+            float b = 0.5f * sinf( t ) + 0.3f * sinf( t * 2.7f + 1.3f ) + 0.2f * sinf( t * 6.1f + 0.4f );
+            f *= 1.0f + 0.07f * b;
+            reach *= 1.0f + 0.04f * b;
+        }
+        all.push_back( { l.m_pos, reach, Vector3Scale( l.m_color, f ), 1.0f } );
     }
     for ( const Capsule &c : m_capsules )
         all.push_back( { Vector3Add( c.m_pos, { 0.0f, 1.6f, 0.0f } ), c.m_active ? 6.0f : 3.0f,
@@ -4031,6 +4105,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     poseTug( m_dynamic );
     poseVault( m_dynamic );
     poseBreakables( m_dynamic );
+    poseBlobs( m_dynamic );
     for ( const Foe &f : m_foes )
     {
         if ( !f.m_alive || human( f ) || f.m_kind == FoeE::DRONE || f.m_kind == FoeE::SHELL ||

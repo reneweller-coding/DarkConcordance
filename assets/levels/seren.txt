@@ -18,7 +18,7 @@ gravity  3.4
 fog      0.0012 0.005 0.4 0.75
 fogcolor 0.0003 0.0006 0.0011
 ambient  0.02 0.026 0.038 0.009 0.013 0.02
-walls    4.0
+walls    3.2
 sky      nebula
 space    1
 below    ocean

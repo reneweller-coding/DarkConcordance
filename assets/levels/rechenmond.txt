@@ -10,7 +10,7 @@ gravity  3.2
 fog      0.003 0.012 0.55 0.9
 fogcolor 0.0012 0.002 0.004
 ambient  0.05 0.06 0.08 0.025 0.03 0.045
-walls    4.5
+walls    3.2
 sky      nebula
 meter    warmth 150 1
 swarm    menders 12 3

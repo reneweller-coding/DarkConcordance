@@ -10,7 +10,7 @@ gravity  6.0
 fog      0.002 0.008 0.5 0.9
 fogcolor 0.0008 0.0012 0.002
 ambient  0.045 0.05 0.06 0.02 0.025 0.03
-walls    4.6
+walls    3.2
 sky      nebula
 faction  collegium
 bossvariant 8

@@ -336,6 +336,7 @@ uniform float variation;
 uniform float cutaway;     // 1: dissolves between the camera and the hero
 uniform vec3 cutCentre;    // the hero (chest)
 uniform float cutRadius;   // radius of the hole at the hero
+uniform float fill;        // figures: the fill light's strength (0: none, the level's own geometry)
 out vec4 finalColor;
 
 // Walls between the camera and the hero dissolve in a cone around the line of sight (ordered dither).
@@ -499,6 +500,13 @@ void main()
     float ndl = max( dot( Ng, -sunDir ), 0.0 );
     if( dot( N, -sunDir ) > 0.0 )
         col += brdf( N, V, -sunDir, albedo, rough, metal ) * sunColor * sunShadowAt( fragPos, Ng, ndl, shadowTaps );
+    // A figure's fill light from the side away from the sun, half as steep (as Dark Alliance's engine gives its
+    // models; no shadow): the side turned from the sun does not sink into black.
+    if( fill > 0.0 )
+    {
+        vec3 Lf = normalize( vec3( sunDir.x, -sunDir.y * 0.5, sunDir.z ) );
+        col += brdf( N, V, Lf, albedo, rough, metal ) * ( sunColor + ambUp * 2.0 ) * fill;
+    }
     vec3 L;
     vec3 sc = spotLight( fragPos, L );
     if( sc.r + sc.g + sc.b > 0.0 ) col += brdf( N, V, L, albedo, rough, metal ) * sc * spotShadowAt( fragPos, Ng, shadowTaps );

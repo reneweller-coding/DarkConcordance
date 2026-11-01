@@ -1340,32 +1340,37 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         Vector3  along = { alongX ? 1.0f : 0.0f, 0.0f, alongX ? 0.0f : 1.0f };
         auto     flat = [&]( float u, float v ) { return Vector3{ alongX ? u : 0.012f, v, alongX ? 0.012f : u }; };
         Vector3  out = Vector3Add( face, Vector3Scale( n, 0.04f ) );
-        if ( h % 5 != 0 )
+        // Under a low wall the house has one storey: its window beside the door, not above it.
+        float   hi = m_wallHeight - base;
+        bool    window = h % 5 != 0, low = hi < 3.9f;
+        Vector3 door = low && window ? Vector3Subtract( out, Vector3Scale( along, 0.45f ) ) : out;
+        if ( window )
         {
             const Vector4 lit[4] = { { 1.5f, 0.95f, 0.4f, 0.0f },
                                      { 1.2f, 0.9f, 0.55f, 0.0f },
                                      { 0.4f, 0.7f, 1.1f, 0.0f },
                                      { 0.03f, 0.03f, 0.035f, 0.0f } };
-            float         y = base + 3.0f;
+            float   y = base + ( low ? 1.55f : 3.0f ), w = low ? 0.26f : 0.5f, t = low ? 0.32f : 0.38f;
+            Vector3 at = low ? Vector3Add( out, Vector3Scale( along, 0.52f ) ) : out;
             metal.m_color = { 70, 66, 62, 255 };
-            metal.box( place( { out.x, y, out.z }, { 0.0f, yaw, 0.0f } ), { 0.6f, 0.48f, 0.05f } );
+            metal.box( place( { at.x, y, at.z }, { 0.0f, yaw, 0.0f } ), { w + 0.1f, t + 0.1f, 0.05f } );
             metal.m_color = WHITE;
-            Vector3 pane = Vector3Add( out, Vector3Scale( n, 0.04f ) );
-            glows.push_back( { { pane.x, y, pane.z }, flat( 0.5f, 0.38f ), lit[( h >> 4 ) % 4], true } );
+            Vector3 pane = Vector3Add( at, Vector3Scale( n, 0.04f ) );
+            glows.push_back( { { pane.x, y, pane.z }, flat( w, t ), lit[( h >> 4 ) % 4], true } );
             Vector3 bar = Vector3Add( pane, Vector3Scale( n, 0.02f ) );
-            metal.box( place( { bar.x, y, bar.z }, { 0.0f, yaw, 0.0f } ), { 0.5f, 0.02f, 0.015f } );
-            metal.box( place( { bar.x, y, bar.z }, { 0.0f, yaw, 0.0f } ), { 0.02f, 0.38f, 0.015f } );
+            metal.box( place( { bar.x, y, bar.z }, { 0.0f, yaw, 0.0f } ), { w, 0.02f, 0.015f } );
+            metal.box( place( { bar.x, y, bar.z }, { 0.0f, yaw, 0.0f } ), { 0.02f, t, 0.015f } );
         }
         int kind = ( h >> 8 ) % 4;
         if ( kind >= 2 && cell( r, c ).m_kind == CellE::FLOOR ) m_faces.push_back( { r, c, d, 0.06f, base } );
         if ( kind == 0 )
         {
             crate.m_color = { 60, 48, 40, 255 };
-            crate.box( place( { out.x, base + 1.05f, out.z }, { 0.0f, yaw, 0.0f } ), { 0.5f, 1.05f, 0.05f } );
+            crate.box( place( { door.x, base + 1.05f, door.z }, { 0.0f, yaw, 0.0f } ), { 0.45f, 1.05f, 0.05f } );
             crate.m_color = WHITE;
-            Vector3 step = Vector3Add( out, Vector3Scale( n, 0.18f ) );
-            metal.box( place( { step.x, base + 0.05f, step.z }, { 0.0f, yaw, 0.0f } ), { 0.6f, 0.05f, 0.2f } );
-            Vector3 lamp = Vector3Add( out, Vector3Scale( n, 0.12f ) );
+            Vector3 step = Vector3Add( door, Vector3Scale( n, 0.18f ) );
+            metal.box( place( { step.x, base + 0.05f, step.z }, { 0.0f, yaw, 0.0f } ), { 0.55f, 0.05f, 0.2f } );
+            Vector3 lamp = Vector3Add( door, Vector3Scale( n, 0.12f ) );
             metal.box( place( { lamp.x, base + 2.35f, lamp.z }, { 0.0f, yaw, 0.0f } ), { 0.12f, 0.06f, 0.1f } );
             glows.push_back(
                 { { lamp.x, base + 2.28f, lamp.z }, { 0.08f, 0.012f, 0.08f }, { 7.0f, 4.2f, 1.6f, 0.0f }, true } );
@@ -1378,12 +1383,13 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         else if ( kind == 1 )
         {
             rust.m_color = { 150, 140, 130, 255 };
-            rust.box( place( { out.x, base + 1.1f, out.z }, { 0.0f, yaw, 0.0f } ), { 0.85f, 1.1f, 0.04f } );
+            float wide = low && window ? 0.42f : 0.85f;   // beside a window a narrower shutter
+            rust.box( place( { door.x, base + 1.1f, door.z }, { 0.0f, yaw, 0.0f } ), { wide, 1.1f, 0.04f } );
             for ( int i = 0; i < 8; ++i )
             {
-                Vector3 rib = Vector3Add( out, Vector3Scale( n, 0.04f ) );
+                Vector3 rib = Vector3Add( door, Vector3Scale( n, 0.04f ) );
                 rust.box( place( { rib.x, base + 0.2f + i * 0.26f, rib.z }, { 0.0f, yaw, 0.0f } ),
-                          { 0.85f, 0.02f, 0.02f } );
+                          { wide, 0.02f, 0.02f } );
             }
             rust.m_color = WHITE;
         }
@@ -1397,7 +1403,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             {
                 drape.m_color = stripes[paint][i % 2];
                 Vector3 a = Vector3Add( Vector3Add( out, Vector3Scale( along, -0.75f + i * 0.3f ) ),
-                                        { 0.0f, base + 2.7f, 0.0f } );
+                                        { 0.0f, base + fminf( 2.7f, hi - 0.4f ), 0.0f } );
                 Vector3 e = Vector3Add( Vector3Add( a, Vector3Scale( n, 0.9f ) ), { 0.0f, -0.45f, 0.0f } );
                 Vector3 z = Vector3Normalize( Vector3Subtract( e, a ) );
                 drape.box( frame( along, Vector3CrossProduct( z, along ), z, Vector3Lerp( a, e, 0.5f ) ),
@@ -1407,10 +1413,11 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         }
         if ( ( h >> 18 ) % 6 == 0 )
             metal.box(
-                place( Vector3Add( { out.x, base + 3.95f, out.z }, Vector3Scale( n, 0.25f ) ), { 0.0f, yaw, 0.0f } ),
+                place( Vector3Add( { out.x, base + fminf( 3.95f, hi - 0.3f ), out.z }, Vector3Scale( n, 0.25f ) ),
+                       { 0.0f, yaw, 0.0f } ),
                 { 0.35f, 0.22f, 0.25f } );
         Vector3 cable = Vector3Add( out, Vector3Scale( n, 0.06f ) );
-        cable.y = base + 4.15f;
+        cable.y = base + fminf( 4.15f, hi - 0.15f );
         rod( rust, Vector3Subtract( cable, Vector3Scale( along, CellSize * 0.5f ) ),
              Vector3Add( cable, Vector3Scale( along, CellSize * 0.5f ) ), 0.025f );
     };
@@ -2104,8 +2111,10 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 rust.m_color = look.m_pipe;
                 for ( int i = 0; i < look.m_pipes; ++i )
                 {
+                    // Two rows under the wall's top, one lower (as high as they were under 4.5 m walls).
+                    float   top = m_wallHeight - base;
                     float   y = k.m_kind == CellE::VOID ? -2.0f - i * 0.45f
-                                                        : base + 3.35f + i * 0.38f - ( i == 2 ? 1.35f : 0.0f );
+                                : base + ( i == 2 ? fminf( 2.76f, top - 1.6f ) : top - 1.15f + i * 0.38f );
                     float   rad = i == 1 ? 0.07f : 0.11f;
                     Vector3 p = Vector3Add( start, Vector3Scale( n, 0.28f + rad ) );
                     rust.cylinder( MatrixMultiply( axis, MatrixTranslate( p.x, y, p.z ) ), rad, CellSize, 10 );
@@ -2648,7 +2657,8 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             if ( wall >= 0 )
             {
                 n = { (float)-DC[wall], 0.0f, (float)-DR[wall] };
-                at = { p.x + DC[wall] * ( CellSize * 0.5f - 0.18f ), p.y + ( red ? 3.0f : 2.6f ),
+                at = { p.x + DC[wall] * ( CellSize * 0.5f - 0.18f ),
+                       p.y + fminf( red ? 3.0f : 2.6f, m_wallHeight - p.y - 0.35f ),
                        p.z + DR[wall] * ( CellSize * 0.5f - 0.18f ) };
             }
             else
@@ -2753,8 +2763,10 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     // The harvest board: a slate on the north wall of its cells, framed, two lamps above it.
     if ( m_boardRow >= 0 )
     {
-        float w = m_boardWidth * CellSize - 0.6f, h = fminf( w * 0.5f, 3.2f );
-        float x = ( m_boardCol + m_boardWidth * 0.5f ) * CellSize, z = m_boardRow * CellSize + 0.36f, y = 3.0f;
+        // Under the wall's top with its lamps, its foot a metre over the floor.
+        float w = m_boardWidth * CellSize - 0.6f, h = fminf( fminf( w * 0.5f, 3.2f ), m_wallHeight - 1.75f );
+        float x = ( m_boardCol + m_boardWidth * 0.5f ) * CellSize, z = m_boardRow * CellSize + 0.36f,
+              y = fminf( 3.0f, m_wallHeight - 0.75f - h * 0.5f );
         metal.box( place( { x, y, z - 0.05f } ), { w * 0.5f + 0.1f, h * 0.5f + 0.1f, 0.04f } );
         m_boardCorner[0] = { x - w * 0.5f, y + h * 0.5f, z };
         m_boardCorner[1] = { x + w * 0.5f, y + h * 0.5f, z };
@@ -2783,7 +2795,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         if ( !open( r - 1, c ) && !garden( r - 1, c ) )
         {
             z = r * CellSize + 0.34f;   // in front of the ribs
-            y = mid.y + 2.75f;
+            y = mid.y + fminf( 2.75f, m_wallHeight - mid.y - h * 0.5f - 0.35f );
             metal.box( place( { mid.x, y, z - 0.04f } ), { w * 0.5f + 0.06f, h * 0.5f + 0.06f, 0.03f } );
             for ( float side : { -1.0f, 1.0f } )
                 metal.box( place( { mid.x + side * ( w * 0.5f - 0.2f ), y, z - 0.2f } ), { 0.04f, 0.04f, 0.16f } );

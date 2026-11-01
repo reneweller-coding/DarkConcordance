@@ -203,6 +203,7 @@ public:
     float   m_bloom = 0.08f;                          ///< how much bloom is mixed in
     int     m_colourVision = 0;                       ///< 1 red-green, 2 blue-yellow (the colours moved apart)
     bool    m_sunShadows = true;                      ///< render the sun's shadow map (off where there is no sun)
+    float   m_fill = 0.3f;                            ///< the figures' fill light (a share of the sun's); 0: none
     Vector3 m_cutCentre = { 0.0f, -1000.0f, 0.0f };   ///< the hero, whom walls in front of dissolve around
     float   m_cutRadius = 2.2f;                       ///< radius of that hole at the hero's distance (m)
     int     m_width = 0;                              ///< picture width

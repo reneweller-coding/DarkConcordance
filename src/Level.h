@@ -449,7 +449,7 @@ public:
     Vector3                 m_fogColor = { 0.002f, 0.002f, 0.003f };                ///< the fog's own glow
     Vector3                 m_ambUp = { 0.01f, 0.01f, 0.01f };                      ///< ambient from above
     Vector3                 m_ambDown = { 0.01f, 0.01f, 0.01f };                    ///< ambient from below
-    float                   m_wallHeight = 4.5f;                                    ///< wall height
+    float                   m_wallHeight = 3.2f;                                    ///< wall height
     std::vector<Marker>     m_markers;                                              ///< spawns, lights, pickups
     std::vector<Line>       m_lines;                                                ///< spoken lines
     std::vector<Hint>       m_hints;                                                ///< hints

@@ -12,7 +12,7 @@ gravity  7.0
 fog      0.003 0.01 0.6 0.9
 fogcolor 0.0018 0.002 0.0028
 ambient  0.06 0.06 0.07 0.035 0.035 0.04
-walls    3.6
+walls    3.2
 peaceful 1
 sky      nebula
 view     planet

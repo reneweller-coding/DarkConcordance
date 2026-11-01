@@ -13,7 +13,7 @@ gravity  9.0
 fog      0.0008 0.003 0.4 0.75
 fogcolor 0.004 0.005 0.007
 ambient  0.09 0.095 0.1 0.045 0.045 0.045
-walls    4.5
+walls    3.2
 skycolor 0.42 0.58 0.85
 view     ring
 sundir   0.55 -0.75 0.4

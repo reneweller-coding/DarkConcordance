@@ -403,7 +403,10 @@ deaths by way point 9, 10 and 12 of 31 in seven minutes; rectangular 8, 15 and 1
 `open-champions/champions-return-to-arms-re` documents it: no cut-away, no silhouettes, the pitch rises): the build
 leaves per cell what stands there (walls, rocks and bushes from the floor up; crowns and lintels between two heights,
 `Level::m_sight`), and where the line from the hero to the camera passes through any of it the camera rises towards
-looking down (74° at most, quickly up, slowly back) at the same distance. Only where even that does not help (under a
+looking down (74° at most, quickly up, slowly back) at the same distance. As in that engine the figures (the skinned
+ones) get a fill light from the side away from the sun, half as steep (`Gfx::m_fill`, 0.3 of the sun), and every
+figure and foe a soft dark spot on the ground beneath it, smaller as it leaps (`Game::poseBlobs`); warm lamps
+breathe a little, each in its own time (±7 %), the cold ones stay steady. Only where even that does not help (under a
 crown) the old cut-away round the hero opens, faded in. Leaves right at the camera dissolve. **The ring** is drawn
 at 6,000 m (it was 2,400: a kilometre ahead its land stood 200 m up and wider than the view, a ceiling over the level);
 it now runs on ahead and climbs into a thin arch, its haze the sky's colour by the air the sight line crosses (thick
@@ -1011,6 +1014,16 @@ end, lights beneath on the floor below (six at most a level; they dissolve like 
 Per level 20-170 cut corners, 10-80 filled ones, up to 110 niches and two to six galleries (`Level::planShapes`).
 Only the look changes: the cells the hero walks are the same. `--level ../../tools/hall.txt` is a hall with all of
 it.
+
+**Walls of 3.2 m** (1.11.2026, the user's choice after comparing with Dark Alliance's views): every level's `walls`
+went from 3.6-6.5 m to 3.2 m, the default too; the heroes and the people are about 1.8-1.9 m tall (Corvin's model
+1.92 m), the doors 2.6. From the steep camera one sees more of a room and the camera has to rise less often. What hangs
+on a wall keeps under its top: the pipes run 1.15 and 0.77 m under it (the third row lower), vents, lamps, alarm
+lights, signs and the harvest board come down where they would stand over it, and a house front under a low wall
+has one storey, its window beside the door instead of above it (narrower shutters there). The galleries need 4.2 m
+and are gone; free-standing show pieces (reactor columns, statues, banners) may stand over the walls, as they did.
+All 36 levels looked at after it (`--seed 22 --autoplay --warm 8`). Cost in the Cooling Guts, 1920x1080 on the RTX
+5090: low 2.4 ms as before, high 8.2 → 8.6 ms (the camera sees more of the level over the lower walls).
 
 **Heights to fight on:** in nearly half of the larger rooms indoors a walkway runs along a long wall, a metre and a half
 up with two steps at one end, and at the other end stands one who shoots from up there (the level's own shooters;

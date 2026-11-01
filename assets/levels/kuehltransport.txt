@@ -15,7 +15,7 @@ gravity  9.0
 fog      0.003 0.01 0.55 0.9
 fogcolor 0.0012 0.0016 0.0028
 ambient  0.045 0.05 0.065 0.02 0.025 0.035
-walls    4.5
+walls    3.2
 sky      nebula
 view     planet
 planet   mill 0.7
