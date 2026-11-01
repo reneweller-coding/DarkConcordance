@@ -435,6 +435,10 @@ def write_list():
         lines.append( "decal %s %s %.2f %.2f %.2f %.2f %.1f %s %.2f %.2f %.2f %s" % (
             d["name"], d["where"], width, height, d["y"], d["rough"], d["glow"], "m" if d["mul"] else "a", mean[0],
             mean[1], mean[2], " ".join( d["groups"] ) ) )
+    # The gardens' paths (tools/make_garden.py) belong to no place: the level lays them along its way.
+    for name in ( "path_1", "path_2" ):
+        if os.path.exists( os.path.join( DECALS, name + ".png" ) ):
+            lines.append( "decal %s floor 2.60 2.60 1.60 0.90 0.0 a 0.30 0.25 0.18" % name )
     with open( os.path.join( DECALS, "decals.txt" ), "w", encoding="utf-8", newline="\n" ) as f:
         f.write( "\n".join( lines ) + "\n" )
     return len( lines ) - 2 - len( GROUPS )

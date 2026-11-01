@@ -158,7 +158,10 @@ struct LevelSurfaces
     int m_themeFloor[64] = {};   ///< ... its floors' own surface + 1
     int m_foliage = -1;          ///< the gardens' leaves, tinted by each plant (-1: the park keeps its plain walls)
     int m_bark = -1;             ///< their trunks
-    int m_gravel = -1;           ///< their paths
+    int m_gravel = -1;           ///< their coral tubes (the sand's grain, tinted)
+    int m_cards = -1;            ///< cut-out clusters of leaves round the crowns
+    int m_blades = -1;           ///< cut-out tufts of grass on the lawn
+    int m_boulder = -1;          ///< the pale stone of their rocky edges
     std::map<int, std::vector<int>> m_variants;           ///< a wall's or floor's variants, laid as a patchwork
     const std::vector<DecalDef>    *m_decals = nullptr;   ///< the decals there are (nullptr: none)
 };
@@ -382,6 +385,14 @@ public:
      * @return true if something was hit before `to`
      */
     bool raycast( Vector3 from, Vector3 to, Vector3 &hit, Vector3 &normal ) const;
+    /**
+     * @brief Whether something seen stands between two points (for the camera): walls, rocks and bushes from the floor
+     *        up, crowns and lintels between their heights, as the build left them per cell.
+     * @param[in] from  start (the hero)
+     * @param[in] to    end (the camera)
+     * @return true if the sight line passes through any of it
+     */
+    bool sightBlocked( Vector3 from, Vector3 to ) const;
 
     /**
      * @brief Whether a cell can be walked on by something that climbs up to `climb`.
@@ -586,6 +597,8 @@ private:
     {
         MeshBuilder &m_foliage, &m_bark, &m_gravel, &m_stone;
         MeshBuilder &m_canopy;   ///< the forest's crowns deep in it: leaves that throw no shadow
+        MeshBuilder &m_cards;    ///< cut-out leaf clusters round the crowns and bushes (no shadow)
+        MeshBuilder &m_blades;   ///< cut-out tufts of grass (no shadow)
         /** the park's hedge (wall) or lawn (floor) builder for a cell, as the patchwork lays its variants */
         std::function<MeshBuilder &( int r, int c, bool wall )> m_park;
         std::vector<GlowBox>                                  &m_glows;
@@ -606,23 +619,38 @@ private:
     };
 
     /**
-     * @brief Plans the gardens (LevelGarden.cpp): which wall cells of a park become hedges (by the paths) and what lies
+     * @brief Plans the gardens (LevelGarden.cpp): which wall cells of a park become its edge (by the paths) and what lies
      *        behind them (garden, then forest), from each wall cell's distance to the open cells.
      * @param[in] on  the level has gardens (its park keeps the hedges' surface)
      */
     void planGarden( bool on );
-    /** @return the cell's garden depth: 0 none, 1 a hedge, 2 and more what lies behind it */
+    /** @return the cell's garden depth: 0 none, 1 its edge by the paths, 2 and more what lies behind it */
     int garden( int r, int c ) const;
     /**
-     * @brief A garden wall cell (LevelGarden.cpp): a hedge's lumpy top and sides (its body is the caller's), a strip of
-     *        garden behind it, or forest.
+     * @brief A garden wall cell (LevelGarden.cpp): its edge by the paths (rocks, or a thicket of bushes and trees),
+     *        a strip of garden behind it, or forest.
      * @param[in]     r    the row
      * @param[in]     c    the column
      * @param[in,out] kit  the builders
      */
     void gardenCell( int r, int c, GardenKit &kit );
     /**
-     * @brief Now and then low plants at a hedge's foot, on the floor in front of it (LevelGarden.cpp).
+     * @brief A park floor cell's ground (LevelGarden.cpp): the lawn's top in large patches of lusher and drier grass
+     *        (one colour function for all cells: no seams), tufts of grass on it.
+     * @param[in]     r    the row
+     * @param[in]     c    the column
+     * @param[in]     h    its height
+     * @param[in,out] kit  the builders
+     */
+    void groundTop( int r, int c, float h, GardenKit &kit );
+    /**
+     * @brief The gardens' paths along the route as decals of trodden earth fading into the grass, and patches of earth
+     *        here and there (LevelGarden.cpp; after the dressing, which lays the decals anew).
+     * @param[in] s  the surfaces (the decals there are)
+     */
+    void gardenPaths( const LevelSurfaces &s );
+    /**
+     * @brief Now and then low plants at the foot of a garden's edge, on the floor in front of it (LevelGarden.cpp).
      * @param[in]     r    the floor cell's row
      * @param[in]     c    its column
      * @param[in]     d    the direction of the hedge from it (0 north, 1 east, 2 south, 3 west)
@@ -630,8 +658,7 @@ private:
      */
     void hedgeFoot( int r, int c, int d, GardenKit &kit );
     /**
-     * @brief The forest beyond the level's edge where a garden reaches it, and the gravel paths along the route
-     *        (LevelGarden.cpp).
+     * @brief The forest beyond the level's edge where a garden reaches it (LevelGarden.cpp).
      * @param[in,out] kit  the builders
      */
     void gardenEdges( GardenKit &kit );
@@ -646,12 +673,13 @@ private:
      */
     void plant( PlantE kind, Vector3 at, float size, unsigned h, GardenKit &kit, bool full = true );
     /**
-     * @brief The lawn's top on a garden cell or beyond the edge (LevelGarden.cpp).
-     * @param[in]     r    the row
-     * @param[in]     c    the column
-     * @param[in,out] kit  the builders
+     * @brief The lawn's top on a garden cell or beyond the edge, in patches (LevelGarden.cpp).
+     * @param[in]     r      the row
+     * @param[in]     c      the column
+     * @param[in,out] kit    the builders
+     * @param[in]     shade  darker under trees (1: in the open)
      */
-    void lawn( int r, int c, GardenKit &kit );
+    void lawn( int r, int c, GardenKit &kit, float shade = 1.0f );
 
     /**
      * @brief Dresses the level after its walls and floors (LevelDress.cpp): decals on floors and walls, clutter by the
@@ -725,7 +753,14 @@ private:
     std::vector<unsigned char> m_fill;      ///< per floor cell: its inner corners filled (bits as m_cut)
     std::vector<signed char>   m_niche;     ///< per wall cell: the side its niche opens to (-1: none)
     std::vector<unsigned char> m_gallery;   ///< per floor cell: the walls a gallery runs along (bit d)
-    std::vector<unsigned char> m_garden;    ///< per wall cell: its garden depth (0 none, 1 a hedge, 2.. behind)
+    std::vector<unsigned char> m_garden;    ///< per wall cell: its garden depth (0 none, 1 the edge, 2.. behind)
+    std::vector<unsigned char> m_path;      ///< per floor cell: a garden's path runs over it
+    std::vector<Vector3>       m_sight;     ///< per cell what is seen there: x up to where it stands from the floor,
+                                            ///< y to z a crown or lintel above (y > z: none); for the camera
+    /** @brief Something standing from the floor up to `top` over a footprint (the cells it mostly covers). */
+    void stand( Vector3 centre, Vector3 radii, float top );
+    /** @brief Something hanging between `low` and `high` over a footprint (a crown, a lintel). */
+    void hang( Vector3 centre, Vector3 radii, float low, float high );
     GardenKit                 *m_gardenKit = nullptr;   ///< during build: the garden's builders (null: no gardens)
 
     /** @brief A cell raised by a "raise" line. */

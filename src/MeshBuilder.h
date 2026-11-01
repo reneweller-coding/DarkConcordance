@@ -107,8 +107,21 @@ public:
      * @param[in] z0      its north edge
      * @param[in] steps   the grid's offsets from there along x and along z (from 0 to the square's size)
      * @param[in] height  the height at (x, z)
+     * @param[in] colour  the colour at (x, z) (empty: m_color)
      */
-    void field( float x0, float z0, const std::vector<float> &steps, const std::function<float( float, float )> &height );
+    void field( float x0, float z0, const std::vector<float> &steps, const std::function<float( float, float )> &height,
+                const std::function<Color( float, float )> &colour = nullptr );
+
+    /**
+     * @brief A quad with its own normal for all four corners (a card of leaves or grass, lit like the volume it stands
+     *        for); UVs as quad().
+     * @param[in] a       first corner
+     * @param[in] b       second corner
+     * @param[in] c       third corner
+     * @param[in] d       fourth corner
+     * @param[in] normal  the normal
+     */
+    void card( Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normal );
 
     /**
      * @brief One flat triangle.

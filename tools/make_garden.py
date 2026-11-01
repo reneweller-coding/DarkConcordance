@@ -10,8 +10,13 @@
             laid everywhere as diagonal stripes)
   foliage   the hedge's leaves without their colour: the plants tint it (teal, violet, rust, ...)
   bark      dustrock stood upright (its layers run up a trunk) and greyed
+  boulder   dustrock greyed and lightened: the stone of the gardens' rocky edges
+  blades    a tuft of long grass blades (alpha: cut out), scattered over the lawn
+  leafcard  a cluster of the foliage's leaves cut out with a ragged rim, round the crowns
+  path_1/2  decals of trodden earth with gravel, their rims fading (assets/textures/decals)
 
-Each writes <name>_albedo.png, _orm.png and _normal.png into assets/textures.
+Each writes <name>_albedo.png, _orm.png and _normal.png into assets/textures (blades and leafcard keep their alpha:
+no DDS for them, DXT1 would cut it).
 """
 import os
 
@@ -83,7 +88,8 @@ def lawn(src, dst):
         maps[k] = fill(maps[k], mask)
     a = maps["albedo"]
     grey = a.mean(axis=2, keepdims=True)
-    maps["albedo"] = (grey + (a - grey) * 0.85) * 0.78
+    # Calmer and towards olive, as an old meadow rather than a sports lawn.
+    maps["albedo"] = (grey + (a - grey) * 0.8) * np.array([0.84, 0.78, 0.56], dtype=np.float32)
     for k in KINDS:
         save(maps[k], dst, k)
     return maps
@@ -122,6 +128,98 @@ def main():
     save(bark, "bark", "albedo")
     save(np.rot90(load("dustrock", "orm"), 1, axes=(0, 1)), "bark", "orm")
     save(turn_normal(load("dustrock", "normal"), 1), "bark", "normal")
+
+    # Boulders: dustrock greyed to a pale, weathered stone with soft layers (the cave rock's frost and fossils do not
+    # belong in a garden).
+    stone = load("dustrock", "albedo")
+    grey = stone.mean(axis=2, keepdims=True)
+    cool = np.array([0.97, 1.0, 1.04], dtype=np.float32)
+    save(np.clip(((grey + (stone - grey) * 0.06) * 1.1 + 0.05) * cool, 0, 1), "boulder", "albedo")
+    save(load("dustrock", "orm"), "boulder", "orm")
+    save(load("dustrock", "normal"), "boulder", "normal")
+
+    blades()
+    leafcard(lum)
+    paths()
+
+
+def flat_maps(name, rough=0.85):
+    """The maps a cut-out card needs beside its picture: an even ORM and a flat normal map."""
+    save(np.full((4, 4, 3), [1.0, rough, 0.0], dtype=np.float32), name, "orm")
+    save(np.full((4, 4, 3), [0.5, 0.5, 1.0], dtype=np.float32), name, "normal")
+
+
+def save_rgba(a, path):
+    Image.fromarray(np.clip(a * 255.0 + 0.5, 0, 255).astype(np.uint8), "RGBA").save(path)
+
+
+def blades():
+    """Long blades of grass in a tuft, fanning out of one root, olive to straw (alpha: where a blade is): a cut-out card
+    the gardens scatter over the lawn."""
+    from PIL import ImageDraw
+    rng = np.random.default_rng(11)
+    size = 2048
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+    for _ in range(38):
+        root = size / 2 + rng.uniform(-0.09, 0.09) * size
+        length = rng.uniform(0.45, 0.95) * size
+        lean = rng.uniform(-0.42, 0.42) * size
+        width = rng.uniform(0.008, 0.016) * size
+        tone = np.array([rng.uniform(0.33, 0.62), rng.uniform(0.42, 0.6), rng.uniform(0.12, 0.24)])
+        left, right = [], []
+        for i in range(17):
+            t = i / 16
+            x = root + lean * t * t
+            y = size - 1 - length * t
+            w = width * (1.0 - t) + 1.0
+            left.append((x - w, y))
+            right.append((x + w, y))
+        shade = tuple(int(c * 255) for c in tone) + (255,)
+        d.polygon(left + right[::-1], fill=shade)
+    img = img.resize((512, 512), Image.Resampling.LANCZOS)
+    save_rgba(np.asarray(img, dtype=np.float32) / 255.0, os.path.join(TEXTURES, "blades_albedo.png"))
+    flat_maps("blades")
+
+
+def leafcard(lum):
+    """A cluster of leaves cut out of the foliage (its light leaves kept, the dark gaps between them clear), ragged at
+    its rim: cards round the crowns, so that they end in leaves and not in a smooth skin."""
+    h, w = lum.shape
+    leaves = lum[h // 4:h // 4 + 512, w // 4:w // 4 + 512]
+    yy, xx = np.mgrid[0:512, 0:512].astype(np.float32)
+    r = np.sqrt((xx - 255.5) ** 2 + (yy - 255.5) ** 2) / 256.0
+    rng = np.random.default_rng(5)
+    wobble = blur(rng.standard_normal((512, 512, 1)).astype(np.float32), 18)[..., 0]
+    wobble = wobble / max(float(np.abs(wobble).max()), 1e-3)
+    inside = r + 0.25 * wobble < 0.82
+    alpha = (inside & (leaves > np.percentile(leaves, 38))).astype(np.float32)
+    rgb = np.repeat(np.clip(leaves * 1.1, 0, 1)[..., None], 3, axis=2)
+    save_rgba(np.concatenate([rgb, alpha[..., None]], axis=2), os.path.join(TEXTURES, "leafcard_albedo.png"))
+    flat_maps("leafcard")
+
+
+def paths():
+    """Patches of trodden earth with fine gravel, their rims fading out raggedly (alpha): decals laid one after another
+    along the gardens' paths, so that the way runs soft into the grass."""
+    dust = np.asarray(Image.open(os.path.join(TEXTURES, "dust_albedo.png")).convert("RGB").resize(
+        (512, 512), Image.Resampling.LANCZOS), dtype=np.float32) / 255.0
+    lum = dust.mean(axis=2)
+    yy, xx = np.mgrid[0:512, 0:512].astype(np.float32)
+    r = np.sqrt((xx - 255.5) ** 2 + (yy - 255.5) ** 2) / 256.0
+    for n, seed in ((1, 21), (2, 22)):
+        rng = np.random.default_rng(seed)
+        wobble = blur(rng.standard_normal((512, 512, 1)).astype(np.float32), 22)[..., 0]
+        wobble = wobble / max(float(np.abs(wobble).max()), 1e-3)
+        grain = blur(rng.standard_normal((512, 512, 1)).astype(np.float32), 2)[..., 0]
+        earth = lum[..., None] * np.array([0.62, 0.5, 0.36], dtype=np.float32) * (0.9 + 0.25 * grain[..., None])
+        # Pebbles: small pale specks.
+        pebbles = (rng.random((512, 512)) > 0.9965).astype(np.float32)[..., None]
+        pebbles = np.clip(blur(pebbles, 1) * 6.0, 0, 1)
+        earth = earth * (1 - pebbles) + np.array([0.62, 0.6, 0.55], dtype=np.float32) * pebbles
+        alpha = np.clip((0.92 - (r + 0.2 * wobble)) / 0.3, 0, 1) ** 1.2
+        save_rgba(np.concatenate([np.clip(earth, 0, 1), alpha[..., None]], axis=2),
+                  os.path.join(TEXTURES, "decals", "path_%d.png" % n))
 
 
 if __name__ == "__main__":

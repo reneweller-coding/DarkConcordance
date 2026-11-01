@@ -45,9 +45,11 @@ using namespace play;
 namespace
 {
 
-constexpr float RingRadius = 2400.0f;   ///< the ring as the game draws it (m; the story's is 1,000 km)
-constexpr float RingWidth = 900.0f;     ///< its land from rim to rim
-constexpr float RingRim = 300.0f;       ///< the rim walls' height
+// (Drawn at 2,400 m, the land was 200 m up a kilometre ahead and wider than the view: a ceiling, no rise out of the
+// horizon. Now it runs on ahead, climbs and narrows into a thin arch.)
+constexpr float RingRadius = 6000.0f;   ///< the ring as the game draws it (m; the story's is 1,000 km)
+constexpr float RingWidth = 900.0f;     ///< its land from rim to rim (the widest level fits on it)
+constexpr float RingRim = 140.0f;       ///< the rim walls' height (higher, they closed the sky at the sides)
 constexpr float CutWarn = 2.4f;         ///< seconds a line glows before it fires
 constexpr float CutBeam = 0.45f;        ///< seconds the beam stays
 constexpr float SpinReach = 7.0f;       ///< a centrifuge's pull outward
@@ -789,7 +791,13 @@ void Game::poseAct34( std::vector<Drawable> &out )
 
 void Game::drawAct34( Gfx &gfx )
 {
-    if ( m_ringMesh.vertexCount > 0 ) gfx.ring( m_ringMesh, m_ringTex, RingRadius );
+    if ( m_ringMesh.vertexCount > 0 )
+    {
+        // The sky's colour as the sky shader shows it (linear, 0.8 of it), for the haze on the land.
+        Vector3 sky = m_level.m_skyColor.x >= 0.0f ? m_level.m_skyColor : Vector3{ 0.42f, 0.58f, 0.85f };
+        sky = { powf( sky.x, 2.2f ) * 0.8f, powf( sky.y, 2.2f ) * 0.8f, powf( sky.z, 2.2f ) * 0.8f };
+        gfx.ring( m_ringMesh, m_ringTex, RingRadius, sky );
+    }
 }
 
 void Game::drawAct34Hud( int w, int h, float s )

@@ -26,10 +26,7 @@ namespace
 const int DR[4] = { -1, 0, 1, 0 };   ///< north, east, south, west (as Level.cpp)
 const int DC[4] = { 0, 1, 0, -1 };
 
-constexpr float         HedgeBody = 1.6f;   ///< a hedge's clipped sides, up to where its top rounds off
-constexpr float         HedgeRound = 0.42f;   ///< the radius its top rounds off with where the hedge ends
-constexpr float         HedgeLumps = 0.22f;   ///< how high the lumps on its top rise
-constexpr int           GardenDepth = 3;    ///< wall cells this deep behind a hedge are garden, deeper ones forest
+constexpr int           GardenDepth = 3;    ///< wall cells this deep behind the edge are garden, deeper ones forest
 constexpr int           Skirt = 12;         ///< cells of forest beyond the level's edge
 constexpr unsigned char Far = 250;          ///< farther than anything counts
 
@@ -56,10 +53,70 @@ const Color Darks[] = { { 26, 70, 26, 255 }, { 22, 64, 48, 255 }, { 34, 74, 30, 
 const Color DarkExotics[] = { { 58, 38, 82, 255 }, { 90, 40, 26, 255 }, { 40, 66, 92, 255 } };
 // Coral tubes and blooms on the gravel's sand (its colour is orange: these bend it).
 const Color Corals[] = { { 125, 72, 212, 255 }, { 105, 36, 255, 255 }, { 145, 105, 64, 255 }, { 40, 52, 255, 255 } };
-const Color Gravel = { 40, 78, 205, 255 };   ///< the paths: the sand greyed to gravel, about as light as the lawn
 const Vector4 Pods[] = { { 2.6f, 1.4f, 0.35f, 0.0f }, { 0.5f, 2.4f, 2.6f, 0.0f }, { 2.2f, 0.7f, 3.0f, 0.0f } };
 
 Vector3 up( float y ) { return { 0.0f, y, 0.0f }; }
+
+/**
+ * @brief The lawn's colour at a point (it multiplies the grass): large patches of lush dark grass, plain grass and dry
+ *        straw, one function for all cells, so that no seams and no squares show.
+ */
+Color meadow( float x, float z, float shade = 1.0f )
+{
+    float t = 1.6f * ( 0.65f * smoothNoise( { x * 0.11f, 0.5f, z * 0.11f }, 71u ) +
+                       0.35f * smoothNoise( { x * 0.31f, 2.5f, z * 0.31f }, 73u ) );
+    t = Clamp( t, -1.0f, 1.0f );
+    Vector3 lush = { 0.6f, 0.7f, 0.58f }, plain = { 0.86f, 0.86f, 0.82f }, dry = { 1.0f, 0.88f, 0.58f };
+    Vector3 c = Vector3Scale( t < 0.0f ? Vector3Lerp( plain, lush, -t ) : Vector3Lerp( plain, dry, t ), shade );
+    return { (unsigned char)( c.x * 255.0f ), (unsigned char)( c.y * 255.0f ), (unsigned char)( c.z * 255.0f ), 255 };
+}
+
+/**
+ * @brief Leaf clusters on cards round a crown or a bush (an ellipsoid), mostly on its top and sides, each half out of
+ *        it: the crown ends in leaves, not in a smooth skin. Lit with the crown's own normal there.
+ */
+void leaves( MeshBuilder &cards, Vector3 centre, Vector3 radii, float turn, int count, Color tone, Dice &dice,
+             float scale = 0.42f )
+{
+    cards.m_color = tone;
+    float size = scale * ( radii.x + radii.z ) * 0.5f;
+    for ( int k = 0; k < count; ++k )
+    {
+        float   th = acosf( dice.in( -0.5f, 1.0f ) ), ph = turn + dice.in( 0.0f, 6.28f ), depth = dice.in( 0.72f, 1.0f );
+        Vector3 d = { sinf( th ) * cosf( ph ), cosf( th ), sinf( th ) * sinf( ph ) };
+        Vector3 p = Vector3Add( centre, { d.x * radii.x * depth, d.y * radii.y * depth, d.z * radii.z * depth } );
+        Vector3 n = Vector3Normalize( { d.x / radii.x, d.y / radii.y, d.z / radii.z } );
+        Vector3 t1 = Vector3Normalize( Vector3CrossProduct( n, fabsf( n.y ) < 0.9f ? Vector3{ 0.0f, 1.0f, 0.0f }
+                                                                                   : Vector3{ 1.0f, 0.0f, 0.0f } ) );
+        Vector3 t2 = Vector3CrossProduct( n, t1 );
+        float   roll = dice.in( 0.0f, 6.28f ), half = std::max( 0.25f, size * dice.in( 0.8f, 1.2f ) );
+        Vector3 u = Vector3Scale( Vector3Add( Vector3Scale( t1, cosf( roll ) ), Vector3Scale( t2, sinf( roll ) ) ), half );
+        Vector3 v = Vector3Scale( Vector3Add( Vector3Scale( t1, -sinf( roll ) ), Vector3Scale( t2, cosf( roll ) ) ), half );
+        cards.card( Vector3Add( Vector3Subtract( p, u ), v ), Vector3Add( Vector3Add( p, u ), v ),
+                    Vector3Subtract( Vector3Add( p, u ), v ), Vector3Subtract( Vector3Subtract( p, u ), v ), n );
+    }
+    cards.m_color = WHITE;
+}
+
+/** @brief A crown core: the same colour, darker (the leaf cards round it carry its outline and its light). */
+Color shaded( Color c, float k )
+{
+    return { (unsigned char)( c.r * k ), (unsigned char)( c.g * k ), (unsigned char)( c.b * k ), c.a };
+}
+
+/** @brief A tuft of grass: two cards crossed, standing on the ground (lit as the ground is, so that it sits in it). */
+void tuft( MeshBuilder &blades, Vector3 at, float width, float height, float turn, Color tone )
+{
+    blades.m_color = tone;
+    for ( int k = 0; k < 2; ++k )
+    {
+        float   a = turn + k * PI * 0.5f;
+        Vector3 t = { cosf( a ) * width * 0.5f, 0.0f, sinf( a ) * width * 0.5f };
+        blades.card( Vector3Add( Vector3Subtract( at, t ), up( height ) ), Vector3Add( Vector3Add( at, t ), up( height ) ),
+                     Vector3Add( at, t ), Vector3Subtract( at, t ), { 0.0f, 1.0f, 0.0f } );
+    }
+    blades.m_color = WHITE;
+}
 
 /** @brief A thin box from a to e (a strand, a stalk). */
 void rod( MeshBuilder &b, Vector3 a, Vector3 e, float half )
@@ -136,6 +193,71 @@ void Level::planGarden( bool on )
                 }
             if ( park ) m_garden[i] = depth[i];
         }
+
+    // The paths along the route (the autopilot's way: through each corridor, across each room), kept to the middle of
+    // the open floor; only in the park. Planned before the build: the lawn keeps its tufts off them.
+    m_path.assign( cells, 0 );
+    if ( m_route.size() < 2 ) return;
+    std::vector<int> wall( cells, 0 );
+    for ( size_t i = 0; i < cells; ++i )
+        if ( !walkable( (int)( i / m_cols ), (int)( i % m_cols ) ) )
+            todo.push_back( (int)i );
+        else
+            wall[i] = -1;
+    while ( !todo.empty() )
+    {
+        int i = todo.front();
+        todo.pop_front();
+        for ( int d = 0; d < 4; ++d )
+        {
+            int nr = i / m_cols + DR[d], nc = i % m_cols + DC[d];
+            if ( nr < 0 || nc < 0 || nr >= m_rows || nc >= m_cols ) continue;
+            size_t n = (size_t)nr * m_cols + nc;
+            if ( wall[n] >= 0 ) continue;
+            wall[n] = wall[i] + 1;
+            todo.push_back( (int)n );
+        }
+    }
+    std::vector<float> cost( cells );
+    std::vector<int>   from( cells );
+    for ( size_t w = 0; w + 1 < m_route.size(); ++w )
+    {
+        int a = m_route[w].first * m_cols + m_route[w].second, b = m_route[w + 1].first * m_cols + m_route[w + 1].second;
+        if ( a < 0 || b < 0 || a >= (int)cells || b >= (int)cells ) continue;
+        std::fill( cost.begin(), cost.end(), 1e9f );
+        std::fill( from.begin(), from.end(), -1 );
+        // Dijkstra on a small queue: a step costs more near the walls.
+        std::vector<std::pair<float, int>> heap = { { 0.0f, a } };
+        cost[a] = 0.0f;
+        while ( !heap.empty() )
+        {
+            std::pop_heap( heap.begin(), heap.end(), std::greater<>() );
+            auto [k, i] = heap.back();
+            heap.pop_back();
+            if ( k > cost[i] ) continue;
+            if ( i == b ) break;
+            for ( int d = 0; d < 4; ++d )
+            {
+                int nr = i / m_cols + DR[d], nc = i % m_cols + DC[d];
+                if ( nr < 0 || nc < 0 || nr >= m_rows || nc >= m_cols || !walkable( nr, nc ) ) continue;
+                int   n = nr * m_cols + nc;
+                float step = cost[i] + 1.0f + 3.0f / (float)std::max( 1, wall[n] );
+                if ( step >= cost[n] ) continue;
+                cost[n] = step;
+                from[n] = i;
+                heap.push_back( { step, n } );
+                std::push_heap( heap.begin(), heap.end(), std::greater<>() );
+            }
+        }
+        if ( cost[b] >= 1e9f ) continue;
+        for ( int i = b; i >= 0; i = from[i] )
+        {
+            int r = i / m_cols, c = i % m_cols;
+            if ( theme( r, c ) == ThemeE::PARK && cell( r, c ).m_kind == CellE::FLOOR && cell( r, c ).m_height == 0.0f )
+                m_path[(size_t)i] = 1;
+            if ( i == a ) break;
+        }
+    }
 }
 
 void Level::gardenCell( int r, int c, GardenKit &kit )
@@ -146,65 +268,71 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
     Dice           dice{ h };
     if ( depth == 1 )
     {
-        // A clipped hedge: a flat body; over it a top whose height is one function for all the hedge's cells (no
-        // seams), rounded down to the body within half a metre of where the hedge ends, gently lumpy between; lumps
-        // pushing out of the sides where they are seen, one over each outer corner.
-        MeshBuilder &hedge = kit.m_park( r, c, true );
-        hedge.m_color = { (unsigned char)( 215 + h % 40 ), (unsigned char)( 222 + ( h >> 6 ) % 33 ),
-                          (unsigned char)( 210 + ( h >> 12 ) % 45 ), 255 };
-        hedge.box( place( { mid.x, ( HedgeBody - 0.5f ) * 0.5f, mid.z } ),
-                   { CellSize * 0.5f, ( HedgeBody + 0.5f ) * 0.5f, CellSize * 0.5f } );
-        auto top = [&]( float x, float z )
+        // The garden's edge by the paths, as out in the wild: stretches of rock (boulders heaped, now and then a crag)
+        // and stretches of thicket (bushes, a tree among them), one or the other along the edge as a slow noise has
+        // it. A dark core closes the gaps at the foot; the lumps of the cells beside run into each other.
+        float turn = dice.in( 0.0f, 6.28f );
+        lawn( r, c, kit );   // the ground under it (between the lumps it shows)
+        if ( smoothNoise( { mid.x * 0.07f, 1.5f, mid.z * 0.07f }, 61u ) > -0.05f )
         {
-            int   r0 = (int)floorf( z / CellSize ), c0 = (int)floorf( x / CellSize );
-            float edge = HedgeRound;
-            for ( int dr = -1; dr <= 1; ++dr )
-                for ( int dc = -1; dc <= 1; ++dc )
-                {
-                    if ( garden( r0 + dr, c0 + dc ) == 1 ) continue;
-                    float ax = ( c0 + dc ) * CellSize, az = ( r0 + dr ) * CellSize;
-                    float dx = std::max( { ax - x, 0.0f, x - ax - CellSize } );
-                    float dz = std::max( { az - z, 0.0f, z - az - CellSize } );
-                    edge = std::min( edge, sqrtf( dx * dx + dz * dz ) );
-                }
-            float t = 1.0f - edge / HedgeRound, round = sqrtf( std::max( 0.0f, 1.0f - t * t ) );
-            float lump = 0.6f * smoothNoise( { x * 0.75f, 0.0f, z * 0.75f }, 41u ) +
-                         0.4f * smoothNoise( { x * 1.9f, 3.0f, z * 1.9f }, 43u );
-            return HedgeBody + HedgeRound * round + HedgeLumps * ( 0.5f + 0.5f * lump ) * round;
-        };
-        static const std::vector<float> Steps = { 0.0f, 0.12f, 0.4f, 1.0f, 1.6f, 1.88f, 2.0f };
-        hedge.field( c * CellSize, r * CellSize, Steps, top );
-        bool seen[4];
-        for ( int d = 0; d < 4; ++d )
-        {
-            int nr = r + DR[d], nc = c + DC[d];
-            seen[d] = garden( nr, nc ) != 1 && !( nr >= 0 && nc >= 0 && nr < m_rows && nc < m_cols &&
-                                                   cell( nr, nc ).m_kind == CellE::ROCK && garden( nr, nc ) == 0 );
-            if ( !seen[d] ) continue;   // the hedge goes on there, or a wall stands against it
-            Vector3 n = { (float)DC[d], 0.0f, (float)DR[d] }, along = { n.z, 0.0f, n.x };
-            int     lumps = 1 + dice.pick( 2 );
-            for ( int i = 0; i < lumps; ++i )
+            // Boulders wider than high, sunk into the ground, now and then one lying on the others or a crag.
+            int g = 175 + (int)( h % 50 );
+            for ( int i = 0; i < 2; ++i )
             {
-                Vector3 p = Vector3Add( mid, Vector3Add( Vector3Scale( n, CellSize * 0.5f - 0.2f ),
-                                                         Vector3Scale( along, dice.in( -0.55f, 0.55f ) ) ) );
-                p.y = dice.in( 0.4f, 1.15f );
-                hedge.blob( frame( along, up( 1.0f ), n, p ), { dice.in( 0.45f, 0.7f ), dice.in( 0.4f, 0.6f ), 0.34f },
-                            0.35f, h + 31u * ( d * 3 + i ), 4 );
+                Vector3 rr = { dice.in( 0.95f, 1.3f ), dice.in( 0.7f, 1.25f ), dice.in( 0.8f, 1.1f ) };
+                Vector3 p = { mid.x + dice.in( -0.2f, 0.2f ), rr.y * dice.in( 0.2f, 0.4f ), mid.z + dice.in( -0.2f, 0.2f ) };
+                if ( i == 1 && dice() < 0.4f )
+                {
+                    rr = Vector3Scale( rr, 0.65f );   // lying on the first
+                    p.y += 0.9f;
+                }
+                else if ( dice() < 0.1f )
+                {
+                    rr = { 1.2f, dice.in( 1.7f, 2.2f ), 1.15f };   // a crag
+                    p.y = rr.y * 0.45f;
+                }
+                kit.m_stone.m_color = { (unsigned char)g, (unsigned char)( g + 2 ), (unsigned char)( g - 8 ), 255 };
+                // Few facets and strong lumps: a stone's planes and edges, not a smooth egg.
+                kit.m_stone.blob( place( p, { dice.in( -0.35f, 0.35f ), turn + i * 1.7f, dice.in( -0.35f, 0.35f ) } ), rr,
+                                  0.3f, h + i, 4 );
+                stand( p, rr, p.y + rr.y );
+                // Moss and a bush in the clefts on top of some.
+                if ( dice() < 0.35f )
+                {
+                    Vector3 top = Vector3Add( p, up( rr.y * 0.75f ) );
+                    Vector3 bush = { 0.55f, 0.4f, 0.55f };
+                    Color   tone = Greens[dice.pick( 5 )];
+                    kit.m_foliage.m_color = tone;
+                    kit.m_foliage.blob( place( top ), bush, 0.35f, h + 9u + i, 4 );
+                    kit.m_foliage.m_color = WHITE;
+                    leaves( kit.m_cards, top, bush, turn, 3, tone, dice );
+                    stand( top, bush, top.y + bush.y );
+                }
             }
+            kit.m_stone.m_color = WHITE;
         }
-        for ( int d = 0; d < 4; ++d )
+        else
         {
-            int e = ( d + 1 ) % 4;
-            if ( !seen[d] || !seen[e] ) continue;
-            Vector3 p = { mid.x + ( DC[d] + DC[e] ) * ( CellSize * 0.5f - 0.3f ), HedgeBody - 0.1f,
-                          mid.z + ( DR[d] + DR[e] ) * ( CellSize * 0.5f - 0.3f ) };
-            hedge.blob( place( p, { 0.0f, dice.in( 0.0f, 6.28f ), 0.0f } ), { 0.5f, 0.55f, 0.5f }, 0.3f, h + 97u + d,
-                        4 );
+            Color tone = dice() < 0.15f ? Exotics[dice.pick( 5 )] : Greens[dice.pick( 5 )];
+            for ( int i = 0; i < 2; ++i )
+            {
+                Vector3 rr = { dice.in( 0.85f, 1.05f ), dice.in( 0.9f, 1.4f ), dice.in( 0.85f, 1.05f ) };
+                Vector3 p = { mid.x + dice.in( -0.25f, 0.25f ), rr.y * 0.65f, mid.z + dice.in( -0.25f, 0.25f ) };
+                kit.m_foliage.m_color = shaded( tone, 0.75f );
+                kit.m_foliage.blob( place( p, { 0.0f, turn + i, 0.0f } ), Vector3Scale( rr, 0.85f ), 0.35f, h + i, 5 );
+                kit.m_foliage.m_color = WHITE;
+                leaves( kit.m_cards, p, rr, turn, 10, tone, dice, 0.32f );
+                stand( p, rr, p.y + rr.y );
+            }
+            // Now and then a tree in the thicket, its crown over the path.
+            if ( h % 3 == 0 )
+                plant( dice() < 0.5f ? PlantE::CANOPY : PlantE::PARASOL, { mid.x, 0.0f, mid.z }, dice.in( 0.6f, 0.75f ),
+                       h, kit );
         }
-        hedge.m_color = WHITE;
+        kit.m_stone.m_color = WHITE;
         return;
     }
-    // Behind the hedge and in the forest: lawn (never walked on; only its top is ever seen).
+    // Behind the edge and in the forest: lawn (never walked on; only its top is ever seen; the crowns shade it).
     lawn( r, c, kit );
     if ( depth > GardenDepth )
     {
@@ -229,6 +357,9 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
         plant( Trees[( bh >> 12 ) % 6], at, dice.in( 0.85f, 1.15f ), h, kit );
         return;
     }
+    for ( int i = 0; i < 2; ++i )
+        tuft( kit.m_blades, { mid.x + dice.in( -0.9f, 0.9f ), 0.0f, mid.z + dice.in( -0.9f, 0.9f ) },
+              dice.in( 0.55f, 0.85f ), dice.in( 0.4f, 0.7f ), dice.in( 0.0f, 6.28f ), meadow( mid.x, mid.z ) );
     float roll = dice();
     if ( roll < 0.24f )
         plant( PlantE::BUSH, at, dice.in( 0.8f, 1.3f ), h, kit );
@@ -240,10 +371,46 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
         plant( PlantE::BED, at, dice.in( 0.8f, 1.1f ), h, kit );
 }
 
-void Level::lawn( int r, int c, GardenKit &kit )
+void Level::lawn( int r, int c, GardenKit &kit, float shade )
 {
-    float x0 = c * CellSize, z0 = r * CellSize, x1 = x0 + CellSize, z1 = z0 + CellSize;
-    kit.m_park( r, c, false ).quad( { x0, 0.0f, z0 }, { x1, 0.0f, z0 }, { x1, 0.0f, z1 }, { x0, 0.0f, z1 } );
+    static const std::vector<float> Steps = { 0.0f, 1.0f, 2.0f };
+    kit.m_park( r, c, false )
+        .field( c * CellSize, r * CellSize, Steps, []( float, float ) { return 0.0f; },
+                [shade]( float x, float z ) { return meadow( x, z, shade ); } );
+}
+
+void Level::groundTop( int r, int c, float h, GardenKit &kit )
+{
+    // The lawn's top in its patches; by a path a little trodden, drier and darker.
+    auto colour = [&]( float x, float z )
+    {
+        Color m = meadow( x, z );
+        float near = 9.0f;
+        for ( int dr = -1; dr <= 1; ++dr )
+            for ( int dc = -1; dc <= 1; ++dc )
+            {
+                int rr = (int)floorf( z / CellSize ) + dr, cc = (int)floorf( x / CellSize ) + dc;
+                if ( rr < 0 || cc < 0 || rr >= m_rows || cc >= m_cols || !m_path[(size_t)rr * m_cols + cc] ) continue;
+                near = std::min( near, Vector2Distance( { x, z }, { ( cc + 0.5f ) * CellSize, ( rr + 0.5f ) * CellSize } ) );
+            }
+        float   t = Clamp( 1.0f - ( near - 1.0f ) / 1.4f, 0.0f, 1.0f ) * 0.45f;
+        Vector3 trodden = { 0.8f, 0.68f, 0.48f };
+        return Color{ (unsigned char)Lerp( m.r, trodden.x * 255.0f, t ), (unsigned char)Lerp( m.g, trodden.y * 255.0f, t ),
+                      (unsigned char)Lerp( m.b, trodden.z * 255.0f, t ), 255 };
+    };
+    static const std::vector<float> Steps = { 0.0f, 1.0f, 2.0f };
+    kit.m_park( r, c, false ).field( c * CellSize, r * CellSize, Steps, [h]( float, float ) { return h; }, colour );
+    // Tufts of grass, more by the edges than in the middle, none on the path.
+    if ( m_path[(size_t)r * m_cols + c] ) return;
+    Dice dice{ hashCell( r, c, 513 ) };
+    int  edge = 0;
+    for ( int d = 0; d < 4; ++d ) edge += garden( r + DR[d], c + DC[d] ) == 1;
+    int n = 1 + dice.pick( 3 ) + edge * 2;
+    for ( int i = 0; i < n; ++i )
+    {
+        Vector3 p = { ( c + dice.in( 0.1f, 0.9f ) ) * CellSize, h, ( r + dice.in( 0.1f, 0.9f ) ) * CellSize };
+        tuft( kit.m_blades, p, dice.in( 0.5f, 0.8f ), dice.in( 0.35f, 0.65f ), dice.in( 0.0f, 6.28f ), colour( p.x, p.z ) );
+    }
 }
 
 void Level::hedgeFoot( int r, int c, int d, GardenKit &kit )
@@ -287,103 +454,51 @@ void Level::gardenEdges( GardenKit &kit )
             bool    near = garden( er, ec ) <= GardenDepth + 1 && std::max( abs( r - er ), abs( c - ec ) ) <= 2;
             plant( PlantE::CANOPY, at, dice.in( 0.9f, 1.25f ), dice.m_s, kit, near );
         }
+}
 
-    // Gravel paths along the route (the autopilot's way: through each corridor, across each room), kept to the middle
-    // of the open floor; only in the park.
-    if ( m_route.size() < 2 ) return;
-    size_t             cells = (size_t)m_rows * m_cols;
-    std::vector<int>   wall( cells, 0 );
-    std::deque<int>    todo;
-    for ( size_t i = 0; i < cells; ++i )
-        if ( !walkable( (int)( i / m_cols ), (int)( i % m_cols ) ) ) todo.push_back( (int)i );
-        else wall[i] = -1;
-    while ( !todo.empty() )
+void Level::gardenPaths( const LevelSurfaces &s )
+{
+    // Decals of trodden earth along the paths, one to a cell and wider than it, turned every which way and fading at
+    // their rims (the next one's covers the gap); here and there a patch of earth in the grass.
+    if ( !s.m_decals || m_path.empty() ) return;
+    int earth[2] = { -1, -1 };
+    for ( size_t i = 0; i < s.m_decals->size(); ++i )
+        for ( int k = 0; k < 2; ++k )
+            if ( ( *s.m_decals )[i].m_name == ( k ? "path_2" : "path_1" ) ) earth[k] = (int)i;
+    if ( earth[0] < 0 || earth[1] < 0 ) return;
+    auto lay = [&]( int r, int c, float size, Dice &dice, float dr, float dc )
     {
-        int i = todo.front();
-        todo.pop_front();
-        for ( int d = 0; d < 4; ++d )
-        {
-            int nr = i / m_cols + DR[d], nc = i % m_cols + DC[d];
-            if ( nr < 0 || nc < 0 || nr >= m_rows || nc >= m_cols ) continue;
-            size_t n = (size_t)nr * m_cols + nc;
-            if ( wall[n] >= 0 ) continue;
-            wall[n] = wall[i] + 1;
-            todo.push_back( (int)n );
-        }
-    }
-    std::vector<unsigned char> path( cells, 0 );
-    std::vector<float>         cost( cells );
-    std::vector<int>           from( cells );
-    for ( size_t w = 0; w + 1 < m_route.size(); ++w )
-    {
-        int a = m_route[w].first * m_cols + m_route[w].second, b = m_route[w + 1].first * m_cols + m_route[w + 1].second;
-        if ( a < 0 || b < 0 || a >= (int)cells || b >= (int)cells ) continue;
-        std::fill( cost.begin(), cost.end(), 1e9f );
-        std::fill( from.begin(), from.end(), -1 );
-        // Dijkstra on a small queue: a step costs more near the walls.
-        std::vector<std::pair<float, int>> heap = { { 0.0f, a } };
-        cost[a] = 0.0f;
-        while ( !heap.empty() )
-        {
-            std::pop_heap( heap.begin(), heap.end(), std::greater<>() );
-            auto [k, i] = heap.back();
-            heap.pop_back();
-            if ( k > cost[i] ) continue;
-            if ( i == b ) break;
-            for ( int d = 0; d < 4; ++d )
-            {
-                int nr = i / m_cols + DR[d], nc = i % m_cols + DC[d];
-                if ( nr < 0 || nc < 0 || nr >= m_rows || nc >= m_cols || !walkable( nr, nc ) ) continue;
-                int   n = nr * m_cols + nc;
-                float step = cost[i] + 1.0f + 3.0f / (float)std::max( 1, wall[n] );
-                if ( step >= cost[n] ) continue;
-                cost[n] = step;
-                from[n] = i;
-                heap.push_back( { step, n } );
-                std::push_heap( heap.begin(), heap.end(), std::greater<>() );
-            }
-        }
-        if ( cost[b] >= 1e9f ) continue;
-        for ( int i = b; i >= 0; i = from[i] )
-        {
-            path[i] = 1;
-            if ( i == a ) break;
-        }
-    }
-    // A flat patch of gravel on each cell of it and one halfway to each next cell of it (a band without gaps), their
-    // edges ragged.
-    auto patch = [&]( Vector3 o, float rad, Dice &dice )
-    {
-        std::vector<Vector3> low, high;
-        for ( int k = 0; k < 14; ++k )
-        {
-            float a = 2.0f * PI * k / 14, e = rad * dice.in( 0.88f, 1.06f );
-            low.push_back( { o.x + cosf( a ) * e, 0.003f, o.z + sinf( a ) * e } );
-            high.push_back( { o.x + cosf( a ) * e, 0.009f, o.z + sinf( a ) * e } );
-        }
-        kit.m_gravel.prism( MatrixIdentity(), { low, high } );
+        static int layer = 0;
+        Vector3    mid = { ( c + 0.5f + dc + dice.in( -0.12f, 0.12f ) ) * CellSize, 0.012f + 0.002f * ( layer++ % 4 ),
+                           ( r + 0.5f + dr + dice.in( -0.12f, 0.12f ) ) * CellSize };
+        float   yaw = dice.in( 0.0f, 6.28f ), half = size * 0.5f;
+        Vector3 right = { cosf( yaw ) * half, 0.0f, sinf( yaw ) * half };
+        Vector3 down = { -sinf( yaw ) * half, 0.0f, cosf( yaw ) * half };
+        Decal   d;
+        d.m_def = earth[dice.pick( 2 )];
+        d.m_corner[0] = Vector3Subtract( Vector3Subtract( mid, right ), down );
+        d.m_corner[1] = Vector3Subtract( Vector3Add( mid, right ), down );
+        d.m_corner[2] = Vector3Add( Vector3Add( mid, right ), down );
+        d.m_corner[3] = Vector3Add( Vector3Subtract( mid, right ), down );
+        d.m_cut = false;
+        m_decals.push_back( d );
     };
     auto onPath = [&]( int r, int c )
-    {
-        return r >= 0 && c >= 0 && r < m_rows && c < m_cols && path[(size_t)r * m_cols + c] &&
-               theme( r, c ) == ThemeE::PARK && cell( r, c ).m_kind == CellE::FLOOR && cell( r, c ).m_height == 0.0f;
-    };
-    kit.m_gravel.m_color = Gravel;
+    { return r >= 0 && c >= 0 && r < m_rows && c < m_cols && m_path[(size_t)r * m_cols + c]; };
     for ( int r = 0; r < m_rows; ++r )
         for ( int c = 0; c < m_cols; ++c )
         {
-            if ( !onPath( r, c ) ) continue;
-            Dice    dice{ hashCell( r, c, 507 ) };
-            Vector3 o = { ( c + 0.5f ) * CellSize, 0.0f, ( r + 0.5f ) * CellSize };
-            patch( Vector3Add( o, { dice.in( -0.15f, 0.15f ), 0.0f, dice.in( -0.15f, 0.15f ) } ), dice.in( 0.85f, 1.0f ),
-                   dice );
-            for ( int d = 1; d <= 2; ++d )
-                if ( onPath( r + DR[d], c + DC[d] ) )
-                    patch( Vector3Add( o, { DC[d] * CellSize * 0.5f + dice.in( -0.15f, 0.15f ), 0.0f,
-                                            DR[d] * CellSize * 0.5f + dice.in( -0.15f, 0.15f ) } ),
-                           dice.in( 0.8f, 0.95f ), dice );
+            Dice dice{ hashCell( r, c, 517 ) };
+            if ( onPath( r, c ) )
+            {
+                lay( r, c, dice.in( 2.4f, 2.8f ), dice, 0.0f, 0.0f );
+                // and halfway to the next cell of the path, so that the way has no gaps
+                for ( int d = 1; d <= 2; ++d )
+                    if ( onPath( r + DR[d], c + DC[d] ) ) lay( r, c, dice.in( 2.2f, 2.6f ), dice, DR[d] * 0.5f, DC[d] * 0.5f );
+            }
+            else if ( theme( r, c ) == ThemeE::PARK && cell( r, c ).m_kind == CellE::FLOOR && dice() < 0.035f )
+                lay( r, c, dice.in( 1.3f, 2.0f ), dice, 0.0f, 0.0f );
         }
-    kit.m_gravel.m_color = WHITE;
 }
 
 void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit, bool full )
@@ -425,11 +540,23 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
             Vector3 tip = Vector3Add( top, { cosf( a ) * reach, dice.in( 0.3f, 0.6f ) * s, sinf( a ) * reach } );
             bark.tube( { Vector3Subtract( top, up( 0.5f * s ) ), Vector3Lerp( top, tip, 0.5f ), tip },
                        { 0.09f * s, 0.06f * s, 0.035f * s }, 5 );
+            Color tone = leaf.m_color;
+            leaf.m_color = shaded( tone, 0.72f );
             leaf.blob( place( Vector3Add( tip, up( 0.2f * s ) ), { 0.0f, a, 0.0f } ),
-                       { 1.1f * s, 0.42f * s, 1.0f * s }, 0.35f, h + k, 6 );
+                       { 0.85f * s, 0.34f * s, 0.8f * s }, 0.35f, h + k, 5 );
+            leaf.m_color = tone;
+            leaves( kit.m_cards, Vector3Add( tip, up( 0.2f * s ) ), { 1.1f * s, 0.42f * s, 1.0f * s }, a, 9, tone, dice,
+                    0.3f );
+            hang( tip, { 1.1f * s, 0.42f * s, 1.0f * s }, tip.y - 0.2f * s, tip.y + 0.65f * s );
         }
-        leaf.blob( place( Vector3Add( top, up( 0.45f * s ) ), { 0.0f, turn, 0.0f } ), { 2.5f * s, 0.55f * s, 2.4f * s },
+        Color tone = leaf.m_color;
+        leaf.m_color = shaded( tone, 0.72f );
+        leaf.blob( place( Vector3Add( top, up( 0.45f * s ) ), { 0.0f, turn, 0.0f } ), { 2.1f * s, 0.45f * s, 2.0f * s },
                    0.3f, h, 7 );
+        leaf.m_color = tone;
+        leaves( kit.m_cards, Vector3Add( top, up( 0.45f * s ) ), { 2.5f * s, 0.6f * s, 2.4f * s }, turn, 30, tone, dice,
+                0.24f );
+        hang( top, { 2.5f * s, 0.55f * s, 2.4f * s }, top.y + 0.1f * s, top.y + 1.0f * s );
         leaf.m_color = WHITE;
         Vector4 pod = Pods[dice.pick( 3 )];
         for ( int k = 0; k < 6; ++k )
@@ -445,9 +572,13 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
         Vector3 top = Vector3Add( at, { dice.in( -0.3f, 0.3f ) * s, dice.in( 2.7f, 3.3f ) * s, dice.in( -0.3f, 0.3f ) * s } );
         trunk( top, { dice.in( -0.5f, 0.5f ) * s, 0.0f, dice.in( -0.5f, 0.5f ) * s }, 0.2f * s, 0.12f * s, 7 );
         Color tone = odd ? Exotics[dice.pick( 5 )] : Color{ 74, 82, 98, 255 };
-        leaf.m_color = tone;
+        leaf.m_color = shaded( tone, 0.72f );
         leaf.blob( place( Vector3Add( top, up( 0.3f * s ) ), { 0.0f, dice.in( 0.0f, 6.28f ), 0.0f } ),
-                   { 1.75f * s, 1.0f * s, 1.75f * s }, 0.3f, h, 6 );
+                   { 1.5f * s, 0.85f * s, 1.5f * s }, 0.3f, h, 6 );
+        leaf.m_color = tone;
+        leaves( kit.m_cards, Vector3Add( top, up( 0.3f * s ) ), { 1.75f * s, 1.0f * s, 1.75f * s }, 0.0f, 22, tone,
+                dice, 0.26f );
+        hang( top, { 1.75f * s, 1.0f * s, 1.75f * s }, top.y - 0.5f * s, top.y + 1.3f * s );
         Vector4 light = Pods[1 + dice.pick( 2 )];
         int     n = 10 + dice.pick( 5 );
         for ( int k = 0; k < n; ++k )
@@ -478,6 +609,7 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
         hedge.m_color = { 220, 235, 215, 255 };
         hedge.tube( coil, rad, 7 );
         hedge.blob( place( Vector3Add( at, up( hgt ) ) ), { 0.26f * s, 0.26f * s, 0.26f * s }, 0.1f, h, 5 );
+        stand( at, { 0.62f * s, 0.0f, 0.62f * s }, hgt + 0.26f * s );
         hedge.m_color = WHITE;
         break;
     }
@@ -491,6 +623,7 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
         for ( int i = 0; i < 3; ++i )
             hedge.blob( place( Vector3Add( at, up( ys[i] * s ) ), { 0.0f, i * 1.3f, 0.0f } ),
                         { rs[i] * s, rs[i] * 0.92f * s, rs[i] * s }, 0.1f, h + i, 7 );
+        stand( at, { 0.8f * s, 0.0f, 0.8f * s }, 3.1f * s );
         hedge.m_color = WHITE;
         break;
     }
@@ -518,6 +651,7 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
                       r1 * 0.45f, { 2.4f, 0.5f, 1.2f, 0.0f } );
         }
         kit.m_gravel.m_color = WHITE;
+        stand( at, { 0.5f * s, 0.0f, 0.5f * s }, 1.5f * s );
         break;
     }
     case PlantE::FRONDS:
@@ -553,7 +687,12 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
         {
             Vector3 rr = { dice.in( 0.45f, 0.8f ) * s, dice.in( 0.4f, 0.65f ) * s, dice.in( 0.45f, 0.8f ) * s };
             Vector3 p = Vector3Add( at, { dice.in( -0.5f, 0.5f ) * s, rr.y * 0.7f, dice.in( -0.5f, 0.5f ) * s } );
-            leaf.blob( place( p, { 0.0f, dice.in( 0.0f, 6.28f ), 0.0f } ), rr, 0.35f, h + k, 5 );
+            Color tone = leaf.m_color;
+            leaf.m_color = shaded( tone, 0.75f );
+            leaf.blob( place( p, { 0.0f, dice.in( 0.0f, 6.28f ), 0.0f } ), Vector3Scale( rr, 0.85f ), 0.35f, h + k, 5 );
+            leaf.m_color = tone;
+            leaves( kit.m_cards, p, rr, 0.0f, 6, tone, dice, 0.34f );
+            stand( p, rr, p.y + rr.y );
         }
         leaf.m_color = WHITE;
         break;
@@ -589,14 +728,23 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
         float   turn = dice.in( 0.0f, 6.28f );
         if ( !full ) crown = Vector3Scale( crown, 1.15f );
         MeshBuilder &crowns = full ? leaf : kit.m_canopy;   // deep in the forest they throw no shadows (none is seen)
-        crowns.m_color = leaf.m_color;
-        crowns.blob( place( Vector3Add( top, up( 0.8f * s ) ), { 0.0f, turn, 0.0f } ), crown, 0.3f, h, full ? 5 : 4 );
+        crowns.m_color = shaded( leaf.m_color, 0.75f );
+        crowns.blob( place( Vector3Add( top, up( 0.8f * s ) ), { 0.0f, turn, 0.0f } ), Vector3Scale( crown, 0.85f ), 0.3f,
+                     h, full ? 5 : 4 );
         kit.m_canopy.m_color = WHITE;
+        leaves( kit.m_cards, Vector3Add( top, up( 0.8f * s ) ), crown, turn, full ? 22 : 9, leaf.m_color, dice,
+                full ? 0.26f : 0.34f );
+        hang( top, crown, top.y + 0.8f * s - crown.y * 0.6f, top.y + 0.8f * s + crown.y );
         if ( full )
         {
             float   a = turn + dice.in( -0.4f, 0.4f ), d = crown.x * dice.in( 0.55f, 0.8f );
             Vector3 p = Vector3Add( top, { cosf( a ) * d, dice.in( 0.0f, 0.9f ) * s, sinf( a ) * d } );
-            leaf.blob( place( p, { 0.0f, a, 0.0f } ), Vector3Scale( crown, dice.in( 0.5f, 0.65f ) ), 0.35f, h + 7u, 4 );
+            Vector3 clump = Vector3Scale( crown, dice.in( 0.5f, 0.65f ) );
+            Color   tone = leaf.m_color;
+            leaf.m_color = shaded( tone, 0.75f );
+            leaf.blob( place( p, { 0.0f, a, 0.0f } ), Vector3Scale( clump, 0.85f ), 0.35f, h + 7u, 4 );
+            leaf.m_color = tone;
+            leaves( kit.m_cards, p, clump, a, 8, tone, dice, 0.3f );
         }
         leaf.m_color = WHITE;
         break;

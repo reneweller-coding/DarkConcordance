@@ -120,7 +120,17 @@ void Game::themeSurfaces( LevelSurfaces &ls )
         ls.m_foliage = surface( "foliage" );
         ls.m_bark = surface( "bark" );
         ls.m_gravel = surface( "dust" );
+        ls.m_boulder = surface( "boulder" );
         if ( ls.m_bark >= 0 ) m_surfaces[ls.m_bark].m_uvScale = 1.1f;
+        // Cut-outs (their picture's alpha): leaf clusters and tufts of grass on cards.
+        for ( int *cut : { &ls.m_cards, &ls.m_blades } )
+        {
+            *cut = surface( cut == &ls.m_cards ? "leafcard" : "blades" );
+            if ( *cut < 0 ) continue;
+            m_surfaces[*cut].m_uvScale = 1.0f;
+            m_surfaces[*cut].m_params = { 1.0f, 0.0f, 0.0f, 6.0f };
+            m_surfaces[*cut].m_variation = 0.3f;
+        }
     }
     // Each wall's and floor's variants (tools/make_dress.py): the plain one's look with other maps.
     auto variants = [&]( int base, const std::string &name )
@@ -230,7 +240,9 @@ void Game::loadDecalDefs()
             in >> d.m_color.y >> d.m_color.z;
             d.m_wall = where == "wall";
             while ( in >> group ) d.m_themes |= groups[group];
-            if ( d.m_themes && FileExists( ( m_assets + "/textures/decals/" + d.m_name + ".png" ).c_str() ) )
+            // (The gardens' paths belong to no place: the level lays them along its way, LevelGarden.cpp.)
+            bool earth = d.m_name.rfind( "path_", 0 ) == 0;
+            if ( ( d.m_themes || earth ) && FileExists( ( m_assets + "/textures/decals/" + d.m_name + ".png" ).c_str() ) )
                 m_decalDefs.push_back( d );
         }
     }
@@ -3682,9 +3694,38 @@ void Game::update( float dt, const GameInput &inRaw )
     float   jolt = m_shake * m_shakeScale;
     Vector3 shake = { ( rnd() - 0.5f ) * jolt * 0.5f, ( rnd() - 0.5f ) * jolt * 0.3f, ( rnd() - 0.5f ) * jolt * 0.5f };
     m_cam.target = Vector3Add( m_camTarget, shake );
-    m_cam.position =
-        Vector3Add( m_cam.target, Vector3Scale( { 8.1f * sinf( m_camYaw ), m_camRise, 8.1f * cosf( m_camYaw ) },
-                                                m_zoom * m_camPull ) );
+    // Kept clear of what stands in the way, as Dark Alliance's engine does: where the line from the hero to the camera
+    // passes through a wall, a rock or a crown, the camera rises towards looking straight down -- quickly up, slowly
+    // back -- and keeps its distance. Only where even that does not help (under a crown) the cut-away round the hero
+    // opens, softly; elsewhere nothing of the world is cut.
+    float horizontal = 8.1f * m_zoom * m_camPull, vertical = m_camRise * m_zoom * m_camPull;
+    float dist = sqrtf( horizontal * horizontal + vertical * vertical ), usual = atan2f( vertical, horizontal );
+    auto  eye = [&]( Vector3 at, float pitch )
+    {
+        return Vector3Add( at, { sinf( m_camYaw ) * dist * cosf( pitch ), dist * sinf( pitch ),
+                                 cosf( m_camYaw ) * dist * cosf( pitch ) } );
+    };
+    auto blocked = [&]( float pitch )
+    {
+        Vector3 cam = eye( m_camTarget, pitch );
+        bool    hidden = m_level.sightBlocked( Vector3Add( m_pos, { 0.0f, 1.2f, 0.0f } ), cam );
+        if ( m_partner && !m_dead ) hidden = hidden || m_level.sightBlocked( Vector3Add( partnerPos(), { 0.0f, 1.2f, 0.0f } ), cam );
+        return hidden;
+    };
+    const float Steepest = 74.0f * DEG2RAD;
+    float       lift = Steepest - usual, cut = 1.0f;
+    for ( int k = 0; k <= 4; ++k )
+    {
+        float pitch = usual + ( Steepest - usual ) * k / 4.0f;
+        if ( !blocked( pitch ) )
+        {
+            lift = pitch - usual, cut = 0.0f;
+            break;
+        }
+    }
+    m_camLift += ( lift - m_camLift ) * fminf( 1.0f, dt * ( lift > m_camLift ? 5.0f : 1.2f ) );
+    m_cutFade += ( cut - m_cutFade ) * fminf( 1.0f, dt * ( cut > m_cutFade ? 6.0f : 3.0f ) );
+    m_cam.position = eye( m_cam.target, usual + m_camLift );
     // A dodge tilts the picture towards where it pushes.
     Vector3 look = Vector3Normalize( Vector3Subtract( m_cam.target, m_cam.position ) );
     Vector3 side = Vector3Normalize( Vector3CrossProduct( look, { 0.0f, 1.0f, 0.0f } ) );
@@ -4120,7 +4161,7 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     Lighting L = lighting();
     gfx.m_sunShadows = m_skyTex.id > 0 || m_ringMesh.vertexCount > 0;
     gfx.m_cutCentre = Vector3Add( m_photo ? m_photoTarget : m_pos, { 0.0f, m_photo ? 0.2f : 1.2f, 0.0f } );
-    gfx.m_cutRadius = 2.6f;
+    gfx.m_cutRadius = m_photo ? 2.6f : 2.6f * m_cutFade;
     gfx.m_exposure = 1.7f * m_brightness * m_viewLight;
     gradeFor( gfx );
     gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );

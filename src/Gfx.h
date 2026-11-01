@@ -167,8 +167,9 @@ public:
      * @param[in] mesh    the band
      * @param[in] map     its land (alpha: towns)
      * @param[in] radius  the ring's radius (m)
+     * @param[in] sky     the sky's colour (linear): the land fades into it with distance
      */
-    void ring( const Mesh &mesh, Texture2D map, float radius );
+    void ring( const Mesh &mesh, Texture2D map, float radius, Vector3 sky );
 
     /**
      * @brief Draws a ball of water (after the opaque scene; it does not write depth).

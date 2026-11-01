@@ -1772,6 +1772,8 @@ private:
     Vector3  m_camTarget = { 0, 0, 0 };
     float    m_shake = 0.0f;
     float    m_camPull = 1.0f;   ///< extra distance in the arena
+    float    m_camLift = 0.0f;   ///< the camera's pitch raised over the usual (radians) where something is in the way
+    float    m_cutFade = 0.0f;   ///< how far the cut-away round the hero is open (only where rising did not help)
 
     // Autopilot.
     std::vector<int>  m_path;

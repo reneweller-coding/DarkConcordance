@@ -351,7 +351,7 @@ void cutAway( bool nearToo )
     float dither = ( Bayer[q.y * 4 + q.x] + 0.5 ) / 16.0;
     // Leaves right at the camera (a crown it has come into) go too: they would fill the picture.
     if( nearToo && smoothstep( 0.8, 2.0, length( rel ) ) < dither ) discard;
-    if( t <= 0.0 || t >= dist - 0.6 || fragPos.y < cutCentre.y - 0.9 ) return;
+    if( cutRadius < 0.01 || t <= 0.0 || t >= dist - 0.6 || fragPos.y < cutCentre.y - 0.9 ) return;
     float r = cutRadius * t / dist;
     float d = length( rel - dir * t );
     float keep = smoothstep( r * 0.65, r, d );
@@ -726,14 +726,18 @@ uniform sampler2D texture0;
 uniform float spin;
 uniform float glow;
 uniform float ringMode;
+uniform vec3 ringSky;
 out vec4 finalColor;
 void main()
 {
     if( ringMode > 0.5 )
     {
-        // The ring seen from its inside: land in daylight, hazier with distance; overhead, on the far side, the
-        // shadow's night, the towns glittering (the map's alpha marks them).
-        vec4 m = textureLod( texture0, fragTexCoord, 0.0 );
+        // The ring seen from its inside: land in daylight, fading into the sky's colour with the air the sight line
+        // goes through (a layer a sixteenth of the radius deep on both sides; a chord meets the ring at the same
+        // angle at both ends): long and hazy near the horizon, where the land rises out of the haze, short and clear
+        // towards the arch overhead. There, on the far side, the shadow's night, the towns glittering (the map's
+        // alpha marks them).
+        vec4 m = texture( texture0, fragTexCoord );
         vec3 land = toLinear( m.rgb );
         float up = clamp( ( fragPos.y - viewPos.y ) / ( 2.0 * ringMode ), 0.0, 1.0 );
         float night = smoothstep( 0.62, 0.92, up );
@@ -742,8 +746,10 @@ void main()
         vec3 towns = vec3( 1.0, 0.72, 0.38 ) * m.a * spark * 1.6;
         vec3 c = mix( land * sunColor * 0.13, towns + land * 0.002, night );
         float d = length( viewPos - fragPos );
-        float haze = ( 1.0 - exp( -d / ( 0.9 * ringMode ) ) ) * ( 1.0 - night * 0.7 );
-        c = mix( c, vec3( 0.36, 0.5, 0.74 ) * sunColor * 0.06, haze * 0.8 );
+        float rise = max( ( fragPos.y - viewPos.y ) / max( d, 1.0 ), 0.02 );
+        float air = min( d, 0.12 * ringMode / rise );
+        float haze = ( 1.0 - exp( -air / ( 0.25 * ringMode ) ) ) * ( 1.0 - night * 0.75 );
+        c = mix( c, ringSky * 0.85, haze * 0.9 );
         finalColor = vec4( c, 1.0 );
         return;
     }

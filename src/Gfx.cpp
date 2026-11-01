@@ -526,12 +526,14 @@ void Gfx::planet( const Mesh &mesh, const Matrix &transform, Texture2D map, floa
     DrawMesh( mesh, m_planetMat, transform );
 }
 
-void Gfx::ring( const Mesh &mesh, Texture2D map, float radius )
+void Gfx::ring( const Mesh &mesh, Texture2D map, float radius, Vector3 sky )
 {
-    static int loc = -2;
+    static int loc = -2, skyLoc = -2;
     if ( loc == -2 ) loc = GetShaderLocation( m_planet, "ringMode" );
+    if ( skyLoc == -2 ) skyLoc = GetShaderLocation( m_planet, "ringSky" );
     m_planetMat.maps[MATERIAL_MAP_ALBEDO].texture = map;
     if ( loc >= 0 ) SetShaderValue( m_planet, loc, &radius, SHADER_UNIFORM_FLOAT );
+    if ( skyLoc >= 0 ) SetShaderValue( m_planet, skyLoc, &sky, SHADER_UNIFORM_VEC3 );
     DrawMesh( mesh, m_planetMat, MatrixIdentity() );
     float off = 0.0f;
     if ( loc >= 0 ) SetShaderValue( m_planet, loc, &off, SHADER_UNIFORM_FLOAT );

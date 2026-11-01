@@ -93,7 +93,10 @@ def main():
         dds = png[:-4] + ".dds"
         if not a.force and os.path.exists(dds) and os.path.getmtime(dds) >= os.path.getmtime(png):
             continue
-        write_dds(dds, Image.open(png))
+        image = Image.open(png)
+        if image.mode in ("RGBA", "LA") and image.getchannel("A").getextrema()[0] < 255:
+            continue   # a cut-out (grass blades, leaf cards) keeps its PNG: DXT1 would lose its alpha
+        write_dds(dds, image)
         done += 1
         before += os.path.getsize(png)
         after += os.path.getsize(dds)

@@ -367,20 +367,43 @@ destinations.
 | 18 The Computing Moon | cold everywhere, superconducting coils that bend shots; the archon's voice from every wall | saw bots, maintenance robots, turrets | the moon's defence: maintenance robots steered by computing cores; then the archon gives the codes, and Unzu reads his memories |
 | 19 Vault Zero | the heat shield turns: outside, whoever leaves its shadow burns (`meter shadow`, `shadow`) | cleaners, snipers | No Cause For Concern, a swarm of thousands that dives all at once; then Ruul, then Ysolde – the deaths counted since the prologue, the Lullaby, and everything goes white |
 
-**The ring's gardens** (`src/LevelGarden.cpp`, wherever the park keeps its hedges: the Dying Gardens, the ring's park,
-the clinic's terrace; on 1.11.2026 the user found the hedges' 4.5 m blocks ugly and asked for outdoor places as fine
-as Dark Alliance's). The walls by a park's paths are clipped hedges two metres high: a flat body, a top that is one
-height function over all of them (rounded off where the hedge ends, gently lumpy, no seams between cells), lumps out
-of the sides, low plants at their foot; no panels, ribs or posters. Behind them two cells of garden on lawn – bushes,
-beds of blooms, fronds, coral tubes and the Concordance's bred trees: parasol trees with pods glowing under the rim,
-lantern willows whose strands end in lights, coiled and stacked topiary – and beyond that forest, dark crowns that
-close overhead (the deep ones throw no shadow), on past the level's edge so that the ring's land does not show
-there. Gravel paths follow the route through the corridors and across the rooms. The walls of the side rooms stand
-in it as small houses. The lawn, the leaves to be tinted and the bark are derived from the textures there are
-(`tools/make_garden.py`; the lawn without most of the daisies, which flickered as white specks, and without
-`grass_v2`'s stepping stones, which the patchwork had laid everywhere as diagonal stripes). The Dying Gardens have a
-lower, warmer sun with longer shadows and a grade. Cost, 1920x1080 on the RTX 5090: high 7.5 → 7.8 ms, low 2.8 →
-3.3 ms (0.2 of it the lower sun); loading the level 0.3 s longer.
+**The ring's gardens** (`src/LevelGarden.cpp`, wherever the park keeps its own walls: the Dying Gardens, the ring's
+park, the clinic's terrace; on 1.11.2026 the user found the hedges' 4.5 m blocks ugly and asked for outdoor places as
+fine as Dark Alliance's, with trees and rocks for their edges). A park's wall cells by the paths are its edge, as out
+in the wild: stretches of boulders (grey, faceted, sunk into the ground, now and then one on another or a crag, moss
+and a bush in the clefts) and stretches of thicket (bushes, a tree among them), one or the other as a slow noise has
+it; low plants at their foot; no panels, ribs or posters. Behind them two cells of garden – bushes, beds of blooms,
+fronds, coral tubes and the Concordance's bred trees: parasol trees with pods glowing under the rim, lantern willows
+whose strands end in lights, coiled and stacked topiary – and beyond that forest, dark crowns that close overhead (the
+deep ones throw no shadow), on past the level's edge so that the ring's land does not show there. Crowns and bushes
+are a darker core inside many cut-out cards of leaves, so that they end in leaves (`leafcard`). The lawn lies in
+large patches of lush, plain and dry grass (one colour function, no seams), with cut-out tufts of grass on it
+(`blades`); paths of trodden earth follow the route through the corridors and across the rooms as decals whose rims
+fade into the grass (`path_1`, `path_2`, laid by the level, not by the dressing), the grass beside them a little
+trodden. Walls that stand in a garden (the side rooms', a door's lintel) and the parks' benches are of the same pale
+stone as the boulders. The textures are derived from those there are (`tools/make_garden.py`: the lawn without most
+of the daisies, which flickered as white specks, and without `grass_v2`'s stepping stones; the boulders' stone from
+dustrock, greyed; cut-outs keep their PNG, `make_dds.py` leaves them). The Dying Gardens have a lower, warmer,
+darker light and a grade.
+
+**Wild layouts** (`genwild park` in a generated level, `LevelGen.cpp`, `wilden`): the rooms of these themes lose
+their rectangles – a rounded rectangle whose rim a slow noise moves in and out, so the corners go and the edges
+wander – and the corridors between two of them swell and narrow (two to five cells, never into anything open but
+themselves); the corridors' mouths and the rooms' middles stay (route, start, capsules), what is cut off goes back to
+rock, and rocks grown together stand in the larger rooms instead of straight hedges. Still the 2 m grid: collision, the
+foes' ways, the maps and the build stay as they were. The autopilot fares the same on three seeds (wild 10, 9 and 12
+deaths by way point 9, 10 and 12 of 31 in seven minutes; rectangular 8, 15 and 12 by 13, 8 and 7).
+
+**The camera** keeps clear of what stands in the way as Dark Alliance's engine does (the Snowblind rebuild
+`open-champions/champions-return-to-arms-re` documents it: no cut-away, no silhouettes, the pitch rises): the build
+leaves per cell what stands there (walls, rocks and bushes from the floor up; crowns and lintels between two heights,
+`Level::m_sight`), and where the line from the hero to the camera passes through any of it the camera rises towards
+looking down (74° at most, quickly up, slowly back) at the same distance. Only where even that does not help (under a
+crown) the old cut-away round the hero opens, faded in. Leaves right at the camera dissolve. **The ring** is drawn
+at 6,000 m (it was 2,400: a kilometre ahead its land stood 200 m up and wider than the view, a ceiling over the level);
+it now runs on ahead and climbs into a thin arch, its haze the sky's colour by the air the sight line crosses (thick
+at the horizon, clear towards the arch), its rim walls 140 m. Cost, 1920x1080 on the RTX 5090: low 2.8 → 3.1 ms,
+high 7.5 → 5.3-6.6 ms (the camera's pitch changes what is in the picture); loading the level 0.3 s longer.
 
 ## Act IV: the Mill
 

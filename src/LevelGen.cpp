@@ -96,6 +96,7 @@ struct Recipe
     std::vector<std::string>            m_notes;                ///< terminal texts to scatter
     bool                                m_void = false;         ///< open space around the rooms instead of rock
     std::set<std::string>               m_outdoor;              ///< themes out in the open: no walls, no air
+    std::set<std::string>               m_wild;   ///< themes laid out as in the wild: ragged rooms, winding ways
     std::string                         m_startTheme;           ///< the start's theme (an airlock, say)
     float                               m_oxygen = 0.0f;   ///< chance of an oxygen canister in a room out in the open
     float                               m_water = 0.0f;    ///< chance of a ball of water floating in a room
@@ -118,6 +119,22 @@ struct Recipe
 
 const int DR[4] = { -1, 0, 1, 0 };   ///< north, east, south, west
 const int DC[4] = { 0, 1, 0, -1 };
+
+/** @brief Smooth value noise in two dimensions (-1 .. 1): the wild rooms' ragged outlines. */
+float noise2( float x, float y, unsigned seed )
+{
+    auto lattice = [seed]( int i, int j )
+    {
+        unsigned h = (unsigned)i * 374761393u + (unsigned)j * 668265263u + seed * 2246822519u;
+        h = ( h ^ ( h >> 13 ) ) * 1274126177u;
+        return ( ( h ^ ( h >> 16 ) ) & 0xffffu ) / 32767.5f - 1.0f;
+    };
+    int   i = (int)floorf( x ), j = (int)floorf( y );
+    float fx = x - i, fy = y - j;
+    fx = fx * fx * ( 3.0f - 2.0f * fx ), fy = fy * fy * ( 3.0f - 2.0f * fy );
+    float a = lattice( i, j ), b = lattice( i + 1, j ), c = lattice( i, j + 1 ), d = lattice( i + 1, j + 1 );
+    return a + ( b - a ) * fx + ( c - a ) * fy + ( a - b - c + d ) * fx * fy;
+}
 
 std::string trim( const std::string &s )
 {
@@ -186,6 +203,8 @@ Recipe parse( const std::string &text, std::string &head, std::string &tail )
         }
         else if ( key == "genoutdoor" )
             while ( kv >> s ) r.m_outdoor.insert( s );
+        else if ( key == "genwild" )
+            while ( kv >> s ) r.m_wild.insert( s );
         else if ( key == "genstarttheme" )
             kv >> r.m_startTheme;
         else if ( key == "genoxygen" )
@@ -525,6 +544,7 @@ private:
             for ( int r = a.m_r1 - 2; r <= a.m_r1 + 4; ++r )
                 for ( int c = mid - 2; c <= mid + 2; ++c ) m_reserved.insert( key( r, c ) );
         }
+        wilden();
         for ( const Hall &h : m_halls )
             for ( bool atTo : { false, true } )
             {
@@ -532,6 +552,129 @@ private:
                 for ( int r = m.m_r0; r <= m.m_r1; ++r )
                     for ( int c = m.m_c0; c <= m.m_c1; ++c ) m_reserved.insert( key( r, c ) );
             }
+    }
+
+    /** @brief Whether a room is laid out as in the wild (a main room or the start of a genwild theme). */
+    bool wild( const Room &room ) const
+    {
+        return ( room.m_kind == MAIN || room.m_kind == START ) && m_rc.m_wild.count( room.m_theme ) > 0;
+    }
+
+    /**
+     * @brief Out in the wild the rooms lose their rectangles: rounded, their edges ragged by a slow noise; and the
+     *        corridors between two of them swell and narrow (two to five cells). The corridors' mouths and the rooms'
+     *        middles stay as they were (the route, the start and the capsules use them); a swelling never reaches
+     *        anything open but its own corridor; what the shaping cuts off a room goes back to rock.
+     */
+    void wilden()
+    {
+        if ( m_rc.m_wild.empty() ) return;
+        unsigned seed = m_rng.next();
+        for ( size_t i = 0; i < m_rooms.size(); ++i )
+        {
+            if ( !wild( m_rooms[i] ) ) continue;
+            const Rect   &a = m_rooms[i].m_r;
+            std::set<int> keep;
+            for ( const Hall &h : m_halls )
+            {
+                if ( h.m_from != (int)i && h.m_to != (int)i ) continue;
+                Rect m = mouth( h, h.m_to == (int)i, 3 );
+                for ( int r = m.m_r0; r <= m.m_r1; ++r )
+                    for ( int c = m.m_c0; c <= m.m_c1; ++c ) keep.insert( key( r, c ) );
+            }
+            int mr = ( a.m_r0 + a.m_r1 ) / 2, mc = ( a.m_c0 + a.m_c1 ) / 2;
+            for ( int r = mr - 1; r <= mr + 1; ++r )
+                for ( int c = mc - 1; c <= mc + 1; ++c ) keep.insert( key( r, c ) );
+            // A rounded rectangle (a superellipse), its rim moved in and out by the noise: the corners go, the
+            // straight edges wander.
+            float hy = a.height() * 0.5f, hx = a.width() * 0.5f;
+            for ( int r = a.m_r0; r <= a.m_r1; ++r )
+                for ( int c = a.m_c0; c <= a.m_c1; ++c )
+                {
+                    if ( keep.count( key( r, c ) ) || m_g[r][c] != '.' ) continue;
+                    float u = fabsf( c + 0.5f - ( a.m_c0 + hx ) ) / hx, v = fabsf( r + 0.5f - ( a.m_r0 + hy ) ) / hy;
+                    float rho = powf( powf( u, 2.6f ) + powf( v, 2.6f ), 1.0f / 2.6f );
+                    float rim = 0.93f + 0.22f * noise2( c * 0.33f, r * 0.33f, seed ) +
+                                0.08f * noise2( c * 0.9f, r * 0.9f, seed + 7u );
+                    if ( rho > rim ) m_g[r][c] = '#';
+                }
+            // What no longer reaches the middle goes back to rock.
+            std::set<int>   seen = { key( mr, mc ) };
+            std::deque<int> q = { key( mr, mc ) };
+            while ( !q.empty() )
+            {
+                int cur = q.front();
+                q.pop_front();
+                for ( int d = 0; d < 4; ++d )
+                {
+                    int nr = cur / 1000 + DR[d], nc = cur % 1000 + DC[d];
+                    if ( nr < a.m_r0 || nr > a.m_r1 || nc < a.m_c0 || nc > a.m_c1 || m_g[nr][nc] != '.' ) continue;
+                    if ( seen.insert( key( nr, nc ) ).second ) q.push_back( key( nr, nc ) );
+                }
+            }
+            for ( int r = a.m_r0; r <= a.m_r1; ++r )
+                for ( int c = a.m_c0; c <= a.m_c1; ++c )
+                    if ( m_g[r][c] == '.' && !seen.count( key( r, c ) ) ) m_g[r][c] = '#';
+        }
+        for ( const Hall &h : m_halls )
+        {
+            if ( !wild( m_rooms[h.m_from] ) || !wild( m_rooms[h.m_to] ) ) continue;
+            const Rect   &c = h.m_r;
+            bool          along = h.m_dir == 0 || h.m_dir == 2;   // it runs north-south
+            int           len = along ? c.height() : c.width();
+            std::set<int> own;
+            auto          ours = [&]( int r, int col )
+            { return ( r >= c.m_r0 && r <= c.m_r1 && col >= c.m_c0 && col <= c.m_c1 ) || own.count( key( r, col ) ); };
+            for ( int side : { -1, 1 } )
+                for ( int t = 1; t + 1 < len; ++t )   // never at its ends, where the rooms' walls are
+                {
+                    float n = noise2( t * 0.3f, side * 7.0f + h.m_from * 3.1f + h.m_to * 1.7f, seed + 11u );
+                    int   shift = n > 0.22f ? 1 : ( n < -0.3f ? -1 : 0 );
+                    if ( shift == 0 ) continue;
+                    int lo = along ? c.m_c0 : c.m_r0, hi = along ? c.m_c1 : c.m_r1;
+                    int across = side < 0 ? ( shift > 0 ? lo - 1 : lo ) : ( shift > 0 ? hi + 1 : hi );
+                    int r = along ? c.m_r0 + t : across, col = along ? across : c.m_c0 + t;
+                    if ( shift > 0 )
+                    {
+                        // Swell into rock that touches nothing open but this corridor.
+                        if ( m_g[r][col] != '#' ) continue;
+                        bool alone = true;
+                        for ( int dr = -1; dr <= 1 && alone; ++dr )
+                            for ( int dc = -1; dc <= 1 && alone; ++dc )
+                                alone = ours( r + dr, col + dc ) || m_g[r + dr][col + dc] == '#';
+                        if ( !alone ) continue;
+                        m_g[r][col] = '.';
+                        own.insert( key( r, col ) );
+                    }
+                    else
+                    {
+                        // Narrow where it is three wide, to two.
+                        int open = 0;
+                        for ( int k = lo; k <= hi; ++k ) open += m_g[along ? r : k][along ? k : col] == '.';
+                        if ( open >= 3 && m_g[r][col] == '.' ) m_g[r][col] = '#';
+                    }
+                }
+        }
+    }
+
+    /** @brief A rock standing in a wild room: a few cells grown together, never cutting the room. */
+    void islet( const Rect &room )
+    {
+        Rect             at = anywhere( room, 1, 1 );
+        int              n = m_rng.range( 3, 6 );
+        std::vector<int> cells = { key( at.m_r0, at.m_c0 ) };
+        for ( int t = 0; t < 30 && (int)cells.size() < n; ++t )
+        {
+            int pick = cells[m_rng.next() % cells.size()], d = m_rng.range( 0, 3 );
+            int r = pick / 1000 + DR[d], c = pick % 1000 + DC[d];
+            if ( r <= room.m_r0 || r >= room.m_r1 || c <= room.m_c0 || c >= room.m_c1 ) continue;
+            if ( std::find( cells.begin(), cells.end(), key( r, c ) ) == cells.end() ) cells.push_back( key( r, c ) );
+        }
+        for ( int k : cells )
+            if ( !free( k / 1000, k % 1000 ) ) return;
+        std::vector<std::string> saved = m_g;
+        for ( int k : cells ) m_g[k / 1000][k % 1000] = '#';
+        if ( !connected( room ) ) m_g = saved;
     }
 
     /** @brief Whether every walkable cell of the room reaches every other (steps of half a metre at most). */
@@ -648,8 +791,12 @@ private:
         }
         if ( t == "park" )
         {
-            // Gardens: hedges, a raised lawn, benches along a path.
-            for ( int k = m_rng.range( 2, 4 ); k > 0; --k ) block( r, anywhere( r, 1, m_rng.range( 2, 4 ) ), '#' );
+            // Gardens: hedges (in the wild rocks grown together), a raised lawn, benches along a path.
+            for ( int k = m_rng.range( 2, 4 ); k > 0; --k )
+                if ( wild( room ) )
+                    islet( r );
+                else
+                    block( r, anywhere( r, 1, m_rng.range( 2, 4 ) ), '#' );
             if ( big && m_rng.chance( 0.6f ) ) block( r, anywhere( r, m_rng.range( 3, 4 ), m_rng.range( 3, 5 ) ), '1' );
             for ( int k = m_rng.range( 1, 3 ); k > 0; --k ) block( r, anywhere( r, 1, 1 ), '+' );
             return;

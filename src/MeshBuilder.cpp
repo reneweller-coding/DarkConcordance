@@ -339,21 +339,25 @@ void MeshBuilder::tube( const std::vector<Vector3> &path, const std::vector<floa
 }
 
 void MeshBuilder::field( float x0, float z0, const std::vector<float> &steps,
-                         const std::function<float( float, float )> &height )
+                         const std::function<float( float, float )> &height,
+                         const std::function<Color( float, float )> &colour )
 {
     size_t k = steps.size();
     if ( k < 2 ) return;
     reserve( k * k );
     unsigned short first = (unsigned short)m_pos.size();
     const float    e = 0.02f;
+    const Color    base = m_color;
     for ( size_t j = 0; j < k; ++j )
         for ( size_t i = 0; i < k; ++i )
         {
             float   x = x0 + steps[i], z = z0 + steps[j];
             Vector3 n = Vector3Normalize( { ( height( x - e, z ) - height( x + e, z ) ) / ( 2.0f * e ), 1.0f,
                                             ( height( x, z - e ) - height( x, z + e ) ) / ( 2.0f * e ) } );
+            if ( colour ) m_color = colour( x, z );
             vertex( { x, height( x, z ), z }, n, { steps[i] / steps.back(), steps[j] / steps.back() } );
         }
+    m_color = base;
     for ( size_t j = 0; j + 1 < k; ++j )
         for ( size_t i = 0; i + 1 < k; ++i )
         {
@@ -371,6 +375,17 @@ void MeshBuilder::quad( Vector3 a, Vector3 b, Vector3 c, Vector3 d )
     vertex( b, n, { 1.0f, 0.0f } );
     vertex( c, n, { 1.0f, 1.0f } );
     vertex( d, n, { 0.0f, 1.0f } );
+    m_idx.insert( m_idx.end(), { i, (unsigned short)( i + 1 ), (unsigned short)( i + 2 ), i, (unsigned short)( i + 2 ),
+                                 (unsigned short)( i + 3 ) } );
+}
+
+void MeshBuilder::card( Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 normal )
+{
+    reserve( 4 );
+    unsigned short i = vertex( a, normal, { 0.0f, 0.0f } );
+    vertex( b, normal, { 1.0f, 0.0f } );
+    vertex( c, normal, { 1.0f, 1.0f } );
+    vertex( d, normal, { 0.0f, 1.0f } );
     m_idx.insert( m_idx.end(), { i, (unsigned short)( i + 1 ), (unsigned short)( i + 2 ), i, (unsigned short)( i + 2 ),
                                  (unsigned short)( i + 3 ) } );
 }
