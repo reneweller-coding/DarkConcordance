@@ -16,8 +16,9 @@ ambient  0.12 0.13 0.15 0.06 0.065 0.07
 walls    4.5
 skycolor 0.42 0.58 0.85
 view     ring
-sundir   0.3 -1.0 0.1
-suncolor 2.1 2.0 1.85
+sundir   0.55 -0.75 0.4
+suncolor 2.3 1.95 1.55
+grade    0.88 1.12 0.0 0.3 1.03 1.0 0.94
 faction  citizen
 bossvariant 5
 waves    4

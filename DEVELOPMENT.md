@@ -367,6 +367,21 @@ destinations.
 | 18 The Computing Moon | cold everywhere, superconducting coils that bend shots; the archon's voice from every wall | saw bots, maintenance robots, turrets | the moon's defence: maintenance robots steered by computing cores; then the archon gives the codes, and Unzu reads his memories |
 | 19 Vault Zero | the heat shield turns: outside, whoever leaves its shadow burns (`meter shadow`, `shadow`) | cleaners, snipers | No Cause For Concern, a swarm of thousands that dives all at once; then Ruul, then Ysolde – the deaths counted since the prologue, the Lullaby, and everything goes white |
 
+**The ring's gardens** (`src/LevelGarden.cpp`, wherever the park keeps its hedges: the Dying Gardens, the ring's park,
+the clinic's terrace; on 1.11.2026 the user found the hedges' 4.5 m blocks ugly and asked for outdoor places as fine
+as Dark Alliance's). The walls by a park's paths are clipped hedges two metres high: a flat body, a top that is one
+height function over all of them (rounded off where the hedge ends, gently lumpy, no seams between cells), lumps out
+of the sides, low plants at their foot; no panels, ribs or posters. Behind them two cells of garden on lawn – bushes,
+beds of blooms, fronds, coral tubes and the Concordance's bred trees: parasol trees with pods glowing under the rim,
+lantern willows whose strands end in lights, coiled and stacked topiary – and beyond that forest, dark crowns that
+close overhead (the deep ones throw no shadow), on past the level's edge so that the ring's land does not show
+there. Gravel paths follow the route through the corridors and across the rooms. The walls of the side rooms stand
+in it as small houses. The lawn, the leaves to be tinted and the bark are derived from the textures there are
+(`tools/make_garden.py`; the lawn without most of the daisies, which flickered as white specks, and without
+`grass_v2`'s stepping stones, which the patchwork had laid everywhere as diagonal stripes). The Dying Gardens have a
+lower, warmer sun with longer shadows and a grade. Cost, 1920x1080 on the RTX 5090: high 7.5 → 7.8 ms, low 2.8 →
+3.3 ms (0.2 of it the lower sun); loading the level 0.3 s longer.
+
 ## Act IV: the Mill
 
 **Hub: the ship on the way back** ([assets/levels/unzu4.txt](assets/levels/unzu4.txt)): Ruul in the mess instead of

@@ -69,7 +69,7 @@ void Game::themeSurfaces( LevelSurfaces &ls )
         { "station", nullptr, "scorched" },
         { "snow", nullptr, "snowfield" },
         { "alien", "obsidian", "obsidian" },
-        { "park", "hedge", "grass" },
+        { "park", "hedge", "lawn" },
         { "clinic", "tiles", "tiles" },
         { "arena", "sandstone", "sand" },
         { "yard", "yellowplate", nullptr },
@@ -112,6 +112,16 @@ void Game::themeSurfaces( LevelSurfaces &ls )
     for ( const Own &o : own ) set( o.m_theme, o.m_wall, o.m_floor );
     for ( const auto &wt : m_level.m_wallTex ) set( wt.first, wt.second.c_str(), nullptr );
     for ( const auto &ft : m_level.m_floorTex ) set( ft.first, nullptr, ft.second.c_str() );
+    // A park with its hedges gets gardens (LevelGarden.cpp): leaves to tint, bark (finer than a wall's texture), gravel.
+    bool hedges = used[(int)ThemeE::PARK] && std::none_of( m_level.m_wallTex.begin(), m_level.m_wallTex.end(),
+                                                           []( const auto &wt ) { return wt.first == "park"; } );
+    if ( hedges )
+    {
+        ls.m_foliage = surface( "foliage" );
+        ls.m_bark = surface( "bark" );
+        ls.m_gravel = surface( "dust" );
+        if ( ls.m_bark >= 0 ) m_surfaces[ls.m_bark].m_uvScale = 1.1f;
+    }
     // Each wall's and floor's variants (tools/make_dress.py): the plain one's look with other maps.
     auto variants = [&]( int base, const std::string &name )
     {

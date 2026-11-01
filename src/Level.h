@@ -12,6 +12,7 @@
 #include <raylib.h>
 
 #include <cstdint>
+#include <functional>
 #include <map>
 #include <set>
 #include <string>
@@ -155,6 +156,9 @@ struct LevelSurfaces
     int m_cloth;                 ///< fabric (bundles, bags)
     int m_themeWall[64] = {};    ///< per theme (ThemeE): its walls' own surface + 1 (0: the common ones)
     int m_themeFloor[64] = {};   ///< ... its floors' own surface + 1
+    int m_foliage = -1;          ///< the gardens' leaves, tinted by each plant (-1: the park keeps its plain walls)
+    int m_bark = -1;             ///< their trunks
+    int m_gravel = -1;           ///< their paths
     std::map<int, std::vector<int>> m_variants;           ///< a wall's or floor's variants, laid as a patchwork
     const std::vector<DecalDef>    *m_decals = nullptr;   ///< the decals there are (nullptr: none)
 };
@@ -577,6 +581,78 @@ private:
         std::vector<GlowBox> &m_glows;
     };
 
+    /** @brief The builders a garden adds to (LevelGarden.cpp). */
+    struct GardenKit
+    {
+        MeshBuilder &m_foliage, &m_bark, &m_gravel, &m_stone;
+        MeshBuilder &m_canopy;   ///< the forest's crowns deep in it: leaves that throw no shadow
+        /** the park's hedge (wall) or lawn (floor) builder for a cell, as the patchwork lays its variants */
+        std::function<MeshBuilder &( int r, int c, bool wall )> m_park;
+        std::vector<GlowBox>                                  &m_glows;
+    };
+    /** @brief What grows in a garden (LevelGarden.cpp, plant). */
+    enum class PlantE
+    {
+        PARASOL,    ///< a slender trunk under a wide flat crown, seed pods glowing beneath it
+        LANTERN,    ///< a dome of silver leaves, strands hanging from it with lights at their ends
+        SPIRAL,     ///< a topiary: a coil of leaves wound up round a stalk
+        ORBS,       ///< a topiary: balls of leaves stacked on a trunk
+        TUBES,      ///< a cluster of open tubes, coral-coloured, some lit inside
+        FRONDS,     ///< long curved blades from the ground
+        BUSH,       ///< a few clumps of leaves
+        BED,        ///< a low patch of coloured blooms
+        CANOPY,     ///< a forest tree: a big dark crown on a trunk
+        COUNT
+    };
+
+    /**
+     * @brief Plans the gardens (LevelGarden.cpp): which wall cells of a park become hedges (by the paths) and what lies
+     *        behind them (garden, then forest), from each wall cell's distance to the open cells.
+     * @param[in] on  the level has gardens (its park keeps the hedges' surface)
+     */
+    void planGarden( bool on );
+    /** @return the cell's garden depth: 0 none, 1 a hedge, 2 and more what lies behind it */
+    int garden( int r, int c ) const;
+    /**
+     * @brief A garden wall cell (LevelGarden.cpp): a hedge's lumpy top and sides (its body is the caller's), a strip of
+     *        garden behind it, or forest.
+     * @param[in]     r    the row
+     * @param[in]     c    the column
+     * @param[in,out] kit  the builders
+     */
+    void gardenCell( int r, int c, GardenKit &kit );
+    /**
+     * @brief Now and then low plants at a hedge's foot, on the floor in front of it (LevelGarden.cpp).
+     * @param[in]     r    the floor cell's row
+     * @param[in]     c    its column
+     * @param[in]     d    the direction of the hedge from it (0 north, 1 east, 2 south, 3 west)
+     * @param[in,out] kit  the builders
+     */
+    void hedgeFoot( int r, int c, int d, GardenKit &kit );
+    /**
+     * @brief The forest beyond the level's edge where a garden reaches it, and the gravel paths along the route
+     *        (LevelGarden.cpp).
+     * @param[in,out] kit  the builders
+     */
+    void gardenEdges( GardenKit &kit );
+    /**
+     * @brief A plant (LevelGarden.cpp).
+     * @param[in]     kind  what grows
+     * @param[in]     at    its foot
+     * @param[in]     size  its scale
+     * @param[in]     h     a hash: its shape and colours
+     * @param[in,out] kit   the builders
+     * @param[in]     full  all of it (false: a forest tree deep in the forest, only its crown)
+     */
+    void plant( PlantE kind, Vector3 at, float size, unsigned h, GardenKit &kit, bool full = true );
+    /**
+     * @brief The lawn's top on a garden cell or beyond the edge (LevelGarden.cpp).
+     * @param[in]     r    the row
+     * @param[in]     c    the column
+     * @param[in,out] kit  the builders
+     */
+    void lawn( int r, int c, GardenKit &kit );
+
     /**
      * @brief Dresses the level after its walls and floors (LevelDress.cpp): decals on floors and walls, clutter by the
      *        walls, a show piece in the larger rooms, their lights.
@@ -649,6 +725,8 @@ private:
     std::vector<unsigned char> m_fill;      ///< per floor cell: its inner corners filled (bits as m_cut)
     std::vector<signed char>   m_niche;     ///< per wall cell: the side its niche opens to (-1: none)
     std::vector<unsigned char> m_gallery;   ///< per floor cell: the walls a gallery runs along (bit d)
+    std::vector<unsigned char> m_garden;    ///< per wall cell: its garden depth (0 none, 1 a hedge, 2.. behind)
+    GardenKit                 *m_gardenKit = nullptr;   ///< during build: the garden's builders (null: no gardens)
 
     /** @brief A cell raised by a "raise" line. */
     struct Raise

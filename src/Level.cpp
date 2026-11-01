@@ -1140,11 +1140,13 @@ void Level::planShapes()
                 // An outer corner of a wall (floor on both sides of it and beyond it): most are cut off. An inner
                 // corner of a room (walls on both sides and beyond): more than half are filled.
                 CellE side1 = kind( r + CR[k], c ), side2 = kind( r, c + CC[k] ), beyond = kind( r + CR[k], c + CC[k] );
-                if ( kind( r, c ) == CellE::ROCK && shaped( r, c ) && side1 == CellE::FLOOR && side2 == CellE::FLOOR &&
-                     beyond == CellE::FLOOR && hash01( r, c, 300 + k ) < 0.75f )
+                // (A garden's hedges round off their own ends and corners.)
+                if ( kind( r, c ) == CellE::ROCK && shaped( r, c ) && !garden( r, c ) && side1 == CellE::FLOOR &&
+                     side2 == CellE::FLOOR && beyond == CellE::FLOOR && hash01( r, c, 300 + k ) < 0.75f )
                     m_cut[at( r, c )] |= (unsigned char)( 1 << k );
                 if ( kind( r, c ) == CellE::FLOOR && shaped( r, c ) && side1 == CellE::ROCK && side2 == CellE::ROCK &&
                      beyond == CellE::ROCK && shaped( r + CR[k], c ) && shaped( r, c + CC[k] ) &&
+                     !garden( r + CR[k], c ) && !garden( r, c + CC[k] ) && !garden( r + CR[k], c + CC[k] ) &&
                      hash01( r, c, 310 + k ) < 0.6f )
                     m_fill[at( r, c )] |= (unsigned char)( 1 << k );
             }
@@ -1152,7 +1154,7 @@ void Level::planShapes()
     for ( int r = 1; r + 1 < m_rows; ++r )
         for ( int c = 1; c + 1 < m_cols; ++c )
         {
-            if ( kind( r, c ) != CellE::ROCK || !shaped( r, c ) || m_cut[at( r, c )] ) continue;
+            if ( kind( r, c ) != CellE::ROCK || !shaped( r, c ) || m_cut[at( r, c )] || garden( r, c ) ) continue;
             int side = -1, opens = 0;
             for ( int d = 0; d < 4; ++d )
                 if ( kind( r + DR[d], c + DC[d] ) != CellE::ROCK ) ++opens, side = d;
@@ -1220,7 +1222,6 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     std::vector<Glow> glows;
     DressKit          kit{ metal, rust, crate, box, cloth, hazard, grate, rock, hull, drape, glows };
     m_faces.clear();
-    planShapes();
     // A wall's or a floor's variants as a patchwork: floors in ragged patches of a few cells, walls in short runs; the
     // plain one is laid most.
     auto variant = [&]( int surface, int r, int c, bool wall ) -> int
@@ -1233,6 +1234,25 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         int      n = (int)v->second.size(), pick = (int)( h % (unsigned)( n + 2 ) );
         return pick < n ? v->second[pick] : surface;
     };
+    // The gardens (LevelGarden.cpp): where the park keeps its hedges and its lawn, and the garden's surfaces are there.
+    MeshBuilder foliage, bark, gravel, canopy;
+    int         parkWall = s.m_themeWall[(int)ThemeE::PARK] - 1, parkFloor = s.m_themeFloor[(int)ThemeE::PARK] - 1;
+    GardenKit   gardens{ foliage,
+                       bark,
+                       gravel,
+                       rock,
+                       canopy,
+                       [&]( int r, int c, bool wall ) -> MeshBuilder &
+                       {
+                           int base = wall ? parkWall : parkFloor;
+                           if ( base < 0 ) return wall ? *allRock : *allGround;
+                           return themed[variant( base, r, c, wall ) * 2 + ( wall ? 1 : 0 )];
+                       },
+                       glows };
+    bool        withGardens = s.m_foliage >= 0 && s.m_bark >= 0 && s.m_gravel >= 0 && parkWall >= 0 && parkFloor >= 0;
+    m_gardenKit = withGardens ? &gardens : nullptr;
+    planGarden( withGardens );
+    planShapes();
 
     auto isVoid = [&]( int r, int c ) { return cell( r, c ).m_kind == CellE::VOID; };
     auto open = [&]( int r, int c ) { return cell( r, c ).m_kind != CellE::ROCK; };
@@ -1426,6 +1446,11 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             float   x0 = c * CellSize;
             float   z0 = r * CellSize;
             Vector3 mid = { x0 + CellSize * 0.5f, 0.0f, z0 + CellSize * 0.5f };
+            if ( k.m_kind == CellE::ROCK && garden( r, c ) )
+            {
+                gardenCell( r, c, gardens );   // a hedge, the garden behind it or forest
+                continue;
+            }
             if ( k.m_kind == CellE::ROCK )
             {
                 bool border = false;
@@ -1506,7 +1531,20 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     shape( hull, m_wallHeight, m_wallHeight + 0.02f );
                     hull.m_color = WHITE;
                 }
-                if ( !border ) continue;
+                if ( !border )
+                {
+                    // Inside the rock only its top shows; by a garden, which lies low, its side too.
+                    bool byGarden = false;
+                    for ( int d = 0; d < 4; ++d ) byGarden = byGarden || garden( r + DR[d], c + DC[d] );
+                    if ( byGarden && look.m_walls != 3 )
+                    {
+                        MeshBuilder &wall = look.m_walls >= 1 ? hull : rock;
+                        wall.m_color = look.m_walls == 0 ? look.m_rock : Color{ 92, 96, 104, 255 };
+                        shape( wall, -0.5f, m_wallHeight );
+                        wall.m_color = WHITE;
+                    }
+                    continue;
+                }
                 // A cut corner keeps its top plain; a niche's crown stands back with it.
                 Vector3 back = niche >= 0 ? Vector3{ DC[niche] * NicheDepth, 0.0f, DR[niche] * NicheDepth }
                                           : Vector3{ 0.0f, 0.0f, 0.0f };
@@ -1930,6 +1968,12 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     if ( m_cut[wallAt] & ( ( 1 << e ) | ( 1 << ( ( e + 1 ) % 4 ) ) ) ) continue;
                     if ( m_niche[wallAt] == e ) face = Vector3Subtract( face, Vector3Scale( n, NicheDepth ) );
                 }
+                if ( garden( nr, nc ) )
+                {
+                    // A hedge: no panels, ribs, pipes, posters or planters; low plants at its foot.
+                    if ( k.m_kind == CellE::FLOOR && k.m_height == 0.0f ) hedgeFoot( r, c, d, *m_gardenKit );
+                    continue;
+                }
                 float yaw = DC[d] != 0 ? PI * 0.5f : 0.0f;   // a box's x along the face
                 float y0 = k.m_kind == CellE::VOID ? -PitDepth + 2.0f : base;
                 if ( theme( r, c ) == ThemeE::STREET && k.m_kind != CellE::VOID )
@@ -2346,8 +2390,15 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 break;
             case ThemeE::PARK:
             {
-                // A tree: a trunk, a crown of leaves; now and then a bench instead.
-                if ( hash01( r, c, 35 ) < 0.7f )
+                // A tree: a trunk, a crown of leaves; now and then a bench instead. In a garden one of the bred ones.
+                if ( hash01( r, c, 35 ) < 0.7f && m_gardenKit )
+                {
+                    static const PlantE Kinds[4] = { PlantE::PARASOL, PlantE::LANTERN, PlantE::ORBS, PlantE::SPIRAL };
+                    unsigned            h = hashCell( r, c, 36 );
+                    plant( Kinds[h % 4], at, 0.7f + 0.15f * hash01( r, c, 37 ), h, *m_gardenKit );
+                    m_props.push_back( { at, 0.35f } );
+                }
+                else if ( hash01( r, c, 35 ) < 0.7f )
                 {
                     rust.m_color = { 110, 80, 60, 255 };
                     rust.cylinder( place( { at.x, 0.0f, at.z } ), 0.16f, 2.2f, 10 );
@@ -2785,11 +2836,14 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     { at( 0.0f, gh - 0.075f, 0.6f ), strip, { colour.x, colour.y, colour.z, 0.0f }, true } );
                 if ( ( r + c ) % 2 == 0 ) m_lights.push_back( { at( 0.0f, gh - 0.3f, 0.7f ), colour, 4.5f, 0.0f } );
             }
+    if ( withGardens ) gardenEdges( gardens );
     dress( s, kit );
+    m_gardenKit = nullptr;
     // In tiles of eight cells: the frustum then leaves out what lies elsewhere, in the picture and in both shadow maps.
-    auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f } )
+    auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f },
+                    float tile = 8.0f * CellSize )
     {
-        for ( Mesh mesh : b.build( 8.0f * CellSize ) )
+        for ( Mesh mesh : b.build( tile ) )
         {
             Drawable d;
             d.m_mesh = mesh;
@@ -2816,6 +2870,19 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     add( hull, s.m_hull, true );
     add( cloth, s.m_cloth, false );
     add( drape, s.m_cloth, true );
+    if ( withGardens )
+    {
+        size_t first = out.size();
+        // (In tiles twice as wide: fewer of them to draw, each lighter than a tile of walls.)
+        add( foliage, s.m_foliage, true, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
+        add( bark, s.m_bark, true, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
+        for ( size_t i = first; i < out.size(); ++i ) out[i].m_nearCut = true;
+        add( gravel, s.m_gravel, false, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
+        size_t deep = out.size();
+        add( canopy, s.m_foliage, true, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
+        for ( size_t i = deep; i < out.size(); ++i )
+            out[i].m_nearCut = true, out[i].m_sunShadow = out[i].m_spotShadow = false;
+    }
     // Glowing boxes of one colour go into one mesh.
     while ( !glows.empty() )
     {

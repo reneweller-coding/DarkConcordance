@@ -71,6 +71,7 @@ struct Drawable
     bool          m_sunShadow = true;             ///< casts a sun shadow
     bool          m_spotShadow = true;            ///< casts a lamp shadow
     bool          m_cutaway = false;              ///< dissolves where it stands between the camera and the hero
+    bool          m_nearCut = false;              ///< with m_cutaway: right at the camera too (leaves it comes into)
     const Matrix *m_bones = nullptr;              ///< a skinned figure's bone matrices (they must live until drawn)
     int           m_boneCount = 0;                ///< how many
     Vector4       m_tint = { 1, 1, 1, 0 };   ///< clothed surfaces: the clothes' colour, the height the skin shows above

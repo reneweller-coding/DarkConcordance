@@ -339,20 +339,23 @@ uniform float cutRadius;   // radius of the hole at the hero
 out vec4 finalColor;
 
 // Walls between the camera and the hero dissolve in a cone around the line of sight (ordered dither).
-void cutAway()
+void cutAway( bool nearToo )
 {
     vec3 toHero = cutCentre - viewPos;
     float dist = length( toHero );
     vec3 dir = toHero / dist;
     vec3 rel = fragPos - viewPos;
     float t = dot( rel, dir );
+    const float Bayer[16] = float[]( 0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0 );
+    ivec2 q = ivec2( gl_FragCoord.xy ) & 3;
+    float dither = ( Bayer[q.y * 4 + q.x] + 0.5 ) / 16.0;
+    // Leaves right at the camera (a crown it has come into) go too: they would fill the picture.
+    if( nearToo && smoothstep( 0.8, 2.0, length( rel ) ) < dither ) discard;
     if( t <= 0.0 || t >= dist - 0.6 || fragPos.y < cutCentre.y - 0.9 ) return;
     float r = cutRadius * t / dist;
     float d = length( rel - dir * t );
     float keep = smoothstep( r * 0.65, r, d );
-    const float Bayer[16] = float[]( 0.0, 8.0, 2.0, 10.0, 12.0, 4.0, 14.0, 6.0, 3.0, 11.0, 1.0, 9.0, 15.0, 7.0, 13.0, 5.0 );
-    ivec2 q = ivec2( gl_FragCoord.xy ) & 3;
-    if( keep < ( Bayer[q.y * 4 + q.x] + 0.5 ) / 16.0 ) discard;
+    if( keep < dither ) discard;
 }
 
 void triplanar( vec3 p, vec3 n, out vec3 albedo, out vec3 orm, out vec3 nrm )
@@ -383,7 +386,7 @@ void triplanar( vec3 p, vec3 n, out vec3 albedo, out vec3 orm, out vec3 nrm )
 
 void main()
 {
-    if( cutaway > 0.5 ) cutAway();
+    if( cutaway > 0.5 ) cutAway( cutaway > 1.5 );
     vec3 n0 = normalize( objNormal );
     vec3 albedo;
     vec3 orm;

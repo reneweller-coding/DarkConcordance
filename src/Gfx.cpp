@@ -490,7 +490,7 @@ void Gfx::draw( const std::vector<Drawable> &list, const std::vector<Surface> &s
         SetShaderValue( shader, l.m_emissive, &em, SHADER_UNIFORM_VEC4 );
         SetShaderValue( shader, l.m_mask, &s.m_mask, SHADER_UNIFORM_VEC2 );
         SetShaderValue( shader, l.m_variation, &s.m_variation, SHADER_UNIFORM_FLOAT );
-        float cut = d.m_cutaway ? 1.0f : 0.0f;
+        float cut = d.m_cutaway ? ( d.m_nearCut ? 2.0f : 1.0f ) : 0.0f;
         SetShaderValue( shader, l.m_cutaway, &cut, SHADER_UNIFORM_FLOAT );
         SetShaderValue( shader, l.m_tint, &d.m_tint, SHADER_UNIFORM_VEC4 );
         SetShaderValue( shader, l.m_cloth, &d.m_cloth, SHADER_UNIFORM_VEC4 );

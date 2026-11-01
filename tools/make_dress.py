@@ -200,8 +200,7 @@ DECAL_LIST = [
     floor( "leaves_3", "garden street", "white", 1.2, "fallen pale pink blossom petals" ),
     floor( "flowers_1", "garden", "white", 1.4, "a patch of small blue and white wildflowers" ),
     floor( "flowers_2", "garden", "white", 1.4, "a patch of small yellow flowers and clover" ),
-    floor( "mud_1", "garden", "white", 1.5, "a muddy puddle with footprints", rough=0.15 ),
-    floor( "mud_2", "garden", "white", 1.3, "a wet patch of dark soil with a few stones", rough=0.3 ),
+    # (No mud: on the gardens' clipped lawn its dark patches looked like holes.)
 
     # Walls of the works, holds and ships.
     wall( "ruststreak_1", "industrial", "white", 1.4, "vertical rust streaks running down from a row of bolts",

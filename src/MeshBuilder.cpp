@@ -37,7 +37,30 @@ std::vector<float> roundCoords( float half, float radius, int seg )
     return c;
 }
 
+/** @brief A lattice point's value (-1 .. 1). */
+float lattice( int x, int y, int z, unsigned seed )
+{
+    unsigned h = (unsigned)x * 374761393u + (unsigned)y * 668265263u + (unsigned)z * 2147483647u + seed * 2246822519u;
+    h = ( h ^ ( h >> 13 ) ) * 1274126177u;
+    return ( ( h ^ ( h >> 16 ) ) & 0xffffu ) / 32767.5f - 1.0f;
+}
+
 }   // namespace
+
+float smoothNoise( Vector3 p, unsigned seed )
+{
+    int   x = (int)floorf( p.x ), y = (int)floorf( p.y ), z = (int)floorf( p.z );
+    float fx = p.x - x, fy = p.y - y, fz = p.z - z;
+    fx = fx * fx * ( 3.0f - 2.0f * fx ), fy = fy * fy * ( 3.0f - 2.0f * fy ), fz = fz * fz * ( 3.0f - 2.0f * fz );
+    float v[2];
+    for ( int k = 0; k < 2; ++k )
+    {
+        float a = Lerp( lattice( x, y, z + k, seed ), lattice( x + 1, y, z + k, seed ), fx );
+        float b = Lerp( lattice( x, y + 1, z + k, seed ), lattice( x + 1, y + 1, z + k, seed ), fx );
+        v[k] = Lerp( a, b, fy );
+    }
+    return Lerp( v[0], v[1], fz );
+}
 
 Matrix frame( Vector3 x, Vector3 y, Vector3 z, Vector3 t )
 {
@@ -238,6 +261,106 @@ void MeshBuilder::cylinder( const Matrix &m, float radius, float height, int sid
              { radius, height },
              { 0.0f, height } },
            sides );
+}
+
+void MeshBuilder::blob( const Matrix &m, Vector3 radii, float bumps, unsigned seed, int seg )
+{
+    int lon = seg * 2;
+    reserve( (size_t)( seg + 1 ) * ( lon + 1 ) );
+    // A direction from the middle pushed out by two octaves of noise, then stretched to the radii; the normals from
+    // the neighbours on the grid (round the seam, through the poles: the ellipsoid's own).
+    std::vector<Vector3> grid( (size_t)( seg + 1 ) * lon );
+    for ( int i = 0; i <= seg; ++i )
+        for ( int j = 0; j < lon; ++j )
+        {
+            float   th = PI * i / seg, ph = 2.0f * PI * j / lon;
+            Vector3 d = { sinf( th ) * cosf( ph ), cosf( th ), sinf( th ) * sinf( ph ) };
+            float   k = 1.0f + bumps * ( 0.7f * smoothNoise( Vector3Scale( d, 1.6f ), seed ) +
+                                       0.3f * smoothNoise( Vector3Scale( d, 3.7f ), seed + 17u ) );
+            grid[(size_t)i * lon + j] = { d.x * radii.x * k, d.y * radii.y * k, d.z * radii.z * k };
+        }
+    auto           at = [&]( int i, int j ) { return grid[(size_t)i * lon + ( ( j % lon ) + lon ) % lon]; };
+    const Color    base = m_color;
+    unsigned short first = (unsigned short)m_pos.size();
+    for ( int i = 0; i <= seg; ++i )
+        for ( int j = 0; j <= lon; ++j )
+        {
+            Vector3 p = at( i, j );
+            Vector3 n = { p.x / ( radii.x * radii.x ), p.y / ( radii.y * radii.y ), p.z / ( radii.z * radii.z ) };
+            if ( i > 0 && i < seg )
+            {
+                Vector3 g = Vector3CrossProduct( Vector3Subtract( at( i, j + 1 ), at( i, j - 1 ) ),
+                                                 Vector3Subtract( at( i + 1, j ), at( i - 1, j ) ) );
+                if ( Vector3Length( g ) > 1e-9f ) n = g;
+            }
+            n = Vector3Normalize( n );
+            if ( Vector3DotProduct( n, p ) < 0.0f ) n = Vector3Negate( n );
+            float up = cosf( PI * i / seg );
+            m_color.a = (unsigned char)( base.a * Clamp( 0.5f + 0.5f * ( up + 0.6f ), 0.42f, 1.0f ) );
+            vertex( Vector3Transform( p, m ), rotate( m, n ), { (float)j / lon, (float)i / seg } );
+        }
+    m_color = base;
+    for ( int i = 0; i < seg; ++i )
+        for ( int j = 0; j < lon; ++j )
+        {
+            unsigned short a = (unsigned short)( first + i * ( lon + 1 ) + j ), b = (unsigned short)( a + lon + 1 );
+            m_idx.insert( m_idx.end(), { a, (unsigned short)( a + 1 ), (unsigned short)( b + 1 ), a,
+                                         (unsigned short)( b + 1 ), b } );
+        }
+}
+
+void MeshBuilder::tube( const std::vector<Vector3> &path, const std::vector<float> &radii, int sides )
+{
+    if ( path.size() < 2 || radii.size() < path.size() ) return;
+    // Each ring square to the line; its sideways axis carried from ring to ring (no twist).
+    std::vector<std::vector<Vector3>> rings;
+    Vector3                           side = { 1.0f, 0.0f, 0.0f };
+    for ( size_t i = 0; i < path.size(); ++i )
+    {
+        Vector3 t = Vector3Normalize(
+            Vector3Subtract( path[i + 1 < path.size() ? i + 1 : i], path[i > 0 ? i - 1 : i] ) );
+        side = Vector3Subtract( side, Vector3Scale( t, Vector3DotProduct( side, t ) ) );
+        if ( Vector3Length( side ) < 1e-3f )
+            side = fabsf( t.x ) < 0.9f ? Vector3{ 1.0f, 0.0f, 0.0f } : Vector3{ 0.0f, 0.0f, 1.0f },
+            side = Vector3Subtract( side, Vector3Scale( t, Vector3DotProduct( side, t ) ) );
+        side = Vector3Normalize( side );
+        Vector3              up = Vector3CrossProduct( t, side );
+        std::vector<Vector3> ring;
+        for ( int k = 0; k < sides; ++k )
+        {
+            float a = 2.0f * PI * k / sides;
+            ring.push_back(
+                Vector3Add( path[i], Vector3Add( Vector3Scale( side, cosf( a ) * radii[i] ),
+                                                 Vector3Scale( up, sinf( a ) * radii[i] ) ) ) );
+        }
+        rings.push_back( ring );
+    }
+    loft( MatrixIdentity(), rings, true );
+}
+
+void MeshBuilder::field( float x0, float z0, const std::vector<float> &steps,
+                         const std::function<float( float, float )> &height )
+{
+    size_t k = steps.size();
+    if ( k < 2 ) return;
+    reserve( k * k );
+    unsigned short first = (unsigned short)m_pos.size();
+    const float    e = 0.02f;
+    for ( size_t j = 0; j < k; ++j )
+        for ( size_t i = 0; i < k; ++i )
+        {
+            float   x = x0 + steps[i], z = z0 + steps[j];
+            Vector3 n = Vector3Normalize( { ( height( x - e, z ) - height( x + e, z ) ) / ( 2.0f * e ), 1.0f,
+                                            ( height( x, z - e ) - height( x, z + e ) ) / ( 2.0f * e ) } );
+            vertex( { x, height( x, z ), z }, n, { steps[i] / steps.back(), steps[j] / steps.back() } );
+        }
+    for ( size_t j = 0; j + 1 < k; ++j )
+        for ( size_t i = 0; i + 1 < k; ++i )
+        {
+            unsigned short a = (unsigned short)( first + j * k + i ), b = (unsigned short)( a + k );
+            m_idx.insert( m_idx.end(), { a, (unsigned short)( a + 1 ), (unsigned short)( b + 1 ), a,
+                                         (unsigned short)( b + 1 ), b } );
+        }
 }
 
 void MeshBuilder::quad( Vector3 a, Vector3 b, Vector3 c, Vector3 d )

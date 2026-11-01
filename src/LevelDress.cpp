@@ -355,8 +355,8 @@ void Level::dress( const LevelSurfaces &s, DressKit &kit )
                 { B::CRATE, B::TANK, B::CASE, B::VIALS, B::BATTERY, B::LOCKER },        // cold
                 { B::CRATE, B::DRUM, B::CASE, B::BATTERY, B::SACKS, B::DRUM },          // outdoor
                 { B::CRYSTAL, B::CRYSTAL, B::CRYSTAL, B::CRYSTAL, B::CRYSTAL, B::CRYSTAL },
-                { B::POT, B::CASE, B::POT, B::SACKS, B::CRATE, B::POT }
-            };   // garden
+                { B::POT, B::SACKS, B::POT, B::POT, B::SACKS, B::POT }
+            };   // garden: plants in pots, sacks of soil
             const float Radius[(int)BreakE::COUNT] = { 0.42f, 0.32f, 0.3f,  0.4f,  0.3f, 0.42f, 0.36f,
                                                        0.38f, 0.3f,  0.36f, 0.42f, 0.3f, 0.3f };
             unsigned    h = hashCell( r, c, 232 );
@@ -991,6 +991,12 @@ void Level::clutter( int group, unsigned h, Vector3 at, float yaw, DressKit &kit
             block( 0.0f, 0.32f );
             break;
         case 0:   // a bush
+            if ( m_gardenKit )
+            {
+                plant( PlantE::BUSH, at, 0.65f, h, *m_gardenKit );
+                block( 0.0f, 0.5f );
+                break;
+            }
             kit.m_cloth.m_color = { 55, 105, 50, 255 };
             for ( int i = 0; i < 6; ++i )
                 kit.m_cloth.roundedBox( M( ( rnd( i ) - 0.5f ) * 0.7f, 0.3f + rnd( i + 3 ) * 0.4f,
@@ -1116,16 +1122,21 @@ void Level::showPiece( int group, unsigned h, Vector3 at, DressKit &kit )
     case GARDEN:
         if ( group == GARDEN && pick % 2 == 0 )
         {
-            // A tree in a ring of stone with a bench around it.
-            kit.m_crate.m_color = { 90, 65, 45, 255 };
-            kit.m_crate.cylinder( M( 0, 0, 0 ), 0.22f, 2.6f, 10 );
-            kit.m_cloth.m_color = { 55, 110, 50, 255 };
-            for ( int i = 0; i < 9; ++i )
+            // A tree in a ring of stone with a bench around it (in a garden a parasol tree, its pods aglow).
+            if ( m_gardenKit )
+                plant( PlantE::PARASOL, at, 1.15f, h, *m_gardenKit );
+            else
             {
-                float a = i * 0.9f, d = 0.3f + ( i % 3 ) * 0.35f;
-                kit.m_cloth.roundedBox(
-                    place( P( cosf( a ) * d, 2.6f + ( i % 4 ) * 0.35f, sinf( a ) * d ), { 0.0f, a, 0.0f } ),
-                    { 0.6f, 0.45f, 0.55f }, 0.4f, 3 );
+                kit.m_crate.m_color = { 90, 65, 45, 255 };
+                kit.m_crate.cylinder( M( 0, 0, 0 ), 0.22f, 2.6f, 10 );
+                kit.m_cloth.m_color = { 55, 110, 50, 255 };
+                for ( int i = 0; i < 9; ++i )
+                {
+                    float a = i * 0.9f, d = 0.3f + ( i % 3 ) * 0.35f;
+                    kit.m_cloth.roundedBox(
+                        place( P( cosf( a ) * d, 2.6f + ( i % 4 ) * 0.35f, sinf( a ) * d ), { 0.0f, a, 0.0f } ),
+                        { 0.6f, 0.45f, 0.55f }, 0.4f, 3 );
+                }
             }
             kit.m_rock.lathe( M( 0, 0, 0 ), { { 1.1f, 0.0f }, { 1.1f, 0.45f }, { 1.3f, 0.45f }, { 1.3f, 0.0f } }, 24 );
             m_props.push_back( { at, 1.35f } );

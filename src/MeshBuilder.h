@@ -9,6 +9,7 @@
 #include <raylib.h>
 
 #include <cstddef>
+#include <functional>
 #include <vector>
 
 namespace spaceopera
@@ -81,6 +82,35 @@ public:
     void loft( const Matrix &m, const std::vector<std::vector<Vector3>> &rings, bool closed );
 
     /**
+     * @brief A lumpy ellipsoid (a clump of leaves, a bush, a crown): its radius swells and dips with a smooth noise;
+     *        its underside darker (the colour's alpha, the baked occlusion).
+     * @param[in] m      where it goes (its middle; no scaling)
+     * @param[in] radii  its half extents
+     * @param[in] bumps  how far the noise moves the surface (a share of the radius)
+     * @param[in] seed   which lumps
+     * @param[in] seg    segments from pole to pole (twice as many around)
+     */
+    void blob( const Matrix &m, Vector3 radii, float bumps, unsigned seed, int seg = 8 );
+
+    /**
+     * @brief A tube along a line (a trunk, a branch, a stalk): a ring round each point, open at both ends.
+     * @param[in] path   its middle line (at least two points)
+     * @param[in] radii  its radius at each point
+     * @param[in] sides  segments around
+     */
+    void tube( const std::vector<Vector3> &path, const std::vector<float> &radii, int sides = 8 );
+
+    /**
+     * @brief A surface over a square of the ground plan, its height a function of x and z (a hedge's top): a grid
+     *        through the given steps, its normals from the function, so that neighbouring squares meet seamlessly.
+     * @param[in] x0      the square's west edge
+     * @param[in] z0      its north edge
+     * @param[in] steps   the grid's offsets from there along x and along z (from 0 to the square's size)
+     * @param[in] height  the height at (x, z)
+     */
+    void field( float x0, float z0, const std::vector<float> &steps, const std::function<float( float, float )> &height );
+
+    /**
      * @brief One flat triangle.
      * @param[in] a  first corner
      * @param[in] b  second corner
@@ -128,6 +158,14 @@ private:
     std::vector<unsigned short> m_idx;    ///< its triangles
     std::vector<Chunk>          m_done;   ///< full chunks
 };
+
+/**
+ * @brief Smooth value noise in three dimensions.
+ * @param[in] p     where
+ * @param[in] seed  which noise
+ * @return -1 .. 1
+ */
+float smoothNoise( Vector3 p, unsigned seed );
 
 /**
  * @brief A frame from three axes and a position.
