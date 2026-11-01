@@ -123,9 +123,9 @@ void Game::themeSurfaces( LevelSurfaces &ls )
         ls.m_boulder = surface( "boulder" );
         if ( ls.m_bark >= 0 ) m_surfaces[ls.m_bark].m_uvScale = 1.1f;
         // Cut-outs (their picture's alpha): leaf clusters and tufts of grass on cards.
-        for ( int *cut : { &ls.m_cards, &ls.m_blades } )
+        for ( int *cut : { &ls.m_cards, &ls.m_blades, &ls.m_needles } )
         {
-            *cut = surface( cut == &ls.m_cards ? "leafcard" : "blades" );
+            *cut = surface( cut == &ls.m_cards ? "leafcard" : cut == &ls.m_blades ? "blades" : "needles" );
             if ( *cut < 0 ) continue;
             m_surfaces[*cut].m_uvScale = 1.0f;
             m_surfaces[*cut].m_params = { 1.0f, 0.0f, 0.0f, 6.0f };

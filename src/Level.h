@@ -162,6 +162,7 @@ struct LevelSurfaces
     int m_cards = -1;            ///< cut-out clusters of leaves round the crowns
     int m_blades = -1;           ///< cut-out tufts of grass on the lawn
     int m_boulder = -1;          ///< the pale stone of their rocky edges
+    int m_needles = -1;          ///< cut-out fir branches (none: no firs)
     std::map<int, std::vector<int>> m_variants;           ///< a wall's or floor's variants, laid as a patchwork
     const std::vector<DecalDef>    *m_decals = nullptr;   ///< the decals there are (nullptr: none)
 };
@@ -599,6 +600,7 @@ private:
         MeshBuilder &m_canopy;   ///< the forest's crowns deep in it: leaves that throw no shadow
         MeshBuilder &m_cards;    ///< cut-out leaf clusters round the crowns and bushes (no shadow)
         MeshBuilder &m_blades;   ///< cut-out tufts of grass (no shadow)
+        MeshBuilder &m_needles;  ///< cut-out fir branches (no shadow)
         /** the park's hedge (wall) or lawn (floor) builder for a cell, as the patchwork lays its variants */
         std::function<MeshBuilder &( int r, int c, bool wall )> m_park;
         std::vector<GlowBox>                                  &m_glows;
@@ -615,6 +617,7 @@ private:
         BUSH,       ///< a few clumps of leaves
         BED,        ///< a low patch of coloured blooms
         CANOPY,     ///< a forest tree: a big dark crown on a trunk
+        FIR,        ///< a fir: tiers of drooping branches round a trunk, narrower upwards
         COUNT
     };
 
@@ -755,6 +758,7 @@ private:
     std::vector<unsigned char> m_gallery;   ///< per floor cell: the walls a gallery runs along (bit d)
     std::vector<unsigned char> m_garden;    ///< per wall cell: its garden depth (0 none, 1 the edge, 2.. behind)
     std::vector<unsigned char> m_path;      ///< per floor cell: a garden's path runs over it
+    std::vector<std::vector<int>> m_propsByCell;   ///< during the lawn's build: the props near each cell
     std::vector<Vector3>       m_sight;     ///< per cell what is seen there: x up to where it stands from the floor,
                                             ///< y to z a crown or lintel above (y > z: none); for the camera
     /** @brief Something standing from the floor up to `top` over a footprint (the cells it mostly covers). */

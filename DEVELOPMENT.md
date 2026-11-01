@@ -376,11 +376,15 @@ it; low plants at their foot; no panels, ribs or posters. Behind them two cells 
 fronds, coral tubes and the Concordance's bred trees: parasol trees with pods glowing under the rim, lantern willows
 whose strands end in lights, coiled and stacked topiary – and beyond that forest, dark crowns that close overhead (the
 deep ones throw no shadow), on past the level's edge so that the ring's land does not show there. Crowns and bushes
-are a darker core inside many cut-out cards of leaves, so that they end in leaves (`leafcard`). The lawn lies in
+are a darker core inside many cut-out cards of leaves, so that they end in leaves (`leafcard`); the forest's trees
+have three clumps round a smaller middle, and among them stand firs: tiers of drooping branch cards round a trunk
+(`needles`), a dark cone inside that throws the shadow. The lawn lies in
 large patches of lush, plain and dry grass (one colour function, no seams), with cut-out tufts of grass on it
 (`blades`); paths of trodden earth follow the route through the corridors and across the rooms as decals whose rims
 fade into the grass (`path_1`, `path_2`, laid by the level, not by the dressing), the grass beside them a little
-trodden. Walls that stand in a garden (the side rooms', a door's lintel) and the parks' benches are of the same pale
+trodden, and darker within a metre of the foot of what stands (rocks, bushes, walls, the things in the room) and
+under a crown, as Dark Alliance paints its shadows into the ground; the lawn is built last for that. Walls that
+stand in a garden (the side rooms', a door's lintel) and the parks' benches are of the same pale
 stone as the boulders. The textures are derived from those there are (`tools/make_garden.py`: the lawn without most
 of the daisies, which flickered as white specks, and without `grass_v2`'s stepping stones; the boulders' stone from
 dustrock, greyed; cut-outs keep their PNG, `make_dds.py` leaves them). The Dying Gardens have a lower, warmer,
@@ -390,7 +394,8 @@ darker light and a grade.
 their rectangles – a rounded rectangle whose rim a slow noise moves in and out, so the corners go and the edges
 wander – and the corridors between two of them swell and narrow (two to five cells, never into anything open but
 themselves); the corridors' mouths and the rooms' middles stay (route, start, capsules), what is cut off goes back to
-rock, and rocks grown together stand in the larger rooms instead of straight hedges. Still the 2 m grid: collision, the
+rock, and rocks grown together stand in the larger rooms instead of straight hedges, a raised lawn grown the same
+way instead of a rectangle. Still the 2 m grid: collision, the
 foes' ways, the maps and the build stay as they were. The autopilot fares the same on three seeds (wild 10, 9 and 12
 deaths by way point 9, 10 and 12 of 31 in seven minutes; rectangular 8, 15 and 12 by 13, 8 and 7).
 

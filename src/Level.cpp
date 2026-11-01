@@ -1276,7 +1276,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         return pick < n ? v->second[pick] : surface;
     };
     // The gardens (LevelGarden.cpp): where the park keeps its hedges and its lawn, and the garden's surfaces are there.
-    MeshBuilder foliage, bark, gravel, canopy, cards, blades, boulders;
+    MeshBuilder foliage, bark, gravel, canopy, cards, blades, boulders, needles;
     int         parkWall = s.m_themeWall[(int)ThemeE::PARK] - 1, parkFloor = s.m_themeFloor[(int)ThemeE::PARK] - 1;
     GardenKit   gardens{ foliage,
                        bark,
@@ -1285,6 +1285,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                        canopy,
                        cards,
                        blades,
+                       needles,
                        [&]( int r, int c, bool wall ) -> MeshBuilder &
                        {
                            int base = wall ? parkWall : parkFloor;
@@ -1295,6 +1296,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     bool        withGardens = s.m_foliage >= 0 && s.m_bark >= 0 && s.m_gravel >= 0 && s.m_cards >= 0 && s.m_blades >= 0 &&
                        s.m_boulder >= 0 && parkWall >= 0 && parkFloor >= 0;
     m_gardenKit = withGardens ? &gardens : nullptr;
+    std::vector<std::pair<int, int>> meadows;   // the gardens' lawn cells: their tops last, when all stands
     m_sight.assign( (size_t)m_rows * m_cols, { 0.0f, 1e9f, -1e9f } );
     planGarden( withGardens );
     planShapes();
@@ -1961,7 +1963,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     meadow = n.m_kind == CellE::ROCK || ( n.m_kind != CellE::VOID && n.m_height == 0.0f );
                 }
                 if ( meadow )
-                    groundTop( r, c, h, *m_gardenKit );
+                    meadows.push_back( { r, c } );
                 else
                 {
                     fb.m_color = look.m_floor;
@@ -2907,6 +2909,23 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     if ( withGardens ) gardenEdges( gardens );
     dress( s, kit );
     if ( withGardens ) gardenPaths( s );
+    if ( withGardens )
+    {
+        // The lawn last: it darkens at the foot of everything that stands on it, and its tufts keep off it.
+        m_propsByCell.assign( (size_t)m_rows * m_cols, {} );
+        for ( size_t i = 0; i < m_props.size(); ++i )
+        {
+            int r0, c0, r1, c1;
+            float reach = m_props[i].m_radius + 1.0f;
+            cellOf( { m_props[i].m_pos.x - reach, 0.0f, m_props[i].m_pos.z - reach }, r0, c0 );
+            cellOf( { m_props[i].m_pos.x + reach, 0.0f, m_props[i].m_pos.z + reach }, r1, c1 );
+            for ( int r = std::max( 0, r0 ); r <= std::min( m_rows - 1, r1 ); ++r )
+                for ( int c = std::max( 0, c0 ); c <= std::min( m_cols - 1, c1 ); ++c )
+                    m_propsByCell[(size_t)r * m_cols + c].push_back( (int)i );
+        }
+        for ( auto [r, c] : meadows ) groundTop( r, c, 0.0f, gardens );
+        m_propsByCell.clear();
+    }
     m_gardenKit = nullptr;
     // In tiles of eight cells: the frustum then leaves out what lies elsewhere, in the picture and in both shadow maps.
     auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f },
@@ -2951,6 +2970,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         size_t deep = out.size();
         add( canopy, s.m_foliage, true, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
         add( cards, s.m_cards, true, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
+        if ( s.m_needles >= 0 ) add( needles, s.m_needles, true, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
         for ( size_t i = deep; i < out.size(); ++i )
             out[i].m_nearCut = true, out[i].m_sunShadow = out[i].m_spotShadow = false;
         size_t grass = out.size();

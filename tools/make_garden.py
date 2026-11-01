@@ -140,6 +140,7 @@ def main():
 
     blades()
     leafcard(lum)
+    needles()
     paths()
 
 
@@ -197,6 +198,42 @@ def leafcard(lum):
     rgb = np.repeat(np.clip(leaves * 1.1, 0, 1)[..., None], 3, axis=2)
     save_rgba(np.concatenate([rgb, alpha[..., None]], axis=2), os.path.join(TEXTURES, "leafcard_albedo.png"))
     flat_maps("leafcard")
+
+
+def needles():
+    """A fir's branch seen from above, its tip at the top: a twig, side twigs, needles all along them, light grey so that
+    a tint gives the colour (alpha: where it is). The firs are tiers of these round a trunk."""
+    from PIL import ImageDraw
+    rng = np.random.default_rng(17)
+    size = 2048
+    img = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    d = ImageDraw.Draw(img)
+
+    def twig(x0, y0, x1, y1, width, depth):
+        steps = int(np.hypot(x1 - x0, y1 - y0) / 9) + 1
+        for i in range(steps):
+            t = i / steps
+            x, y = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+            length = (1.0 - 0.5 * t) * rng.uniform(95, 135) * (1.0 if depth == 0 else 0.75)
+            ang = np.arctan2(y1 - y0, x1 - x0)
+            for side in (-1, 1):
+                a = ang + side * rng.uniform(0.7, 1.1)
+                g = int(rng.uniform(150, 235))
+                d.line([(x, y), (x + np.cos(a) * length, y + np.sin(a) * length)], fill=(g, g, g, 255), width=9)
+        d.line([(x0, y0), (x1, y1)], fill=(110, 105, 100, 255), width=int(width))
+        if depth == 0:
+            for k in range(10):
+                t = 0.08 + 0.085 * k
+                bx, by = x0 + (x1 - x0) * t, y0 + (y1 - y0) * t
+                for side in (-1, 1):
+                    reach = (1.0 - 0.7 * t) * size * rng.uniform(0.38, 0.5)
+                    ang = np.arctan2(y1 - y0, x1 - x0) + side * rng.uniform(0.45, 0.75)
+                    twig(bx, by, bx + np.cos(ang) * reach, by + np.sin(ang) * reach, 9, 1)
+
+    twig(size / 2, size - 40, size / 2 + rng.uniform(-40, 40), 60, 22, 0)
+    img = img.resize((512, 512), Image.Resampling.LANCZOS)
+    save_rgba(np.asarray(img, dtype=np.float32) / 255.0, os.path.join(TEXTURES, "needles_albedo.png"))
+    flat_maps("needles")
 
 
 def paths():

@@ -657,13 +657,16 @@ private:
         }
     }
 
-    /** @brief A rock standing in a wild room: a few cells grown together, never cutting the room. */
-    void islet( const Rect &room )
+    /**
+     * @brief A rock standing in a wild room (or a mound, `ch` a height): a few cells grown together, never cutting the
+     *        room.
+     */
+    void islet( const Rect &room, char ch = '#', int least = 3, int most = 6 )
     {
         Rect             at = anywhere( room, 1, 1 );
-        int              n = m_rng.range( 3, 6 );
+        int              n = m_rng.range( least, most );
         std::vector<int> cells = { key( at.m_r0, at.m_c0 ) };
-        for ( int t = 0; t < 30 && (int)cells.size() < n; ++t )
+        for ( int t = 0; t < 60 && (int)cells.size() < n; ++t )
         {
             int pick = cells[m_rng.next() % cells.size()], d = m_rng.range( 0, 3 );
             int r = pick / 1000 + DR[d], c = pick % 1000 + DC[d];
@@ -673,7 +676,7 @@ private:
         for ( int k : cells )
             if ( !free( k / 1000, k % 1000 ) ) return;
         std::vector<std::string> saved = m_g;
-        for ( int k : cells ) m_g[k / 1000][k % 1000] = '#';
+        for ( int k : cells ) m_g[k / 1000][k % 1000] = ch;
         if ( !connected( room ) ) m_g = saved;
     }
 
@@ -797,7 +800,13 @@ private:
                     islet( r );
                 else
                     block( r, anywhere( r, 1, m_rng.range( 2, 4 ) ), '#' );
-            if ( big && m_rng.chance( 0.6f ) ) block( r, anywhere( r, m_rng.range( 3, 4 ), m_rng.range( 3, 5 ) ), '1' );
+            if ( big && m_rng.chance( 0.6f ) )
+            {
+                if ( wild( room ) )
+                    islet( r, '1', 7, 13 );   // a mound grown as the rocks are
+                else
+                    block( r, anywhere( r, m_rng.range( 3, 4 ), m_rng.range( 3, 5 ) ), '1' );
+            }
             for ( int k = m_rng.range( 1, 3 ); k > 0; --k ) block( r, anywhere( r, 1, 1 ), '+' );
             return;
         }

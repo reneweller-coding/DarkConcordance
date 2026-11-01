@@ -326,8 +326,11 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
             }
             // Now and then a tree in the thicket, its crown over the path.
             if ( h % 3 == 0 )
-                plant( dice() < 0.5f ? PlantE::CANOPY : PlantE::PARASOL, { mid.x, 0.0f, mid.z }, dice.in( 0.6f, 0.75f ),
-                       h, kit );
+            {
+                float pick = dice();
+                plant( pick < 0.4f ? PlantE::CANOPY : pick < 0.7f ? PlantE::FIR : PlantE::PARASOL,
+                       { mid.x, 0.0f, mid.z }, dice.in( 0.6f, 0.75f ), h, kit );
+            }
         }
         kit.m_stone.m_color = WHITE;
         return;
@@ -341,7 +344,10 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
         {
             Vector3 at = { mid.x + CellSize * 0.5f + dice.in( -0.7f, 0.7f ), 0.0f,
                            mid.z + CellSize * 0.5f + dice.in( -0.7f, 0.7f ) };
-            plant( PlantE::CANOPY, at, dice.in( 0.9f, 1.2f ), h, kit, depth <= GardenDepth + 2 );
+        {
+            bool near = depth <= GardenDepth + 2;
+            plant( near && dice() < 0.3f ? PlantE::FIR : PlantE::CANOPY, at, dice.in( 0.9f, 1.2f ), h, kit, near );
+        }
         }
         return;
     }
@@ -353,8 +359,8 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
     if ( r == br + (int)( bh % 3 ) && c == bc + (int)( ( bh >> 4 ) % 3 ) && ( bh >> 8 ) % 10 < 7 )
     {
         static const PlantE Trees[] = { PlantE::PARASOL, PlantE::PARASOL, PlantE::LANTERN, PlantE::ORBS,
-                                        PlantE::SPIRAL,  PlantE::CANOPY };
-        plant( Trees[( bh >> 12 ) % 6], at, dice.in( 0.85f, 1.15f ), h, kit );
+                                        PlantE::SPIRAL,  PlantE::CANOPY,  PlantE::FIR };
+        plant( Trees[( bh >> 12 ) % 7], at, dice.in( 0.85f, 1.15f ), h, kit );
         return;
     }
     for ( int i = 0; i < 2; ++i )
@@ -381,10 +387,36 @@ void Level::lawn( int r, int c, GardenKit &kit, float shade )
 
 void Level::groundTop( int r, int c, float h, GardenKit &kit )
 {
-    // The lawn's top in its patches; by a path a little trodden, drier and darker.
+    const std::vector<int> &props = m_propsByCell[(size_t)r * m_cols + c];
+    // How far a point is from the foot of what stands: the edge's rocks and bushes and the walls (cells), the things
+    // in the room (props).
+    auto foot = [&]( float x, float z, bool walls )
+    {
+        float d = 9.0f;
+        if ( walls )
+            for ( int dr = -1; dr <= 1; ++dr )
+                for ( int dc = -1; dc <= 1; ++dc )
+                {
+                    int rr = r + dr, cc = c + dc;
+                    if ( cell( rr, cc ).m_kind != CellE::ROCK ) continue;
+                    float ax = cc * CellSize, az = rr * CellSize;
+                    float dx = std::max( { ax - x, 0.0f, x - ax - CellSize } ), dz = std::max( { az - z, 0.0f, z - az - CellSize } );
+                    d = std::min( d, sqrtf( dx * dx + dz * dz ) );
+                }
+        for ( int i : props )
+            d = std::min( d, Vector2Distance( { x, z }, { m_props[i].m_pos.x, m_props[i].m_pos.z } ) - m_props[i].m_radius );
+        return d;
+    };
+    Vector3 sight = m_sight[(size_t)r * m_cols + c];
+    bool    crowned = sight.y < sight.z;   // a crown above
+    // The lawn's top in its patches; by a path a little trodden, drier and darker; at the foot of what stands darker
+    // (the sky does not reach in there; painted into the ground as Dark Alliance's are), darker too under a crown.
     auto colour = [&]( float x, float z )
     {
         Color m = meadow( x, z );
+        float ao = 1.0f - 0.38f * ( 1.0f - Clamp( foot( x, z, true ) / 1.1f, 0.0f, 1.0f ) );
+        ao *= crowned ? 0.86f : 1.0f;
+        m = { (unsigned char)( m.r * ao ), (unsigned char)( m.g * ao ), (unsigned char)( m.b * ao ), 255 };
         float near = 9.0f;
         for ( int dr = -1; dr <= 1; ++dr )
             for ( int dc = -1; dc <= 1; ++dc )
@@ -398,9 +430,14 @@ void Level::groundTop( int r, int c, float h, GardenKit &kit )
         return Color{ (unsigned char)Lerp( m.r, trodden.x * 255.0f, t ), (unsigned char)Lerp( m.g, trodden.y * 255.0f, t ),
                       (unsigned char)Lerp( m.b, trodden.z * 255.0f, t ), 255 };
     };
-    static const std::vector<float> Steps = { 0.0f, 1.0f, 2.0f };
-    kit.m_park( r, c, false ).field( c * CellSize, r * CellSize, Steps, [h]( float, float ) { return h; }, colour );
-    // Tufts of grass, more by the edges than in the middle, none on the path.
+    // Finer by what stands (the shadow at its foot is a metre wide), plain elsewhere.
+    bool near = !props.empty();
+    for ( int dr = -1; dr <= 1; ++dr )
+        for ( int dc = -1; dc <= 1; ++dc ) near = near || cell( r + dr, c + dc ).m_kind == CellE::ROCK;
+    static const std::vector<float> Plain = { 0.0f, 1.0f, 2.0f }, Fine = { 0.0f, 0.4f, 0.8f, 1.2f, 1.6f, 2.0f };
+    kit.m_park( r, c, false )
+        .field( c * CellSize, r * CellSize, near ? Fine : Plain, [h]( float, float ) { return h; }, colour );
+    // Tufts of grass, more by the edges than in the middle, none on the path, none in what stands.
     if ( m_path[(size_t)r * m_cols + c] ) return;
     Dice dice{ hashCell( r, c, 513 ) };
     int  edge = 0;
@@ -409,6 +446,7 @@ void Level::groundTop( int r, int c, float h, GardenKit &kit )
     for ( int i = 0; i < n; ++i )
     {
         Vector3 p = { ( c + dice.in( 0.1f, 0.9f ) ) * CellSize, h, ( r + dice.in( 0.1f, 0.9f ) ) * CellSize };
+        if ( foot( p.x, p.z, false ) < 0.2f ) continue;
         tuft( kit.m_blades, p, dice.in( 0.5f, 0.8f ), dice.in( 0.35f, 0.65f ), dice.in( 0.0f, 6.28f ), colour( p.x, p.z ) );
     }
 }
@@ -713,6 +751,44 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
         leaf.m_color = WHITE;
         break;
     }
+    case PlantE::FIR:
+    {
+        // A fir: a straight trunk; round it tiers of branches (cards seen from above, their tips drooping), each tier
+        // narrower, turned against the one below; inside a dark cone that throws the shadow and fills the gaps.
+        float hgt = dice.in( 4.6f, 6.2f ) * s, base = dice.in( 1.8f, 2.3f ) * s;
+        bark.tube( { Vector3Subtract( at, up( 0.2f ) ), Vector3Add( at, up( hgt ) ) }, { 0.22f * s, 0.06f * s }, 6 );
+        Color tone = dice() < 0.15f ? DarkExotics[dice.pick( 3 )] : Darks[dice.pick( 4 )];
+        tone = shaded( tone, 1.25f );
+        leaf.m_color = shaded( tone, 0.6f );
+        leaf.lathe( place( at ), { { base * 0.55f, 0.9f * s }, { base * 0.3f, hgt * 0.55f }, { 0.0f, hgt } }, 8 );
+        leaf.m_color = WHITE;
+        int   tiers = 6 + dice.pick( 3 );
+        float turn = dice.in( 0.0f, 6.28f );
+        kit.m_needles.m_color = tone;
+        for ( int t = 0; t < tiers; ++t )
+        {
+            float f = (float)t / tiers, y = 0.9f * s + f * ( hgt - 1.2f * s ), reach = base * ( 1.0f - f ) + 0.35f * s;
+            int   n = 7 - t / 3;
+            for ( int k = 0; k < n; ++k )
+            {
+                float   a = turn + k * 2.0f * PI / n + t * 0.45f + dice.in( -0.15f, 0.15f );
+                Vector3 out = { cosf( a ), 0.0f, sinf( a ) }, side = { -sinf( a ), 0.0f, cosf( a ) };
+                Vector3 root = Vector3Add( at, up( y + 0.15f * s ) );
+                Vector3 tip = Vector3Add( root, Vector3Add( Vector3Scale( out, reach ), up( -0.35f * reach ) ) );
+                float   w = ( 0.35f + 0.3f * reach ) * dice.in( 0.85f, 1.15f );
+                Vector3 n2 = Vector3Normalize( Vector3CrossProduct( Vector3Subtract( tip, root ), side ) );
+                if ( n2.y < 0.0f ) n2 = Vector3Negate( n2 );
+                n2 = Vector3Normalize( Vector3Add( n2, Vector3Scale( out, 0.4f ) ) );
+                // Its tip at the picture's top: tip corners first.
+                kit.m_needles.card( Vector3Subtract( tip, Vector3Scale( side, w ) ), Vector3Add( tip, Vector3Scale( side, w ) ),
+                                    Vector3Add( root, Vector3Scale( side, w * 0.6f ) ),
+                                    Vector3Subtract( root, Vector3Scale( side, w * 0.6f ) ), n2 );
+            }
+        }
+        kit.m_needles.m_color = WHITE;
+        hang( at, { base, 0.0f, base }, 0.9f * s, hgt );
+        break;
+    }
     default:   // CANOPY
     {
         // A forest tree: a short trunk into a big dark crown and a clump beside it, low and wide, so that the crowns
@@ -735,16 +811,18 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
         leaves( kit.m_cards, Vector3Add( top, up( 0.8f * s ) ), crown, turn, full ? 22 : 9, leaf.m_color, dice,
                 full ? 0.26f : 0.34f );
         hang( top, crown, top.y + 0.8f * s - crown.y * 0.6f, top.y + 0.8f * s + crown.y );
-        if ( full )
+        for ( int k = 0; full && k < 3; ++k )
         {
-            float   a = turn + dice.in( -0.4f, 0.4f ), d = crown.x * dice.in( 0.55f, 0.8f );
-            Vector3 p = Vector3Add( top, { cosf( a ) * d, dice.in( 0.0f, 0.9f ) * s, sinf( a ) * d } );
-            Vector3 clump = Vector3Scale( crown, dice.in( 0.5f, 0.65f ) );
+            // Clumps round the middle at different heights: a crown of lumps, not one egg.
+            float   a = turn + k * 2.09f + dice.in( -0.4f, 0.4f ), d = crown.x * dice.in( 0.55f, 0.8f );
+            Vector3 p = Vector3Add( top, { cosf( a ) * d, dice.in( -0.2f, 1.1f ) * s, sinf( a ) * d } );
+            Vector3 clump = Vector3Scale( crown, dice.in( 0.45f, 0.6f ) );
             Color   tone = leaf.m_color;
             leaf.m_color = shaded( tone, 0.75f );
-            leaf.blob( place( p, { 0.0f, a, 0.0f } ), Vector3Scale( clump, 0.85f ), 0.35f, h + 7u, 4 );
+            leaf.blob( place( p, { 0.0f, a, 0.0f } ), Vector3Scale( clump, 0.85f ), 0.35f, h + 7u + k, 4 );
             leaf.m_color = tone;
-            leaves( kit.m_cards, p, clump, a, 8, tone, dice, 0.3f );
+            leaves( kit.m_cards, p, clump, a, 7, tone, dice, 0.3f );
+            hang( p, clump, p.y - clump.y * 0.6f, p.y + clump.y );
         }
         leaf.m_color = WHITE;
         break;
