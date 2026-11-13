@@ -1107,8 +1107,8 @@ void Game::updateCreature( Foe &f, float dt, Vector3 dir, float dist, Vector3 pa
                       0.6f,
                       0.6f,
                       0.05f,
-                      { 150, 130, 110, 200 },
-                      1 } );
+                      { 150, 130, 110, 45 },
+                      5 } );
             if ( f.m_timer <= 0.0f )
             {
                 f.m_state = FoeStateE::LEAP;
@@ -1580,8 +1580,8 @@ void Game::updateGifts( Foe &f, int index, float dt, float dist, Vector3 dir )
                                      0.8f,
                                      0.8f,
                                      0.04f,
-                                     { 210, 240, 255, 200 },
-                                     1 } );
+                                     { 210, 240, 255, 50 },
+                                     5 } );
     }
     // Fiery: its steps burn.
     if ( hasGift( f, FIERY ) && Vector3Length( f.m_vel ) > 0.6f && f.m_ground && fmodf( f.m_giftT, 0.4f ) < dt )
@@ -1767,8 +1767,8 @@ void Game::updateHazards( float dt )
         {
             float a = rnd() * 2.0f * PI, r = sqrtf( rnd() ) * h.m_radius;
             Color c = h.m_kind == 0 ? Color{ 255, 140, 40, 255 }
-                                    : ( h.m_kind == 1 ? Color{ 150, 255, 90, 220 } : Color{ 210, 240, 255, 200 } );
-            m_particles.push_back( { Vector3Add( h.m_pos, { cosf( a ) * r, 0.05f, sinf( a ) * r } ),
+                                    : ( h.m_kind == 1 ? Color{ 150, 255, 90, 70 } : Color{ 210, 240, 255, 60 } );
+            m_particles.push_back( { Vector3Add( h.m_pos, { cosf( a ) * r, 0.3f, sinf( a ) * r } ),
                                      { 0.0f, 1.0f, 0.0f },
                                      0.7f,
                                      0.7f,
@@ -1817,12 +1817,12 @@ void Game::updateAilments( float dt )
     }
     if ( m_chill > 0.0f && rnd() < dt * 8.0f )
         m_particles.push_back(
-            { Vector3Add( m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.1f + rnd() * 0.6f, ( rnd() - 0.5f ) * 0.6f } ),
+            { Vector3Add( m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.35f + rnd() * 0.6f, ( rnd() - 0.5f ) * 0.6f } ),
               { 0.0f, 0.3f, 0.0f },
               0.8f,
               0.8f,
               0.03f,
-              { 210, 240, 255, 200 },
+              { 210, 240, 255, 55 },
               1 } );
 }
 

@@ -1047,7 +1047,7 @@ void Gfx::beginScene( const Camera3D &cam, const Lighting &lights, float time, T
     SetShaderValue( m_sky, GetShaderLocation( m_sky, "nebula" ), &nebula, SHADER_UNIFORM_FLOAT );
     rlDisableDepthMask();
     rlDisableDepthTest();
-    fullscreen( m_sky, sky, m_viewW, m_viewH );
+    if ( !( m_off & OFF_VIEW ) ) fullscreen( m_sky, sky, m_viewW, m_viewH );
     rlEnableDepthTest();
     rlEnableDepthMask();
 
@@ -1260,7 +1260,8 @@ void Gfx::leanDraw( const Drawable &d, const Surface &s, bool skin, bool multipl
         }
     }
     // The drawable's own (as cheap to compare as to set, but each set is a call into the driver).
-    const Vector4 &em = d.m_emissive.x >= 0.0f ? d.m_emissive : s.m_emissive;
+    const Vector4  none = { 0.0f, 0.0f, 0.0f, 0.0f };
+    const Vector4 &em = ( m_off & OFF_EMISSIVE ) ? none : d.m_emissive.x >= 0.0f ? d.m_emissive : s.m_emissive;
     float          cut = d.m_cutaway && !early ? ( d.m_nearCut ? 2.0f : 1.0f ) : 0.0f;
     bool           fresh = p.m_cut < 0.0f;
     auto           same = []( const Vector4 &a, const Vector4 &c ) { return std::memcmp( &a, &c, sizeof a ) == 0; };
@@ -1379,7 +1380,8 @@ void Gfx::draw( const std::vector<Drawable> &list, const std::vector<Surface> &s
         Bounds b;
         if ( !d.m_visible || d.m_detail > level || !inside( m_view, d, b ) ) continue;
         const Surface &s = surfaces[d.m_surface];
-        bool           early = prepassed && solid( s );
+        if ( ( m_off & OFF_DECALS ) && ( decal( s ) || stain( s ) ) ) continue;
+        bool early = prepassed && solid( s );
         if ( early != equal ) depthEqual( equal = early );
         drawOne( d, s, b, early );
     }
@@ -1407,7 +1409,7 @@ void Gfx::fog()
     SetShaderValueMatrix( m_fogShader, GetShaderLocation( m_fogShader, "invViewProj" ), inv );
     SetShaderValue( m_fogShader, GetShaderLocation( m_fogShader, "sceneSize" ), &size, SHADER_UNIFORM_VEC2 );
     rlDisableColorBlend();
-    fullscreen( m_fogShader, depth, fw, fh );
+    if ( !( m_off & OFF_FOG ) ) fullscreen( m_fogShader, depth, fw, fh );
     rlEnableColorBlend();
     EndTextureMode();
 
@@ -1421,7 +1423,8 @@ void Gfx::fog()
     SetShaderValue( m_fogUp, GetShaderLocation( m_fogUp, "fogLast" ), last, SHADER_UNIFORM_IVEC2 );
     rlSetBlendFactorsSeparate( RL_DST_ALPHA, RL_SRC_ALPHA, RL_ZERO, RL_ONE, RL_FUNC_ADD, RL_FUNC_ADD );
     rlSetBlendMode( RL_BLEND_CUSTOM_SEPARATE );
-    fullscreen( m_fogUp, m_fogTarget.texture, m_viewW, m_viewH, depth, GetShaderLocation( m_fogUp, "depthTex" ) );
+    if ( !( m_off & OFF_FOG ) )
+        fullscreen( m_fogUp, m_fogTarget.texture, m_viewW, m_viewH, depth, GetShaderLocation( m_fogUp, "depthTex" ) );
     rlSetBlendMode( RL_BLEND_ALPHA );
     // The lamps' cones while this target (the colour alone) is bound: no switch of their own.
     drawCones();
@@ -1548,14 +1551,14 @@ void Gfx::pond( const Mesh &mesh, const std::vector<Vector4> &ripples, Vector3 s
     EndBlendMode();
 }
 
-void Gfx::beginParticles( float boost, bool lit )
+void Gfx::beginParticles( float boost, bool lit, bool smoke )
 {
     rlDrawRenderBatchActive();
     BeginShaderMode( m_particle );
-    int litFlag = lit ? 1 : 0;
+    int litFlag = smoke ? 2 : lit ? 1 : 0;
     SetShaderValue( m_particle, GetShaderLocation( m_particle, "boost" ), &boost, SHADER_UNIFORM_FLOAT );
     SetShaderValue( m_particle, GetShaderLocation( m_particle, "lit" ), &litFlag, SHADER_UNIFORM_INT );
-    BeginBlendMode( BLEND_ADDITIVE );
+    BeginBlendMode( smoke ? BLEND_ALPHA_PREMULTIPLY : BLEND_ADDITIVE );
     rlDisableDepthMask();
 }
 

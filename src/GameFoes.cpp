@@ -406,7 +406,7 @@ void Game::updateTaxator( Foe &f, float dt, Vector3 dir, float dist, Vector3 pat
                                          0.7f,
                                          0.35f,
                                          { 200, 175, 140, 26 },
-                                         1 } );
+                                         5 } );
             }
             sparks( floor, { 0.0f, 1.0f, 0.0f }, 30, { 255, 180, 90, 255 }, 5.0f );
             m_audio.play( SfxE::SLAM, floor, m_camTarget, 1.0f );
@@ -572,7 +572,7 @@ void Game::updateHydraulic( Foe &f, float dt, Vector3 dir, float dist, Vector3 p
             for ( int i = 0; i < 40; ++i )
             {
                 float a = i * PI * 2.0f / 40.0f;
-                m_particles.push_back( { Vector3Add( f.m_pos, { 0.0f, 0.2f, 0.0f } ),
+                m_particles.push_back( { Vector3Add( f.m_pos, { 0.0f, 0.5f, 0.0f } ),
                                          { cosf( a ) * 6.0f, 1.0f + rnd(), sinf( a ) * 6.0f },
                                          0.7f,
                                          0.7f,

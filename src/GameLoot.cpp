@@ -623,7 +623,7 @@ void Game::quake( int r )
                                  0.6f,
                                  0.3f,
                                  { 200, 175, 150, 24 },
-                                 1 } );
+                                 5 } );
     }
     sparks( at, { 0.0f, 1.0f, 0.0f }, 40, { 255, 190, 100, 255 }, 5.0f );
     m_flashes.push_back(

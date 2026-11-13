@@ -1746,6 +1746,11 @@ int runGame( const Options &o, Gfx &gfx )
             if ( end == std::string::npos ) end = o.m_tour.size();
             std::string entry = o.m_tour.substr( at, end - at ), place = entry;
             at = end + 1;
+            // ("#mask" at its end: what to leave out of its picture, Gfx::OffE's bits; its name gets "_off<mask>".)
+            int    off = 0;
+            size_t hash = entry.find( '#' );
+            if ( hash != std::string::npos )
+                off = atoi( entry.c_str() + hash + 1 ), entry = place = entry.substr( 0, hash );
             float  x = 0.0f, z = 0.0f;
             size_t mark = entry.find( '@' );
             bool   put = mark != std::string::npos && sscanf( entry.c_str() + mark + 1, "%f,%f", &x, &z ) == 2;
@@ -1785,7 +1790,12 @@ int runGame( const Options &o, Gfx &gfx )
                 bench( gfx, o.m_bench, o, draw );
             }
             std::string base = o.m_shot.substr( 0, o.m_shot.rfind( '.' ) );
-            savePicture( gfx, base + "_" + place.substr( 0, place.rfind( '.' ) ) + ( put ? "_at.png" : ".png" ), draw );
+            gfx.m_off = off;
+            savePicture( gfx,
+                         base + "_" + place.substr( 0, place.rfind( '.' ) ) + ( put ? "_at" : "" ) +
+                             ( off ? "_off" + std::to_string( off ) : "" ) + ".png",
+                         draw );
+            gfx.m_off = 0;
         }
         game->shutdown();
         score.shutdown();

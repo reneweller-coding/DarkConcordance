@@ -239,7 +239,7 @@ void Game::strike( int swing )
                                      0.5f,
                                      0.25f,
                                      { 190, 170, 150, 18 },
-                                     1 } );
+                                     5 } );
         }
         sparks( floor, { 0.0f, 1.0f, 0.0f }, 16, { 255, 180, 90, 255 }, 3.5f );
         m_flashes.push_back(
@@ -544,8 +544,8 @@ void Game::burst( const Foe &f )
               life,
               life,
               0.35f + rnd() * 0.3f,
-              { 70, 72, 78, 170 },
-              1 } );
+              { 70, 72, 78, 150 },
+              6 } );
     }
     m_flashes.push_back( { chest, { 12.0f, 18.0f, 30.0f }, 6.0f, 0.3f, 0.3f } );
     m_audio.play( SfxE::POP, chest, m_camTarget, 0.9f );

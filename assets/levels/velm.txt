@@ -21,7 +21,7 @@ gravity  7.0
 fog      0.003 0.01 0.6 0.9
 fogcolor 0.004 0.0028 0.0018
 ambient  0.034 0.028 0.025 0.02 0.017 0.016
-lampgain 2.0 0.55
+lampgain 1.5 0.6
 walls    3.2
 walltex  bar plaster
 peaceful 1

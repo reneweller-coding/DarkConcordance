@@ -751,12 +751,20 @@ void main()
     }
     vec3 L;
     vec3 sc = spotLight( fragPos, L );
-    if( sc.r + sc.g + sc.b > 0.0 ) col += brdf( N, V, L, albedo, rough, metal ) * sc * spotShadowAt( fragPos, Ng, shadowTaps );
+    // The helmet lamp: its highlight no sharper than a rough surface's, and what it adds eased off softly towards a
+    // peak (phase F5: on wet cobbles and metal plates right in front of the hero, in a tight corridor, it blew out to
+    // a white patch); a lamp's light that is weak is hardly changed.
+    if( sc.r + sc.g + sc.b > 0.0 )
+    {
+        vec3 lamp = brdf( N, V, L, albedo, max( rough, 0.7 ), metal ) * sc * spotShadowAt( fragPos, Ng, shadowTaps );
+        col += lamp / ( 1.0 + max( lamp.r, max( lamp.g, lamp.b ) ) * 3.0 );
+    }
     // The fixed lights stop at the walls (their masks, looked up a little out of a wall's face so that it takes the
     // light of its own side).
     vec3 mp = fragPos + vec3( Ng.x, 0.0, Ng.z ) * 0.25;
     vec3 Rp = reflect( -V, N );
     vec3 mirror = vec3( 0.0 );
+    vec3 lamps = vec3( 0.0 );   // the fixed lights' sum
     for( int i = 0; i < lightCount; i++ )
     {
         vec3 lv = lightPos[i].xyz - fragPos;
@@ -764,12 +772,12 @@ void main()
         if( d < lightPos[i].w )
         {
             float vis = lightVis( i, mp );
-            col += brdf( N, V, lv / d, albedo, rough, metal ) * lightColor[i].rgb * atten( d, lightPos[i].w ) * vis;
+            lamps += brdf( N, V, lv / d, albedo, rough, metal ) * lightColor[i].rgb * atten( d, lightPos[i].w ) * vis;
             // A face looking up over the lamp (a wall's lid, a cupboard's top) takes some of what the lamp throws on
             // the ceiling (phase F3: the walls' lids were black: the lamps hang below them), past the wall only from
             // its room's side (its mask looked up 0.6 m towards it).
             if( Ng.y > 0.6 && lv.y < -0.3 )
-                col += albedo * ( 1.0 - metal ) * ( 0.12 / PI ) * Ng.y * lightColor[i].rgb * atten( d, lightPos[i].w ) *
+                lamps += albedo * ( 1.0 - metal ) * ( 0.12 / PI ) * Ng.y * lightColor[i].rgb * atten( d, lightPos[i].w ) *
                        lightVis( i, fragPos + vec3( lv.x, 0.0, lv.z ) / max( length( lv.xz ), 1e-3 ) * 0.6 );
             // A puddle mirrors the lamp where the reflected ray passes it: a small bright image and a halo round it
             // (by the angle the ray misses it by, so that a far lamp's image is small).
@@ -782,7 +790,7 @@ void main()
             }
         }
     }
-    col += mirror * puddle * 0.02;
+    col += lamps + mirror * puddle * 0.02;
 
     // Ambient: a hemisphere for the diffuse part; what reflects mirrors the level's surroundings (its cube map, blurrier
     // the rougher it is), or a fake environment where there is none.
@@ -1178,8 +1186,11 @@ vec4 volumetric( vec3 from, vec3 to )
         Li += sunColor * sh * phaseSun * fogParams.w;
         vec3 L;
         vec3 sc = spotLight( p, L );
+        // (Weaker in thick haze and no stronger than three metres out: right at the shoulder, in a tale's rain and the
+        // prologue's corridors, it filled the picture with white, phase F5.)
         if( sc.r + sc.g + sc.b > 0.0 )
-            Li += sc * spotShadowAt( p, vec3( 0.0 ), 1 ) * hg( dot( -L, -dir ), 0.35 ) * fogParams.w;
+            Li += min( sc, vec3( 3.0 ) ) * spotShadowAt( p, vec3( 0.0 ), 1 ) * hg( dot( -L, -dir ), 0.35 ) * fogParams.w *
+                  clamp( 0.008 / max( fogParams.x + fogParams.y, 1e-4 ), 0.3, 1.0 );
         float ext = dens * dt;
         scat += T * Li * ext;
         T *= exp( -ext );
@@ -1197,7 +1208,13 @@ vec4 volumetric( vec3 from, vec3 to )
         float a = ( atan( ( tf - tc ) / h ) - atan( ( tn - tc ) / h ) ) / h;
         halo += lightColor[i].rgb * lightColor[i].w * a * lightVis( i, from + dir * clamp( tc, tn, tf ) );
     }
-    scat += halo * densAvg / ( 4.0 * PI ) * mix( 1.0, T, 0.5 );
+    // In thick haze only (the prologue, a tale's rain: 0.016 and more), its peaks eased off above 0.15 (1 becomes some
+    // 0.38); elsewhere the halos keep their punch (phase F5).
+    vec3  glow = halo * densAvg / ( 4.0 * PI ) * mix( 1.0, T, 0.5 );
+    float top = max( glow.r, max( glow.g, glow.b ) );
+    if( top > 0.15 && fogParams.x + fogParams.y >= 0.016 )
+        glow *= ( 0.15 + ( top - 0.15 ) / ( 1.0 + ( top - 0.15 ) * 3.0 ) ) / top;
+    scat += glow;
     return vec4( scat, T );
 }
 
@@ -1360,13 +1377,13 @@ in vec2 fragTexCoord;
 in vec4 fragColor;
 uniform sampler2D texture0;
 uniform float boost;
-uniform int lit;
+uniform int lit;   // 1: lit by the sun, the lamp and the lights; 2: so, and blended by its alpha (dark smoke)
 out vec4 finalColor;
 void main()
 {
     vec4 t = texture( texture0, fragTexCoord ) * fragColor;
     vec3 c = t.rgb * t.a * boost;
-    if( lit == 1 )
+    if( lit >= 1 )
     {
         vec3 light = fogColor * 20.0 + sunColor * sunShadowAt( fragPos, vec3( 0.0 ), 1.0, 1 );
         vec3 L;
@@ -1377,10 +1394,11 @@ void main()
             float d = length( lightPos[i].xyz - fragPos );
             if( d < lightPos[i].w ) light += lightColor[i].rgb * atten( d, lightPos[i].w ) * lightVis( i, fragPos );
         }
-        // Capped: a cloud of steam beside a lamp must not add up to white.
-        c *= min( light, vec3( 2.5 ) );
+        // Capped: a cloud of steam beside a lamp must not add up to white. Dark smoke as a dull surface takes it
+        // (its colour over pi: by a work lamp at 2.5 it read as a pale grey wall of fog across a corridor).
+        c *= min( light, vec3( 2.5 ) ) / ( lit == 2 ? PI : 1.0 );
     }
-    finalColor = vec4( c, 1.0 );
+    finalColor = vec4( c, lit == 2 ? t.a : 1.0 );
 }
 )";
 

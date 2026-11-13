@@ -549,7 +549,7 @@ private:
         Vector3 m_pos, m_vel;
         float   m_life, m_max, m_size;
         Color   m_color;
-        int     m_kind;   ///< 0 spark, 1 steam (lit), 2 flash, 3 ember, 4 a streak of the wind
+        int m_kind;   ///< 0 spark, 1 steam (lit), 2 flash, 3 ember, 4 a streak of the wind, 5 dust lying flat (lit), 6 dark smoke (lit, blended)
     };
     struct Debris
     {

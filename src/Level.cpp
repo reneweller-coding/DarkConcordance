@@ -3026,6 +3026,9 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             ThemeE  t = theme( m.m_row, m.m_col );
             Vector3 colour = red ? Vector3{ 30.0f, 3.4f, 1.4f } : Vector3{ 34.0f, 21.0f, 8.5f };
             if ( !red && ( t == ThemeE::EXCHANGER || t == ThemeE::COLDSTORE ) ) colour = { 18.0f, 26.0f, 36.0f };
+            // A street's lantern lights a lane, not a hall: under half a work lamp's light (phase F5: by Velm's light
+            // plaster fronts and street floor it blew out to white).
+            if ( dressGroup( t ) == 1 ) colour = Vector3Scale( colour, 0.45f );
             unsigned h = hashCell( m.m_row, m.m_col, 5 );
             // On a wall a lamp of the place's own kind with its cone of light in the haze (a steady one: a failing
             // lamp's cone would stay lit while it goes dark); on a pole or out in the open the old housing. Where the
@@ -3173,7 +3176,8 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         metal.box( place( { mid.x, y + h * 0.5f + 0.18f, z + 0.12f } ), { 0.3f, 0.04f, 0.12f } );
         glows.push_back(
             { { mid.x, y + h * 0.5f + 0.14f, z + 0.14f }, { 0.25f, 0.01f, 0.08f }, { 6.0f, 4.5f, 2.5f, 0.0f } } );
-        m_lights.push_back( { sign.m_lamp, { 7.0f, 5.5f, 3.5f }, 3.2f, 0.0f } );
+        // (Six tenths of it: right at a light front it blew the wall out round the sign, phase F5.)
+        m_lights.push_back( { sign.m_lamp, { 4.2f, 3.3f, 2.1f }, 3.2f, 0.0f } );
         m_signs.push_back( sign );
     }
 

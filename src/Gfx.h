@@ -312,8 +312,9 @@ public:
      * @brief Begins additive particles.
      * @param[in] boost  intensity factor (the vertex colours stop at 1)
      * @param[in] lit    true: lit by the sun and the lamp (dust)
+     * @param[in] smoke  true: blended over the scene by their alpha instead of added (dark smoke; lit)
      */
-    void beginParticles( float boost, bool lit );
+    void beginParticles( float boost, bool lit, bool smoke = false );
 
     /** @brief Ends the particles. */
     void endParticles();
@@ -357,9 +358,14 @@ public:
     /** @brief What m_off switches off. */
     enum OffE
     {
-        OFF_MASKS = 1,   ///< the fixed lights' masks (they shine through the walls again)
-        OFF_CONES = 2,   ///< the lamps' cones in the haze
-        OFF_ENV = 4      ///< the level's cube map and the wet map (the old fake environment, dry floors)
+        OFF_MASKS = 1,        ///< the fixed lights' masks (they shine through the walls again)
+        OFF_CONES = 2,        ///< the lamps' cones in the haze
+        OFF_ENV = 4,          ///< the level's cube map and the wet map (the old fake environment, dry floors)
+        OFF_FOG = 8,          ///< the fog pass (its in-scattered light, the halos; tests: --tour "a.txt@x,z#mask")
+        OFF_EMISSIVE = 16,    ///< what glows by itself on the lit surfaces
+        OFF_DECALS = 32,      ///< the decals and stains
+        OFF_PARTICLES = 64,   ///< the particles and the air's motes and mist (Game)
+        OFF_VIEW = 128        ///< what lies behind the scene: the sky, the star, plumes, ring, sea, the windows (Game)
     };
 
     /** @brief The six planes of a frustum (a point is inside where all of them are >= 0). */

@@ -417,12 +417,12 @@ void Game::updateElements( float dt )
         float rate = g.m_state == 1 ? 10.0f : 70.0f;
         if ( rnd() < dt * rate )
             m_particles.push_back(
-                { Vector3Add( g.m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.2f, ( rnd() - 0.5f ) * 0.6f } ),
+                { Vector3Add( g.m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.35f, ( rnd() - 0.5f ) * 0.6f } ),
                   { ( rnd() - 0.5f ) * 1.5f, g.m_state == 1 ? 1.5f : 9.0f + rnd() * 5.0f, ( rnd() - 0.5f ) * 1.5f },
                   g.m_state == 1 ? 0.6f : 1.1f,
                   g.m_state == 1 ? 0.6f : 1.1f,
                   g.m_state == 1 ? 0.04f : 0.12f,
-                  { 225, 240, 255, 200 },
+                  { 225, 240, 255, 90 },
                   1 } );
         if ( g.m_state != 2 ) continue;
         if ( Vector2Distance( { g.m_pos.x, g.m_pos.z }, { m_pos.x, m_pos.z } ) < GeyserReach && m_pos.y < 4.0f )

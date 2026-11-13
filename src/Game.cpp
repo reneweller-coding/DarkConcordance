@@ -58,7 +58,7 @@ void Game::themeSurfaces( LevelSurfaces &ls )
         const char *m_theme, *m_wall, *m_floor;
     };
     static const Own own[] = {
-        { "street", "plaster", "streetfloor" },
+        { "street", "plaster", "streetfloor" },   // (the plaster a little darker, below: Velm's fronts blew out)
         { "hull", "hullplate", "hullplate" },
         { "vault", "vaultwall", "vaultfloor" },
         { "coldstore", "frost", nullptr },
@@ -110,6 +110,14 @@ void Game::themeSurfaces( LevelSurfaces &ls )
         if ( f >= 0 ) ls.m_themeFloor[t] = f + 1;
     };
     for ( const Own &o : own ) set( o.m_theme, o.m_wall, o.m_floor );
+    // The pale own floors a little darker (phase F5: under their lamps they read washed out to white): the alleys'
+    // street floor (0.195), the vaults' pale stone (0.39), the ark's and the clinic's white tiles (0.79, walls too);
+    // and the streets' plaster fronts (0.33, by Velm's clinic blown out to white).
+    static const std::pair<const char *, unsigned char> pale[] = {
+        { "streetfloor", 165 }, { "vaultfloor", 150 }, { "tiles", 120 }, { "plaster", 185 }
+    };
+    for ( const auto &[name, k] : pale )
+        if ( m_ownSurfaces.count( name ) ) m_surfaces[m_ownSurfaces[name]].m_tint = { k, k, k, 255 };
     for ( const auto &wt : m_level.m_wallTex ) set( wt.first, wt.second.c_str(), nullptr );
     for ( const auto &ft : m_level.m_floorTex ) set( ft.first, nullptr, ft.second.c_str() );
     // The floors per kind of room (Level::planRooms): a hall's, a corridor's and a side room's (nullptr: the place's
@@ -160,10 +168,11 @@ void Game::themeSurfaces( LevelSurfaces &ls )
     // their colour), the concrete, the pavers and the terrazzo are not: at 0.06 the concrete still took three times
     // the plates' light and stayed pale grey in the Cooling Guts, at Seren and on the Wanderer; now 0.033. Phase F3: the
     // concrete grimed (tools/make_grime.py: oil, burns, worn lanes, bold bay lines; its mean 0.15), at 46 a mean of
-    // 0.027 with its yellow lines twice as light; the Mill's sooted plating as the common floor's plates.
+    // 0.027 with its yellow lines twice as light; the Mill's sooted plating as the common floor's plates. Phase F5: the
+    // plazas' pavers (0.29 times 90: 0.10) read washed out under the streets' lamps, now 0.07; the terrazzo 0.09.
     static const std::pair<const char *, unsigned char> shades[] = { { "concretebay", 46 },   { "treadplate", 140 },
-                                                                     { "foundryplate", 200 }, { "pavers", 90 },
-                                                                     { "terrazzo", 64 },      { "composite", 105 },
+                                                                     { "foundryplate", 200 }, { "pavers", 62 },
+                                                                     { "terrazzo", 48 },      { "composite", 105 },
                                                                      { "carpet", 180 },       { "frostplate", 80 } };
     auto                                                own2 = [&]( const char *name ) -> int
     {
@@ -464,9 +473,18 @@ void Game::buildDecals()
             surf.m_emissive = dd.m_glow > 0.0f ? Vector4{ dd.m_glow, dd.m_glow, dd.m_glow, 2.0f } : Vector4{};
             surf.m_variation = 0.15f;
             surf.m_tint = WHITE;
-            // A hall's motif is laid into the floor, not painted white over it (its pale disc read as a pool of light
-            // in the Mill, at Seren, on Brannt): about as light as the place's floor (linear: the works' concrete and
-            // the plates 0.033-0.05, the streets' pavers and the clean places' stone lighter).
+            // A pale floor decal (frost, snow drifts, white paint, chalk) no lighter than some 0.25 (phase F5: at their
+            // picture's white, 30 times the concrete, they lay on the floors as paper cut-outs, the Ark's frost blown out).
+            if ( !dd.m_wall && !dd.m_multiply && dd.m_glow <= 0.0f && dd.m_name.rfind( "motif_", 0 ) != 0 &&
+                 dd.m_name.rfind( "bay_", 0 ) != 0 && dd.m_name.rfind( "path_", 0 ) != 0 )
+            {
+                float lum = powf( 0.2126f * dd.m_color.x + 0.7152f * dd.m_color.y + 0.0722f * dd.m_color.z, 2.2f );
+                if ( lum > 0.25f )
+                {
+                    unsigned char k = (unsigned char)( 255.0f * 0.25f / lum );
+                    surf.m_tint = { k, k, k, 255 };
+                }
+            }
             if ( dd.m_name.rfind( "bay_", 0 ) == 0 )
             {
                 // The bay lines' yellow some three times as light as the grimed concrete (0.027), not glowing.
@@ -475,6 +493,9 @@ void Game::buildDecals()
                 surf.m_tint = { (unsigned char)( 255.0f * k ), (unsigned char)( 255.0f * k ),
                                 (unsigned char)( 255.0f * k ), 255 };
             }
+            // A hall's motif is laid into the floor, not painted white over it (its pale disc read as a pool of light
+            // in the Mill, at Seren, on Brannt): about as light as the place's floor (linear: the works' concrete and
+            // the plates 0.033-0.05, the streets' pavers and the clean places' stone lighter).
             if ( dd.m_name.rfind( "motif_", 0 ) == 0 )
             {
                 float lum = 0.2126f * dd.m_color.x + 0.7152f * dd.m_color.y + 0.0722f * dd.m_color.z;
@@ -2102,7 +2123,7 @@ void Game::updateHero( float dt, const GameInput &in )
                                      0.5f,
                                      0.2f,
                                      { 180, 165, 150, 30 },
-                                     1 } );
+                                     5 } );
     }
     // Health that comes back by itself (gear, Nanoheilung).
     if ( stat( StatE::REGEN ) > 0.0f ) m_hp = fminf( hpMax(), m_hp + stat( StatE::REGEN ) * dt );
@@ -2974,11 +2995,13 @@ void Game::updateEffects( float dt )
                 p.m_vel = { p.m_vel.x * 0.5f, -p.m_vel.y * 0.35f, p.m_vel.z * 0.5f };
             }
         }
-        else if ( p.m_kind == 1 )
+        else if ( p.m_kind == 1 || p.m_kind == 5 || p.m_kind == 6 )
         {
+            float y = p.m_pos.y;
             p.m_pos = Vector3Add( p.m_pos, Vector3Scale( p.m_vel, dt ) );
             p.m_vel = Vector3Scale( p.m_vel, 1.0f - dt * 0.6f );
             p.m_size += dt * 0.5f;
+            if ( p.m_kind == 5 ) p.m_pos.y = y;   // over the ground, where it was made
         }
         else if ( p.m_kind == 3 || p.m_kind == 4 )
             p.m_pos = Vector3Add( p.m_pos, Vector3Scale( p.m_vel, dt ) );
@@ -3117,7 +3140,7 @@ void Game::updateEffects( float dt )
             // Few, large and faint: many puffs on top of each other add up to a white blot.
             if ( rnd() < dt * 12.0f )
                 m_particles.push_back(
-                    { Vector3Add( v.m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.1f, ( rnd() - 0.5f ) * 0.6f } ),
+                    { Vector3Add( v.m_pos, { ( rnd() - 0.5f ) * 0.6f, 0.45f, ( rnd() - 0.5f ) * 0.6f } ),
                       { ( rnd() - 0.5f ) * 0.6f, 1.4f + rnd() * 1.2f, ( rnd() - 0.5f ) * 0.6f },
                       2.2f,
                       2.2f,
@@ -4227,8 +4250,34 @@ void Game::drawParticles( Gfx &gfx )
         float   twinkle = 0.55f + 0.45f * sinf( m_time * 3.0f + d.m_phase * 7.0f );
         billboard( Vector3Add( d.m_centre, o ), d.m_size, { 220, 235, 255, (unsigned char)( 255 * twinkle ) } );
     }
+    // Dust lying flat over the ground (kind 5; phase F5: as steam, kind 1, each stood up to the camera and the ground
+    // cut it off in a straight line, the rings of a slam and the dust of a dash among them).
+    auto flat = [&]( Vector3 p, float s, Color col )
+    {
+        quad( { p.x - s, p.y, p.z - s }, { p.x - s, p.y, p.z + s }, { p.x + s, p.y, p.z + s },
+              { p.x + s, p.y, p.z - s }, col );
+    };
     for ( const Particle &p : m_particles )
-        if ( p.m_kind == 1 )
+        if ( p.m_kind == 1 || p.m_kind == 5 )
+        {
+            Color c = p.m_color;
+            c.a = (unsigned char)( c.a * sinf( PI * p.m_life / p.m_max ) );
+            if ( p.m_kind == 1 )
+                billboard( p.m_pos, p.m_size, c );
+            else
+                flat( Vector3Add( p.m_pos, { 0.0f, 0.03f, 0.0f } ), p.m_size, c );
+        }
+    rlEnd();
+    rlSetTexture( 0 );
+    gfx.endParticles();
+
+    // Dark smoke (kind 6; phase F5: as steam, added and boosted six times, a power cell's smoke glowed as a white ball):
+    // lit at its own strength and laid over the scene by its alpha.
+    gfx.beginParticles( 1.0f, true, true );
+    rlSetTexture( m_dot.id );
+    rlBegin( RL_QUADS );
+    for ( const Particle &p : m_particles )
+        if ( p.m_kind == 6 )
         {
             Color c = p.m_color;
             c.a = (unsigned char)( c.a * sinf( PI * p.m_life / p.m_max ) );
@@ -4488,11 +4537,16 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     Lighting L = lighting();
     gfx.m_sunShadows = m_skyTex.id > 0 || m_ringMesh.vertexCount > 0;
     gfx.m_cutCentre = Vector3Add( m_photo ? m_photoTarget : m_pos, { 0.0f, m_photo ? 0.2f : 1.2f, 0.0f } );
-    gfx.m_cutRadius = m_photo ? 2.6f : 2.6f * m_cutFade;
+    // (Never quite shut: within some 0.9 m of the line to the hero what hangs over it, a corridor's pipes and the
+    // lining over its wall, dissolves; phase F5: in the ship's corridors they hid the hero, whose sight line to the
+    // camera, the walls' alone, was clear.)
+    gfx.m_cutRadius = m_photo ? 2.6f : std::max( 2.6f * m_cutFade, 0.9f );
     gfx.m_exposure = 1.7f * m_brightness * m_viewLight;
     gradeFor( gfx );
     gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );
-    gfx.beginScene( m_cam, L, m_time, m_skyTex.id > 0 ? m_skyTex : ( m_skyColorTex.id > 0 ? m_skyColorTex : m_dot ) );
+    Texture2D sky = m_skyTex.id > 0 ? m_skyTex : ( m_skyColorTex.id > 0 ? m_skyColorTex : m_dot );
+    if ( gfx.m_off & Gfx::OFF_VIEW ) sky = Texture2D{};   // (tests: nothing behind the scene)
+    gfx.beginScene( m_cam, L, m_time, sky );
     gfx.prepass( { &m_static, &m_dynamic }, m_surfaces );
     gfx.draw( m_static, m_surfaces );
     gfx.draw( m_dynamic, m_surfaces );
@@ -4503,14 +4557,12 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     gfx.fog();
     // The star, the ships' plumes and the ring glow by themselves: after the fog (it never lay over them), behind the
     // scene by its depth.
-    drawView( gfx );
-    drawAct34( gfx );
-    drawSea( gfx );
-    if ( m_glassMesh.vertexCount > 0 && !m_crust )
+    const bool behind = !( gfx.m_off & Gfx::OFF_VIEW ), bits = !( gfx.m_off & Gfx::OFF_PARTICLES );   // (tests)
+    if ( behind ) drawView( gfx ), drawAct34( gfx ), drawSea( gfx );
+    if ( behind && m_glassMesh.vertexCount > 0 && !m_crust )
         gfx.glass( m_glassMesh, MatrixIdentity(), m_level.m_ice ? 1.0f : 0.0f );
     drawWater( gfx );
-    drawAir( gfx );
-    drawParticles( gfx );
+    if ( bits ) drawAir( gfx ), drawParticles( gfx );
     gfx.endScene();
     gfx.post( out );
 

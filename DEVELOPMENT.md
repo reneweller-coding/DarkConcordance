@@ -430,6 +430,44 @@ concrete halls). The autopilot's report (`RUN:`) is the same to the character in
 do: the Tiefen's wall lamp not seen up close (the hero died at the spot and woke elsewhere); halls that are no rectangle
 get no lines.
 
+**The other places looked at, the effects that stood up** (13.11.2026, phase F5, after 1.2.0; `src/Game.cpp`,
+`Shaders.h`, `Level.cpp`, `GameCrew.cpp`, `GameFoes.cpp`, `GameLoot.cpp`, `GameFamilies.cpp`, `GameElements.cpp`; the
+level `velm`): the 21 places the round had not looked at (the Anhörung, the Arche, the Ertrunken, Erzstrom,
+Gelassenheit, the Gute Hoffnung, Kael, the Klinik, the Knochenmarkt, the Kühltransport, the Leitwerk, the Netz, the
+Rechenmond, the Verlies, the Wracks, Velm 2, Unzu 4 and the four tales) in two tours (`work/gfxF5`: `look.png` the start
+of each with 1.2.0, `after_look.png` the same after, `halls.png` a hall of each by its motif; the tales' halls show
+their films). The steam's kind of particle (1: upright to the camera, lit and boosted six times, growing half a metre a
+second) had been used for dust and mist at the floor, which the floor cut off in a straight line, and some glowed like
+lamps: a dash's dust, the bolt-head's and a slam's and Dorra's quake's rings of dust, a charging creature's dust and an
+icy one's mist lie flat now (kind 5: drawn over the ground where it was made, its height kept); the icy mist, the
+hazards' wisps, the chill round the hero and the dust of a charge at a quarter of their alpha or less (200 → 45-70), the
+power cell's smoke 170 → 40, the geysers 200 → 90; the vents', the hazards', the chill's and a burst's puffs start
+higher (0.35-0.5 m), out of the floor. The same `rnd()` calls in the same order: the autopilot's runs are the same. Pale
+floors and lights that blew out: the helmet lamp's highlight is no sharper than a rough surface's (`max( rough, 0.55 )`:
+on wet cobbles and metal plates it was a white blot), its light in the haze capped (no stronger than three metres out,
+weaker in thick haze); a street's wall lamp has 0.45 of a work lamp's light (Velm's plaster fronts and street floor blew
+out; Velm's `lampgain` 1.5 0.6 instead of 2.0 0.55); pale floor decals (frost, snow drifts, white paint, chalk) no
+lighter than 0.25 linear (the Arche's frost lay as paper cut-outs); the pavers 62 instead of 90, the terrazzo 48, the
+street floor 165, the vaults' pale stone 150, the white tiles of the Arche and the Klinik 120 (the last three not yet
+seen in a picture). The autopilot's report (`RUN:`) is the same to the character in all 21 places and in Velm (the
+second tour against the first). Then (F5b): the helmet lamp's light eased off towards a peak (`lamp / (1 + 3 peak)`, its
+highlight no sharper than 0.7); the fixed lights' halos in the haze eased off above 0.15 only where the haze is thick
+(0.016 and more: the prologue, the Corvin tale); a soft knee on all the fixed lights' pools and halos took the punch out
+of the Tiefen's and the Kühlgedärme's pools and is not kept (`work/gfxF5/compress_check.png`: before, with it, without
+it). The cut-away round the hero never quite shuts (`m_cutRadius` at least 0.9: within some 0.9 m of the line to the
+hero what hangs over it, a corridor's pipes over its south wall, dissolves; in the ship's corridors they hid the hero,
+whose sight line past the walls alone was clear: the camera rises only for walls); the streets' plaster 185, the signs'
+lamps six tenths. Seen: the hero in the Gute Hoffnung's corridor in sight, the Corvin tale's blot much smaller (the
+helmet lamp it was), Velm's front by the clinic a little less bright, the other places' pools as before F5b. The white
+patch in the Gute Hoffnung's corridor (the first place every player sees) was found by leaving one thing out at a time
+(`--tour "a.txt#mask"`: the place's picture without the bits of `Gfx::OffE` in its mask, `_off<mask>` in its name; 2 the
+cones, 8 the fog pass, 16 what glows, 32 the decals, 64 the particles, 128 what lies behind the scene;
+`work/gfxF5/elim.png`): with the particles out it went. It was the smoke of a dead enemy's power cell, ten clouds
+growing to some two metres, drawn as steam (added, lit, six times as bright), upright behind the corridor's walls, which
+cut it straight. It is its own kind now (6, dark smoke: lit as a dull surface, its colour over pi, blended by its alpha
+of 150 instead of added; the same `rnd()` calls): a dim grey cloud. Still to do: Velm's street by the clinic still the
+brightest of its pictures; the tales' halls not seen (their films).
+
 Where Windows' fonts are missing (Proton on the Deck, Linux) the game writes in Barlow, which comes with it
 (`assets/fonts`, SIL Open Font License); on Windows it keeps Bahnschrift.
 
