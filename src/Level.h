@@ -175,6 +175,7 @@ struct LevelSurfaces
     int                m_border[64] = {};   ///< per theme the band along its halls' walls + 1 (0: none)
     int                m_sill[64] = {};     ///< per theme the plates in its doorways and where floors change + 1
     bool               m_bays[64] = {};     ///< per theme: its halls get painted bay lines (Level::bayLines)
+    std::string        m_motif[64];         ///< per theme its halls' motif (motif_<kind>_<n>; "": its kind of place's)
     std::map<int, int> m_patch;    ///< a wall's or floor's surface -> the same with its two variants in one draw
     std::map<int, int> m_shaped;   ///< a ground's surface -> the same with its trodden ways and scree (out in the open)
     const std::vector<DecalDef>    *m_decals = nullptr;   ///< the decals there are (nullptr: none)

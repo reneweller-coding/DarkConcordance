@@ -334,6 +334,35 @@ TEXTURES = {
                   "Seamless tileable texture, top-down orthographic view of thick dark brushed steel plating with "
                   "rows of countersunk bolts, worn smooth by boots, light scratches, " + FLAT,
                   0.9, 0.45, 2.0),
+    # Phase F6: the rooms of the places that lay their own floor (the drowned quarter, the tales' mine and farm):
+    # their corridors, side rooms and the bands along their halls' walls. Painted locally (FLUX.2, --local).
+    "floodgrate": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of a rusty steel grating walkway laid over "
+                   "dark standing flood water: a regular mesh of flat corroded bars, black water with green slime and "
+                   "floating silt visible between them, wet rust streaks, " + FLAT,
+                   0.6, 0.4, 3.5),
+    "mineplank": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of a mine gallery floor of heavy rough timber "
+                  "planks laid crosswise between two rusty narrow-gauge rails, ochre ore dust in the gaps, boot "
+                  "scuffs, iron spikes, " + FLAT,
+                  0.1, 0.8, 3.0),
+    "farmboards": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of a weathered grey wooden boardwalk on a "
+                   "frontier farm: wide sun-bleached planks running in one direction, mud and loose straw on them, "
+                   "dark gaps, rusty nails, " + FLAT,
+                   0.0, 0.85, 2.5),
+    "strawfloor": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of a barn floor of packed brown earth "
+                   "covered with scattered golden straw and hay, a few dry leaves and seeds, " + FLAT,
+                   0.0, 0.95, 2.5),
+    "fieldstone": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of a band of rounded grey and brown field "
+                   "stones set tightly in packed earth, moss in the joints, " + FLAT,
+                   0.0, 0.85, 3.0),
+    "minebeam": ("tile", "1:1",
+                 "Seamless tileable texture, top-down orthographic view of dark tarred mine timber beams bolted "
+                 "together with rusty iron straps and big bolt heads, coal dust, " + FLAT,
+                 0.15, 0.75, 3.0),
     "kerbstone": ("tile", "1:1",
                   "Seamless tileable texture, top-down orthographic view of dark grey granite with a rough flamed "
                   "surface and fine black and white speckles, " + FLAT,

@@ -84,6 +84,14 @@ VARIANTS = {
     "pavers": ["with a few cracked slabs and a round drain cover", "with darker slabs and moss in the joints"],
     "terrazzo": ["with a brass divider strip and a crack", "with a darker stained area and scuffs"],
     "woodboards": ["with a few replaced lighter boards", "with a burn mark and a worn path"],
+    # Phase F6: the drowned quarter's, the mine's and the farm's rooms.
+    "floodgrate": ["with a sunken drain pipe and floating debris below the bars", "with a patch of newer galvanized "
+                   "bars and an oil sheen on the water"],
+    "mineplank": ["with a rail switch and a dropped ore chunk", "with a broken plank and wet mud"],
+    "farmboards": ["with a few replaced darker planks and a water bucket ring", "with spilled grain and a muddy track"],
+    # (strawfloor_v2 is the plain one mirrored and shifted, tools/make_grime.py --f6: its painted heap held a
+    # pitchfork that repeated across the barns.)
+    "strawfloor": ["with a trodden bare path of earth"],
     "composite": ["with a recessed floor vent panel", "with a narrow inlaid guidance strip and scuffs"],
     "carpet": ["with a darker worn path", "with a coffee stain and a lighter replaced tile"],
     "frostplate": ["with thicker frost drifts in the corners", "with a frozen puddle of clear ice"],
@@ -377,6 +385,15 @@ DECAL_LIST = [
            "in brass, dark stone and pale enamel", rough=0.25 ),
     motif( "motif_cold_1", "none", 4.2, "a large round inlay of a six-pointed snowflake of pale blue enamel and steel "
            "lines on dark blue-grey stone", rough=0.3 ),
+    # Phase F6: the halls of the places that lay their own floor (Game::themeSurfaces' table `ownKinds`).
+    motif( "motif_flood_1", "black", 4.4, "a large worn painted floor marking of a pump station: a faded blue ring with "
+           "wave lines and arrows pointing to a central drain" ),
+    motif( "motif_mine_1", "black", 4.6, "a large worn painted mining company floor emblem: a faded ochre ring with "
+           "crossed hammers and a mine cart wheel" ),
+    motif( "motif_farm_1", "none", 4.2, "a large round mosaic of river pebbles in a packed earth floor forming a "
+           "sun with a wheat sheaf, brown, grey and ochre stones" ),
+    motif( "motif_rain_1", "none", 4.4, "a large round cast-iron drain cover set into wet dark cobblestones, a "
+           "radial pattern of slots and a raised ring of rivets" ),
 ]
 
 

@@ -156,11 +156,12 @@ void Game::themeSurfaces( LevelSurfaces &ls )
     };
     // Their patterns' scale (texture repeats per metre; the places' own floors 0.3): a tread plate's diamonds, a
     // grating's bars, boards and carpet tiles finer.
-    static const std::pair<const char *, float> scales[] = { { "treadplate", 0.45f },  { "catwalk", 0.5f },
-                                                             { "rubbermat", 0.4f },    { "woodboards", 0.4f },
-                                                             { "carpet", 0.4f },       { "kerbsteel", 0.5f },
-                                                             { "metal", 0.6f },        { "composite", 0.35f },
-                                                             { "foundryplate", 0.25f } };
+    static const std::pair<const char *, float> scales[] = {
+        { "treadplate", 0.45f },   { "catwalk", 0.5f },    { "rubbermat", 0.4f }, { "woodboards", 0.4f },
+        { "carpet", 0.4f },        { "kerbsteel", 0.5f },  { "metal", 0.6f },     { "composite", 0.35f },
+        { "foundryplate", 0.25f }, { "floodgrate", 0.5f }, { "mineplank", 0.4f }, { "farmboards", 0.4f },
+        { "minebeam", 0.5f },      { "fieldstone", 0.5f }
+    };
     // ... and the pale ones darker (their pictures' white concrete, terrazzo and panels shone like snow under the lamps;
     // the tint multiplies the linear colour: a hall's floor some two to three times as light as the dark plates it
     // replaces, the concrete's mean 0.26 down to 0.06: at 0.10 it still lit the Mill's and the Cooling Guts' halls up
@@ -184,6 +185,39 @@ void Game::themeSurfaces( LevelSurfaces &ls )
                 m_surfaces[f].m_tint = { sh.second, sh.second, sh.second, 255 };
         return f + 1;
     };
+    // Phase F6 (as parts 2 and 3): a place that lays its own floor (`floortex`) keeps it in its halls, and the floor's
+    // world gives its corridors, side rooms, the band along its halls' walls, its sills and its halls' motif (before,
+    // such a place had one floor everywhere). Out in the open (the moon, the gardens) the ground stays as it is.
+    struct OwnKinds
+    {
+        const char *m_floor, *m_corridor, *m_side, *m_border, *m_sill, *m_motif;
+    };
+    static const OwnKinds ownKinds[] = {
+        // The drowned quarter: gratings over the flood water in its passages, boards in its rooms, granite by the walls.
+        { "wetfloor", "floodgrate", "woodboards", "kerbstone", "metal", "flood" },
+        // Corvin's town in the rain: its cobbles in the lanes too, boards in the houses, granite kerbs and sills.
+        { "wetcobble", nullptr, "woodboards", "kerbstone", "kerbstone", "rain" },
+        // Dorra's mine: plank galleries between the rails, rubber matting in the side rooms, tarred beams by the walls.
+        { "minefloor", "mineplank", "rubbermat", "minebeam", "metal", "mine" },
+        // Unzu's farm: a boardwalk in the passages, straw in the barns and sheds, field stones along the walls.
+        { "farmsoil", "farmboards", "strawfloor", "fieldstone", "kerbstone", "farm" },
+    };
+    for ( const auto &ft : m_level.m_floorTex )
+    {
+        int t = (int)themeNamed( ft.first );
+        if ( t < 0 || !used[t] || t == (int)ThemeE::MOON || t == (int)ThemeE::PARK || t == (int)ThemeE::DUSK ||
+             t == (int)ThemeE::SNOW || t == (int)ThemeE::ICE || t == (int)ThemeE::ARENA )
+            continue;
+        for ( const OwnKinds &o : ownKinds )
+            if ( ft.second == o.m_floor )
+            {
+                const char *names[3] = { nullptr, o.m_corridor, o.m_side };   // the halls keep the place's own
+                for ( int i = 0; i < 3; ++i ) ls.m_kindFloor[t][i] = own2( names[i] );
+                ls.m_border[t] = own2( o.m_border );
+                ls.m_sill[t] = own2( o.m_sill );
+                ls.m_motif[t] = o.m_motif;
+            }
+    }
     for ( const Kinds &k : kinds )
     {
         int t = (int)themeNamed( k.m_theme );

@@ -4,6 +4,7 @@ are decals laid by the room, their picture bay_line.png made here). The Mill's h
 sooted, burnt and spattered with slag (foundryplate). Only post-processing of the textures there are, no model: the same seed, the same pictures.
 
     py -3 tools/make_grime.py
+    py -3 tools/make_grime.py --f6      (only: the mine's planks calmed, strawfloor_v2 derived; after make_dress)
     py -3 tools/make_dds.py --force --only concretebay concretebay_v1 concretebay_v2 foundryplate foundryplate_v1 \
         foundryplate_v2
 
@@ -12,6 +13,7 @@ assets/raw/grime/, kept on the first run); foundryplate's normal map is the plat
 """
 import os
 import shutil
+import sys
 
 import numpy as np
 from PIL import Image
@@ -202,6 +204,31 @@ def hulldeck(src, name, seed):
     print(name, "mean linear %.3f" % lin(col).mean())
 
 
+def calm(name, contrast=0.62, flatten=0.45):
+    """A busy picture calmed (phase F6: the mine's planks read restless): its colours pulled towards their mean, its
+    bumps flatter. From its painted maps as tile_maps made them (run make_textures/make_dress first)."""
+    a = load(name, "albedo")
+    mean = a.mean(axis=(0, 1), keepdims=True)
+    save(name, "albedo", mean + (a - mean) * contrast)
+    n = load(name, "normal")
+    flat = np.array([0.5, 0.5, 1.0], np.float32)
+    save(name, "normal", n * (1.0 - flatten) + flat * flatten)
+    print(name, "calmed")
+
+
+def derived_variant(src, name, shift=(0.37, 0.61)):
+    """A variant made from another picture of the same material, mirrored top to bottom and shifted (its normals' y
+    turned with it): no object of a painted variant repeats (phase F6: strawfloor_v2 had a pitchfork in its hay)."""
+    for kind in ("albedo", "orm", "normal"):
+        a = load(src, kind)[::-1, :, :].copy()
+        if kind == "normal":
+            a[..., 1] = 1.0 - a[..., 1]
+        h, w = a.shape[:2]
+        a = np.roll(a, (int(h * shift[0]), int(w * shift[1])), axis=(0, 1))
+        save(name, kind, a)
+    print(name, "from", src)
+
+
 def bay_line():
     """A painted bay line, 2 m by 12 cm (512 by 32): safety yellow, worn and chipped, its ends meeting the next
     piece's (the noise wraps along it), its long edges a little ragged; assets/textures/decals/bay_line.png."""
@@ -222,6 +249,12 @@ def bay_line():
 
 
 def main():
+    if "--f6" in sys.argv:
+        # Phase F6 only (the painted maps there): the mine's planks calmer, the straw's second variant made anew.
+        for n in ("mineplank", "mineplank_v1", "mineplank_v2"):
+            calm(n)
+        derived_variant("strawfloor", "strawfloor_v2")
+        return
     os.makedirs(KEEP, exist_ok=True)
     bay_line()
     for i, n in enumerate(("concretebay", "concretebay_v1", "concretebay_v2")):

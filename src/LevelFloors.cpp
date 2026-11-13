@@ -375,7 +375,8 @@ void Level::motifs( const LevelSurfaces &s )
         {
             auto [r, c] = order[k];
             const Cell &mid = cell( r, c );
-            std::string kind = motifKind( theme( r, c ), dressGroup( theme( r, c ) ) );
+            std::string kind = s.m_motif[(int)theme( r, c )];   // a world's own (phase F6), else its kind of place's
+            if ( kind.empty() ) kind = motifKind( theme( r, c ), dressGroup( theme( r, c ) ) );
             if ( kind.empty() || mid.m_kind != CellE::FLOOR ) continue;
             std::vector<int> mine;
             for ( size_t i = 0; i < defs.size(); ++i )

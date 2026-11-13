@@ -468,6 +468,29 @@ cut it straight. It is its own kind now (6, dark smoke: lit as a dull surface, i
 of 150 instead of added; the same `rnd()` calls): a dim grey cloud. Still to do: Velm's street by the clinic still the
 brightest of its pictures; the tales' halls not seen (their films).
 
+**Own floors with their rooms** (13.11.2026, phase F6; `src/Game.cpp`, `Level.h`, `LevelFloors.cpp`,
+`tools/make_textures.py`, `tools/make_dress.py`, `work/gfxF6/paint_f6.py`): a place that lays its own floor (`floortex`)
+had no floors per kind of room, `themeSurfaces` skipped its theme: the Ertrunken (wet floors in its works and streets),
+the Corvin tale (wet cobbles), the Dorra tale (the mine floor) and the Unzu tale (the farm's soil). As parts 2 and 3 do,
+a second table keyed by that floor (`ownKinds`) keeps it in the halls and gives the rest from its world: the drowned
+quarter gratings over the flood water in its passages (`floodgrate`), boards in its rooms, granite along the walls; the
+rainy town its cobbles in the lanes too, boards in the houses, granite kerbs and sills; the mine plank galleries between
+the rails (`mineplank`), rubber matting, tarred beams along the walls (`minebeam`); the farm a boardwalk (`farmboards`),
+straw in the barns and sheds (`strawfloor`), field stones along the walls (`fieldstone`). Each world has its halls'
+motif (`LevelSurfaces::m_motif`: `motif_flood_1`, a pump station's painted ring; `motif_rain_1`, a cast-iron drain
+cover; `motif_mine_1`, the mining company's emblem; `motif_farm_1`, a pebble mosaic of a sun and a wheat sheaf). Out in
+the open (the moon, the gardens) the ground stays as it was. 18 pictures painted locally (`paint_f6.py`: six tiles, two
+variants of each of the four new floors, four motifs; FLUX.2 under the GPU flag), their maps and DDS by
+`make_textures.py --local --only`, `make_dress.py --local --only` and `make_dds.py`. Seen (`work/gfxF6/vergleich.png`,
+before with 1.2.0): the mine's hall with its emblem instead of the works' cross, the farm's lane a boardwalk, the
+drowned quarter's halls with the pump station's ring (four laid), the rainy town's with its drain cover. The white blots
+in the Corvin and the Dorra tale are gone too: like the Gute Hoffnung's, they were dead enemies' power cell smoke (F5's
+dark smoke). The autopilot's report (`RUN:`) is the same in the four places and in the Ertrunken's hall. Afterwards: the
+straw's second variant had a pitchfork painted into its heap, which repeated: `strawfloor_v2` is now the plain straw
+mirrored and shifted (`make_grime.py --f6`, its normals turned with it; `make_dress.py` paints only one straw variant);
+the mine's planks read restless: their colours pulled 0.62 of the way to their mean and their normals 0.45 flatter
+(`calm`, the same `--f6`). Neither seen in a picture since.
+
 Where Windows' fonts are missing (Proton on the Deck, Linux) the game writes in Barlow, which comes with it
 (`assets/fonts`, SIL Open Font License); on Windows it keeps Bahnschrift.
 

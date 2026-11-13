@@ -16,6 +16,10 @@ decal motif_street_2 floor 4.39 4.40 1.60 0.60 0.0 a 0.52 0.50 0.48
 decal motif_clean_1 floor 4.40 4.38 1.60 0.25 0.0 a 0.69 0.66 0.60 
 decal motif_clean_2 floor 4.40 4.39 1.60 0.25 0.0 a 0.43 0.38 0.30 
 decal motif_cold_1 floor 4.20 4.20 1.60 0.30 0.0 a 0.37 0.44 0.50 
+decal motif_flood_1 floor 4.40 4.40 1.60 0.60 0.0 a 0.60 0.69 0.74 
+decal motif_mine_1 floor 4.60 4.60 1.60 0.60 0.0 a 0.78 0.64 0.51 
+decal motif_farm_1 floor 4.16 4.20 1.60 0.60 0.0 a 0.54 0.39 0.28 
+decal motif_rain_1 floor 4.40 4.22 1.60 0.60 0.0 a 0.30 0.29 0.30 
 decal bay_line floor 2.00 0.12 1.60 0.55 0.0 a 0.86 0.64 0.10
 decal oil_1 floor 1.60 1.60 1.60 0.25 0.0 m 0.10 0.02 0.00 industrial street
 decal oil_2 floor 1.40 1.40 1.60 0.25 0.0 m 0.04 0.02 0.00 industrial
