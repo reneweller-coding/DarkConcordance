@@ -590,6 +590,11 @@ bool Level::loadText( const std::string &text )
             kv >> m_fogColor.x >> m_fogColor.y >> m_fogColor.z;
         else if ( key == "ambient" )
             kv >> m_ambUp.x >> m_ambUp.y >> m_ambUp.z >> m_ambDown.x >> m_ambDown.y >> m_ambDown.z;
+        else if ( key == "lampgain" )
+        {
+            kv >> m_lampGain;
+            if ( !( kv >> m_lampReach ) ) m_lampReach = 1.0f;
+        }
         else if ( key == "walls" )
             kv >> m_wallHeight;
         else if ( key == "zone" )
@@ -628,11 +633,11 @@ bool Level::loadText( const std::string &text )
             kv >> m_endCard >> m_endMusic >> m_endFlag;
         else if ( key == "epilogue" )
             kv >> m_epilogue;
-        else if ( key == "walltex" || key == "floortex" )
+        else if ( key == "walltex" || key == "floortex" || key == "hallfloor" )
         {
             std::string th, tex;
             kv >> th >> tex;
-            ( key == "walltex" ? m_wallTex : m_floorTex ).push_back( { th, tex } );
+            ( key == "walltex" ? m_wallTex : key == "floortex" ? m_floorTex : m_hallTex ).push_back( { th, tex } );
         }
         else if ( key == "thing" )
         {
@@ -1269,6 +1274,7 @@ void Level::planShapes()
 void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
 {
     MeshBuilder rock, floor, grate, metal, hazard, rust, foil, fins, crate, box, hull, cloth, drape, ground, plate;
+    MeshBuilder sunk;   // the floors' sunken channels (LevelInterior.cpp), darkened by hand
     // A theme with walls or floors of its own builds them apart (key: surface * 2, + 1 for walls).
     std::map<int, MeshBuilder> themed;
     MeshBuilder *const allRock = &rock, *const allHull = &hull, *const allFloor = &floor, *const allGround = &ground,
@@ -1283,28 +1289,53 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     {
         auto v = s.m_variants.find( surface );
         if ( v == s.m_variants.end() || v->second.empty() ) return surface;
-        unsigned h = wall ? hashCell( r / 2, ( c + ( r / 2 ) % 2 ) / 2, 141 )
-                          : hashCell( ( r + (int)( hashCell( r / 3, c, 143 ) % 2 ) ) / 3,
-                                      ( c + (int)( hashCell( r, c / 3, 144 ) % 2 ) ) / 3, 142 );
-        int      n = (int)v->second.size(), pick = (int)( h % (unsigned)( n + 2 ) );
-        return pick < n ? v->second[pick] : surface;
+        int n = (int)v->second.size(), k = patchPick( r, c, wall, n );
+        return k < n ? v->second[k] : surface;
+    };
+    // ... laid in one draw with its variants (Surface::m_layerMode 2; which a triangle takes, its cell decides at the
+    // build's end, as above): one draw a tile for a wall or a floor instead of three. The gardens' keep theirs apart.
+    auto pick = [&]( int surface, int r, int c, bool wall ) -> int
+    {
+        auto p = s.m_patch.find( surface );
+        return p != s.m_patch.end() ? p->second : variant( surface, r, c, wall );
+    };
+    // Out in the open the ground and the rock are of one surface each with its variants blended in by the shader (no
+    // patches with hard edges, no tiles repeating).
+    auto splatOf = [&]( int base, bool wall ) -> MeshBuilder *
+    {
+        // The ground with its trodden ways and its scree where the place has them (its UVs set at the end).
+        auto shaped = wall ? s.m_shaped.end() : s.m_shaped.find( base );
+        if ( shaped != s.m_shaped.end() ) return &themed[shaped->second * 2];
+        auto it = s.m_splat.find( base );
+        return it == s.m_splat.end() ? nullptr : &themed[it->second * 2 + ( wall ? 1 : 0 )];
     };
     // The gardens (LevelGarden.cpp): where the park keeps its hedges and its lawn, and the garden's surfaces are there.
-    MeshBuilder foliage, bark, gravel, canopy, cards, blades, boulders, needles;
-    int         parkWall = s.m_themeWall[(int)ThemeE::PARK] - 1, parkFloor = s.m_themeFloor[(int)ThemeE::PARK] - 1;
-    GardenKit   gardens{ foliage,
-                       bark,
-                       gravel,
-                       boulders,
-                       canopy,
-                       cards,
-                       blades,
-                       needles,
-                       [&]( int r, int c, bool wall ) -> MeshBuilder &
+    // (Their lawn has its own shade at the foot of what stands: no occlusion baked over it; parkKeys.)
+    std::set<int> parkKeys;
+    MeshBuilder   foliage, bark, gravel, canopy, cards, blades, boulders, needles, deepCards, lush;
+    int           parkWall = s.m_themeWall[(int)ThemeE::PARK] - 1, parkFloor = s.m_themeFloor[(int)ThemeE::PARK] - 1;
+    GardenKit     gardens{ foliage,
+                           bark,
+                           gravel,
+                           boulders,
+                           canopy,
+                           cards,
+                           blades,
+                           needles,
+                           deepCards,
+                           lush,
+                           [&]( int r, int c, bool wall ) -> MeshBuilder     &
                        {
                            int base = wall ? parkWall : parkFloor;
                            if ( base < 0 ) return wall ? *allRock : *allGround;
-                           return themed[variant( base, r, c, wall ) * 2 + ( wall ? 1 : 0 )];
+                           // The lawn out in the open (beyond the level's edge as at it) of one blended surface.
+                           auto splat = s.m_splat.find( base );
+                           int  key = !wall && splat != s.m_splat.end() &&
+                                              outdoor( std::clamp( r, 0, m_rows - 1 ), std::clamp( c, 0, m_cols - 1 ) )
+                                          ? splat->second * 2
+                                          : variant( base, r, c, wall ) * 2 + ( wall ? 1 : 0 );
+                           parkKeys.insert( key );
+                           return themed[key];
                        },
                        glows };
     bool        withGardens = s.m_foliage >= 0 && s.m_bark >= 0 && s.m_gravel >= 0 && s.m_cards >= 0 && s.m_blades >= 0 &&
@@ -1312,8 +1343,119 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     m_gardenKit = withGardens ? &gardens : nullptr;
     std::vector<std::pair<int, int>> meadows;   // the gardens' lawn cells: their tops last, when all stands
     m_sight.assign( (size_t)m_rows * m_cols, { 0.0f, 1e9f, -1e9f } );
+    m_occTop.clear();
+    m_occProps.clear();
+    // The ways along the route (the gardens' paths, the trodden ground out in the open; LevelFloors.cpp).
+    if ( withGardens || !s.m_shaped.empty() )
+        planWays();
+    else
+        m_way.clear();
     planGarden( withGardens );
     planShapes();
+    planRelief();
+    planPits();
+    planRooms();
+    m_coneSpecs.clear();
+
+    // The rock out in the open (LevelRelief.cpp): of its place's rock (the nearest open cell's), its faces in that
+    // rock's colour, its tops darker as the walls' lids are.
+    auto slopeRock = [&]( int r, int c, Color &face, Color &top ) -> MeshBuilder &
+    {
+        ThemeE t = rockTheme( r, c );
+        int    own = s.m_themeWall[(int)t];
+        face = own ? WHITE : Looks[(int)t].m_rock;
+        top = t < ThemeE::PARK ? Color{ 70, 66, 64, 255 }
+                               : Color{ (unsigned char)( face.r * 0.3f ), (unsigned char)( face.g * 0.3f ),
+                                        (unsigned char)( face.b * 0.3f ), 255 };
+        int base = own ? own - 1 : s.m_rock;
+        if ( MeshBuilder *b = splatOf( base, true ) ) return *b;
+        return themed[pick( base, r, c, true ) * 2 + 1];
+    };
+    // The natural ground of an open cell, as the floors below lay it.
+    auto groundFor = [&]( int r, int c ) -> MeshBuilder &
+    {
+        int own = s.m_themeFloor[(int)theme( r, c )], base = own ? own - 1 : s.m_rock;
+        if ( MeshBuilder *b = outdoor( r, c ) ? splatOf( base, false ) : nullptr ) return *b;
+        int v = pick( base, r, c, false );
+        return own || v != s.m_rock ? themed[v * 2] : *allGround;
+    };
+    // A floor cell's own floor (+ 1; 0 the common one): its kind of room's in its place (LevelFloors.cpp), else its
+    // place's.
+    auto ownFloorOf = [&]( int r, int c ) -> int
+    {
+        int t = (int)theme( r, c ), kind = roomKind( r, c );
+        if ( kind != ROOM_NONE && s.m_kindFloor[t][kind - 1] ) return s.m_kindFloor[t][kind - 1];
+        return s.m_themeFloor[t];
+    };
+    auto naturalFloor = []( ThemeE th )
+    {
+        return th == ThemeE::DUSK || th == ThemeE::SNOW || th == ThemeE::ICE || th == ThemeE::ALIEN ||
+               th == ThemeE::PARK || th == ThemeE::ARENA || th == ThemeE::MOON || th == ThemeE::HALL;
+    };
+    auto platedFloor = []( ThemeE th )
+    {
+        return th == ThemeE::DECK || th == ThemeE::STATION || th == ThemeE::YARD || th == ThemeE::CONTAINER ||
+               th == ThemeE::FURNACE || th == ThemeE::PRISON;
+    };
+    // The floor of an open cell as the cells below lay it (its builder, its colour): for the corners cut off a wall
+    // beside it. A hall's band goes round a wall's corner (LevelFloors.cpp): so does its cut corner.
+    auto floorOf = [&]( int r, int c, int corner, Color &colour ) -> MeshBuilder &
+    {
+        ThemeE th = theme( r, c );
+        int    own = ownFloorOf( r, c ), t = (int)th;
+        colour = own ? WHITE : Looks[t].m_floor;
+        if ( corner >= 0 && s.m_border[t] && ( bandSides( r, c ) & ( 1u << ( 4 + corner ) ) ) )
+        {
+            colour = WHITE;
+            return themed[pick( s.m_border[t] - 1, r, c, false ) * 2];
+        }
+        if ( naturalFloor( th ) )
+        {
+            if ( MeshBuilder *b = outdoor( r, c ) ? splatOf( own ? own - 1 : s.m_rock, false ) : nullptr ) return *b;
+            int g = pick( own ? own - 1 : s.m_rock, r, c, false );
+            return own || g != s.m_rock ? themed[g * 2] : *allGround;
+        }
+        int base = own ? own - 1 : platedFloor( th ) ? s.m_hull : s.m_floor;
+        int v = pick( base, r, c, false );
+        if ( own || v != base ) return themed[v * 2];
+        return platedFloor( th ) ? *allPlate : *allFloor;
+    };
+    // At the foot of sloped rock (direction d from an open cell): stones; where an upright wall of an outdoor place had
+    // its floodlight (wallKit), one on a post in front of the rock, lighting the same.
+    auto slopeFoot = [&]( int r, int c, int d )
+    {
+        Color        face, top;
+        MeshBuilder &rocks = slopeRock( r + DR[d], c + DC[d], face, top );
+        rubble( r, c, d, rocks, face );
+        rockFoot( r, c, d, rocks, face );
+        // Scree over the ground's edge in front of it (the ground's own surface: its shapes make it scree there).
+        // (On a moon's crust too: its slabs' tops lie at the ground's height, the apron's shoulder over them; phase
+        // F2 left the crust out, and Brannt's rock stood on the slabs' straight edges.)
+        const CellE kind = cell( r, c ).m_kind;
+        if ( naturalFloor( theme( r, c ) ) && outdoor( r, c ) &&
+             ( kind == CellE::FLOOR || ( kind == CellE::GLASS && m_keys.count( "crust" ) ) ) )
+            screeApron( r, c, d, groundFor( r, c ) );
+        if ( dressGroup( theme( r, c ) ) != 4 || hash01( r, c * 4 + d, 303 ) >= 0.08f ) return;
+        Vector3 n = { (float)-DC[d], 0.0f, (float)-DR[d] };
+        float   base = cell( r, c ).m_kind == CellE::FLOOR ? cell( r, c ).m_height : 0.0f;
+        float   y = base + fminf( 3.2f, m_wallHeight - 0.3f );
+        Vector3 post =
+            Vector3Add( { ( c + 0.5f + DC[d] * 0.5f ) * CellSize, base, ( r + 0.5f + DR[d] * 0.5f ) * CellSize },
+                        Vector3Scale( n, 0.22f ) );
+        metal.m_color = { 62, 66, 72, 255 };
+        metal.box( place( { post.x, ( base + y ) * 0.5f, post.z } ), { 0.04f, ( y - base ) * 0.5f, 0.04f } );
+        metal.box( place( { post.x, y, post.z }, { 0.0f, atan2f( n.x, n.z ), 0.0f } ), { 0.16f, 0.1f, 0.12f } );
+        metal.m_color = WHITE;
+        Vector3 lamp = Vector3Add( post, Vector3Scale( n, 0.13f ) );
+        glows.push_back(
+            { { lamp.x, y - 0.05f, lamp.z },
+              { fabsf( n.z ) * 0.13f + fabsf( n.x ) * 0.01f, 0.07f, fabsf( n.x ) * 0.13f + fabsf( n.z ) * 0.01f },
+              { 7.0f, 6.5f, 5.0f, 0.0f } } );
+        m_lights.push_back( { Vector3Add( { post.x, y - 0.2f, post.z }, Vector3Scale( n, 0.58f ) ),
+                              { 3.5f, 3.3f, 2.8f },
+                              6.0f,
+                              0.0f } );
+    };
 
     auto isVoid = [&]( int r, int c ) { return cell( r, c ).m_kind == CellE::VOID; };
     auto open = [&]( int r, int c ) { return cell( r, c ).m_kind != CellE::ROCK; };
@@ -1496,12 +1638,12 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         for ( int c = 0; c < m_cols; ++c )
         {
             const Cell  &k = cell( r, c );
-            int          ownWall = s.m_themeWall[(int)theme( r, c )], ownFloor = s.m_themeFloor[(int)theme( r, c )];
-            int          rockS = variant( ownWall ? ownWall - 1 : s.m_rock, r, c, true );
-            int          hullS = variant( ownWall ? ownWall - 1 : s.m_hull, r, c, true );
-            int          floorS = variant( ownFloor ? ownFloor - 1 : s.m_floor, r, c, false );
-            int          groundS = variant( ownFloor ? ownFloor - 1 : s.m_rock, r, c, false );
-            int          plateS = variant( ownFloor ? ownFloor - 1 : s.m_hull, r, c, false );
+            int          ownWall = s.m_themeWall[(int)theme( r, c )], ownFloor = ownFloorOf( r, c );
+            int          rockS = pick( ownWall ? ownWall - 1 : s.m_rock, r, c, true );
+            int          hullS = pick( ownWall ? ownWall - 1 : s.m_hull, r, c, true );
+            int          floorS = pick( ownFloor ? ownFloor - 1 : s.m_floor, r, c, false );
+            int          groundS = pick( ownFloor ? ownFloor - 1 : s.m_rock, r, c, false );
+            int          plateS = pick( ownFloor ? ownFloor - 1 : s.m_hull, r, c, false );
             // A wall standing in a garden (a service room's, a house among the trees): of the gardens' pale stone,
             // not of hedge or cave rock.
             bool inGarden = false;
@@ -1511,7 +1653,10 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             MeshBuilder &rock = inGarden ? boulders : ownWall || rockS != s.m_rock ? themed[rockS * 2 + 1] : *allRock;
             MeshBuilder &hull = ownWall || hullS != s.m_hull ? themed[hullS * 2 + 1] : *allHull;
             MeshBuilder &floor = ownFloor || floorS != s.m_floor ? themed[floorS * 2] : *allFloor;
-            MeshBuilder &ground = ownFloor || groundS != s.m_rock ? themed[groundS * 2] : *allGround;
+            MeshBuilder *outside = outdoor( r, c ) ? splatOf( ownFloor ? ownFloor - 1 : s.m_rock, false ) : nullptr;
+            MeshBuilder &ground = outside                           ? *outside
+                                  : ownFloor || groundS != s.m_rock ? themed[groundS * 2]
+                                                                    : *allGround;
             MeshBuilder &plate = ownFloor || plateS != s.m_hull ? themed[plateS * 2] : *allPlate;
             // Its own surfaces carry their colour: the tints are for the common ones.
             Look look = Looks[(int)theme( r, c )];
@@ -1524,6 +1669,32 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             if ( k.m_kind == CellE::ROCK && garden( r, c ) )
             {
                 gardenCell( r, c, gardens );   // a hedge, the garden behind it or forest
+                continue;
+            }
+            if ( k.m_kind == CellE::ROCK && sloped( r, c ) )
+            {
+                // Rock out in the open: from the ground's edge a steep face leaning back to an uneven top
+                // (LevelRelief.cpp); where its corners are cut, the floor in front goes on into them.
+                m_sight[(size_t)r * m_cols + c].x = m_wallHeight;
+                Color        face, top;
+                MeshBuilder &rocks = slopeRock( r, c, face, top );
+                reliefCell( r, c, rocks, face, top );
+                unsigned char cut = m_cut[(size_t)r * m_cols + c];
+                for ( int q = 0; q < 4 && cut; ++q )
+                {
+                    if ( !( cut & ( 1 << q ) ) ) continue;
+                    int          fr = r + CR[q], fc = c + CC[q];
+                    float        h = cell( fr, fc ).m_height;
+                    Vector2      corner = { mid.x + CC[q] * CellSize * 0.5f, mid.z + CR[q] * CellSize * 0.5f };
+                    Vector2      a = { corner.x - CC[q] * ( Natural + 0.02f ), corner.y };
+                    Vector2      b = { corner.x, corner.y - CR[q] * ( Natural + 0.02f ) };
+                    MeshBuilder &fb = groundFor( fr, fc );
+                    fb.m_color = s.m_themeFloor[(int)theme( fr, fc )] ? WHITE : Looks[(int)theme( fr, fc )].m_floor;
+                    fb.prism( MatrixIdentity(),
+                              { { { corner.x, -0.5f, corner.y }, { a.x, -0.5f, a.y }, { b.x, -0.5f, b.y } },
+                                { { corner.x, h, corner.y }, { a.x, h, a.y }, { b.x, h, b.y } } } );
+                    fb.m_color = WHITE;
+                }
                 continue;
             }
             if ( k.m_kind == CellE::ROCK )
@@ -1658,25 +1829,30 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 float        bottom = nearVoid( r, c ) && !m_space ? -PitDepth : -0.5f;
                 MeshBuilder &wall = look.m_walls >= 2 ? hull : rock;
                 wall.m_color = look.m_walls == 3 ? FrontPaint[hashCell( r / 4, c / 4, 98 ) % 5] : look.m_rock;
-                shape( wall, bottom, m_wallHeight );
+                // In two blocks, split where the occlusion of the floor's corner has faded (0.7 m over the lowest floor
+                // beside it): baked into the corners of the faces, it darkens only the wall's foot.
+                float foot = 1e9f;
+                for ( int d = 0; d < 4; ++d )
+                {
+                    const Cell &n = cell( r + DR[d], c + DC[d] );
+                    if ( n.m_kind != CellE::ROCK ) foot = fminf( foot, n.m_kind == CellE::FLOOR ? n.m_height : 0.0f );
+                }
+                foot = Clamp( foot + 0.7f, bottom + 0.1f, m_wallHeight - 0.1f );
+                shape( wall, bottom, foot );
+                shape( wall, foot, m_wallHeight );
                 wall.m_color = WHITE;
                 // Where a corner is cut off, the floor in front goes on into it.
                 for ( int q = 0; q < 4 && cut; ++q )
                 {
                     if ( !( cut & ( 1 << q ) ) ) continue;
-                    ThemeE       th = theme( r + CR[q], c + CC[q] );
-                    bool         natural = th == ThemeE::DUSK || th == ThemeE::SNOW || th == ThemeE::ICE ||
-                                           th == ThemeE::ALIEN || th == ThemeE::PARK || th == ThemeE::ARENA ||
-                                           th == ThemeE::MOON || th == ThemeE::HALL;
-                    bool         plated = th == ThemeE::DECK || th == ThemeE::STATION || th == ThemeE::YARD ||
-                                          th == ThemeE::CONTAINER || th == ThemeE::FURNACE || th == ThemeE::PRISON;
-                    MeshBuilder &fb = natural ? ground : ( plated ? plate : floor );
+                    Color        colour;
+                    MeshBuilder &fb = floorOf( r + CR[q], c + CC[q], ( q + 2 ) % 4, colour );
                     float        h = cell( r + CR[q], c + CC[q] ).m_height;
                     Vector2      corner = { mid.x + CC[q] * CellSize * 0.5f, mid.z + CR[q] * CellSize * 0.5f };
                     float        cs = this->natural( r, c ) ? Natural : CutSize;
                     Vector2      a = { corner.x - CC[q] * ( cs + 0.02f ), corner.y };
                     Vector2      b = { corner.x, corner.y - CR[q] * ( cs + 0.02f ) };
-                    fb.m_color = Looks[(int)th].m_floor;
+                    fb.m_color = colour;
                     fb.prism( MatrixIdentity(),
                               { { { corner.x, -0.5f, corner.y }, { a.x, -0.5f, a.y }, { b.x, -0.5f, b.y } },
                                 { { corner.x, h, corner.y }, { a.x, h, a.y }, { b.x, h, b.y } } } );
@@ -1721,9 +1897,12 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             }
             if ( k.m_kind == CellE::DOOR )
             {
-                // A door: the deck, two jambs, a lintel of what the walls are made of, a hazard band across the
-                // threshold; the leaves are the game's (they move). They run along x when the walls are east and west.
-                floor.box( place( { mid.x, -0.25f, mid.z } ), { CellSize * 0.5f, 0.25f, CellSize * 0.5f } );
+                // A door: the deck (of the place's sill plates where it has them), two jambs, a lintel of what the walls
+                // are made of, a hazard band across the threshold; the leaves are the game's (they move). They run
+                // along x when the walls are east and west.
+                int          sill = s.m_sill[(int)theme( r, c )];
+                MeshBuilder &deck = sill ? themed[pick( sill - 1, r, c, false ) * 2] : floor;
+                deck.box( place( { mid.x, -0.25f, mid.z } ), { CellSize * 0.5f, 0.25f, CellSize * 0.5f } );
                 bool         alongX = !open( r, c - 1 ) || !open( r, c + 1 );
                 Vector3      axis = alongX ? Vector3{ 1.0f, 0.0f, 0.0f } : Vector3{ 0.0f, 0.0f, 1.0f };
                 MeshBuilder &wall = look.m_walls == 0 ? rock : look.m_walls == 1 ? box : hull;
@@ -1789,7 +1968,9 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                                       { { corner.x, y1, corner.y }, { a.x, y1, a.y }, { b.x, y1, b.y } } } );
                     };
                     wall.m_color = look.m_rock;
-                    wedge( bottom, m_wallHeight );
+                    float foot = Clamp( k.m_height + 0.7f, bottom + 0.1f, m_wallHeight - 0.1f );   // (as the walls)
+                    wedge( bottom, foot );
+                    wedge( foot, m_wallHeight );
                     wall.m_color = look.m_walls == 2              ? Color{ 92, 96, 104, 255 }
                                    : theme( r, c ) < ThemeE::PARK ? Color{ 70, 66, 64, 255 }
                                                                   : Color{ (unsigned char)( look.m_rock.r * 0.3f ),
@@ -1817,6 +1998,8 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                                        { DC[d] ? 0.1f : CellSize * 0.5f, 0.33f, DR[d] ? 0.1f : CellSize * 0.5f } );
                         }
                     floor.m_color = WHITE;
+                    for ( int d = 0; d < 4; ++d )
+                        if ( sloped( r + DR[d], c + DC[d] ) ) slopeFoot( r, c, d );   // (a moon's crust by its rock)
                     continue;
                 }
                 for ( int d = 0; d < 4; ++d )
@@ -2020,13 +2203,112 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     meadows.push_back( { r, c } );
                 else
                 {
+                    // Its top a grid of half metres: the occlusion at the walls' feet and round what stands is baked
+                    // into its corners. A sunken channel's opening left out of it (quarter metres there).
                     fb.m_color = look.m_floor;
-                    fb.box( place( { mid.x, ( h - 0.5f ) * 0.5f, mid.z } ),
-                            { CellSize * 0.5f, ( h + 0.5f ) * 0.5f, CellSize * 0.5f } );
+                    int      i0, i1, j0, j1;
+                    bool     pit = pitRect( r, c, i0, i1, j0, j1 );
+                    unsigned band = s.m_border[(int)th] ? bandSides( r, c ) : 0;
+                    if ( band )
+                    {
+                        // A hall's band along its walls (and round a wall's corner), half a metre of the place's
+                        // border, flush in the floor; a thin dark joint where it meets the floor (LevelFloors.cpp).
+                        MeshBuilder &bb = themed[pick( s.m_border[(int)th] - 1, r, c, false ) * 2];
+                        int          steps = pit ? 8 : 4;
+                        auto hole = [&]( int i, int j ) { return pit && i >= i0 && i < i1 && j >= j0 && j < j1; };
+                        auto inBand = [&]( int i, int j ) { return bandSquare( band, i, j, steps ); };
+                        fb.top( x0, z0, CellSize, h, steps,
+                                [&]( int i, int j ) { return !hole( i, j ) && !inBand( i, j ); } );
+                        bb.top( x0, z0, CellSize, h, steps,
+                                [&]( int i, int j ) { return !hole( i, j ) && inBand( i, j ); } );
+                        fb.sides( x0, z0, CellSize, -0.5f, h );
+                        bandJoints( r, c, band, s, metal );
+                        if ( pit ) pitCell( r, c, h, sunk, rust, metal, glows );
+                    }
+                    else if ( pit )
+                    {
+                        fb.slabHole( x0, z0, CellSize, -0.5f, h, 8, i0, i1, j0, j1 );
+                        pitCell( r, c, h, sunk, rust, metal, glows );
+                    }
+                    else
+                        fb.slab( x0, z0, CellSize, -0.5f, h, 4 );
                     fb.m_color = WHITE;
+                    // Where the floor changes to the next cell's (a corridor's mouth, another room, another place): a
+                    // plate across (a threshold, wider at a corridor's mouth) or a joint, so that it looks built.
+                    // Where floors change along more than a doorway (a corridor open to a hall along its length: in
+                    // the Werft a bright steel band ran down the picture), a dark joint alone.
+                    auto changes = [&]( int ar, int ac, int d )
+                    {
+                        const Cell &a = cell( ar, ac ), &b = cell( ar + DR[d], ac + DC[d] );
+                        ThemeE      at = theme( ar, ac ), bt = theme( ar + DR[d], ac + DC[d] );
+                        return a.m_kind == CellE::FLOOR && b.m_kind == CellE::FLOOR && a.m_height == b.m_height &&
+                               !naturalFloor( at ) && !naturalFloor( bt ) &&
+                               ownFloorOf( ar, ac ) != ownFloorOf( ar + DR[d], ac + DC[d] );
+                    };
+                    for ( int d = 1; d <= 2 && !natural; ++d )
+                    {
+                        int         nr = r + DR[d], nc = c + DC[d];
+                        const Cell &n = cell( nr, nc );
+                        ThemeE      nth = theme( nr, nc );
+                        int         sill = s.m_sill[(int)th] ? s.m_sill[(int)th] : s.m_sill[(int)nth];
+                        if ( !sill || n.m_kind != CellE::FLOOR || n.m_height != h || naturalFloor( nth ) ||
+                             ownFloorOf( nr, nc ) == ownFloor )
+                            continue;
+                        // How long the change runs along this edge (cells, both ways, up to four).
+                        int run = 1;
+                        for ( int sgn : { -1, 1 } )
+                            for ( int k = 1;
+                                  k <= 3 && changes( r + ( d == 1 ? sgn * k : 0 ), c + ( d == 2 ? sgn * k : 0 ), d );
+                                  ++k )
+                                ++run;
+                        Vector3 at = { mid.x + DC[d] * CellSize * 0.5f, h - 0.001f, mid.z + DR[d] * CellSize * 0.5f };
+                        if ( run > 2 )
+                        {
+                            metal.m_color = { 38, 40, 44, 255 };
+                            metal.box( place( { at.x, h + 0.002f, at.z } ),
+                                       { DC[d] ? 0.012f : CellSize * 0.5f, 0.003f, DR[d] ? 0.012f : CellSize * 0.5f } );
+                            metal.m_color = WHITE;
+                            continue;
+                        }
+                        bool  mouth = roomOf( nr, nc ) != roomOf( r, c ) &&
+                                      ( roomKind( r, c ) == ROOM_CORRIDOR || roomKind( nr, nc ) == ROOM_CORRIDOR );
+                        float across = mouth ? 0.18f : 0.08f;
+                        MeshBuilder &plates = themed[pick( sill - 1, r, c, false ) * 2];
+                        plates.box( place( at ),
+                                    { DC[d] ? across : CellSize * 0.5f, 0.009f, DR[d] ? across : CellSize * 0.5f } );
+                    }
                 }
-                if ( !natural && hashCell( r, c, 3 ) % 9 == 0 )
+                if ( !natural && hashCell( r, c, 3 ) % 9 == 0 && m_pit[(size_t)r * m_cols + c] == PIT_NONE )
                     grate.box( place( { mid.x, h + 0.01f, mid.z } ), { 0.7f, 0.012f, 0.7f } );
+                // Dry tufts on the dust out in the open (with air): in patches, more by the rock's foot; the second
+                // half only on middle and high.
+                if ( th == ThemeE::DUSK && s.m_blades >= 0 && outdoor( r, c ) && !m_vacuum )
+                {
+                    float patch = smoothNoise( { mid.x * 0.15f, 3.3f, mid.z * 0.15f }, 907u );
+                    int   rocky = 0;
+                    for ( int d = 0; d < 4; ++d ) rocky += cell( r + DR[d], c + DC[d] ).m_kind == CellE::ROCK;
+                    int n = (int)Clamp( patch * 4.0f + 1.0f, 0.0f, 3.0f ) + rocky;
+                    for ( int i = 0; i < n * 2; ++i )
+                    {
+                        int     salt = r * 16 + i;
+                        Vector3 p = { x0 + 0.1f + 1.8f * hash01( salt, c, 912 ), h,
+                                      z0 + 0.1f + 1.8f * hash01( salt, c, 913 ) };
+                        float   tone = 0.75f + 0.3f * hash01( salt, c, 914 ), turn = 6.28f * hash01( salt, c, 915 );
+                        // (Half as large again as the gardens' lawn tufts: dry grass stands in tall clumps.)
+                        float   w = 0.5f + 0.45f * hash01( salt, c, 916 ), t = 0.32f + 0.45f * hash01( salt, c, 917 );
+                        MeshBuilder &to = i < n ? blades : lush;
+                        to.m_color = { (unsigned char)( 240 * tone ), (unsigned char)( 205 * tone ),
+                                       (unsigned char)( 140 * tone ), 255 };
+                        for ( int k = 0; k < 2; ++k )
+                        {
+                            Vector3 e = { cosf( turn + k * PI * 0.5f ) * w * 0.5f, 0.0f,
+                                          sinf( turn + k * PI * 0.5f ) * w * 0.5f };
+                            to.card( { p.x - e.x, h + t, p.z - e.z }, { p.x + e.x, h + t, p.z + e.z },
+                                     { p.x + e.x, h, p.z + e.z }, { p.x - e.x, h, p.z - e.z }, { 0.0f, 1.0f, 0.0f } );
+                        }
+                        to.m_color = WHITE;
+                    }
+                }
                 if ( theme( r, c ) == ThemeE::HULL ) hullPlate( r, c, mid );
             }
 
@@ -2055,6 +2337,12 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                                 { DC[d] ? 0.18f : CellSize * 0.5f, 0.008f, DR[d] ? 0.18f : CellSize * 0.5f } );
                 }
                 if ( open( nr, nc ) ) continue;
+                if ( sloped( nr, nc ) )
+                {
+                    // Sloped rock leans back from here: nothing hangs on it; stones at its foot.
+                    if ( k.m_kind != CellE::VOID ) slopeFoot( r, c, d );
+                    continue;
+                }
                 // A wall face: lining, ribs, pipes (as the zone's theme has them). A face whose end is cut off stays
                 // plain; a niche's face stands back with it.
                 Vector3 n = { (float)-DC[d], 0.0f, (float)-DR[d] };   // into this cell
@@ -2470,7 +2758,14 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             case ThemeE::DUSK:
             case ThemeE::SNOW:
             {
-                // Boulders: warm stone in the dusk, black rock in the snow.
+                // Boulders: warm stone in the dusk, black rock in the snow; out in the open on a low mound of the ground.
+                if ( outside )
+                {
+                    ground.m_color = look.m_floor;
+                    ground.blob( place( { at.x, -0.03f, at.z }, { 0.0f, turn, 0.0f } ), { 0.85f, 0.17f, 0.75f }, 0.25f,
+                                 hashCell( r, c, 39 ), 5 );
+                    ground.m_color = WHITE;
+                }
                 rock.m_color = theme( r, c ) == ThemeE::DUSK ? Color{ 170, 115, 85, 255 } : Color{ 60, 64, 74, 255 };
                 for ( int i = 0; i < 3; ++i )
                 {
@@ -2613,6 +2908,13 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
             case ThemeE::MOON:
             case ThemeE::HALL:
             {
+                if ( outside )
+                {
+                    ground.m_color = look.m_floor;
+                    ground.blob( place( { at.x, -0.03f, at.z }, { 0.0f, turn, 0.0f } ), { 0.85f, 0.17f, 0.75f }, 0.25f,
+                                 hashCell( r, c, 39 ), 5 );
+                    ground.m_color = WHITE;
+                }
                 rock.m_color =
                     theme( r, c ) == ThemeE::MOON ? Color{ 120, 118, 114, 255 } : Color{ 140, 128, 116, 255 };
                 for ( int i = 0; i < 3; ++i )
@@ -2681,18 +2983,30 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         Vector3 p = m.m_pos;
         if ( m.m_kind == 'R' || m.m_kind == 'A' )
         {
-            int wall = -1;
-            for ( int d = 0; d < 4 && wall < 0; ++d )
+            // The wall it hangs on: the first of north, east, south, west. Where the dark does not count (in the dark
+            // the lamps' places decide who is seen, Game::heroLit) one the camera sees from the side first, east or
+            // west, then north (phase F2: on a north wall a lamp hung at the picture's top edge or above it).
+            int       wall = -1;
+            const int order[2][4] = { { 0, 1, 2, 3 }, { 1, 3, 0, 2 } };
+            for ( int k = 0; k < 4 && wall < 0; ++k )
+            {
+                int d = order[m_dark ? 0 : 1][k];
                 if ( !open( m.m_row + DR[d], m.m_col + DC[d] ) ) wall = d;
+            }
             bool    red = m.m_kind == 'R';
             Vector3 at;
             Vector3 n = { 0.0f, 0.0f, 1.0f };
             if ( wall >= 0 )
             {
+                // Lower than before (2.6 m, a red one 3.0): a lamp the camera sees, not one at the picture's top.
                 n = { (float)-DC[wall], 0.0f, (float)-DR[wall] };
-                at = { p.x + DC[wall] * ( CellSize * 0.5f - 0.18f ),
-                       p.y + fminf( red ? 3.0f : 2.6f, m_wallHeight - p.y - 0.35f ),
+                float high = wall == 0 ? ( red ? 2.4f : 2.15f ) : ( red ? 2.7f : 2.35f );
+                at = { p.x + DC[wall] * ( CellSize * 0.5f - 0.18f ), p.y + fminf( high, m_wallHeight - p.y - 0.35f ),
                        p.z + DR[wall] * ( CellSize * 0.5f - 0.18f ) };
+                // Sloped rock leans back from there: the lamp on a post.
+                if ( sloped( m.m_row + DR[wall], m.m_col + DC[wall] ) )
+                    metal.box( place( { at.x, ( p.y + at.y ) * 0.5f, at.z } ),
+                               { 0.035f, ( at.y - p.y ) * 0.5f, 0.035f } );
             }
             else
             {
@@ -2706,17 +3020,26 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                         { 0.03f, 0.4f, 0.03f } );
                 }
             }
-            float yaw = fabsf( n.x ) > 0.5f ? PI * 0.5f : 0.0f;
-            metal.roundedBox( place( at, { 0.0f, yaw, 0.0f } ), { 0.2f, 0.16f, 0.1f }, 0.04f, 2 );
-            Vector4 glow = red ? Vector4{ 9.0f, 0.6f, 0.2f, 0.0f } : Vector4{ 7.0f, 4.0f, 1.5f, 0.0f };
-            glows.push_back( { Vector3Add( at, Vector3Scale( n, 0.1f ) ),
-                               { fabsf( n.x ) > 0.5f ? 0.02f : 0.15f, 0.1f, fabsf( n.z ) > 0.5f ? 0.02f : 0.15f },
-                               glow } );
+            float   yaw = fabsf( n.x ) > 0.5f ? PI * 0.5f : 0.0f;
+            Vector4 glow = red ? Vector4{ 9.0f, 0.6f, 0.2f, 0.0f } : Vector4{ 8.5f, 4.9f, 1.8f, 0.0f };
             // The lamp's colour follows the zone: cold light in the exchangers and the cold store.
             ThemeE  t = theme( m.m_row, m.m_col );
             Vector3 colour = red ? Vector3{ 30.0f, 3.4f, 1.4f } : Vector3{ 34.0f, 21.0f, 8.5f };
             if ( !red && ( t == ThemeE::EXCHANGER || t == ThemeE::COLDSTORE ) ) colour = { 18.0f, 26.0f, 36.0f };
             unsigned h = hashCell( m.m_row, m.m_col, 5 );
+            // On a wall a lamp of the place's own kind with its cone of light in the haze (a steady one: a failing
+            // lamp's cone would stay lit while it goes dark); on a pole or out in the open the old housing. Where the
+            // place runs pipes along its walls, out in front of them (phase F4: at 2.35 m it hung between their rows,
+            // which reach half a metre out, and from above one saw the pipes, not the lamp).
+            float reach = Looks[(int)t].m_pipes > 0 ? 0.36f : 0.0f;
+            if ( wall < 0 || sloped( m.m_row + DR[wall], m.m_col + DC[wall] ) ||
+                 !lamp( at, n, t, glow, colour, h % 4 != 0, kit, reach ) )
+            {
+                metal.roundedBox( place( at, { 0.0f, yaw, 0.0f } ), { 0.2f, 0.16f, 0.1f }, 0.04f, 2 );
+                glows.push_back( { Vector3Add( at, Vector3Scale( n, 0.1f ) ),
+                                   { fabsf( n.x ) > 0.5f ? 0.02f : 0.15f, 0.1f, fabsf( n.z ) > 0.5f ? 0.02f : 0.15f },
+                                   glow } );
+            }
             m_lights.push_back(
                 { Vector3Add( at, Vector3Scale( n, 0.6f ) ), colour, red ? 10.0f : 12.5f, h % 4 == 0 ? 0.7f : 0.0f } );
         }
@@ -2825,7 +3148,7 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         Sign    sign;
         sign.m_texture = req.first;
         float z, y;
-        if ( !open( r - 1, c ) && !garden( r - 1, c ) )
+        if ( !open( r - 1, c ) && !garden( r - 1, c ) && !sloped( r - 1, c ) )
         {
             z = r * CellSize + 0.34f;   // in front of the ribs
             y = mid.y + fminf( 2.75f, m_wallHeight - mid.y - h * 0.5f - 0.35f );
@@ -2951,8 +3274,15 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                     { at( 0.0f, gh - 0.075f, 0.6f ), strip, { colour.x, colour.y, colour.z, 0.0f }, true } );
                 if ( ( r + c ) % 2 == 0 ) m_lights.push_back( { at( 0.0f, gh - 0.3f, 0.7f ), colour, 4.5f, 0.0f } );
             }
-    if ( withGardens ) gardenEdges( gardens );
+    if ( withGardens ) gardenEdges( gardens ), gardenPonds( gardens );
     dress( s, kit );
+    motifs( s );
+    bayLines( s );
+    // Shallow water over the lawn by the ways (only seen; the game draws it, GameWorld.cpp).
+    if ( withGardens )
+        planShallows();
+    else
+        m_shallows.clear();
     if ( withGardens ) gardenPaths( s );
     if ( withGardens )
     {
@@ -2972,6 +3302,38 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         m_propsByCell.clear();
     }
     m_gardenKit = nullptr;
+    // The patchworks: each triangle takes the material its cell took as a variant before (patchPick; a wall's as a
+    // wall's, from just inside the face); the ground out in the open its shapes (its trodden ways, its scree).
+    std::map<int, std::pair<int, int>> patched;   // a patchwork's surface -> its plain one, its variants
+    for ( const auto &[base, patch] : s.m_patch ) patched[patch] = { base, (int)s.m_variants.at( base ).size() };
+    std::set<int> shaped;
+    for ( const auto &sh : s.m_shaped ) shaped.insert( sh.second );
+    for ( auto &[key, b] : themed )
+    {
+        auto p = patched.find( key / 2 );
+        if ( p != patched.end() )
+        {
+            bool wall = key % 2 == 1;
+            int  n = p->second.second;
+            b.tag(
+                [&]( Vector3 at, Vector3 n0 )
+                {
+                    Vector3 in = Vector3Subtract( at, Vector3Scale( n0, 0.01f ) );
+                    int     k = patchPick( (int)floorf( in.z / CellSize ), (int)floorf( in.x / CellSize ), wall, n );
+                    return k < n ? k + 1 : 0;
+                } );
+        }
+        else if ( shaped.count( key / 2 ) )
+            b.mapUv( [&]( Vector3 q ) { return groundShape( q ); } );
+    }
+    // The occlusion baked into the corners of what was built (LevelRelief.cpp): the walls' feet, the corners, round the
+    // things on the floor. Not into the gardens' plants and lawn (they have their own shade).
+    prepareOcclusion();
+    for ( MeshBuilder *b : { &rock, &floor, &ground, &plate, &grate, &metal, &hazard, &rust, &foil, &fins, &crate, &box,
+                             &hull, &cloth, &drape } )
+        shadeOcclusion( *b );
+    for ( auto &tb : themed )
+        if ( !parkKeys.count( tb.first ) ) shadeOcclusion( tb.second );
     // In tiles of eight cells: the frustum then leaves out what lies elsewhere, in the picture and in both shadow maps.
     auto add = [&]( MeshBuilder &b, int surface, bool cutaway, Vector4 glow = { -1.0f, 0.0f, 0.0f, 0.0f },
                     float tile = 8.0f * CellSize )
@@ -3003,6 +3365,12 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
     add( hull, s.m_hull, true );
     add( cloth, s.m_cloth, false );
     add( drape, s.m_cloth, true );
+    // The channels under the floors' gratings cast no shadow (below the floor, nothing that shows lies in it but
+    // their own insides; the gratings over them do).
+    size_t sunkFrom = out.size();
+    add( sunk, s.m_metal, false );
+    for ( size_t i = sunkFrom; i < out.size(); ++i ) out[i].m_sunShadow = out[i].m_spotShadow = false;
+    buildCones();
     if ( withGardens )
     {
         size_t first = out.size();
@@ -3018,9 +3386,23 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
         if ( s.m_needles >= 0 ) add( needles, s.m_needles, true, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
         for ( size_t i = deep; i < out.size(); ++i )
             out[i].m_nearCut = true, out[i].m_sunShadow = out[i].m_spotShadow = false;
+        // The deeper leaf cards not on frugal (Gfx::detail).
+        size_t inner = out.size();
+        add( deepCards, s.m_cards, true, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
+        for ( size_t i = inner; i < out.size(); ++i )
+            out[i].m_nearCut = true, out[i].m_sunShadow = out[i].m_spotShadow = false, out[i].m_detail = 1;
+    }
+    // Tufts of grass (the gardens' lawn, dry ones on the dust out in the open): none on frugal, more on middle and high.
+    if ( s.m_blades >= 0 )
+    {
         size_t grass = out.size();
         add( blades, s.m_blades, false, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
-        for ( size_t i = grass; i < out.size(); ++i ) out[i].m_sunShadow = out[i].m_spotShadow = false;
+        for ( size_t i = grass; i < out.size(); ++i )
+            out[i].m_sunShadow = out[i].m_spotShadow = false, out[i].m_detail = 1;
+        grass = out.size();
+        add( lush, s.m_blades, false, { -1.0f, 0.0f, 0.0f, 0.0f }, 16.0f * CellSize );
+        for ( size_t i = grass; i < out.size(); ++i )
+            out[i].m_sunShadow = out[i].m_spotShadow = false, out[i].m_detail = 2;
     }
     // Glowing boxes of one colour go into one mesh.
     while ( !glows.empty() )
@@ -3038,6 +3420,14 @@ void Level::build( const LevelSurfaces &s, std::vector<Drawable> &out )
                 ++it;
         add( b, s.m_glow, cut, colour );
     }
+    // A place lit in pools (Velm, the Werft: `lampgain <gain> <reach>`): its own lamps stronger and reaching less far,
+    // its ambient light lower (its file): bright under the lamps, dark between them.
+    if ( m_lampGain != 1.0f || m_lampReach != 1.0f )
+        for ( LevelLight &l : m_lights )
+        {
+            l.m_color = Vector3Scale( l.m_color, m_lampGain );
+            l.m_radius *= m_lampReach;
+        }
 }
 
 }   // namespace spaceopera

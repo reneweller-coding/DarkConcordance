@@ -263,21 +263,24 @@ void MeshBuilder::cylinder( const Matrix &m, float radius, float height, int sid
            sides );
 }
 
-void MeshBuilder::blob( const Matrix &m, Vector3 radii, float bumps, unsigned seed, int seg )
+void MeshBuilder::blob( const Matrix &m, Vector3 radii, float bumps, unsigned seed, int seg, bool rock )
 {
     int lon = seg * 2;
     reserve( (size_t)( seg + 1 ) * ( lon + 1 ) );
     // A direction from the middle pushed out by two octaves of noise, then stretched to the radii; the normals from
     // the neighbours on the grid (round the seam, through the poles: the ellipsoid's own).
     std::vector<Vector3> grid( (size_t)( seg + 1 ) * lon );
+    std::vector<float>   swell( grid.size() );
     for ( int i = 0; i <= seg; ++i )
         for ( int j = 0; j < lon; ++j )
         {
             float   th = PI * i / seg, ph = 2.0f * PI * j / lon;
             Vector3 d = { sinf( th ) * cosf( ph ), cosf( th ), sinf( th ) * sinf( ph ) };
-            float   k = 1.0f + bumps * ( 0.7f * smoothNoise( Vector3Scale( d, 1.6f ), seed ) +
-                                       0.3f * smoothNoise( Vector3Scale( d, 3.7f ), seed + 17u ) );
+            float   n = 0.7f * smoothNoise( Vector3Scale( d, 1.6f ), seed ) +
+                        0.3f * smoothNoise( Vector3Scale( d, 3.7f ), seed + 17u );
+            float   k = 1.0f + bumps * n;
             grid[(size_t)i * lon + j] = { d.x * radii.x * k, d.y * radii.y * k, d.z * radii.z * k };
+            swell[(size_t)i * lon + j] = n;
         }
     auto           at = [&]( int i, int j ) { return grid[(size_t)i * lon + ( ( j % lon ) + lon ) % lon]; };
     const Color    base = m_color;
@@ -297,6 +300,24 @@ void MeshBuilder::blob( const Matrix &m, Vector3 radii, float bumps, unsigned se
             if ( Vector3DotProduct( n, p ) < 0.0f ) n = Vector3Negate( n );
             float up = cosf( PI * i / seg );
             m_color.a = (unsigned char)( base.a * Clamp( 0.5f + 0.5f * ( up + 0.6f ), 0.42f, 1.0f ) );
+            if ( rock )
+            {
+                // A stone: its hollows dark (dirt and shade in the clefts), its underside darker still, moss where its
+                // top faces up (more on the rounded swells, patchy by a noise of its own).
+                float   s = swell[(size_t)i * lon + ( j % lon )];
+                float   shade = Clamp( 0.5f + 0.75f * ( s + 0.35f ), 0.42f, 1.08f ) * ( up < -0.2f ? 0.72f : 1.0f );
+                Vector3 w = rotate( m, n );
+                float   moss = Clamp( ( w.y - 0.45f ) * 2.2f, 0.0f, 1.0f ) *
+                               Clamp( 0.5f + 1.2f * smoothNoise( Vector3Scale( p, 1.9f ), seed + 41u ), 0.0f, 1.0f );
+                auto    mix = [&]( unsigned char c, float g )
+                {
+                    return (unsigned char)Clamp( ( c * shade ) * ( 1.0f - moss * 0.8f ) + g * moss * 0.8f, 0.0f,
+                                                 255.0f );
+                };
+                m_color.r = mix( base.r, 88.0f );
+                m_color.g = mix( base.g, 112.0f );
+                m_color.b = mix( base.b, 52.0f );
+            }
             vertex( Vector3Transform( p, m ), rotate( m, n ), { (float)j / lon, (float)i / seg } );
         }
     m_color = base;
@@ -390,6 +411,17 @@ void MeshBuilder::card( Vector3 a, Vector3 b, Vector3 c, Vector3 d, Vector3 norm
                                  (unsigned short)( i + 3 ) } );
 }
 
+void MeshBuilder::card( const Vector3 corners[4], const Vector3 normals[4], Vector2 uv0, float uvSize )
+{
+    reserve( 4 );
+    static const Vector2 Uv[4] = { { 0.0f, 0.0f }, { 1.0f, 0.0f }, { 1.0f, 1.0f }, { 0.0f, 1.0f } };
+    auto                 at = [&]( int k ) { return Vector2{ uv0.x + Uv[k].x * uvSize, uv0.y + Uv[k].y * uvSize }; };
+    unsigned short       i = vertex( corners[0], normals[0], at( 0 ) );
+    for ( int k = 1; k < 4; ++k ) vertex( corners[k], normals[k], at( k ) );
+    m_idx.insert( m_idx.end(), { i, (unsigned short)( i + 1 ), (unsigned short)( i + 2 ), i, (unsigned short)( i + 2 ),
+                                 (unsigned short)( i + 3 ) } );
+}
+
 void MeshBuilder::triangle( Vector3 a, Vector3 b, Vector3 c )
 {
     reserve( 3 );
@@ -398,6 +430,168 @@ void MeshBuilder::triangle( Vector3 a, Vector3 b, Vector3 c )
     vertex( b, n, { 1.0f, 0.0f } );
     vertex( c, n, { 0.0f, 1.0f } );
     m_idx.insert( m_idx.end(), { i, (unsigned short)( i + 1 ), (unsigned short)( i + 2 ) } );
+}
+
+void MeshBuilder::patch( Vector3 a, Vector3 b, Vector3 c, Vector3 d, int steps )
+{
+    steps = std::max( steps, 1 );
+    reserve( (size_t)( steps + 1 ) * ( steps + 1 ) );
+    Vector3        n = Vector3Normalize( Vector3CrossProduct( Vector3Subtract( d, a ), Vector3Subtract( b, a ) ) );
+    unsigned short first = (unsigned short)m_pos.size();
+    for ( int j = 0; j <= steps; ++j )
+        for ( int i = 0; i <= steps; ++i )
+        {
+            float u = (float)i / steps, v = (float)j / steps;
+            vertex( Vector3Lerp( Vector3Lerp( a, b, u ), Vector3Lerp( d, c, u ), v ), n, { u, v } );
+        }
+    for ( int j = 0; j < steps; ++j )
+        for ( int i = 0; i < steps; ++i )
+        {
+            unsigned short p = (unsigned short)( first + j * ( steps + 1 ) + i ), q = (unsigned short)( p + steps + 1 );
+            m_idx.insert( m_idx.end(), { p, (unsigned short)( p + 1 ), (unsigned short)( q + 1 ), p,
+                                         (unsigned short)( q + 1 ), q } );
+        }
+}
+
+void MeshBuilder::slab( float x0, float z0, float size, float y0, float y1, int steps )
+{
+    std::vector<float> at;
+    for ( int i = 0; i <= std::max( steps, 1 ); ++i ) at.push_back( size * i / std::max( steps, 1 ) );
+    field( x0, z0, at, [y1]( float, float ) { return y1; } );
+    const float x1 = x0 + size, z1 = z0 + size;
+    card( { x0, y1, z0 }, { x1, y1, z0 }, { x1, y0, z0 }, { x0, y0, z0 }, { 0.0f, 0.0f, -1.0f } );
+    card( { x1, y1, z1 }, { x0, y1, z1 }, { x0, y0, z1 }, { x1, y0, z1 }, { 0.0f, 0.0f, 1.0f } );
+    card( { x0, y1, z1 }, { x0, y1, z0 }, { x0, y0, z0 }, { x0, y0, z1 }, { -1.0f, 0.0f, 0.0f } );
+    card( { x1, y1, z0 }, { x1, y1, z1 }, { x1, y0, z1 }, { x1, y0, z0 }, { 1.0f, 0.0f, 0.0f } );
+}
+
+void MeshBuilder::slabHole( float x0, float z0, float size, float y0, float y1, int steps, int i0, int i1, int j0,
+                            int j1 )
+{
+    steps = std::max( steps, 1 );
+    size_t k = (size_t)steps + 1;
+    reserve( k * k );
+    unsigned short first = (unsigned short)m_pos.size();
+    for ( size_t j = 0; j < k; ++j )
+        for ( size_t i = 0; i < k; ++i )
+            vertex( { x0 + size * i / steps, y1, z0 + size * j / steps }, { 0.0f, 1.0f, 0.0f },
+                    { (float)i / steps, (float)j / steps } );
+    for ( int j = 0; j < steps; ++j )
+        for ( int i = 0; i < steps; ++i )
+        {
+            if ( i >= i0 && i < i1 && j >= j0 && j < j1 ) continue;   // the hole
+            unsigned short a = (unsigned short)( first + j * k + i ), b = (unsigned short)( a + k );
+            m_idx.insert( m_idx.end(), { a, (unsigned short)( a + 1 ), (unsigned short)( b + 1 ), a,
+                                         (unsigned short)( b + 1 ), b } );
+        }
+    const float x1 = x0 + size, z1 = z0 + size;
+    card( { x0, y1, z0 }, { x1, y1, z0 }, { x1, y0, z0 }, { x0, y0, z0 }, { 0.0f, 0.0f, -1.0f } );
+    card( { x1, y1, z1 }, { x0, y1, z1 }, { x0, y0, z1 }, { x1, y0, z1 }, { 0.0f, 0.0f, 1.0f } );
+    card( { x0, y1, z1 }, { x0, y1, z0 }, { x0, y0, z0 }, { x0, y0, z1 }, { -1.0f, 0.0f, 0.0f } );
+    card( { x1, y1, z0 }, { x1, y1, z1 }, { x1, y0, z1 }, { x1, y0, z0 }, { 1.0f, 0.0f, 0.0f } );
+}
+
+void MeshBuilder::top( float x0, float z0, float size, float y, int steps, const std::function<bool( int, int )> &keep )
+{
+    steps = std::max( steps, 1 );
+    size_t k = (size_t)steps + 1;
+    reserve( k * k );
+    unsigned short first = (unsigned short)m_pos.size();
+    for ( size_t j = 0; j < k; ++j )
+        for ( size_t i = 0; i < k; ++i )
+            vertex( { x0 + size * i / steps, y, z0 + size * j / steps }, { 0.0f, 1.0f, 0.0f },
+                    { (float)i / steps, (float)j / steps } );
+    for ( int j = 0; j < steps; ++j )
+        for ( int i = 0; i < steps; ++i )
+        {
+            if ( !keep( i, j ) ) continue;
+            unsigned short a = (unsigned short)( first + j * k + i ), b = (unsigned short)( a + k );
+            m_idx.insert( m_idx.end(), { a, (unsigned short)( a + 1 ), (unsigned short)( b + 1 ), a,
+                                         (unsigned short)( b + 1 ), b } );
+        }
+}
+
+void MeshBuilder::sides( float x0, float z0, float size, float y0, float y1 )
+{
+    const float x1 = x0 + size, z1 = z0 + size;
+    card( { x0, y1, z0 }, { x1, y1, z0 }, { x1, y0, z0 }, { x0, y0, z0 }, { 0.0f, 0.0f, -1.0f } );
+    card( { x1, y1, z1 }, { x0, y1, z1 }, { x0, y0, z1 }, { x1, y0, z1 }, { 0.0f, 0.0f, 1.0f } );
+    card( { x0, y1, z1 }, { x0, y1, z0 }, { x0, y0, z0 }, { x0, y0, z1 }, { -1.0f, 0.0f, 0.0f } );
+    card( { x1, y1, z0 }, { x1, y1, z1 }, { x1, y0, z1 }, { x1, y0, z0 }, { 1.0f, 0.0f, 0.0f } );
+}
+
+void MeshBuilder::tag( const std::function<int( Vector3, Vector3 )> &material )
+{
+    auto label = [&]( const std::vector<Vector3> &pos, const std::vector<Vector3> &nrm, std::vector<Vector2> &uv,
+                      const std::vector<unsigned short> &idx )
+    {
+        for ( size_t t = 0; t + 2 < idx.size(); t += 3 )
+        {
+            unsigned short a = idx[t], b = idx[t + 1], c = idx[t + 2];
+            Vector3        mid = Vector3Scale( Vector3Add( Vector3Add( pos[a], pos[b] ), pos[c] ), 1.0f / 3.0f );
+            Vector3        n = Vector3Normalize( Vector3Add( Vector3Add( nrm[a], nrm[b] ), nrm[c] ) );
+            float          u = 4.0f * (float)material( mid, n ) + 0.5f;
+            uv[a] = uv[b] = uv[c] = { u, 0.5f };
+        }
+    };
+    for ( Chunk &c : m_done ) label( c.m_pos, c.m_nrm, c.m_uv, c.m_idx );
+    label( m_pos, m_nrm, m_uv, m_idx );
+}
+
+void MeshBuilder::mapUv( const std::function<Vector2( Vector3 )> &uv )
+{
+    for ( Chunk &c : m_done )
+        for ( size_t i = 0; i < c.m_pos.size(); ++i ) c.m_uv[i] = uv( c.m_pos[i] );
+    for ( size_t i = 0; i < m_pos.size(); ++i ) m_uv[i] = uv( m_pos[i] );
+}
+
+void MeshBuilder::sheet( const std::vector<Vector3> &pos, const std::vector<Vector3> &nrm,
+                         const std::vector<Color> &col, int nx, int nz )
+{
+    if ( nx < 2 || nz < 2 || pos.size() < (size_t)( nx * nz ) ) return;
+    reserve( (size_t)( nx * nz ) );
+    unsigned short first = (unsigned short)m_pos.size();
+    const Color    base = m_color;
+    for ( int j = 0; j < nz; ++j )
+        for ( int i = 0; i < nx; ++i )
+        {
+            size_t k = (size_t)j * nx + i;
+            m_color = col[k];
+            vertex( pos[k], nrm[k], { (float)i / ( nx - 1 ), (float)j / ( nz - 1 ) } );
+        }
+    m_color = base;
+    for ( int j = 0; j + 1 < nz; ++j )
+        for ( int i = 0; i + 1 < nx; ++i )
+        {
+            unsigned short a = (unsigned short)( first + j * nx + i ), b = (unsigned short)( a + nx );
+            // Along the diagonal whose ends lie nearer in height: the sheet does not fold across a ridge.
+            float d1 = fabsf( pos[(size_t)j * nx + i].y - pos[(size_t)( j + 1 ) * nx + i + 1].y );
+            float d2 = fabsf( pos[(size_t)j * nx + i + 1].y - pos[(size_t)( j + 1 ) * nx + i].y );
+            if ( d1 <= d2 )
+                m_idx.insert( m_idx.end(), { a, (unsigned short)( a + 1 ), (unsigned short)( b + 1 ), a,
+                                             (unsigned short)( b + 1 ), b } );
+            else
+                m_idx.insert( m_idx.end(), { a, (unsigned short)( a + 1 ), b, (unsigned short)( a + 1 ),
+                                             (unsigned short)( b + 1 ), b } );
+        }
+}
+
+void MeshBuilder::shade( const std::function<float( Vector3, Vector3 )> &occlusion, float direct )
+{
+    auto bake = [&]( const std::vector<Vector3> &pos, const std::vector<Vector3> &nrm, std::vector<Color> &col )
+    {
+        for ( size_t i = 0; i < pos.size(); ++i )
+        {
+            float ao = Clamp( occlusion( pos[i], nrm[i] ), 0.0f, 1.0f );
+            if ( ao >= 0.999f ) continue;
+            float  k = 1.0f - direct * ( 1.0f - ao );
+            Color &c = col[i];
+            c = { (unsigned char)( c.r * k + 0.5f ), (unsigned char)( c.g * k + 0.5f ),
+                  (unsigned char)( c.b * k + 0.5f ), (unsigned char)( c.a * ao + 0.5f ) };
+        }
+    };
+    for ( Chunk &c : m_done ) bake( c.m_pos, c.m_nrm, c.m_col );
+    bake( m_pos, m_nrm, m_col );
 }
 
 void MeshBuilder::prism( const Matrix &m, const std::vector<std::vector<Vector3>> &rings )

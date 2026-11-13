@@ -1,7 +1,12 @@
-"""Derives the gardens' surfaces from textures there are (no image model, nothing asked for):
+"""Derives the gardens' surfaces from textures there are, the leaves from two pictures painted locally:
 
-    G:\\Tools\\ImageGeneration\\venv\\Scripts\\python.exe tools\\make_garden.py
+    G:\\Tools\\ImageGeneration\\venv\\Scripts\\python.exe tools\\make_garden.py [--local]
     py -3 tools/make_dds.py --only lawn lawn_v1 lawn_v2 foliage bark
+
+--local paints the leaves' pictures that are missing (assets/raw/garden/leafcard.jpg, foliage.jpg; FLUX.2 in WSL2, as
+make_textures.py --local): large broad leaves in calm clumps, as a painted game's crowns (13.11.2026; before, both
+were cut from the hedge's fine boxwood, which speckled restlessly from the game's height). Without them the old
+derivation from the hedge.
 
   lawn      grass with most of its daisies gone (from the camera's height they flickered as white specks), a shade
             darker and calmer
@@ -12,19 +17,32 @@
   bark      dustrock stood upright (its layers run up a trunk) and greyed
   boulder   dustrock greyed and lightened: the stone of the gardens' rocky edges
   blades    a tuft of long grass blades (alpha: cut out), scattered over the lawn
-  leafcard  a cluster of the foliage's leaves cut out with a ragged rim, round the crowns
+  leafcard  a cluster of the foliage's leaves cut out with a ragged rim, round the crowns; an atlas of four clumps
+            made of fans of it (leaf_atlas, 13.11.2026: one rosette on every card read as blossom)
   path_1/2  decals of trodden earth with gravel, their rims fading (assets/textures/decals)
 
 Each writes <name>_albedo.png, _orm.png and _normal.png into assets/textures (blades and leafcard keep their alpha:
 no DDS for them, DXT1 would cut it).
 """
 import os
+import sys
 
 import numpy as np
 from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TEXTURES = os.path.join(ROOT, "assets", "textures")
+PAINTED = os.path.join(ROOT, "assets", "raw", "garden")
+# The leaves painted locally (paint_jobs): a cluster cut out of white for the cards, a seamless canopy for the cores.
+PAINT = {
+    "leafcard": ("A single round cluster of about ten large broad tree leaves seen from straight above, overlapping in "
+                 "two or three calm soft groups, simple painted leaf shapes with a lit upper side and gently darker "
+                 "leaves beneath, hand-painted fantasy game art, soft brush strokes, low contrast, green, isolated in "
+                 "the centre, nothing else, on a plain pure white background, flat even lighting, no text, no frame"),
+    "foliage": ("Seamless tileable texture, top-down view of a dense tree canopy of large broad leaves gathered in soft "
+                "rounded clumps, hand-painted fantasy game texture, calm grouping of light and dark clumps, low "
+                "contrast, green, flat even lighting, no perspective, no text, highly detailed"),
+}
 KINDS = ("albedo", "orm", "normal")
 KEEP = 0.12          # share of the daisies kept (in patches)
 OFFSETS = [(37, 211), (-163, 91), (233, -57), (-89, -173), (151, 149), (-211, 23)]
@@ -113,13 +131,14 @@ def main():
     save(np.rot90(base["orm"], 2, axes=(0, 1)), "lawn_v2", "orm")
     save(turn_normal(base["normal"], 2), "lawn_v2", "normal")
 
-    # Foliage: the hedge's luminance, brightened so that a tint gives the colour.
+    # Foliage: the painted canopy's (else the hedge's) luminance, brightened so that a tint gives the colour.
     leaf = load("hedge", "albedo")
     lum = leaf @ np.array([0.3, 0.55, 0.15], dtype=np.float32)
     lum = lum / max(float(lum.mean()), 1e-3) * 0.55
-    save(np.repeat(lum[..., None], 3, axis=2), "foliage", "albedo")
-    save(load("hedge", "orm"), "foliage", "orm")
-    save(load("hedge", "normal"), "foliage", "normal")
+    if not painted_foliage():
+        save(np.repeat(lum[..., None], 3, axis=2), "foliage", "albedo")
+        save(load("hedge", "orm"), "foliage", "orm")
+        save(load("hedge", "normal"), "foliage", "normal")
 
     # Bark: dustrock upright, nearly grey (a warm trace left), darker.
     rock = np.rot90(load("dustrock", "albedo"), 1, axes=(0, 1))
@@ -139,9 +158,121 @@ def main():
     save(load("dustrock", "normal"), "boulder", "normal")
 
     blades()
-    leafcard(lum)
+    if not painted_leafcard():
+        leafcard(lum)
     needles()
     paths()
+
+
+def paint_jobs():
+    """The leaves' pictures not painted yet: [(raw path, aspect, prompt, seed)] for make_textures' local painting."""
+    return [(os.path.join(PAINTED, name + ".jpg"), "1:1", prompt, 1) for name, prompt in PAINT.items()
+            if not os.path.exists(os.path.join(PAINTED, name + ".jpg"))]
+
+
+def calm(lum, keep=0.55, group=0.35, radius=24):
+    """A leaf picture's luminance made calm: its fine contrast cut to `keep`, a share `group` of it from a wide blur
+    (the clumps' light and dark read as wholes), its mean at 0.55 (the plants' tint gives the colour)."""
+    mean = float(lum.mean())
+    fine = mean + (lum - mean) * keep
+    wide = blur(lum[..., None], radius)[..., 0]
+    out = fine * (1.0 - group) + wide * group
+    return out / max(float(out.mean()), 1e-3) * 0.55
+
+
+def painted_foliage():
+    """The crowns' cores from the painted canopy: made seamless, its luminance calmed, its bumps soft."""
+    raw = os.path.join(PAINTED, "foliage.jpg")
+    if not os.path.exists(raw):
+        return False
+    sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+    import make_textures
+    make_textures.tile_maps("foliage", raw, 0.0, 0.85, 2.0)
+    a = load("foliage", "albedo")
+    lum = calm(a @ np.array([0.3, 0.55, 0.15], dtype=np.float32), keep=0.6, group=0.3, radius=20)
+    save(np.repeat(np.clip(lum, 0, 1)[..., None], 3, axis=2), "foliage", "albedo")
+    return True
+
+
+def painted_leafcard():
+    """The leaf cards from the painted cluster: keyed out of its white, the leaves' grey calmed, the outline the
+    leaves' own (alpha), a clear rim fading so that no card shows a square edge."""
+    raw = os.path.join(PAINTED, "leafcard.jpg")
+    if not os.path.exists(raw):
+        return False
+    img = np.asarray(Image.open(raw).convert("RGB").resize((512, 512), Image.Resampling.LANCZOS),
+                     dtype=np.float32) / 255.0
+    dist = (1.0 - img).max(axis=2)
+    alpha = np.clip((dist - 0.1) / 0.25, 0.0, 1.0)
+    colour = np.clip((img - (1.0 - dist[..., None])) / np.maximum(dist, 0.1)[..., None], 0.0, 1.0)
+    lum = colour @ np.array([0.3, 0.55, 0.15], dtype=np.float32)
+    inside = alpha > 0.5
+    mean = float(lum[inside].mean()) if inside.any() else 0.5
+    lum = np.where(inside, lum, mean)
+    lum = calm(lum, keep=0.6, group=0.3, radius=16)
+    # No leaf reaches the card's edge.
+    yy, xx = np.mgrid[0:512, 0:512].astype(np.float32)
+    edge = np.clip(np.minimum(np.minimum(xx, 511 - xx), np.minimum(yy, 511 - yy)) / 20.0, 0.0, 1.0)
+    rgb = np.repeat(np.clip(lum * 1.1, 0, 1)[..., None], 3, axis=2)
+    save_rgba(leaf_atlas(np.concatenate([rgb, (alpha * edge)[..., None]], axis=2)),
+              os.path.join(TEXTURES, "leafcard_albedo.png"))
+    flat_maps("leafcard")
+    return True
+
+
+# The atlas's four clusters (phase F2: every card was the same star-shaped rosette, which repeated and read like
+# blossom): each three or four fans cut out of the painted cluster (a sector of its leaves, soft at its sides), scaled,
+# turned and laid off the quadrant's middle, the ones below darker: an uneven clump, no star. Each fan: x, y in the
+# quadrant, scale, degrees turned, the sector's middle and width (degrees), shade.
+ATLAS = [
+    [(0.58, 0.6, 0.78, 75.0, 200.0, 230.0, 0.7), (0.4, 0.5, 0.8, 20.0, 40.0, 240.0, 0.84),
+     (0.56, 0.4, 0.74, 160.0, 300.0, 210.0, 1.0)],
+    [(0.62, 0.42, 0.74, 140.0, 90.0, 240.0, 0.72), (0.38, 0.44, 0.76, 10.0, 250.0, 220.0, 0.82),
+     (0.5, 0.54, 0.8, 260.0, 0.0, 250.0, 1.0)],
+    [(0.45, 0.58, 0.82, 200.0, 120.0, 250.0, 0.72), (0.58, 0.44, 0.74, 35.0, 330.0, 220.0, 0.88),
+     (0.38, 0.4, 0.6, 300.0, 60.0, 200.0, 1.0), (0.64, 0.64, 0.56, 110.0, 210.0, 200.0, 0.95)],
+    [(0.44, 0.6, 0.78, 300.0, 170.0, 240.0, 0.72), (0.58, 0.5, 0.84, 51.0, 20.0, 230.0, 0.86),
+     (0.44, 0.4, 0.62, 230.0, 280.0, 210.0, 1.0)],
+]
+
+
+def leaf_atlas(card):
+    """The leaf card (RGBA, 512 square) as an atlas of four different clusters in a 1024 square (Level's leaves() picks
+    a quadrant per card): fans of its leaves laid over each other, a clear rim round each quadrant (the coarser levels'
+    filtering must not carry a neighbour's leaves over)."""
+    card = card.copy()
+    # Calmer: the lit upper leaves nearer the ones below (their contrast drew the star).
+    inside = card[..., 3] > 0.5
+    mean = card[..., :3][inside].mean(axis=0) if inside.any() else np.array([0.5, 0.5, 0.5], dtype=np.float32)
+    card[..., :3] = mean + (card[..., :3] - mean) * 0.7
+    yy, xx = np.mgrid[0:512, 0:512].astype(np.float32)
+    angle = np.degrees(np.arctan2(yy - 255.5, xx - 255.5))
+    radius = np.sqrt((xx - 255.5) ** 2 + (yy - 255.5) ** 2) / 256.0
+    out = Image.new("RGBA", (1024, 1024), (0, 0, 0, 0))
+    rim = np.clip(np.minimum(np.minimum(xx, 511 - xx), np.minimum(yy, 511 - yy)) / 24.0 - 0.5, 0.0, 1.0)
+    for q, fans in enumerate(ATLAS):
+        tile = Image.new("RGBA", (512, 512), (0, 0, 0, 0))
+        for x, y, scale, deg, middle, width, shade in fans:
+            off = np.abs((angle - middle + 180.0) % 360.0 - 180.0)
+            keep = np.clip((width * 0.5 - off) / 12.0 + 0.5, 0.0, 1.0)
+            keep = np.maximum(keep, np.clip((0.14 - radius) / 0.06, 0.0, 1.0))
+            fan = card.copy()
+            fan[..., 3] *= keep
+            fan[..., :3] *= shade
+            part = Image.fromarray(np.clip(fan * 255.0 + 0.5, 0, 255).astype(np.uint8), "RGBA")
+            size = max(1, int(512 * scale))
+            part = part.resize((size, size), Image.Resampling.LANCZOS)
+            part = part.rotate(deg, resample=Image.Resampling.BICUBIC, expand=True)
+            tile.alpha_composite(part, (int(x * 512 - part.width / 2), int(y * 512 - part.height / 2)))
+        t = np.asarray(tile, dtype=np.float32) / 255.0
+        t[..., 3] *= rim
+        # Where nothing covers, the leaves' mean colour (the filtering then blends towards it, not to black).
+        cover = t[..., 3] > 0.05
+        fill = t[..., :3][cover].mean(axis=0) if cover.any() else np.array([0.5, 0.5, 0.5], dtype=np.float32)
+        t[..., :3] = np.where(t[..., 3:] > 0.02, t[..., :3], fill)
+        out.paste(Image.fromarray(np.clip(t * 255.0 + 0.5, 0, 255).astype(np.uint8), "RGBA"),
+                  ((q % 2) * 512, (q // 2) * 512))
+    return np.asarray(out, dtype=np.float32) / 255.0
 
 
 def flat_maps(name, rough=0.85):
@@ -196,7 +327,7 @@ def leafcard(lum):
     inside = r + 0.25 * wobble < 0.82
     alpha = (inside & (leaves > np.percentile(leaves, 38))).astype(np.float32)
     rgb = np.repeat(np.clip(leaves * 1.1, 0, 1)[..., None], 3, axis=2)
-    save_rgba(np.concatenate([rgb, alpha[..., None]], axis=2), os.path.join(TEXTURES, "leafcard_albedo.png"))
+    save_rgba(leaf_atlas(np.concatenate([rgb, alpha[..., None]], axis=2)), os.path.join(TEXTURES, "leafcard_albedo.png"))
     flat_maps("leafcard")
 
 
@@ -260,4 +391,8 @@ def paths():
 
 
 if __name__ == "__main__":
+    if "--local" in sys.argv[1:]:
+        sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+        import make_textures
+        print("painted locally: %d" % make_textures.paint_local(paint_jobs(), "garden"), flush=True)
     main()

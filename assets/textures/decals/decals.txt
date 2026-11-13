@@ -7,6 +7,16 @@ group cold coldstore ice snow cryo
 group outdoor dusk arena moon snow
 group alien alien
 group garden park
+decal motif_works_1 floor 4.60 4.60 1.60 0.60 0.0 a 0.78 0.66 0.30 
+decal motif_works_2 floor 4.40 4.40 1.60 0.60 0.0 a 0.77 0.77 0.76 
+decal motif_plated_1 floor 4.60 4.60 1.60 0.60 0.0 a 0.77 0.76 0.75 
+decal motif_plated_2 floor 4.60 4.60 1.60 0.60 0.0 a 0.78 0.50 0.31 
+decal motif_street_1 floor 4.60 4.49 1.60 0.60 0.0 a 0.80 0.63 0.47 
+decal motif_street_2 floor 4.39 4.40 1.60 0.60 0.0 a 0.52 0.50 0.48 
+decal motif_clean_1 floor 4.40 4.38 1.60 0.25 0.0 a 0.69 0.66 0.60 
+decal motif_clean_2 floor 4.40 4.39 1.60 0.25 0.0 a 0.43 0.38 0.30 
+decal motif_cold_1 floor 4.20 4.20 1.60 0.30 0.0 a 0.37 0.44 0.50 
+decal bay_line floor 2.00 0.12 1.60 0.55 0.0 a 0.86 0.64 0.10
 decal oil_1 floor 1.60 1.60 1.60 0.25 0.0 m 0.10 0.02 0.00 industrial street
 decal oil_2 floor 1.40 1.40 1.60 0.25 0.0 m 0.04 0.02 0.00 industrial
 decal oil_3 floor 1.20 1.20 1.60 0.25 0.0 m 0.28 0.10 0.00 industrial

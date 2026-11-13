@@ -152,6 +152,7 @@ void Game::loadShip( Gfx &gfx, const std::string &assets )
         }
         c = Vector3Scale( c, 1.0f / m_level.m_glass.size() );
         m_glassMesh = glass.build().front();
+        if ( m_level.m_keys.count( "crust" ) ) rebuildGlass();   // a moon's crust: slabs, shaded at the rock's foot
     }
     // Looking down through the window from the game's camera: the red dwarf's limb crosses the view, our own drive
     // plume reaches towards it, the other ships brake before it in a chain, and the patrol hangs off to one side.

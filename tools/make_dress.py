@@ -73,6 +73,21 @@ VARIANTS = {
     "farmsoil": ["with rows of seedlings", "with an irrigation pipe and puddles"],
     "algae": ["with bubbles and a darker patch", "with tangled strands"],
     "wetfloor": ["with a drain grate and a film of running water", "with spots of algae slime"],
+    # The floors per room kind (13.11.2026).
+    "treadplate": ["with a bolted rectangular access hatch and worn yellow paint on its edges",
+                   "with welded repair seams and a patch of rust"],
+    "concretebay": ["with a cracked and patched area and a small drain grate",
+                    "with darker oil-soaked concrete and freshly painted lines"],
+    "rubbermat": ["with a torn corner and a few dropped washers", "with a dusty path worn into the ribs"],
+    "heavyplate": ["with a square inspection hatch with heavy hinges", "with a cracked plate welded with a thick bead"],
+    "catwalk": ["with a solid steel plate bolted over part of the mesh", "with rust patches and a bent bar"],
+    "pavers": ["with a few cracked slabs and a round drain cover", "with darker slabs and moss in the joints"],
+    "terrazzo": ["with a brass divider strip and a crack", "with a darker stained area and scuffs"],
+    "woodboards": ["with a few replaced lighter boards", "with a burn mark and a worn path"],
+    "composite": ["with a recessed floor vent panel", "with a narrow inlaid guidance strip and scuffs"],
+    "carpet": ["with a darker worn path", "with a coffee stain and a lighter replaced tile"],
+    "frostplate": ["with thicker frost drifts in the corners", "with a frozen puddle of clear ice"],
+    "alienslab": ["with faint violet veins in the joints", "with small pale crystals grown between the slabs"],
 }
 
 # ------------------------------------------------------------------------------------------------------------ decals
@@ -110,6 +125,20 @@ MULTIPLY = { "oil", "ruststain", "crack", "scorch", "boots", "blood", "scuff", "
 
 def floor( name, groups, key, size, what, **kw ):
     return decal( name, "floor", groups, key, size, TOP.format( what, key ), **kw )
+
+
+MOTIF = ( "Top-down orthographic view of {}, a single round floor emblem centred and filling most of the frame, on a "
+          "plain pure {} background, flat even lighting, highly detailed, no text, no letters, no numbers, no logos, "
+          "no frame" )
+
+
+def motif( name, key, size, what, rough=0.6 ):
+    """A centre motif of the larger halls (Level::motifs lays them by the name's place: motif_<kind>_<n>): painted
+    marks keyed out of black, inlays cut out of white whole. They belong to no place's decals."""
+    d = decal( name, "floor", "", key, size, MOTIF.format( what, "black" if key == "black" else "white" ),
+               rough=rough )
+    d["dim"] = 0.78 if key == "black" else 1.0   # keyed out of black a mark comes out at full brightness: worn paint
+    return d
 
 
 def wall( name, groups, key, size, what, **kw ):
@@ -329,6 +358,25 @@ DECAL_LIST = [
     wall( "ivy_3", "garden", "white", 1.6, "hanging moss and trailing vines", y=2.4, aspect="16:9" ),
     wall( "moss_1", "garden outdoor", "white", 1.2, "green moss and lichen patches", y=0.8 ),
     wall( "moss_2", "garden", "white", 1.0, "a small birdhouse with a round hole", y=2.0 ),
+    # The halls' centre motifs (13.11.2026): one in the middle of each larger hall, as its place has them.
+    motif( "motif_works_1", "black", 4.6, "a large worn painted industrial floor marking: a yellow ring with black and "
+           "yellow hazard chevrons around its rim and a bold yellow cross in the middle, faded and scuffed paint" ),
+    motif( "motif_works_2", "black", 4.4, "a large worn painted floor emblem: a pale grey gear wheel around a "
+           "stylised drill bit, faded and chipped paint" ),
+    motif( "motif_plated_1", "black", 4.6, "a large worn painted landing pad marking: a white circle with four "
+           "inward-pointing triangles and a ring of short stripes, faded paint" ),
+    motif( "motif_plated_2", "black", 4.6, "a large worn painted floor marking of a stylised sun with long straight "
+           "rays in faded orange paint, soot over it" ),
+    motif( "motif_street_1", "none", 4.6, "a round mosaic of small cobblestones forming an eight-pointed compass rose "
+           "in ochre, rust red and cream stone" ),
+    motif( "motif_street_2", "none", 4.4, "a round paving pattern of concentric rings of dark and pale stone setts "
+           "with a small star at its centre" ),
+    motif( "motif_clean_1", "none", 4.4, "a large round inlay in a polished floor: an eight-pointed star of pale "
+           "marble, dark slate and thin brass lines inside a plain brass ring", rough=0.25 ),
+    motif( "motif_clean_2", "none", 4.4, "a large round inlay of a stylised planet with an orbit ring and small stars "
+           "in brass, dark stone and pale enamel", rough=0.25 ),
+    motif( "motif_cold_1", "none", 4.2, "a large round inlay of a six-pointed snowflake of pale blue enamel and steel "
+           "lines on dark blue-grey stone", rough=0.3 ),
 ]
 
 
@@ -408,6 +456,7 @@ def key_decal( d, raw, out ):
     xx = np.minimum( np.arange( w ), np.arange( w )[::-1] )[None, :] / ( w * 0.06 )
     edge = np.clip( np.minimum( yy, xx ), 0.0, 1.0 )
     alpha = alpha * ( edge if d["key"] != "none" else np.clip( np.minimum( yy, xx ) * 6.0, 0.0, 1.0 ) )
+    colour = colour * d.get( "dim", 1.0 )
     rgba = np.dstack( [colour, alpha] )
     Image.fromarray( ( rgba * 255 + 0.5 ).astype( np.uint8 ), "RGBA" ).save( out )
     # The mean colour where it shows (the colour of its light, if it glows).
@@ -422,7 +471,9 @@ def write_list():
              "multiply> <r> <g> <b> <groups...>"]
     for g, themes in GROUPS.items():
         lines.append( "group %s %s" % ( g, themes ) )
-    for d in DECAL_LIST:
+    # The halls' motifs first: the decals are drawn kind by kind in this order, and the motifs lie lowest (the stains
+    # over them, not hidden under a stain's clear rim).
+    for d in sorted( DECAL_LIST, key=lambda d: not d["name"].startswith( "motif_" ) ):
         path = os.path.join( DECALS, d["name"] + ".png" )
         if not os.path.exists( path ):
             continue
@@ -435,6 +486,10 @@ def write_list():
         lines.append( "decal %s %s %.2f %.2f %.2f %.2f %.1f %s %.2f %.2f %.2f %s" % (
             d["name"], d["where"], width, height, d["y"], d["rough"], d["glow"], "m" if d["mul"] else "a", mean[0],
             mean[1], mean[2], " ".join( d["groups"] ) ) )
+    # The halls' bay lines (tools/make_grime.py, phase F4) right after the motifs: the level lays them by the room.
+    if os.path.exists( os.path.join( DECALS, "bay_line.png" ) ):
+        last = max( i for i, l in enumerate( lines ) if l.startswith( "decal motif_" ) or l.startswith( "group" ) )
+        lines.insert( last + 1, "decal bay_line floor 2.00 0.12 1.60 0.55 0.0 a 0.86 0.64 0.10" )
     # The gardens' paths (tools/make_garden.py) belong to no place: the level lays them along its way.
     for name in ( "path_1", "path_2" ):
         if os.path.exists( os.path.join( DECALS, name + ".png" ) ):

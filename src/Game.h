@@ -549,7 +549,7 @@ private:
         Vector3 m_pos, m_vel;
         float   m_life, m_max, m_size;
         Color   m_color;
-        int     m_kind;   ///< 0 spark, 1 steam (lit), 2 flash, 3 ember
+        int     m_kind;   ///< 0 spark, 1 steam (lit), 2 flash, 3 ember, 4 a streak of the wind
     };
     struct Debris
     {
@@ -712,6 +712,7 @@ private:
     void freeUnusedTextures();
     Gfx                       *m_gfx = nullptr;   ///< the renderer (surfaces made after loading)
     std::map<std::string, int> m_ownSurfaces;     ///< the places' own surfaces by texture
+    std::map<int, int>         m_splatOf;         ///< a surface -> the same with its variants blended in (outdoors)
     std::vector<DecalDef>      m_decalDefs;       ///< the decals there are
     void loadFont();
     void spawnFoe( FoeE kind, Vector3 pos, bool awake );
@@ -1137,6 +1138,18 @@ private:
     bool               m_inWater = false;   ///< the hero's chest is under water
     int waterAt( Vector3 p ) const;
     void drawWater( Gfx &gfx );
+    Mesh m_pondMesh = {};      ///< the gardens' ponds' water (Level::m_ponds), one mesh in the world
+    Mesh m_shallowMesh = {};   ///< the gardens' shallow water over the lawn (Level::m_shallows), one mesh
+    /** @brief Builds the ponds' and the shallows' water: a disc each, texture coordinates -1 .. 1 to the shore. */
+    void buildPonds();
+    /**
+     * @brief The air out in the open (GameWorld.cpp): motes round the camera by the place's kind (pollen in the gardens,
+     *        dust in the dusk, snow on ice and snow, mist low over the ground), none in a vacuum or indoors; a few
+     *        hundred unlit billboards at most, fewer on low and frugal. Each mote's place is a fixed point carried by
+     *        the wind and wrapped into a box round the camera's target (no state, the same for the same moment).
+     * @param[in] gfx  the renderer (its quality)
+     */
+    void drawAir( Gfx &gfx );
     void updateShocker( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
     void updateHydraulic( Foe &f, float dt, Vector3 dir, float dist, Vector3 path, Vector3 &want, float &faceYaw );
     Figure               m_hydraFigure;

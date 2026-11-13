@@ -29,6 +29,8 @@ const int DC[4] = { 0, 1, 0, -1 };
 constexpr int           GardenDepth = 3;    ///< wall cells this deep behind the edge are garden, deeper ones forest
 constexpr int           Skirt = 12;         ///< cells of forest beyond the level's edge
 constexpr unsigned char Far = 250;          ///< farther than anything counts
+constexpr float         BankReach = 1.35f;   ///< a pond's bank rises to the lawn this far out (a share of its radius)
+constexpr float         PondDepth = 0.4f;    ///< how deep its hollow goes under the water in the middle
 
 /** @brief Dice from a hash: the same plant every time the level is built. */
 struct Dice
@@ -73,29 +75,57 @@ Color meadow( float x, float z, float shade = 1.0f )
 
 /**
  * @brief Leaf clusters on cards round a crown or a bush (an ellipsoid), mostly on its top and sides, each half out of
- *        it: the crown ends in leaves, not in a smooth skin. Lit with the crown's own normal there.
+ *        it: the crown ends in leaves, not in a smooth skin. Lit as the crown: each corner's normal from its middle
+ *        (the light runs smoothly over the cards instead of breaking on each), the underside and the cards deeper in
+ *        darker (the colour's alpha, the ambient light's occlusion). `inner` more cards deeper in the crown fill it (on
+ *        dice of their own: the shared dice, and so the plants after, stay as they were).
  */
 void leaves( MeshBuilder &cards, Vector3 centre, Vector3 radii, float turn, int count, Color tone, Dice &dice,
-             float scale = 0.42f )
+             float scale = 0.42f, int inner = 0, MeshBuilder *deepCards = nullptr )
 {
-    cards.m_color = tone;
+    if ( !deepCards ) inner = 0;
     float size = scale * ( radii.x + radii.z ) * 0.5f;
-    for ( int k = 0; k < count; ++k )
+    Dice  deep{ dice.m_s ^ 0x9e3779b9u };
+    for ( int k = 0; k < count + inner; ++k )
     {
-        float   th = acosf( dice.in( -0.5f, 1.0f ) ), ph = turn + dice.in( 0.0f, 6.28f ), depth = dice.in( 0.72f, 1.0f );
+        Dice   &dd = k < count ? dice : deep;
+        float   th = acosf( dd.in( -0.5f, 1.0f ) ), ph = turn + dd.in( 0.0f, 6.28f );
+        float   depth = k < count ? dd.in( 0.72f, 1.0f ) : dd.in( 0.45f, 0.75f );
         Vector3 d = { sinf( th ) * cosf( ph ), cosf( th ), sinf( th ) * sinf( ph ) };
         Vector3 p = Vector3Add( centre, { d.x * radii.x * depth, d.y * radii.y * depth, d.z * radii.z * depth } );
         Vector3 n = Vector3Normalize( { d.x / radii.x, d.y / radii.y, d.z / radii.z } );
         Vector3 t1 = Vector3Normalize( Vector3CrossProduct( n, fabsf( n.y ) < 0.9f ? Vector3{ 0.0f, 1.0f, 0.0f }
                                                                                    : Vector3{ 1.0f, 0.0f, 0.0f } ) );
         Vector3 t2 = Vector3CrossProduct( n, t1 );
-        float   roll = dice.in( 0.0f, 6.28f ), half = std::max( 0.25f, size * dice.in( 0.8f, 1.2f ) );
+        float   roll = dd.in( 0.0f, 6.28f ), half = std::max( 0.25f, size * dd.in( 0.8f, 1.2f ) );
         Vector3 u = Vector3Scale( Vector3Add( Vector3Scale( t1, cosf( roll ) ), Vector3Scale( t2, sinf( roll ) ) ), half );
         Vector3 v = Vector3Scale( Vector3Add( Vector3Scale( t1, -sinf( roll ) ), Vector3Scale( t2, cosf( roll ) ) ), half );
-        cards.card( Vector3Add( Vector3Subtract( p, u ), v ), Vector3Add( Vector3Add( p, u ), v ),
-                    Vector3Subtract( Vector3Add( p, u ), v ), Vector3Subtract( Vector3Subtract( p, u ), v ), n );
+        Vector3 corner[4] = { Vector3Add( Vector3Subtract( p, u ), v ), Vector3Add( Vector3Add( p, u ), v ),
+                              Vector3Subtract( Vector3Add( p, u ), v ), Vector3Subtract( Vector3Subtract( p, u ), v ) };
+        Vector3 normal[4];
+        for ( int i = 0; i < 4; ++i )
+        {
+            Vector3 q = Vector3Subtract( corner[i], centre );
+            normal[i] = Vector3Normalize(
+                Vector3Add( Vector3Scale( Vector3Normalize( { q.x / radii.x, q.y / radii.y, q.z / radii.z } ), 0.8f ),
+                            Vector3Scale( n, 0.2f ) ) );
+        }
+        // Lit from above, shaded below and inside (as the sky reaches a crown).
+        float        ao = Clamp( 0.62f + 0.3f * d.y + 0.35f * ( depth - 0.72f ), 0.32f, 1.0f );
+        MeshBuilder &to = k < count ? cards : *deepCards;
+        // Each card one of the atlas's four clumps (tools/make_garden.py), a little lighter or darker, warmer or
+        // cooler than its crown: from a hash of where it hangs (the dice, and so every plant after, stay as they were).
+        unsigned h = (unsigned)(int)floorf( p.x * 7.3f ) * 73856093u ^ (unsigned)(int)floorf( p.y * 5.1f ) * 19349663u ^
+                     (unsigned)(int)floorf( p.z * 7.9f ) * 83492791u;
+        h = ( h ^ ( h >> 13 ) ) * 0x5bd1e995u;
+        h ^= h >> 15;
+        float lit = 0.84f + 0.3f * ( ( h >> 4 ) % 64u ) / 63.0f, warm = ( ( h >> 10 ) % 64u ) / 63.0f - 0.5f;
+        auto  channel = [&]( unsigned char v, float k ) { return (unsigned char)Clamp( v * lit * k, 0.0f, 255.0f ); };
+        to.m_color = { channel( tone.r, 1.0f + 0.1f * warm ), channel( tone.g, 1.0f + 0.03f * warm ),
+                       channel( tone.b, 1.0f - 0.1f * warm ), (unsigned char)( ao * 255.0f ) };
+        to.card( corner, normal, { 0.5f * ( h & 1u ), 0.5f * ( ( h >> 1 ) & 1u ) }, 0.5f );
+        to.m_color = WHITE;
     }
-    cards.m_color = WHITE;
 }
 
 /** @brief A crown core: the same colour, darker (the leaf cards round it carry its outline and its light). */
@@ -142,6 +172,7 @@ void Level::planGarden( bool on )
 {
     size_t cells = (size_t)m_rows * m_cols;
     m_garden.assign( cells, 0 );
+    m_ponds.clear();
     if ( !on ) return;
     // Each wall cell's distance to the nearest open cell (diagonals count: a hedge closes round a room's corners) and
     // that cell's place.
@@ -193,70 +224,18 @@ void Level::planGarden( bool on )
                 }
             if ( park ) m_garden[i] = depth[i];
         }
+    planPonds();
 
-    // The paths along the route (the autopilot's way: through each corridor, across each room), kept to the middle of
-    // the open floor; only in the park. Planned before the build: the lawn keeps its tufts off them.
+    // The paths along the route (the ways, planWays: through each corridor, across each room, kept to the middle of
+    // the open floor); only in the park. Planned before the build: the lawn keeps its tufts off them.
     m_path.assign( cells, 0 );
-    if ( m_route.size() < 2 ) return;
-    std::vector<int> wall( cells, 0 );
+    if ( m_way.size() != cells ) return;
     for ( size_t i = 0; i < cells; ++i )
-        if ( !walkable( (int)( i / m_cols ), (int)( i % m_cols ) ) )
-            todo.push_back( (int)i );
-        else
-            wall[i] = -1;
-    while ( !todo.empty() )
     {
-        int i = todo.front();
-        todo.pop_front();
-        for ( int d = 0; d < 4; ++d )
-        {
-            int nr = i / m_cols + DR[d], nc = i % m_cols + DC[d];
-            if ( nr < 0 || nc < 0 || nr >= m_rows || nc >= m_cols ) continue;
-            size_t n = (size_t)nr * m_cols + nc;
-            if ( wall[n] >= 0 ) continue;
-            wall[n] = wall[i] + 1;
-            todo.push_back( (int)n );
-        }
-    }
-    std::vector<float> cost( cells );
-    std::vector<int>   from( cells );
-    for ( size_t w = 0; w + 1 < m_route.size(); ++w )
-    {
-        int a = m_route[w].first * m_cols + m_route[w].second, b = m_route[w + 1].first * m_cols + m_route[w + 1].second;
-        if ( a < 0 || b < 0 || a >= (int)cells || b >= (int)cells ) continue;
-        std::fill( cost.begin(), cost.end(), 1e9f );
-        std::fill( from.begin(), from.end(), -1 );
-        // Dijkstra on a small queue: a step costs more near the walls.
-        std::vector<std::pair<float, int>> heap = { { 0.0f, a } };
-        cost[a] = 0.0f;
-        while ( !heap.empty() )
-        {
-            std::pop_heap( heap.begin(), heap.end(), std::greater<>() );
-            auto [k, i] = heap.back();
-            heap.pop_back();
-            if ( k > cost[i] ) continue;
-            if ( i == b ) break;
-            for ( int d = 0; d < 4; ++d )
-            {
-                int nr = i / m_cols + DR[d], nc = i % m_cols + DC[d];
-                if ( nr < 0 || nc < 0 || nr >= m_rows || nc >= m_cols || !walkable( nr, nc ) ) continue;
-                int   n = nr * m_cols + nc;
-                float step = cost[i] + 1.0f + 3.0f / (float)std::max( 1, wall[n] );
-                if ( step >= cost[n] ) continue;
-                cost[n] = step;
-                from[n] = i;
-                heap.push_back( { step, n } );
-                std::push_heap( heap.begin(), heap.end(), std::greater<>() );
-            }
-        }
-        if ( cost[b] >= 1e9f ) continue;
-        for ( int i = b; i >= 0; i = from[i] )
-        {
-            int r = i / m_cols, c = i % m_cols;
-            if ( theme( r, c ) == ThemeE::PARK && cell( r, c ).m_kind == CellE::FLOOR && cell( r, c ).m_height == 0.0f )
-                m_path[(size_t)i] = 1;
-            if ( i == a ) break;
-        }
+        int r = (int)( i / m_cols ), c = (int)( i % m_cols );
+        if ( m_way[i] && theme( r, c ) == ThemeE::PARK && cell( r, c ).m_kind == CellE::FLOOR &&
+             cell( r, c ).m_height == 0.0f )
+            m_path[i] = 1;
     }
 }
 
@@ -303,9 +282,11 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
                     p.y = rr.y * 0.45f;
                 }
                 kit.m_stone.m_color = { (unsigned char)g, (unsigned char)( g + 2 ), (unsigned char)( g - 8 ), 255 };
-                // Few facets and strong lumps: a stone's planes and edges, not a smooth egg.
-                kit.m_stone.blob( place( p, { dice.in( -0.35f, 0.35f ), turn + i * 1.7f, dice.in( -0.35f, 0.35f ) } ), rr,
-                                  0.3f, h + i, 4 );
+                // Few facets and strong lumps: a stone's planes and edges, not a smooth egg; its clefts dark, moss on
+                // top (phase F3: they read as smooth grey blobs), some lumpier than others (by the cell's hash: the
+                // dice stay as they were).
+                kit.m_stone.blob( place( p, { dice.in( -0.35f, 0.35f ), turn + i * 1.7f, dice.in( -0.35f, 0.35f ) } ),
+                                  rr, 0.3f + 0.08f * (float)( ( h >> ( 6 + i ) ) % 3 ), h + i, 4, true );
                 stand( p, rr, p.y + rr.y );
                 // Moss and a bush in the clefts on top of some.
                 if ( dice() < 0.35f )
@@ -329,10 +310,10 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
             {
                 Vector3 rr = { dice.in( 0.85f, 1.05f ), dice.in( 0.9f, 1.4f ), dice.in( 0.85f, 1.05f ) };
                 Vector3 p = { mid.x + dice.in( -0.25f, 0.25f ), rr.y * 0.65f, mid.z + dice.in( -0.25f, 0.25f ) };
-                kit.m_foliage.m_color = shaded( tone, 0.75f );
-                kit.m_foliage.blob( place( p, { 0.0f, turn + i, 0.0f } ), Vector3Scale( rr, 0.85f ), 0.35f, h + i, 5 );
+                kit.m_foliage.m_color = shaded( tone, 0.62f );
+                kit.m_foliage.blob( place( p, { 0.0f, turn + i, 0.0f } ), Vector3Scale( rr, 0.75f ), 0.35f, h + i, 5 );
                 kit.m_foliage.m_color = WHITE;
-                leaves( kit.m_cards, p, rr, turn, 10, tone, dice, 0.32f );
+                leaves( kit.m_cards, p, rr, turn, 10, tone, dice, 0.32f, 3, &kit.m_deep );
                 stand( p, rr, p.y + rr.y );
             }
             // Now and then a tree in the thicket, its crown over the path.
@@ -356,8 +337,10 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
             Vector3 at = { mid.x + CellSize * 0.5f + dice.in( -0.7f, 0.7f ), 0.0f,
                            mid.z + CellSize * 0.5f + dice.in( -0.7f, 0.7f ) };
         {
-            bool near = depth <= GardenDepth + 2;
-            plant( near && dice() < 0.3f ? PlantE::FIR : PlantE::CANOPY, at, dice.in( 0.9f, 1.2f ), h, kit, near );
+            bool   near = depth <= GardenDepth + 2;
+            float  size = dice.in( 0.9f, 1.2f );   // (taken before the kind, as the call that had both did)
+            PlantE kind = near && dice() < 0.3f ? PlantE::FIR : PlantE::CANOPY;
+            if ( !inPond( at, 1.2f ) ) plant( kind, at, size, h, kit, near );
         }
         }
         return;
@@ -371,26 +354,74 @@ void Level::gardenCell( int r, int c, GardenKit &kit )
     {
         static const PlantE Trees[] = { PlantE::PARASOL, PlantE::PARASOL, PlantE::LANTERN, PlantE::ORBS,
                                         PlantE::SPIRAL,  PlantE::CANOPY,  PlantE::FIR };
-        plant( Trees[( bh >> 12 ) % 7], at, dice.in( 0.85f, 1.15f ), h, kit );
+        float               size = dice.in( 0.85f, 1.15f );
+        if ( !inPond( at, 1.2f ) ) plant( Trees[( bh >> 12 ) % 7], at, size, h, kit );
         return;
     }
     for ( int i = 0; i < 2; ++i )
-        tuft( kit.m_blades, { mid.x + dice.in( -0.9f, 0.9f ), 0.0f, mid.z + dice.in( -0.9f, 0.9f ) },
-              dice.in( 0.55f, 0.85f ), dice.in( 0.4f, 0.7f ), dice.in( 0.0f, 6.28f ), meadow( mid.x, mid.z ) );
-    float roll = dice();
+    {
+        // (The dice in the order the call they were arguments of took them, right to left: the tufts stay put.)
+        float   a = dice.in( 0.0f, 6.28f ), t = dice.in( 0.4f, 0.7f ), w = dice.in( 0.55f, 0.85f );
+        float   x = mid.x + dice.in( -0.9f, 0.9f );
+        Vector3 p = { x, 0.0f, mid.z + dice.in( -0.9f, 0.9f ) };
+        if ( !inPond( p, 0.2f ) ) tuft( kit.m_blades, p, w, t, a, meadow( mid.x, mid.z ) );
+    }
+    float  roll = dice(), size = 1.0f;
+    PlantE kind = PlantE::COUNT;
     if ( roll < 0.24f )
-        plant( PlantE::BUSH, at, dice.in( 0.8f, 1.3f ), h, kit );
+        kind = PlantE::BUSH, size = dice.in( 0.8f, 1.3f );
     else if ( roll < 0.34f )
-        plant( PlantE::FRONDS, at, dice.in( 0.8f, 1.2f ), h, kit );
+        kind = PlantE::FRONDS, size = dice.in( 0.8f, 1.2f );
     else if ( roll < 0.42f )
-        plant( PlantE::TUBES, at, dice.in( 0.8f, 1.2f ), h, kit );
+        kind = PlantE::TUBES, size = dice.in( 0.8f, 1.2f );
     else if ( roll < 0.5f )
-        plant( PlantE::BED, at, dice.in( 0.8f, 1.1f ), h, kit );
+        kind = PlantE::BED, size = dice.in( 0.8f, 1.1f );
+    // (Nothing grows in a pond: its reeds and stones are its own, gardenPonds.)
+    if ( kind != PlantE::COUNT && !inPond( at, 0.9f ) ) plant( kind, at, size, h, kit );
+    Dice more{ hashCell( r, c, 521 ) };
+    for ( int i = 0; i < 3; ++i )
+    {
+        Vector3 p = { mid.x + more.in( -0.95f, 0.95f ), 0.0f, mid.z + more.in( -0.95f, 0.95f ) };
+        float   w = more.in( 0.45f, 0.7f ), t = more.in( 0.25f, 0.5f ), a = more.in( 0.0f, 6.28f );
+        if ( !inPond( p, 0.2f ) ) tuft( kit.m_lush, p, w, t, a, meadow( p.x, p.z ) );
+    }
 }
 
 void Level::lawn( int r, int c, GardenKit &kit, float shade )
 {
     static const std::vector<float> Steps = { 0.0f, 1.0f, 2.0f };
+    // By a pond the ground sinks into its hollow (on a finer grid): mud under the water, dark and wet up its bank.
+    for ( size_t i = 0; i < m_ponds.size(); ++i )
+    {
+        const Vector4 &p = m_ponds[i];
+        float          reach = std::max( p.z, p.w ) * 1.16f * BankReach;
+        float          dx = std::max( { c * CellSize - p.x, 0.0f, p.x - ( c + 1 ) * CellSize } ),
+                       dz = std::max( { r * CellSize - p.y, 0.0f, p.y - ( r + 1 ) * CellSize } );
+        if ( dx * dx + dz * dz >= reach * reach ) continue;
+        static const std::vector<float> Fine = { 0.0f, 0.25f, 0.5f, 0.75f, 1.0f, 1.25f, 1.5f, 1.75f, 2.0f };
+        kit.m_park( r, c, false )
+            .field(
+                c * CellSize, r * CellSize, Fine,
+                [this]( float x, float z )
+                {
+                    float wet;
+                    return pondGround( x, z, wet );
+                },
+                [this, shade]( float x, float z )
+                {
+                    float   wet;
+                    float   g = pondGround( x, z, wet );
+                    Color   m = meadow( x, z, shade );
+                    Vector3 mud = { 0.36f, 0.31f, 0.22f };
+                    float   k = wet * ( 0.55f + 0.45f * Clamp( -g / 0.2f, 0.0f, 1.0f ) );
+                    float   damp = 1.0f - 0.3f * fminf( wet * 2.0f, 1.0f );   // the bank darker as it gets wetter
+                    return Color{ (unsigned char)Lerp( m.r * damp, mud.x * 255.0f, k ),
+                                  (unsigned char)Lerp( m.g * damp, mud.y * 255.0f, k ),
+                                  (unsigned char)Lerp( m.b * damp, mud.z * 255.0f, k ),
+                                  (unsigned char)( 255.0f * ( 1.0f - 0.35f * wet ) ) };
+                } );
+        return;
+    }
     kit.m_park( r, c, false )
         .field( c * CellSize, r * CellSize, Steps, []( float, float ) { return 0.0f; },
                 [shade]( float x, float z ) { return meadow( x, z, shade ); } );
@@ -459,6 +490,16 @@ void Level::groundTop( int r, int c, float h, GardenKit &kit )
         Vector3 p = { ( c + dice.in( 0.1f, 0.9f ) ) * CellSize, h, ( r + dice.in( 0.1f, 0.9f ) ) * CellSize };
         if ( foot( p.x, p.z, false ) < 0.2f ) continue;
         tuft( kit.m_blades, p, dice.in( 0.5f, 0.8f ), dice.in( 0.35f, 0.65f ), dice.in( 0.0f, 6.28f ), colour( p.x, p.z ) );
+    }
+    // On middle and high more of them, shorter, the lawn thicker by the edges (their own dice: the first stay).
+    Dice more{ hashCell( r, c, 519 ) };
+    int  extra = 2 + more.pick( 3 ) + edge;
+    for ( int i = 0; i < extra; ++i )
+    {
+        Vector3 p = { ( c + more.in( 0.05f, 0.95f ) ) * CellSize, h, ( r + more.in( 0.05f, 0.95f ) ) * CellSize };
+        float   w = more.in( 0.4f, 0.65f ), t = more.in( 0.22f, 0.45f ), a = more.in( 0.0f, 6.28f );
+        if ( foot( p.x, p.z, false ) < 0.2f ) continue;
+        tuft( kit.m_lush, p, w, t, a, colour( p.x, p.z ) );
     }
 }
 
@@ -569,22 +610,30 @@ void Level::gardenPaths( const LevelSurfaces &s )
         for ( int k = 0; k < 2; ++k )
             if ( ( *s.m_decals )[i].m_name == ( k ? "path_2" : "path_1" ) ) earth[k] = (int)i;
     if ( earth[0] < 0 || earth[1] < 0 ) return;
-    auto lay = [&]( int r, int c, float size, Dice &dice, float dr, float dc )
+    // Decals write their depth: two at one height fight over it where they overlap. So each has a height of its own
+    // among those it may overlap (one reaches at most 1.4 m from its middle; those of one height lie four half cells
+    // apart), the second kind all above the first, and both above the place's other floor decals (0.012-0.018 m);
+    // laid from low to high, as they are drawn (by kind, then in order), each lies on what was drawn before it.
+    std::vector<std::pair<float, Decal>> laid;
+    auto                                 lay = [&]( int r, int c, float size, Dice &dice, float dr, float dc )
     {
-        static int layer = 0;
-        Vector3    mid = { ( c + 0.5f + dc + dice.in( -0.12f, 0.12f ) ) * CellSize, 0.012f + 0.002f * ( layer++ % 4 ),
-                           ( r + 0.5f + dr + dice.in( -0.12f, 0.12f ) ) * CellSize };
+        float   x = ( c + 0.5f + dc + dice.in( -0.12f, 0.12f ) ) * CellSize;
+        float   z = ( r + 0.5f + dr + dice.in( -0.12f, 0.12f ) ) * CellSize;
         float   yaw = dice.in( 0.0f, 6.28f ), half = size * 0.5f;
+        int     kind = dice.pick( 2 );
+        int     hr = 2 * r + ( dr > 0.0f ? 1 : 0 ), hc = 2 * c + ( dc > 0.0f ? 1 : 0 );
+        float   y = 0.019f + 0.0065f * kind + 0.0004f * (float)( ( hr & 3 ) * 4 + ( hc & 3 ) );
+        Vector3 mid = { x, y, z };
         Vector3 right = { cosf( yaw ) * half, 0.0f, sinf( yaw ) * half };
         Vector3 down = { -sinf( yaw ) * half, 0.0f, cosf( yaw ) * half };
         Decal   d;
-        d.m_def = earth[dice.pick( 2 )];
+        d.m_def = earth[kind];
         d.m_corner[0] = Vector3Subtract( Vector3Subtract( mid, right ), down );
         d.m_corner[1] = Vector3Subtract( Vector3Add( mid, right ), down );
         d.m_corner[2] = Vector3Add( Vector3Add( mid, right ), down );
         d.m_corner[3] = Vector3Add( Vector3Subtract( mid, right ), down );
         d.m_cut = false;
-        m_decals.push_back( d );
+        laid.push_back( { y, d } );
     };
     auto onPath = [&]( int r, int c )
     { return r >= 0 && c >= 0 && r < m_rows && c < m_cols && m_path[(size_t)r * m_cols + c]; };
@@ -602,6 +651,8 @@ void Level::gardenPaths( const LevelSurfaces &s )
             else if ( theme( r, c ) == ThemeE::PARK && cell( r, c ).m_kind == CellE::FLOOR && dice() < 0.035f )
                 lay( r, c, dice.in( 1.3f, 2.0f ), dice, 0.0f, 0.0f );
         }
+    std::stable_sort( laid.begin(), laid.end(), []( const auto &a, const auto &b ) { return a.first < b.first; } );
+    for ( const auto &l : laid ) m_decals.push_back( l.second );
 }
 
 void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit, bool full )
@@ -644,21 +695,21 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
             bark.tube( { Vector3Subtract( top, up( 0.5f * s ) ), Vector3Lerp( top, tip, 0.5f ), tip },
                        { 0.09f * s, 0.06f * s, 0.035f * s }, 5 );
             Color tone = leaf.m_color;
-            leaf.m_color = shaded( tone, 0.72f );
+            leaf.m_color = shaded( tone, 0.6f );
             leaf.blob( place( Vector3Add( tip, up( 0.2f * s ) ), { 0.0f, a, 0.0f } ),
-                       { 0.85f * s, 0.34f * s, 0.8f * s }, 0.35f, h + k, 5 );
+                       { 0.72f * s, 0.28f * s, 0.68f * s }, 0.35f, h + k, 5 );
             leaf.m_color = tone;
             leaves( kit.m_cards, Vector3Add( tip, up( 0.2f * s ) ), { 1.1f * s, 0.42f * s, 1.0f * s }, a, 9, tone, dice,
-                    0.3f );
+                    0.3f, 3, &kit.m_deep );
             hang( tip, { 1.1f * s, 0.42f * s, 1.0f * s }, tip.y - 0.2f * s, tip.y + 0.65f * s );
         }
         Color tone = leaf.m_color;
-        leaf.m_color = shaded( tone, 0.72f );
-        leaf.blob( place( Vector3Add( top, up( 0.45f * s ) ), { 0.0f, turn, 0.0f } ), { 2.1f * s, 0.45f * s, 2.0f * s },
-                   0.3f, h, 7 );
+        leaf.m_color = shaded( tone, 0.6f );
+        leaf.blob( place( Vector3Add( top, up( 0.45f * s ) ), { 0.0f, turn, 0.0f } ),
+                   { 1.85f * s, 0.4f * s, 1.75f * s }, 0.3f, h, 7 );
         leaf.m_color = tone;
         leaves( kit.m_cards, Vector3Add( top, up( 0.45f * s ) ), { 2.5f * s, 0.6f * s, 2.4f * s }, turn, 30, tone, dice,
-                0.24f );
+                0.24f, 10, &kit.m_deep );
         hang( top, { 2.5f * s, 0.55f * s, 2.4f * s }, top.y + 0.1f * s, top.y + 1.0f * s );
         leaf.m_color = WHITE;
         Vector4 pod = Pods[dice.pick( 3 )];
@@ -675,12 +726,12 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
         Vector3 top = Vector3Add( at, { dice.in( -0.3f, 0.3f ) * s, dice.in( 2.7f, 3.3f ) * s, dice.in( -0.3f, 0.3f ) * s } );
         trunk( top, { dice.in( -0.5f, 0.5f ) * s, 0.0f, dice.in( -0.5f, 0.5f ) * s }, 0.2f * s, 0.12f * s, 7 );
         Color tone = odd ? Exotics[dice.pick( 5 )] : Color{ 74, 82, 98, 255 };
-        leaf.m_color = shaded( tone, 0.72f );
+        leaf.m_color = shaded( tone, 0.58f );
         leaf.blob( place( Vector3Add( top, up( 0.3f * s ) ), { 0.0f, dice.in( 0.0f, 6.28f ), 0.0f } ),
-                   { 1.5f * s, 0.85f * s, 1.5f * s }, 0.3f, h, 6 );
+                   { 1.3f * s, 0.72f * s, 1.3f * s }, 0.3f, h, 6 );
         leaf.m_color = tone;
         leaves( kit.m_cards, Vector3Add( top, up( 0.3f * s ) ), { 1.75f * s, 1.0f * s, 1.75f * s }, 0.0f, 22, tone,
-                dice, 0.26f );
+                dice, 0.26f, 9, &kit.m_deep );
         hang( top, { 1.75f * s, 1.0f * s, 1.75f * s }, top.y - 0.5f * s, top.y + 1.3f * s );
         Vector4 light = Pods[1 + dice.pick( 2 )];
         int     n = 10 + dice.pick( 5 );
@@ -791,10 +842,10 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
             Vector3 rr = { dice.in( 0.45f, 0.8f ) * s, dice.in( 0.4f, 0.65f ) * s, dice.in( 0.45f, 0.8f ) * s };
             Vector3 p = Vector3Add( at, { dice.in( -0.5f, 0.5f ) * s, rr.y * 0.7f, dice.in( -0.5f, 0.5f ) * s } );
             Color tone = leaf.m_color;
-            leaf.m_color = shaded( tone, 0.75f );
-            leaf.blob( place( p, { 0.0f, dice.in( 0.0f, 6.28f ), 0.0f } ), Vector3Scale( rr, 0.85f ), 0.35f, h + k, 5 );
+            leaf.m_color = shaded( tone, 0.62f );
+            leaf.blob( place( p, { 0.0f, dice.in( 0.0f, 6.28f ), 0.0f } ), Vector3Scale( rr, 0.75f ), 0.35f, h + k, 5 );
             leaf.m_color = tone;
-            leaves( kit.m_cards, p, rr, 0.0f, 6, tone, dice, 0.34f );
+            leaves( kit.m_cards, p, rr, 0.0f, 6, tone, dice, 0.34f, 2, &kit.m_deep );
             stand( p, rr, p.y + rr.y );
         }
         leaf.m_color = WHITE;
@@ -869,12 +920,12 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
         float   turn = dice.in( 0.0f, 6.28f );
         if ( !full ) crown = Vector3Scale( crown, 1.15f );
         MeshBuilder &crowns = full ? leaf : kit.m_canopy;   // deep in the forest they throw no shadows (none is seen)
-        crowns.m_color = shaded( leaf.m_color, 0.75f );
-        crowns.blob( place( Vector3Add( top, up( 0.8f * s ) ), { 0.0f, turn, 0.0f } ), Vector3Scale( crown, 0.85f ), 0.3f,
-                     h, full ? 5 : 4 );
+        crowns.m_color = shaded( leaf.m_color, full ? 0.62f : 0.75f );
+        crowns.blob( place( Vector3Add( top, up( 0.8f * s ) ), { 0.0f, turn, 0.0f } ),
+                     Vector3Scale( crown, full ? 0.72f : 0.85f ), 0.3f, h, full ? 5 : 4 );
         kit.m_canopy.m_color = WHITE;
         leaves( kit.m_cards, Vector3Add( top, up( 0.8f * s ) ), crown, turn, full ? 22 : 9, leaf.m_color, dice,
-                full ? 0.26f : 0.34f );
+                full ? 0.26f : 0.34f, full ? 9 : 0, &kit.m_deep );
         hang( top, crown, top.y + 0.8f * s - crown.y * 0.6f, top.y + 0.8f * s + crown.y );
         for ( int k = 0; full && k < 3; ++k )
         {
@@ -883,15 +934,215 @@ void Level::plant( PlantE kind, Vector3 at, float s, unsigned h, GardenKit &kit,
             Vector3 p = Vector3Add( top, { cosf( a ) * d, dice.in( -0.2f, 1.1f ) * s, sinf( a ) * d } );
             Vector3 clump = Vector3Scale( crown, dice.in( 0.45f, 0.6f ) );
             Color   tone = leaf.m_color;
-            leaf.m_color = shaded( tone, 0.75f );
-            leaf.blob( place( p, { 0.0f, a, 0.0f } ), Vector3Scale( clump, 0.85f ), 0.35f, h + 7u + k, 4 );
+            // A bough from the trunk out under the clump (the crown stands on branches, not on a pole).
+            Vector3 fork = Vector3Lerp( at, top, 0.62f ), under = Vector3Subtract( p, up( clump.y * 0.35f ) );
+            bark.tube( { fork, Vector3Add( Vector3Lerp( fork, under, 0.55f ), up( 0.25f * s ) ), under },
+                       { 0.15f * s, 0.1f * s, 0.05f * s }, 5 );
+            leaf.m_color = shaded( tone, 0.62f );
+            leaf.blob( place( p, { 0.0f, a, 0.0f } ), Vector3Scale( clump, 0.72f ), 0.35f, h + 7u + k, 4 );
             leaf.m_color = tone;
-            leaves( kit.m_cards, p, clump, a, 7, tone, dice, 0.3f );
+            leaves( kit.m_cards, p, clump, a, 7, tone, dice, 0.3f, 3, &kit.m_deep );
             hang( p, clump, p.y - clump.y * 0.6f, p.y + clump.y );
         }
         leaf.m_color = WHITE;
         break;
     }
+    }
+}
+
+float Level::pondShape( size_t i, float angle ) const
+{
+    float a = (float)i * 2.39996f, b = (float)i * 4.1f + 1.3f;
+    return 1.0f + 0.09f * sinf( 3.0f * angle + a ) + 0.06f * sinf( 5.0f * angle + b );
+}
+
+float Level::pondReach( size_t i, float x, float z ) const
+{
+    const Vector4 &p = m_ponds[i];
+    float          u = ( x - p.x ) / p.z, v = ( z - p.y ) / p.w;
+    return sqrtf( u * u + v * v ) / pondShape( i, atan2f( v, u ) );
+}
+
+float Level::shallowReach( size_t i, float x, float z ) const
+{
+    const Vector4 &p = m_shallows[i];
+    float          u = ( x - p.x ) / p.z, v = ( z - p.y ) / p.w;
+    return sqrtf( u * u + v * v ) / pondShape( i + 17, atan2f( v, u ) );
+}
+
+void Level::planShallows()
+{
+    m_shallows.clear();
+    if ( m_way.empty() || m_garden.empty() ) return;
+    // Level lawn one walks on (the park's floor at its own height, no step, door or grating).
+    auto lawn = [&]( int r, int c )
+    {
+        const Cell &k = cell( r, c );
+        return k.m_kind == CellE::FLOOR && theme( r, c ) == ThemeE::PARK && k.m_height == 0.0f && !garden( r, c );
+    };
+    // The ways' cells over the lawn, in the order of a hash (the same level, the same water).
+    std::vector<std::pair<unsigned, int>> way;
+    for ( int r = 0; r < m_rows; ++r )
+        for ( int c = 0; c < m_cols; ++c )
+            if ( m_way[(size_t)r * m_cols + c] && lawn( r, c ) )
+                way.push_back( { hashCell( r, c, 561 ), r * m_cols + c } );
+    std::sort( way.begin(), way.end() );
+    size_t want = std::clamp( way.size() / 45, (size_t)2, (size_t)6 );
+    for ( const auto &[h, i] : way )
+    {
+        if ( m_shallows.size() >= want ) break;
+        int   r = i / m_cols, c = i % m_cols;
+        Dice  dice{ h };
+        float x = ( c + 0.5f ) * CellSize + dice.in( -0.5f, 0.5f ),
+              z = ( r + 0.5f ) * CellSize + dice.in( -0.5f, 0.5f );
+        float rx = dice.in( 1.8f, 2.8f ), rz = dice.in( 1.4f, 2.4f );
+        bool  ok = true;
+        for ( const Vector4 &o : m_shallows ) ok = ok && Vector2Distance( { o.x, o.y }, { x, z } ) > 18.0f;
+        for ( const Vector4 &o : m_ponds ) ok = ok && Vector2Distance( { o.x, o.y }, { x, z } ) > 8.0f;
+        // All under it and its damp rim level lawn; nothing standing in its middle.
+        float reach = std::max( rx, rz ) * 1.16f * 1.18f;
+        int   span = (int)ceilf( reach / CellSize ) + 1;
+        for ( int dr = -span; dr <= span && ok; ++dr )
+            for ( int dc = -span; dc <= span && ok; ++dc )
+            {
+                int   rr = r + dr, cc = c + dc;
+                float x0 = cc * CellSize, z0 = rr * CellSize;
+                float dx = std::max( { x0 - x, 0.0f, x - x0 - CellSize } ),
+                      dz = std::max( { z0 - z, 0.0f, z - z0 - CellSize } );
+                if ( dx * dx + dz * dz < reach * reach && !lawn( rr, cc ) ) ok = false;
+            }
+        for ( const Prop &p : m_props )
+            ok = ok && Vector2Distance( { p.m_pos.x, p.m_pos.z }, { x, z } ) > p.m_radius + std::min( rx, rz ) * 0.6f;
+        if ( ok )
+        {
+            m_shallows.push_back( { x, z, rx, rz } );
+            TraceLog( LOG_WARNING, "WATER: shallow at %.1f,%.1f (%.1f x %.1f m)", x, z, rx * 2.0f, rz * 2.0f );
+        }
+    }
+}
+
+bool Level::inPond( Vector3 p, float margin ) const
+{
+    for ( size_t i = 0; i < m_ponds.size(); ++i )
+    {
+        const Vector4 &q = m_ponds[i];
+        float          u = ( p.x - q.x ) / ( q.z + margin ), v = ( p.z - q.y ) / ( q.w + margin );
+        if ( sqrtf( u * u + v * v ) < 1.2f * pondShape( i, atan2f( v, u ) ) ) return true;
+    }
+    return false;
+}
+
+float Level::pondGround( float x, float z, float &wet ) const
+{
+    wet = 0.0f;
+    float h = 0.0f;
+    for ( size_t i = 0; i < m_ponds.size(); ++i )
+    {
+        float q = pondReach( i, x, z );
+        if ( q >= BankReach ) continue;
+        if ( q < 1.0f )
+        {
+            wet = 1.0f;
+            return PondLevel - PondDepth * powf( 1.0f - q * q, 0.7f );
+        }
+        float t = ( q - 1.0f ) / ( BankReach - 1.0f ), k = t * t * ( 3.0f - 2.0f * t );
+        wet = std::max( wet, 1.0f - k );
+        h = std::min( h, PondLevel * ( 1.0f - k ) );
+    }
+    return h;
+}
+
+void Level::planPonds()
+{
+    // A few garden cells by a hash, far apart, where the bank stays clear of the edge and of every path (they only
+    // show: nobody walks there, nothing in the fight changes).
+    for ( int r = 0; r < m_rows; ++r )
+        for ( int c = 0; c < m_cols; ++c )
+        {
+            int g = garden( r, c );
+            if ( g < 2 || g > GardenDepth + 2 || m_ponds.size() >= 8 ) continue;
+            unsigned h = hashCell( r, c, 531 );
+            if ( h % 1000 >= 30 ) continue;
+            Dice  dice{ h };
+            float x = ( c + 0.5f ) * CellSize + dice.in( -0.4f, 0.4f );
+            float z = ( r + 0.5f ) * CellSize + dice.in( -0.4f, 0.4f );
+            float rx = dice.in( 1.2f, 1.8f ), rz = dice.in( 1.1f, 1.6f );
+            bool  ok = true;
+            for ( const Vector4 &o : m_ponds ) ok = ok && Vector2Distance( { o.x, o.y }, { x, z } ) > 16.0f;
+            float reach = std::max( rx, rz ) * 1.16f * BankReach + 0.4f;
+            int   span = (int)ceilf( reach / CellSize ) + 1;
+            for ( int dr = -span; dr <= span && ok; ++dr )
+                for ( int dc = -span; dc <= span && ok; ++dc )
+                {
+                    int   rr = r + dr, cc = c + dc;
+                    float x0 = cc * CellSize, z0 = rr * CellSize;
+                    float dx = std::max( { x0 - x, 0.0f, x - x0 - CellSize } );
+                    float dz = std::max( { z0 - z, 0.0f, z - z0 - CellSize } );
+                    if ( dx * dx + dz * dz < reach * reach && garden( rr, cc ) < 2 ) ok = false;
+                }
+            if ( ok ) m_ponds.push_back( { x, z, rx, rz } );
+        }
+}
+
+void Level::gardenPonds( GardenKit &kit )
+{
+    for ( size_t i = 0; i < m_ponds.size(); ++i )
+    {
+        const Vector4 &p = m_ponds[i];
+        Dice           dice{ (unsigned)( i * 7919u + 104729u ) };
+        auto           at = [&]( float a, float t )
+        {
+            float k = t * pondShape( i, a );
+            return Vector3{ p.x + cosf( a ) * p.z * k, 0.0f, p.y + sinf( a ) * p.w * k };
+        };
+        float wet;
+        // Reeds in clumps along the shore, taller and greener than the lawn's grass, their feet in the water.
+        int clumps = 3 + dice.pick( 3 );
+        for ( int k = 0; k < clumps; ++k )
+        {
+            float a0 = dice.in( 0.0f, 6.28f );
+            int   n = 4 + dice.pick( 5 );
+            for ( int j = 0; j < n; ++j )
+            {
+                Vector3 q = at( a0 + dice.in( -0.35f, 0.35f ), dice.in( 0.9f, 1.1f ) );
+                q.y = pondGround( q.x, q.z, wet );
+                float w = dice.in( 0.3f, 0.5f ), t = dice.in( 0.7f, 1.2f ), turn = dice.in( 0.0f, 6.28f );
+                tuft( kit.m_blades, q, w, t, turn, { 150, 185, 105, 255 } );
+            }
+        }
+        // Stones on the bank, half in the water.
+        int stones = 2 + dice.pick( 3 );
+        for ( int k = 0; k < stones; ++k )
+        {
+            Vector3 q = at( dice.in( 0.0f, 6.28f ), dice.in( 0.95f, 1.12f ) );
+            float   g = pondGround( q.x, q.z, wet );
+            Vector3 rr = { dice.in( 0.22f, 0.45f ), dice.in( 0.12f, 0.22f ), dice.in( 0.2f, 0.4f ) };
+            int     tone = 170 + dice.pick( 50 );
+            float   turn = dice.in( 0.0f, 6.28f );
+            kit.m_stone.m_color = { (unsigned char)tone, (unsigned char)( tone + 2 ), (unsigned char)( tone - 8 ),
+                                    255 };
+            kit.m_stone.blob( place( { q.x, g + rr.y * 0.3f, q.z }, { 0.0f, turn, 0.0f } ), rr, 0.3f, dice.m_s, 4,
+                              true );
+        }
+        kit.m_stone.m_color = WHITE;
+        // Leaves floating on it (discs with a notch), a bloom on some.
+        int pads = 3 + dice.pick( 5 );
+        for ( int k = 0; k < pads; ++k )
+        {
+            Vector3 q = at( dice.in( 0.0f, 6.28f ), dice.in( 0.2f, 0.75f ) );
+            float   rad = dice.in( 0.14f, 0.26f ), turn = dice.in( 0.0f, 6.28f );
+            kit.m_foliage.m_color = Greens[dice.pick( 5 )];
+            kit.m_foliage.lathe( place( { q.x, PondLevel + 0.006f, q.z }, { 0.0f, turn, 0.0f } ),
+                                 { { 0.0f, 0.0f }, { rad, 0.0f }, { rad, 0.012f }, { 0.0f, 0.016f } }, 12, 0.0f, 5.7f );
+            if ( dice() < 0.35f )
+            {
+                kit.m_foliage.m_color = { 235, 150, 190, 255 };
+                kit.m_foliage.blob( place( { q.x, PondLevel + 0.05f, q.z } ), { 0.07f, 0.05f, 0.07f }, 0.3f, dice.m_s,
+                                    3 );
+            }
+        }
+        kit.m_foliage.m_color = WHITE;
+        TraceLog( LOG_WARNING, "GARDEN: a pond at %.1f,%.1f (%.1f by %.1f m)", p.x, p.y, p.z * 2.0f, p.w * 2.0f );
     }
 }
 

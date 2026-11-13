@@ -267,7 +267,130 @@ TEXTURES = {
                  "horizontal turbulent cloud bands in ochre, rust, cream and deep teal, swirling vortex storms, highly "
                  "detailed, no sphere, no stars, no space background, no text",
                  0.0, 0.0, 0.0),
+    # The floors per room kind (Game::themeSurfaces: a corridor, a hall and a side room each their own floor), the
+    # bands along the halls' walls, and the ground out in the open at the rock's foot and along the ways. Painted
+    # locally (FLUX.2, --local).
+    "treadplate": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of a worn steel diamond tread plate floor in a "
+                   "ship's corridor: a dense regular pattern of small raised diamond ridges, scuffed bare metal along "
+                   "the walking line, dark grime in the pattern, a few oil smears, " + FLAT,
+                   0.9, 0.5, 3.5),
+    "concretebay": ("tile", "1:1",
+                    "Seamless tileable texture, flat top-down orthographic view straight down onto the poured "
+                    "concrete floor of a large industrial hall: smooth grey sealed concrete in large square slabs "
+                    "with straight saw-cut joints, worn painted yellow lines along some of the joints, faint tyre "
+                    "marks, oil stains, " + FLAT,
+                    0.0, 0.7, 2.0),
+    "rubbermat": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of black ribbed rubber floor matting in a "
+                  "workshop: long straight parallel raised ribs, dusty and scuffed, a seam between two mats, " + FLAT,
+                  0.0, 0.85, 3.0),
+    "heavyplate": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of heavy riveted steel deck plates of a "
+                   "foundry: large dark grey plates with rows of round rivet heads along their seams, soot, blue and "
+                   "brown heat discolouration, scraped walking paths, " + FLAT,
+                   0.85, 0.55, 3.0),
+    "catwalk": ("tile", "1:1",
+                "Seamless tileable texture, top-down orthographic view of a steel grating catwalk floor: a regular "
+                "rectangular mesh of flat steel bars with dark depth between them, grey paint worn to bare metal, "
+                "grime, " + FLAT,
+                0.8, 0.55, 4.5),
+    "pavers": ("tile", "1:1",
+               "Seamless tileable texture, top-down orthographic view of a town square paved with large square stone "
+               "slabs in grey and ochre, laid in a regular grid with mortar joints, worn smooth, grime in the joints, "
+               + FLAT,
+               0.0, 0.75, 2.5),
+    "terrazzo": ("tile", "1:1",
+                 "Seamless tileable texture, top-down orthographic view of an old terrazzo floor in a small shop: "
+                 "polished speckled stone chips in cream, rust and grey set in pale cement, a few hairline cracks, "
+                 "scuffs, " + FLAT,
+                 0.0, 0.35, 1.2),
+    "woodboards": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of worn wooden floorboards in an old bar: "
+                   "long narrow dark brown planks all running in one direction, scuffed varnish, dark gaps between "
+                   "the boards, nail heads, old drink stains, " + FLAT,
+                   0.0, 0.55, 2.5),
+    "composite": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of a clean spaceship corridor floor of light "
+                  "grey composite panels: large rectangular panels with thin dark seams, a subtle anti-slip texture, "
+                  "small recessed fixing points, light scuffs, " + FLAT,
+                  0.2, 0.45, 1.5),
+    "carpet": ("tile", "1:1",
+               "Seamless tileable texture, top-down orthographic view of office carpet tiles in muted blue-grey and "
+               "slate, square tiles laid with their pile in alternating directions, a few worn and stained spots, "
+               + FLAT,
+               0.0, 0.95, 1.5),
+    "frostplate": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of a cold-store floor: pale grey insulated "
+                   "steel floor panels with rounded seams, white frost and thin ice in the seams and corners, scuffed "
+                   "tracks, " + FLAT,
+                   0.5, 0.5, 2.5),
+    "alienslab": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of a floor of dark basalt-like stone slabs of "
+                  "uneven sizes fitted tightly together, smooth worn surface, faint carved geometric grooves, a subtle "
+                  "violet sheen, " + FLAT,
+                  0.0, 0.3, 3.0),
+    "kerbsteel": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of thick dark brushed steel plating with "
+                  "rows of countersunk bolts, worn smooth by boots, light scratches, " + FLAT,
+                  0.9, 0.45, 2.0),
+    "kerbstone": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of dark grey granite with a rough flamed "
+                  "surface and fine black and white speckles, " + FLAT,
+                  0.0, 0.7, 2.0),
+    "darkstone": ("tile", "1:1",
+                  "Seamless tileable texture, top-down orthographic view of polished black stone with fine "
+                  "gold-coloured flecks and faint grey veins, " + FLAT,
+                  0.0, 0.2, 1.0),
+    "dust_scree": ("tile", "1:1",
+                   "Seamless tileable texture, top-down orthographic view of reddish-brown scree at the foot of a "
+                   "sandstone cliff: angular rock chips and gravel of many sizes lying in ochre dust, " + FLAT,
+                   0.0, 0.85, 4.0),
+    "dust_trodden": ("tile", "1:1",
+                     "Seamless tileable texture, top-down orthographic view of a trampled dusty footpath: compacted "
+                     "darker ochre dust pressed flat by many feet, overlapping boot prints pointing every way, a few "
+                     "small stones pressed in, evenly spread all over, " + FLAT,
+                     0.0, 0.9, 2.5),
+    "regolith_scree": ("tile", "1:1",
+                       "Seamless tileable texture, top-down orthographic view of grey lunar scree: sharp angular dark "
+                       "rock fragments and gravel of many sizes scattered evenly and randomly over pale grey regolith "
+                       "dust, " + FLAT,
+                       0.1, 0.85, 4.0),
+    "regolith_trodden": ("tile", "1:1",
+                         "Seamless tileable texture, top-down orthographic view of trampled grey lunar regolith: the "
+                         "fine dust pressed flat and darker by many overlapping boot prints pointing every way, evenly "
+                         "spread all over, " + FLAT,
+                         0.0, 0.95, 3.0),
+    "snowfield_scree": ("tile", "1:1",
+                        "Seamless tileable texture, flat top-down orthographic view straight down onto white "
+                        "wind-packed snow with black gravel and small dark angular rocks scattered evenly all over it, "
+                        + FLAT,
+                        0.0, 0.7, 3.5),
+    "snowfield_trodden": ("tile", "1:1",
+                          "Seamless tileable texture, top-down orthographic view of trampled packed snow on a path: "
+                          "many overlapping boot prints and sledge runner tracks, bluish shadows in the prints, "
+                          + FLAT,
+                          0.0, 0.75, 2.5),
 }
+
+# Pictures made from another's instead of painted: FLUX.2 laid the lunar scree in rows twice; the snow's scree (dark
+# rocks scattered evenly over white) greyed to the regolith's tone is it.
+DERIVED = { "regolith_scree": "snowfield_scree" }
+
+
+def derive_raw( name ):
+    """A DERIVED picture from its source's (assets/raw): the ground's white brought down to the regolith's grey, the
+    rocks kept dark, a trace of warmth. Returns whether it was made."""
+    src = os.path.join( RAW, DERIVED[name] + ".jpg" )
+    if not os.path.exists( src ):
+        return False
+    img = np.asarray( Image.open( src ).convert( "RGB" ), dtype=np.float64 ) / 255.0
+    lum = img @ np.array( [0.2126, 0.7152, 0.0722] )
+    grey = 0.06 + lum * 0.56
+    out = np.stack( [grey * 1.03, grey * 1.0, grey * 0.97], axis=-1 )
+    Image.fromarray( ( np.clip( out, 0, 1 ) * 255 + 0.5 ).astype( np.uint8 ) ).save(
+        os.path.join( RAW, name + ".jpg" ), quality=95 )
+    return True
 
 
 def token():
@@ -307,17 +430,19 @@ FLUX_SIZES = { "1:1": ( 1024, 1024 ), "3:4": ( 896, 1152 ), "4:3": ( 1152, 896 )
 
 
 def paint_local( jobs, tag ):
-    """Paints [(raw path, aspect, prompt), ...] locally in one batch (the model loads once); returns how many exist."""
+    """Paints [(raw path, aspect, prompt[, seed]), ...] locally in one batch (the model loads once); returns how many
+    exist."""
     import json
     import subprocess
     jobs = [j for j in jobs if not os.path.exists( j[0] )]
     if not jobs:
         return 0
     tasks = []
-    for path, aspect, prompt in jobs:
+    for job in jobs:
+        path, aspect, prompt = job[:3]
         w, h = FLUX_SIZES.get( aspect, ( 1024, 1024 ) )
-        tasks.append( { "prompt": prompt, "out": path.replace( "\\", "/" ), "width": w, "height": h, "seed": 1,
-                        "steps": 24 } )
+        tasks.append( { "prompt": prompt, "out": path.replace( "\\", "/" ), "width": w, "height": h,
+                        "seed": job[3] if len( job ) > 3 else 1, "steps": 24 } )
     work = os.path.join( ROOT, "work", "flux" )
     os.makedirs( work, exist_ok=True )
     spec = os.path.join( work, tag + ".json" )
@@ -329,7 +454,7 @@ def paint_local( jobs, tag ):
     subprocess.run( ["wsl.exe", "-d", "Ubuntu-22.04", "--", "bash", "-lc",
                      "cd /tmp && nice -n 10 %s %s %s" % ( WSL_PYTHON, linux( os.path.join( ROOT, "tools", "flux_wsl.py" ) ),
                                                           linux( spec ) )], check=False )
-    return sum( 1 for path, _, _ in jobs if os.path.exists( path ) )
+    return sum( 1 for job in jobs if os.path.exists( job[0] ) )
 
 
 def generate( name, aspect, prompt ):
@@ -434,15 +559,32 @@ def main():
     ap.add_argument( "--force", nargs="*", default=[], help="ask Imagen again for these" )
     ap.add_argument( "--only", nargs="*", default=None, help="only these textures" )
     ap.add_argument( "--lang", nargs="*", default=None, help="signs only in these languages" )
+    ap.add_argument( "--local", action="store_true", help="paint the missing ones locally (FLUX.2), not on Vertex" )
     args = ap.parse_args()
     os.makedirs( RAW, exist_ok=True )
     os.makedirs( OUT, exist_ok=True )
+    if args.local and args.lang is None:
+        # All missing pictures in one local batch first (the model loads once); the loop below only maps them.
+        for name in args.force:
+            if os.path.exists( os.path.join( RAW, name + ".jpg" ) ):
+                os.remove( os.path.join( RAW, name + ".jpg" ) )
+        todo = [( os.path.join( RAW, name + ".jpg" ), t[1], t[2] ) for name, t in TEXTURES.items()
+                if ( not args.only or name in args.only ) and name not in DERIVED]
+        print( "painted locally: %d" % paint_local( todo, "textures" ), flush=True )
+        args.force = []
     for name, (kind, aspect, prompt, metallic, roughness, strength) in TEXTURES.items():
         if (args.only and name not in args.only) or args.lang is not None:
             continue
         raw = os.path.join( RAW, name + ".jpg" )
-        if not os.path.exists( raw ) or name in args.force:
+        if name in DERIVED and ( not os.path.exists( raw ) or name in args.force ):
+            derive_raw( name )
+        if args.local and not os.path.exists( raw ):
+            print( f"{name}: not painted" )
+            continue
+        if name not in DERIVED and ( not os.path.exists( raw ) or name in args.force ):
             generate( name, aspect, prompt )
+        if not os.path.exists( raw ):
+            continue
         if kind == "tile":
             tile_maps( name, raw, metallic, roughness, strength )
         else:

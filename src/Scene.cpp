@@ -93,6 +93,7 @@ void Scene::addStatic( MeshBuilder &b, SurfaceE s, bool visible, Vector4 glow )
 
 void Scene::load( Gfx &gfx, const std::string &assets )
 {
+    gfx.newPlace();
     std::string dir = assets + "/textures/";
     m_surfaces.resize( (int)SurfaceE::COUNT );
     auto tile = [&]( SurfaceE s, const char *name, float uv, Vector4 params, float variation, Color tint = WHITE,
@@ -994,12 +995,14 @@ void Scene::render( Gfx &gfx, const RenderTexture2D *out )
 
     gfx.shadows( L, { 0.0f, 2.0f, 0.5f }, { &m_static, &m_dynamic } );
     gfx.beginScene( m_cam, L, m_time, m_nebula );
+    gfx.prepass( { &m_static, &m_dynamic }, m_surfaces );
     // 20 km below, 18 degrees east of the view: its lit western limb crosses the glass.
     Matrix planet = MatrixMultiply( MatrixMultiply( MatrixScale( 8000.0f, 8000.0f, 8000.0f ), MatrixRotateX( 0.45f ) ),
                                     MatrixTranslate( 6180.0f, -15660.0f, -10800.0f ) );
     gfx.planet( m_sphere, planet, m_gasGiant, m_time * 0.0015f );
     gfx.draw( m_static, m_surfaces );
     gfx.draw( m_dynamic, m_surfaces );
+    gfx.fog();
     // A soft blob of shadow under the hero (the point lights cast none).
     rlDrawRenderBatchActive();
     BeginBlendMode( BLEND_ALPHA );

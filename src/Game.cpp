@@ -112,6 +112,86 @@ void Game::themeSurfaces( LevelSurfaces &ls )
     for ( const Own &o : own ) set( o.m_theme, o.m_wall, o.m_floor );
     for ( const auto &wt : m_level.m_wallTex ) set( wt.first, wt.second.c_str(), nullptr );
     for ( const auto &ft : m_level.m_floorTex ) set( ft.first, nullptr, ft.second.c_str() );
+    // The floors per kind of room (Level::planRooms): a hall's, a corridor's and a side room's (nullptr: the place's
+    // own, or the common one), the band along a hall's walls and the plates in its doorways and where floors change.
+    // Not where a level chose the place's floor itself (the drowned quarter's wet floors, a tale's cobbles).
+    struct Kinds
+    {
+        const char *m_theme, *m_hall, *m_corridor, *m_side, *m_border, *m_sill;
+    };
+    static const Kinds kinds[] = {
+        { "service", "concretebay", "treadplate", "rubbermat", "kerbsteel", "metal" },
+        { "exchanger", "concretebay", "treadplate", "catwalk", "kerbsteel", "metal" },
+        { "shaft", "concretebay", "treadplate", "catwalk", "kerbsteel", "metal" },
+        { "works", "concretebay", "treadplate", "rubbermat", "kerbsteel", "metal" },
+        { "cargo", "concretebay", "treadplate", "rubbermat", "kerbsteel", "metal" },
+        { "gangway", nullptr, "treadplate", "rubbermat", "kerbsteel", "metal" },
+        { "hold", "concretebay", "treadplate", "rubbermat", "kerbsteel", "metal" },
+        { "bridge", nullptr, "composite", "carpet", "darkstone", "metal" },
+        { "street", "pavers", nullptr, "terrazzo", "kerbstone", "kerbstone" },
+        { "bar", "woodboards", "woodboards", "terrazzo", nullptr, "metal" },
+        { "vault", nullptr, "composite", "carpet", "darkstone", "metal" },
+        { "pods", nullptr, "composite", "carpet", "darkstone", "metal" },
+        { "clinic", nullptr, "composite", "carpet", "darkstone", "metal" },
+        { "server", nullptr, "composite", "carpet", "darkstone", "metal" },
+        { "hall", nullptr, "composite", "carpet", "darkstone", "metal" },
+        { "coldstore", "frostplate", "treadplate", "catwalk", "kerbsteel", "metal" },
+        { "cryo", nullptr, "composite", "frostplate", "kerbsteel", "metal" },
+        { "furnace", nullptr, "heavyplate", "catwalk", "kerbsteel", "metal" },
+        { "station", nullptr, "heavyplate", "catwalk", "kerbsteel", "metal" },
+        { "prison", nullptr, "heavyplate", "catwalk", "kerbsteel", "metal" },
+        { "deck", nullptr, "heavyplate", "catwalk", "kerbsteel", "metal" },
+        { "yard", "concretebay", "heavyplate", "catwalk", "kerbsteel", "metal" },
+        { "container", nullptr, "heavyplate", "catwalk", nullptr, "metal" },
+        { "hull", "hulldeck", "heavyplate", "catwalk", nullptr, "metal" },   // (its white plates grimed, phase F4)
+        { "alien", nullptr, "alienslab", "alienslab", nullptr, nullptr },
+    };
+    // Their patterns' scale (texture repeats per metre; the places' own floors 0.3): a tread plate's diamonds, a
+    // grating's bars, boards and carpet tiles finer.
+    static const std::pair<const char *, float> scales[] = { { "treadplate", 0.45f },  { "catwalk", 0.5f },
+                                                             { "rubbermat", 0.4f },    { "woodboards", 0.4f },
+                                                             { "carpet", 0.4f },       { "kerbsteel", 0.5f },
+                                                             { "metal", 0.6f },        { "composite", 0.35f },
+                                                             { "foundryplate", 0.25f } };
+    // ... and the pale ones darker (their pictures' white concrete, terrazzo and panels shone like snow under the lamps;
+    // the tint multiplies the linear colour: a hall's floor some two to three times as light as the dark plates it
+    // replaces, the concrete's mean 0.26 down to 0.06: at 0.10 it still lit the Mill's and the Cooling Guts' halls up
+    // like snow). Phase F2: the plates are metal (their light is mostly the mirrored kind, their diffuse a fifth of
+    // their colour), the concrete, the pavers and the terrazzo are not: at 0.06 the concrete still took three times
+    // the plates' light and stayed pale grey in the Cooling Guts, at Seren and on the Wanderer; now 0.033. Phase F3: the
+    // concrete grimed (tools/make_grime.py: oil, burns, worn lanes, bold bay lines; its mean 0.15), at 46 a mean of
+    // 0.027 with its yellow lines twice as light; the Mill's sooted plating as the common floor's plates.
+    static const std::pair<const char *, unsigned char> shades[] = { { "concretebay", 46 },   { "treadplate", 140 },
+                                                                     { "foundryplate", 200 }, { "pavers", 90 },
+                                                                     { "terrazzo", 64 },      { "composite", 105 },
+                                                                     { "carpet", 180 },       { "frostplate", 80 } };
+    auto                                                own2 = [&]( const char *name ) -> int
+    {
+        int f = name ? surface( name ) : -1;
+        for ( const auto &sc : scales )
+            if ( f >= 0 && name && std::string( sc.first ) == name ) m_surfaces[f].m_uvScale = sc.second;
+        for ( const auto &sh : shades )
+            if ( f >= 0 && name && std::string( sh.first ) == name )
+                m_surfaces[f].m_tint = { sh.second, sh.second, sh.second, 255 };
+        return f + 1;
+    };
+    for ( const Kinds &k : kinds )
+    {
+        int t = (int)themeNamed( k.m_theme );
+        if ( t < 0 || !used[t] ||
+             std::any_of(
+                 m_level.m_floorTex.begin(), m_level.m_floorTex.end(),
+                 [&]( const auto &ft ) { return ft.first == k.m_theme; } ) )
+            continue;
+        const char *names[3] = { k.m_hall, k.m_corridor, k.m_side };
+        // A place's own halls (`hallfloor <theme> <texture>`: the Mill's works keep its rusty, sooted plating).
+        for ( const auto &ht : m_level.m_hallTex )
+            if ( ht.first == k.m_theme ) names[0] = ht.second.c_str();
+        for ( int i = 0; i < 3; ++i ) ls.m_kindFloor[t][i] = own2( names[i] );
+        ls.m_bays[t] = names[0] && std::string( names[0] ) == "concretebay";   // its halls' lines by the room
+        ls.m_border[t] = own2( k.m_border );
+        ls.m_sill[t] = own2( k.m_sill );
+    }
     // A park with its hedges gets gardens (LevelGarden.cpp): leaves to tint, bark (finer than a wall's texture), gravel.
     bool hedges = used[(int)ThemeE::PARK] && std::none_of( m_level.m_wallTex.begin(), m_level.m_wallTex.end(),
                                                            []( const auto &wt ) { return wt.first == "park"; } );
@@ -122,6 +202,8 @@ void Game::themeSurfaces( LevelSurfaces &ls )
         ls.m_gravel = surface( "dust" );
         ls.m_boulder = surface( "boulder" );
         if ( ls.m_bark >= 0 ) m_surfaces[ls.m_bark].m_uvScale = 1.1f;
+        // The stones' grain finer and deeper (at 0.3 a boulder showed a third of the picture's layers: smooth blobs).
+        if ( ls.m_boulder >= 0 ) m_surfaces[ls.m_boulder].m_uvScale = 0.75f, m_surfaces[ls.m_boulder].m_params.z = 1.9f;
         // Cut-outs (their picture's alpha): leaf clusters and tufts of grass on cards.
         for ( int *cut : { &ls.m_cards, &ls.m_blades, &ls.m_needles } )
         {
@@ -130,6 +212,45 @@ void Game::themeSurfaces( LevelSurfaces &ls )
             m_surfaces[*cut].m_uvScale = 1.0f;
             m_surfaces[*cut].m_params = { 1.0f, 0.0f, 0.0f, 6.0f };
             m_surfaces[*cut].m_variation = 0.3f;
+            // In the wind: the grass's tops, the leaf cards, the fir branches (Gfx.h, Surface::m_sway).
+            m_surfaces[*cut].m_sway = cut == &ls.m_cards ? 2.0f : cut == &ls.m_blades ? 1.0f : 3.0f;
+        }
+        // The crowns' and bushes' dark cores lit as softly as their leaves (they stay still: they cast the shadows),
+        // their maps' bumps flatter: a crown reads as leaves round a shaded inside, not as a noisy lump.
+        if ( ls.m_foliage >= 0 ) m_surfaces[ls.m_foliage].m_sway = 4.0f, m_surfaces[ls.m_foliage].m_params.z = 0.6f;
+    }
+    // Dry tufts of grass on the dust out in the open, where there is air (Level.cpp lays them).
+    else if ( used[(int)ThemeE::DUSK] && !m_level.m_vacuum && m_level.m_outdoorThemes.count( (int)ThemeE::DUSK ) )
+    {
+        ls.m_blades = surface( "blades" );
+        if ( ls.m_blades >= 0 )
+        {
+            m_surfaces[ls.m_blades].m_uvScale = 1.0f;
+            m_surfaces[ls.m_blades].m_params = { 1.0f, 0.0f, 0.0f, 6.0f };
+            m_surfaces[ls.m_blades].m_variation = 0.3f;
+            m_surfaces[ls.m_blades].m_sway = 1.0f;
+            // Dry: the blades' picture without its green, lighter (the tufts' own colour makes it straw: paler than the
+            // dust, as dry grass is; darker, the tufts read as stains from above), made once.
+            static Texture2D straw = {};
+            if ( straw.id == 0 )
+            {
+                Image img = LoadImage( ( dir + "blades_albedo.png" ).c_str() );
+                if ( img.data )
+                {
+                    ImageFormat( &img, PIXELFORMAT_UNCOMPRESSED_R8G8B8A8 );
+                    Color *px = (Color *)img.data;
+                    for ( int i = 0; i < img.width * img.height; ++i )
+                    {
+                        float l = std::min( ( 0.3f * px[i].r + 0.59f * px[i].g + 0.11f * px[i].b ) * 1.8f, 255.0f );
+                        px[i].r = px[i].g = px[i].b = (unsigned char)l;
+                    }
+                    straw = LoadTextureFromImage( img );
+                    GenTextureMipmaps( &straw );
+                    SetTextureFilter( straw, TEXTURE_FILTER_TRILINEAR );
+                    UnloadImage( img );
+                }
+            }
+            if ( straw.id ) m_surfaces[ls.m_blades].m_material.maps[MATERIAL_MAP_ALBEDO].texture = straw;
         }
     }
     // Each wall's and floor's variants (tools/make_dress.py): the plain one's look with other maps.
@@ -153,6 +274,60 @@ void Game::themeSurfaces( LevelSurfaces &ls )
     variants( S_HULL, "wall" );
     std::map<std::string, int> owned = m_ownSurfaces;
     for ( const auto &o : owned ) variants( o.second, o.first );
+    // Out in the open the ground and the rock are laid as one surface with two of its variants blended in by the
+    // shader (Gfx's splat): no patches with hard edges, no tiles repeating.
+    m_splatOf.clear();
+    for ( const auto &[base, list] : ls.m_variants )
+    {
+        if ( list.size() < 2 ) continue;
+        Surface surf = m_surfaces[base];
+        for ( int k = 0; k < 2; ++k )
+        {
+            const Material &v = m_surfaces[list[k]].m_material;
+            surf.m_layers[k * 3 + 0] = v.maps[MATERIAL_MAP_ALBEDO].texture;
+            surf.m_layers[k * 3 + 1] = v.maps[MATERIAL_MAP_METALNESS].texture;
+            surf.m_layers[k * 3 + 2] = v.maps[MATERIAL_MAP_NORMAL].texture;
+        }
+        m_surfaces.push_back( surf );
+        ls.m_splat[base] = m_splatOf[base] = (int)m_surfaces.size() - 1;
+    }
+    // Elsewhere a wall's or a floor's variants lie as a patchwork, but in the same draw as the plain one (Gfx's
+    // patchwork: each triangle names its material; Level::patchPick): one draw a tile instead of three.
+    for ( const auto &[base, list] : ls.m_variants )
+    {
+        if ( list.size() != 2 ) continue;
+        Surface surf = m_surfaces[base];
+        for ( int k = 0; k < 2; ++k )
+        {
+            const Material &v = m_surfaces[list[k]].m_material;
+            surf.m_layers[k * 3 + 0] = v.maps[MATERIAL_MAP_ALBEDO].texture;
+            surf.m_layers[k * 3 + 1] = v.maps[MATERIAL_MAP_METALNESS].texture;
+            surf.m_layers[k * 3 + 2] = v.maps[MATERIAL_MAP_NORMAL].texture;
+        }
+        surf.m_layerMode = 2.0f;
+        m_surfaces.push_back( surf );
+        ls.m_patch[base] = (int)m_surfaces.size() - 1;
+    }
+    // Out in the open the dust, the regolith and the snow by the level's shape: trodden along the ways, scree at the
+    // rock's foot (<ground>_trodden, <ground>_scree; Gfx's third way, Level::groundShape), a few patches of each.
+    for ( const char *name : { "dust", "regolith", "snowfield" } )
+    {
+        auto known = m_ownSurfaces.find( name );
+        if ( known == m_ownSurfaces.end() || !m_gfx ) continue;
+        std::string trodden = dir + name + "_trodden", scree = dir + name + "_scree";
+        if ( !textureExists( trodden + "_albedo.png" ) || !textureExists( scree + "_albedo.png" ) ) continue;
+        Surface     surf = m_surfaces[known->second];
+        std::string maps[2] = { trodden, scree };
+        for ( int k = 0; k < 2; ++k )
+        {
+            surf.m_layers[k * 3 + 0] = sharedTexture( maps[k] + "_albedo.png" );
+            surf.m_layers[k * 3 + 1] = sharedTexture( maps[k] + "_orm.png" );
+            surf.m_layers[k * 3 + 2] = sharedTexture( maps[k] + "_normal.png" );
+        }
+        surf.m_layerMode = 3.0f;
+        m_surfaces.push_back( surf );
+        ls.m_shaped[known->second] = (int)m_surfaces.size() - 1;
+    }
 }
 
 namespace
@@ -240,9 +415,12 @@ void Game::loadDecalDefs()
             in >> d.m_color.y >> d.m_color.z;
             d.m_wall = where == "wall";
             while ( in >> group ) d.m_themes |= groups[group];
-            // (The gardens' paths belong to no place: the level lays them along its way, LevelGarden.cpp.)
-            bool earth = d.m_name.rfind( "path_", 0 ) == 0;
-            if ( ( d.m_themes || earth ) && FileExists( ( m_assets + "/textures/decals/" + d.m_name + ".png" ).c_str() ) )
+            // (The gardens' paths belong to no place: the level lays them along its way, LevelGarden.cpp; nor do the
+            // halls' motifs and bay lines, LevelFloors.cpp.)
+            bool earth = d.m_name.rfind( "path_", 0 ) == 0 || d.m_name.rfind( "motif_", 0 ) == 0 ||
+                         d.m_name.rfind( "bay_", 0 ) == 0;
+            if ( ( d.m_themes || earth ) &&
+                 FileExists( ( m_assets + "/textures/decals/" + d.m_name + ".png" ).c_str() ) )
                 m_decalDefs.push_back( d );
         }
     }
@@ -253,8 +431,13 @@ void Game::buildDecals()
     // A surface per kind laid (its roughness in a tiny ORM map, the glowing ones lit by their own picture), the quads
     // of one kind in one mesh; blended or multiplied (the stains), no shadows.
     std::map<int, MeshBuilder> byKind;   // kind * 2, + 1 on a wall (dissolves with it)
+    // Each a grid of three by three, the occlusion baked into its corners as into the floor's under it (a decal over a
+    // wall's darkened foot would shine); a stain darkens what is under it as it is and needs none.
     for ( const Decal &d : m_level.m_decals )
-        byKind[d.m_def * 2 + ( d.m_cut ? 1 : 0 )].quad( d.m_corner[0], d.m_corner[1], d.m_corner[2], d.m_corner[3] );
+        byKind[d.m_def * 2 + ( d.m_cut ? 1 : 0 )].patch( d.m_corner[0], d.m_corner[1], d.m_corner[2], d.m_corner[3],
+                                                         m_decalDefs[d.m_def].m_multiply ? 1 : 3 );
+    for ( auto &kb : byKind )
+        if ( !m_decalDefs[kb.first / 2].m_multiply ) m_level.shadeOcclusion( kb.second );
     std::map<int, int> surfaceOf;
     for ( auto &kb : byKind )
     {
@@ -281,6 +464,26 @@ void Game::buildDecals()
             surf.m_emissive = dd.m_glow > 0.0f ? Vector4{ dd.m_glow, dd.m_glow, dd.m_glow, 2.0f } : Vector4{};
             surf.m_variation = 0.15f;
             surf.m_tint = WHITE;
+            // A hall's motif is laid into the floor, not painted white over it (its pale disc read as a pool of light
+            // in the Mill, at Seren, on Brannt): about as light as the place's floor (linear: the works' concrete and
+            // the plates 0.033-0.05, the streets' pavers and the clean places' stone lighter).
+            if ( dd.m_name.rfind( "bay_", 0 ) == 0 )
+            {
+                // The bay lines' yellow some three times as light as the grimed concrete (0.027), not glowing.
+                float lum = 0.2126f * dd.m_color.x + 0.7152f * dd.m_color.y + 0.0722f * dd.m_color.z;
+                float k = Clamp( 0.08f / std::max( powf( lum, 2.2f ), 0.01f ), 0.08f, 1.0f );
+                surf.m_tint = { (unsigned char)( 255.0f * k ), (unsigned char)( 255.0f * k ),
+                                (unsigned char)( 255.0f * k ), 255 };
+            }
+            if ( dd.m_name.rfind( "motif_", 0 ) == 0 )
+            {
+                float lum = 0.2126f * dd.m_color.x + 0.7152f * dd.m_color.y + 0.0722f * dd.m_color.z;
+                bool  light = dd.m_name.rfind( "motif_street", 0 ) == 0 || dd.m_name.rfind( "motif_clean", 0 ) == 0 ||
+                              dd.m_name.rfind( "motif_cold", 0 ) == 0;
+                float k = Clamp( ( light ? 0.13f : 0.055f ) / std::max( powf( lum, 2.2f ), 0.01f ), 0.08f, 1.0f );
+                surf.m_tint = { (unsigned char)( 255.0f * k ), (unsigned char)( 255.0f * k ),
+                                (unsigned char)( 255.0f * k ), 255 };
+            }
             m_surfaces.push_back( surf );
             known = surfaceOf.emplace( def, (int)m_surfaces.size() - 1 ).first;
         }
@@ -415,10 +618,30 @@ bool Game::load( Gfx &gfx, const std::string &assets, const std::string &level, 
     themeSurfaces( ls );
     loadDecalDefs();
     ls.m_decals = &m_decalDefs;
+    gfx.newPlace();   // (the last place's meshes are gone; theirs and the new ones' memory can be the same)
     m_level.build( ls, m_static );
     buildDecals();
     freeUnusedTextures();
     lap( "build" );
+    // The interiors (LevelInterior.cpp): each fixed light kept in its room by its mask, the wet and the polished floors,
+    // the surroundings what reflects mirrors (made of the lamps' colours; none where the place lies out in the open).
+    {
+        LightMasks masks = m_level.lightMasks();
+        int        count = 0;
+        for ( const Vector4 &p : masks.m_place ) count += p.w > 0.5f ? 1 : 0;
+        gfx.lightMasks( masks );
+        gfx.wetMap( m_level.wetMap(), m_level.cols(), m_level.rows(), CellSize );
+        std::vector<Vector3> lamps;
+        if ( m_level.m_outdoorThemes.empty() )
+            for ( const LevelLight &l : m_level.m_lights ) lamps.push_back( l.m_color );
+        gfx.environment( m_level.m_ambUp, m_level.m_ambDown, m_level.m_fogColor, lamps, seed );
+        TraceLog( LOG_WARNING,
+                  "INTERIOR: %d of %d fixed lights masked (%d of them from in front of their wall; none: %d need none, "
+                  "%d deep in a wall; atlas %dx%d), %d cones",
+                  count, (int)m_level.m_lights.size(), masks.m_moved, masks.m_open, masks.m_inRock, masks.m_width,
+                  masks.m_height, (int)m_level.m_cones.size() );
+    }
+    lap( "interior" );
 
     // Signs: each picture its own surface, lit a little from within so it reads in the dark.
     for ( const Sign &sign : m_level.m_signs )
@@ -896,6 +1119,8 @@ std::vector<std::string> Game::takeStings()
 
 void Game::shutdown()
 {
+    // The figures' feet asked this game for the floor (render sets it): the next place's first updates must not.
+    Figure::ground( nullptr );
     m_audio.shutdown();
     if ( m_ownFont ) UnloadFont( m_font );
     if ( m_heroShot.id ) UnloadRenderTexture( m_heroShot );
@@ -2755,7 +2980,7 @@ void Game::updateEffects( float dt )
             p.m_vel = Vector3Scale( p.m_vel, 1.0f - dt * 0.6f );
             p.m_size += dt * 0.5f;
         }
-        else if ( p.m_kind == 3 )
+        else if ( p.m_kind == 3 || p.m_kind == 4 )
             p.m_pos = Vector3Add( p.m_pos, Vector3Scale( p.m_vel, dt ) );
         if ( p.m_life <= 0.0f )
         {
@@ -3834,10 +4059,32 @@ Lighting Game::lighting() const
         float storm =
             m_flareState == 1 ? m_flareT / 8.0f : ( m_flareState == 2 ? 2.5f + 0.8f * sinf( m_time * 23.0f ) : 0.0f );
         L.m_sunColor = Vector3Scale( L.m_sunColor, 1.0f + storm );
+        // By day in a place out in the open the sun outshines the helmet lamp: three tenths of it (phase F4: its pool,
+        // some two and a half times the sun's light three metres out, lit the Werft's shade as bright as its sunlit
+        // yard, and the yard read flat).
+        if ( !m_level.m_dark && !m_level.m_outdoorThemes.empty() && Vector3Length( m_level.m_sunColor ) > 1.0f )
+            L.m_spotColor = Vector3Scale( L.m_spotColor, 0.3f );
+        // Where the place lies out in the open under a sky with air, the shadows of clouds drift over it with the wind
+        // (a vacuum has none).
+        if ( !m_level.m_vacuum && !m_level.m_outdoorThemes.empty() )
+        {
+            Vector3 wind = Vector3Length( m_level.m_windDir ) > 0.1f ? m_level.m_windDir : Vector3{ 0.8f, 0.0f, 0.6f };
+            L.m_clouds = { 0.42f, 1.0f / 30.0f, wind.x * 2.2f, wind.z * 2.2f };
+        }
+    }
+    // The plants sway in the same wind (a level's own blows harder, its gusts bend them further); a vacuum has none.
+    if ( !m_level.m_vacuum && !m_level.m_outdoorThemes.empty() )
+    {
+        bool    own = Vector3Length( m_level.m_windDir ) > 0.1f;
+        Vector3 wind = own ? Vector3Normalize( m_level.m_windDir ) : Vector3{ 0.8f, 0.0f, 0.6f };
+        L.m_wind = { wind.x, wind.z, own ? fmaxf( m_level.m_windStrength, 2.2f ) : 2.2f, Clamp( m_gust, 0.0f, 1.0f ) };
     }
 
     std::vector<PointLight> all;
-    all.push_back( { Vector3Add( m_pos, { 0.4f, 3.2f, 1.2f } ), 11.0f, { 13.0f, 11.5f, 10.0f }, 0.0f } );
+    // (Half as strong in a place lit in pools, `lampgain`: round the hero it lit Velm's bar evenly, phase F3.)
+    const float fill = m_level.m_lampReach < 1.0f ? 0.5f : 1.0f;
+    all.push_back(
+        { Vector3Add( m_pos, { 0.4f, 3.2f, 1.2f } ), 11.0f, Vector3Scale( { 13.0f, 11.5f, 10.0f }, fill ), 0.0f } );
     if ( m_partner )
         all.push_back( { Vector3Add( partnerPos(), { 0.4f, 3.2f, 1.2f } ), 9.0f, { 10.0f, 9.0f, 8.0f }, 0.0f } );
     // The ship's warning lights while it dodges; the scanner by Ilka, still warm.
@@ -3874,7 +4121,7 @@ Lighting Game::lighting() const
             f *= 1.0f + 0.07f * b;
             reach *= 1.0f + 0.04f * b;
         }
-        all.push_back( { l.m_pos, reach, Vector3Scale( l.m_color, f ), 1.0f } );
+        all.push_back( { l.m_pos, reach, Vector3Scale( l.m_color, f ), 1.0f, (int)i } );   // its mask: its index
     }
     for ( const Capsule &c : m_capsules )
         all.push_back( { Vector3Add( c.m_pos, { 0.0f, 1.6f, 0.0f } ), c.m_active ? 6.0f : 3.0f,
@@ -4013,6 +4260,11 @@ void Game::drawParticles( Gfx &gfx )
         {
             c.a = (unsigned char)( 200 * f );
             billboard( p.m_pos, p.m_size, c );
+        }
+        else if ( p.m_kind == 4 )
+        {
+            c.a = (unsigned char)( c.a * sinf( PI * f ) );   // in and out again
+            streak( p.m_pos, Vector3Subtract( p.m_pos, Vector3Scale( p.m_vel, 0.06f ) ), p.m_size, c );
         }
     }
     for ( const Tracer &t : m_tracers )
@@ -4241,14 +4493,23 @@ void Game::render( Gfx &gfx, const RenderTexture2D *out )
     gradeFor( gfx );
     gfx.shadows( L, m_pos, { &m_static, &m_dynamic } );
     gfx.beginScene( m_cam, L, m_time, m_skyTex.id > 0 ? m_skyTex : ( m_skyColorTex.id > 0 ? m_skyColorTex : m_dot ) );
-    drawView( gfx );
-    drawAct34( gfx );
+    gfx.prepass( { &m_static, &m_dynamic }, m_surfaces );
     gfx.draw( m_static, m_surfaces );
     gfx.draw( m_dynamic, m_surfaces );
+    // The lamps' cones in the haze, as thick as the place's fog shows them (thinner where the air is thin), drawn by
+    // the fog pass right after the fog; never quite gone (phase F2: in thin fog one hardly saw where the light came from).
+    gfx.cones( m_level.m_cones, Clamp( m_level.m_fog.x * 40.0f + m_level.m_fog.y * 10.0f, 0.24f, 0.6f ) *
+                                    ( m_level.m_vacuum ? 0.6f : 1.0f ) );
+    gfx.fog();
+    // The star, the ships' plumes and the ring glow by themselves: after the fog (it never lay over them), behind the
+    // scene by its depth.
+    drawView( gfx );
+    drawAct34( gfx );
     drawSea( gfx );
     if ( m_glassMesh.vertexCount > 0 && !m_crust )
         gfx.glass( m_glassMesh, MatrixIdentity(), m_level.m_ice ? 1.0f : 0.0f );
     drawWater( gfx );
+    drawAir( gfx );
     drawParticles( gfx );
     gfx.endScene();
     gfx.post( out );

@@ -26,6 +26,9 @@ class MeshBuilder;
 constexpr float CellSize = 2.0f;    ///< metres per map cell
 constexpr float FinHeight = 2.5f;   ///< height of a heat exchanger block
 constexpr float PitDepth = 30.0f;   ///< how deep the shafts go
+constexpr float PondLevel = -0.07f;   ///< a garden pond's water, a little below the lawn
+
+constexpr float ShallowLevel = 0.03f;   ///< the gardens' shallow water over the lawn (only seen: one walks on the lawn)
 
 /** @brief What a cell is. */
 enum class CellE : uint8_t
@@ -164,6 +167,16 @@ struct LevelSurfaces
     int m_boulder = -1;          ///< the pale stone of their rocky edges
     int m_needles = -1;          ///< cut-out fir branches (none: no firs)
     std::map<int, std::vector<int>> m_variants;           ///< a wall's or floor's variants, laid as a patchwork
+    std::map<int, int>
+        m_splat;   ///< a wall's or floor's surface with two variants blended in (ground and rock outside)
+    /// The floors per kind of room (Level::planRooms): per theme a hall's, a corridor's and a side room's own floor + 1
+    /// (0: the theme's own, or the common one).
+    int                m_kindFloor[64][3] = {};
+    int                m_border[64] = {};   ///< per theme the band along its halls' walls + 1 (0: none)
+    int                m_sill[64] = {};     ///< per theme the plates in its doorways and where floors change + 1
+    bool               m_bays[64] = {};     ///< per theme: its halls get painted bay lines (Level::bayLines)
+    std::map<int, int> m_patch;    ///< a wall's or floor's surface -> the same with its two variants in one draw
+    std::map<int, int> m_shaped;   ///< a ground's surface -> the same with its trodden ways and scree (out in the open)
     const std::vector<DecalDef>    *m_decals = nullptr;   ///< the decals there are (nullptr: none)
 };
 
@@ -398,6 +411,23 @@ public:
     bool sightBlocked( Vector3 from, Vector3 to ) const;
 
     /**
+     * @brief The occlusion baked into the level's geometry (LevelRelief.cpp): how much of the sky a point with a normal
+     *        sees past what stands round it within 1.6 m (walls, rocks, the things on the floor), and how near the floor
+     *        a face looking sideways is. Only the grid and the props are asked: no runtime cost, darker at the walls'
+     *        feet, in inner corners, under and beside things.
+     * @param[in] p  the point
+     * @param[in] n  its normal
+     * @return 1 open .. about 0.4 deep in a corner
+     */
+    float occlusion( Vector3 p, Vector3 n ) const;
+
+    /**
+     * @brief Bakes occlusion() into a builder's vertices (MeshBuilder::shade).
+     * @param[in,out] b  the builder
+     */
+    void shadeOcclusion( MeshBuilder &b ) const;
+
+    /**
      * @brief Whether a cell can be walked on by something that climbs up to `climb`.
      * @param[in] r      row
      * @param[in] c      column
@@ -487,9 +517,13 @@ public:
     Vector3                          m_sunColor = { 0, 0, 0 };    ///< its colour (0: the red dwarf's)
     int                              m_tugRow = -1, m_tugCol = 0, m_tugSide = 1;   ///< the tug's berth (an edge cell)
     std::vector<Vector4>             m_water;     ///< balls of water floating in low gravity: cell row, column, radius
-    std::vector<std::pair<int, int>> m_relays;    ///< Mother Sevenfold's relays (cells)
-    std::vector<std::pair<int, int>> m_mothers;   ///< her bodies (cells)
-    int                              m_birds = 0;                      ///< birds that fly over it and never land
+    /// The gardens' ponds (LevelGarden.cpp; behind the edges, never by a path): middle x, z and the radii along x and z
+    /// (their shore wavers round that ellipse, pondShape). Nothing walks there: they only show.
+    std::vector<Vector4>             m_ponds;
+    std::vector<Vector4>             m_shallows;    ///< shallow water on the lawn by the ways (as m_ponds; only seen)
+    std::vector<std::pair<int, int>> m_relays;      ///< Mother Sevenfold's relays (cells)
+    std::vector<std::pair<int, int>> m_mothers;     ///< her bodies (cells)
+    int                              m_birds = 0;   ///< birds that fly over it and never land
     int                              m_ilkaRow = -1, m_ilkaCol = -1;   ///< where Ilka stands at the start
     std::vector<std::pair<int, int>> m_ilkaWay;   ///< where she runs after the alarm (then she is gone)
     std::map<int, std::string>       m_locks;     ///< door cell (row * 1000 + col) -> the event that unlocks it
@@ -526,6 +560,8 @@ public:
     bool        m_ice = false;                ///< the glass is ice over an ocean: it breaks; falling in is cold
     std::string m_below;                      ///< what open space shows below: "" the stars, "ocean", "clouds"
     bool        m_dark = false;               ///< darkness: enemies see near only, the hero carries a lamp
+    float       m_lampGain = 1.0f;            ///< the place's own lamps this much stronger (pools of light, phase F2)
+    float       m_lampReach = 1.0f;           ///< ... and their reach times this
     std::string m_planetTex = "reddwarf";     ///< the body in the sky ("star")
     float       m_planetGlow = 2.2f;          ///< its own light
     std::string m_faction;                    ///< whose men: "" the Skimmers, "concession", "clearance", "security"
@@ -543,6 +579,7 @@ public:
     std::string        m_epilogue;               ///< after this event the endings' and the epilogue's cards
     std::vector<Thing> m_things;                 ///< things by name ("thing r c name")
     std::vector<std::pair<std::string, std::string>> m_wallTex, m_floorTex;   ///< a theme's own surfaces here
+    std::vector<std::pair<std::string, std::string>> m_hallTex;   ///< a theme's own halls' floor here ("hallfloor")
     std::map<std::string, std::string> m_keys;   ///< the later places' settings by key (see GameAct34.cpp)
     /**
      * @param[in] key   a setting of the later places
@@ -570,6 +607,53 @@ public:
      * @return the step, or nullptr
      */
     const TalkNode *talk( const std::string &id ) const;
+
+    /**
+     * @brief How a pond's shore wavers round its ellipse (LevelGarden.cpp; the ground's hollow and the water's disc
+     *        both follow it).
+     * @param[in] i      the pond
+     * @param[in] angle  the direction from its middle (radians, in the ellipse's own measure)
+     * @return the shore's distance as a share of the ellipse's (0.86 .. 1.16)
+     */
+    float pondShape( size_t i, float angle ) const;
+    /**
+     * @param[in] i  the pond
+     * @param[in] x  east (m)
+     * @param[in] z  south (m)
+     * @return how far a point lies out from the pond's middle: 0 there, 1 at its shore
+     */
+    float pondReach( size_t i, float x, float z ) const;
+    /**
+     * @param[in] i  the shallow water (m_shallows)
+     * @param[in] x  east (m)
+     * @param[in] z  south (m)
+     * @return how far a point lies out from its middle: 0 there, 1 at its shore
+     */
+    float shallowReach( size_t i, float x, float z ) const;
+
+    /**
+     * @brief The fixed lights' masks (LevelInterior.cpp; after build): for each light, seen from above, where its light
+     *        reaches past the walls (rays from it over a fine grid of the walls, their cut corners and filled corners; a
+     *        wall's first 0.6 m still lit, the rest and what lies behind it dark), softened at the edges. A light in a
+     *        wall shines from the nearest open point in front of it (within 0.7 m); the gardens' hedges and the sloped
+     *        rock out in the open let it through. One nothing stops within its reach has none.
+     * @return the masks, one square of 64 texels a light (an empty atlas when none has one)
+     */
+    LightMasks lightMasks() const;
+
+    /**
+     * @brief The wet map (LevelInterior.cpp; Gfx::wetMap): per cell how wet its floor is (puddles where water runs: the
+     *        exchangers, the shafts, the streets; none in a vacuum, out in the open or where it burns), its floor's
+     *        height, how polished it is (the vaults, the bridge, the clinic) and where its water gathers (by the walls,
+     *        the drains, in low spots); the walls take their floor's values.
+     * @return RGBA texels, row by row (empty where no floor is wet or polished)
+     */
+    std::vector<unsigned char> wetMap() const;
+
+    std::vector<Drawable> m_cones;   ///< the lamps' soft cones of light in the haze (after build; Gfx::cones)
+    /// The bench's breakdown (--plaininterior): levels built without the floors' sunken channels and without the
+    /// places' own wall lamps (the old housings, no cones), as before the graphics round's fourth phase.
+    static inline bool s_plainInterior = false;
 
 private:
     /** @brief A glowing box (lamps, panes, bulbs); boxes of one colour become one mesh. */
@@ -603,6 +687,8 @@ private:
         MeshBuilder &m_cards;    ///< cut-out leaf clusters round the crowns and bushes (no shadow)
         MeshBuilder &m_blades;   ///< cut-out tufts of grass (no shadow)
         MeshBuilder &m_needles;  ///< cut-out fir branches (no shadow)
+        MeshBuilder &m_deep;     ///< leaf cards deeper in the crowns (no shadow; not on frugal)
+        MeshBuilder &m_lush;     ///< more tufts of grass (no shadow; middle and high only)
         /** the park's hedge (wall) or lawn (floor) builder for a cell, as the patchwork lays its variants */
         std::function<MeshBuilder &( int r, int c, bool wall )> m_park;
         std::vector<GlowBox>                                  &m_glows;
@@ -694,6 +780,35 @@ private:
      * @param[in]     shade  darker under trees (1: in the open)
      */
     void lawn( int r, int c, GardenKit &kit, float shade = 1.0f );
+    /**
+     * @brief Plans the gardens' ponds (LevelGarden.cpp, after planGarden's depths): in the garden behind the edges where
+     *        neither the edge nor a path is within reach of their banks, far apart.
+     */
+    void planPonds();
+    /**
+     * @brief Plans the gardens' shallow water (LevelGarden.cpp, at the build's end): on the ways over the lawn, where
+     *        all round is level lawn and nothing stands in its middle, far apart and from the ponds.
+     */
+    void planShallows();
+    /**
+     * @param[in] p       a point
+     * @param[in] margin  how far round a pond's bank counts (m)
+     * @return whether it lies in a pond or its bank
+     */
+    bool inPond( Vector3 p, float margin ) const;
+    /**
+     * @brief The ground by a pond: its hollow under the water and its bank (LevelGarden.cpp).
+     * @param[in]  x    east (m)
+     * @param[in]  z    south (m)
+     * @param[out] wet  how wet it is: 1 under the water, falling to 0 up the bank
+     * @return the ground's height there (0 away from the ponds)
+     */
+    float pondGround( float x, float z, float &wet ) const;
+    /**
+     * @brief The ponds' shores (LevelGarden.cpp): reeds, stones half in the water, leaves floating on it.
+     * @param[in,out] kit  the builders
+     */
+    void gardenPonds( GardenKit &kit );
 
     /**
      * @brief Dresses the level after its walls and floors (LevelDress.cpp): decals on floors and walls, clutter by the
@@ -759,6 +874,279 @@ private:
      */
     static int dressGroup( ThemeE t );
 
+    /**
+     * @brief Plans the rock out in the open (LevelRelief.cpp): the wall cells whose nearest open cell is the ground of
+     *        a natural place out in the open (dust, snow, ice, regolith), with no door, shaft or other place beside
+     *        them, become sloped rock: their outer corners all cut, the filled corners in front of them dropped (the
+     *        slope rounds them), no niches. Before the build, after planShapes().
+     */
+    void planRelief();
+    /**
+     * @param[in] r  row
+     * @param[in] c  column
+     * @return whether the wall cell is built as sloped rock (planRelief)
+     */
+    bool sloped( int r, int c ) const;
+    /**
+     * @param[in] r  row
+     * @param[in] c  column
+     * @return the place whose rock a sloped cell is (its nearest open cell's theme)
+     */
+    ThemeE rockTheme( int r, int c ) const;
+    /**
+     * @brief The sloped rock's height at a point (LevelRelief.cpp): from the floor at the open ground's edge up a steep,
+     *        lumpy face that leans back to an uneven top; a little below the floor under open ground; level with the
+     *        walls' tops where it meets a wall that stands upright.
+     * @param[in] x  east (m)
+     * @param[in] z  south (m)
+     * @return the height
+     */
+    float reliefAt( float x, float z ) const;
+    /**
+     * @brief The relief at a point of the cells' grid (six to a cell's edge, closer by its edges), computed once.
+     * @param[in] gx  the point's column (cell column times six plus its step)
+     * @param[in] gz  its row
+     * @return the height
+     */
+    float reliefPoint( int gx, int gz ) const;
+    /**
+     * @brief The relief between the grid's points (for the occlusion).
+     * @param[in] x  east (m)
+     * @param[in] z  south (m)
+     * @return the height
+     */
+    float reliefLookup( float x, float z ) const;
+    /**
+     * @brief A sloped rock cell (LevelRelief.cpp): the relief over its square, its faces in the rock's colour, its
+     *        flat tops darker (as the walls' lids are).
+     * @param[in]     r     the row
+     * @param[in]     c     the column
+     * @param[in,out] b     the builder
+     * @param[in]     face  the colour of its faces
+     * @param[in]     top   the colour of its tops
+     */
+    void reliefCell( int r, int c, MeshBuilder &b, Color face, Color top );
+    /**
+     * @brief Stones at the foot of a sloped rock's face, on the floor in front of it (LevelRelief.cpp).
+     * @param[in]     r       the floor cell's row
+     * @param[in]     c       its column
+     * @param[in]     d       the direction of the rock from it (0 north, 1 east, 2 south, 3 west)
+     * @param[in,out] b       the builder (the rock's)
+     * @param[in]     colour  their colour
+     */
+    void rubble( int r, int c, int d, MeshBuilder &b, Color colour );
+    /**
+     * @brief The foot of a sloped rock's face in front of a floor cell (LevelRelief.cpp): a low lumpy band of the rock
+     *        bulging up to some 15 cm out over the floor, wavering along the face, so that the rock does not meet the
+     *        ground along the cells' straight line (only seen: collision and the floors stay as they are).
+     * @param[in]     r       the floor cell's row
+     * @param[in]     c       its column
+     * @param[in]     d       the direction of the rock from it (0 north, 1 east, 2 south, 3 west)
+     * @param[in,out] b       the builder (the rock's)
+     * @param[in]     colour  its colour
+     */
+    void rockFoot( int r, int c, int d, MeshBuilder &b, Color colour );
+    /**
+     * @brief A slope of scree at the foot of a sloped rock's face (LevelRelief.cpp, phase F2): from inside the face out
+     *        20-46 cm over the ground, its outline wandering by a noise of the place, of the ground's own surface (its
+     *        shapes make it scree there). Only seen: collision, groundAt, the paths and the sight lines stay.
+     * @param[in]     r  the floor cell's row
+     * @param[in]     c  its column
+     * @param[in]     d  the direction of the rock from it (0 north, 1 east, 2 south, 3 west)
+     * @param[in,out] b  the builder (the cell's ground)
+     */
+    void screeApron( int r, int c, int d, MeshBuilder &b ) const;
+    /** @brief The props near each cell and the highest that stands in it, for occlusion() (after the build's props). */
+    void prepareOcclusion();
+    /**
+     * @brief The top of what stands at a point, for the occlusion: walls, rocks, the relief, props (as 0.9 m high).
+     * @param[in] x  east (m)
+     * @param[in] z  south (m)
+     * @return the height (-1000 over a shaft)
+     */
+    float standsAt( float x, float z ) const;
+    /**
+     * @brief The floor a point stands over, for the occlusion: its cell's, or in rock the open cell its normal faces.
+     * @param[in]  p  the point
+     * @param[in]  n  its normal
+     * @param[out] h  the floor's height
+     * @return false: none (a shaft, deep in rock)
+     */
+    bool floorFor( Vector3 p, Vector3 n, float &h ) const;
+
+    /** @brief A sunken channel in a floor cell under a grating (LevelInterior.cpp): only seen, walked over as before. */
+    enum PitE : unsigned char
+    {
+        PIT_NONE,       ///< none
+        PIT_SUMP,       ///< a square sump in the middle (where a plate of grating lay on the floor before)
+        PIT_DUCT_X,     ///< a duct along a corridor running east-west
+        PIT_DUCT_Z,     ///< ... north-south
+        PIT_GUTTER_N,   ///< a gutter along the wall to the north (a street's)
+        PIT_GUTTER_E,   ///< ... east
+        PIT_GUTTER_S,   ///< ... south
+        PIT_GUTTER_W    ///< ... west
+    };
+    /**
+     * @brief Plans the floors' sunken channels (LevelInterior.cpp; before the build): ducts along the corridors indoors,
+     *        gutters along a street's walls, a sump where a plate of grating lay; only on level floors with no step,
+     *        shaft, door, window or filled corner beside them.
+     */
+    void planPits();
+    /**
+     * @brief Where a floor cell's channel opens (in eighths of the cell).
+     * @param[in]  r   the row
+     * @param[in]  c   the column
+     * @param[out] i0  its first eighth along x
+     * @param[out] i1  one past its last
+     * @param[out] j0  its first along z
+     * @param[out] j1  one past its last
+     * @return false: the cell has none
+     */
+    bool pitRect( int r, int c, int &i0, int &i1, int &j0, int &j1 ) const;
+    /**
+     * @brief A floor cell's channel below its opening (LevelInterior.cpp): its sides and bottom (open where the next
+     *        cell's runs on), what runs in it as the place has it (pipes, cables, a line of light, glowing slag, water),
+     *        and the grating over it, flush with the floor.
+     * @param[in]     r      the row
+     * @param[in]     c      the column
+     * @param[in]     h      the floor's height
+     * @param[in,out] sunk   the builder (darkened by hand with the depth: not the baked occlusion)
+     * @param[in,out] rust   the grating's builder in the industrial places
+     * @param[in,out] steel  ... in the clean and cold ones
+     * @param[in,out] glows  the glowing boxes
+     */
+    void pitCell( int r, int c, float h, MeshBuilder &sunk, MeshBuilder &rust, MeshBuilder &steel,
+                  std::vector<GlowBox> &glows );
+    /**
+     * @param[in] x  east (m)
+     * @param[in] z  south (m)
+     * @return whether a lamp's light stops there, seen from above: a wall (not its cut corners, not a garden's), a
+     *         filled corner; not doors, counters or heat exchangers (they stand below the lamps)
+     */
+    bool blocksLight( float x, float z ) const;
+    /**
+     * @brief A wall lamp of the kind its place has (LevelInterior.cpp): an industrial shade on an arm, a street's
+     *        lantern, a clean light bar under a hood, a cluster of glowing crystal; and its cone of light in the haze.
+     * @param[in]     at      the old housing's middle (0.18 m out of the wall, at the lamp's height)
+     * @param[in]     n       out of the wall
+     * @param[in]     t       the place
+     * @param[in]     glow    the glass's glow
+     * @param[in]     colour  its light's colour times intensity (the cone's colour)
+     * @param[in]     cone    with a cone (a steady lamp)
+     * @param[in,out] kit     the builders
+     * @param[in]     reach   how much further out of the wall it hangs (in front of the wall's pipes; phase F4)
+     * @return false: the place has no lamp of its own (the old housing is built)
+     */
+    bool lamp( Vector3 at, Vector3 n, ThemeE t, Vector4 glow, Vector3 colour, bool cone, DressKit &kit,
+               float reach = 0.0f );
+    /** @brief The lamps' cones as meshes (m_cones), at the build's end. */
+    void buildCones();
+    /** @brief A cone of light under a lamp. */
+    struct Cone
+    {
+        Vector3 m_apex;     ///< at the lamp's glass
+        Vector3 m_axis;     ///< where it points (unit)
+        float   m_length;   ///< how long (m)
+        float   m_radius;   ///< its radius at the glass
+        float   m_spread;   ///< its radius grows this much a metre
+        Color   m_colour;   ///< the light's colour (alpha: its strength)
+    };
+    std::vector<Cone>          m_coneSpecs;   ///< during the build
+    std::vector<unsigned char> m_pit;         ///< per cell: its sunken channel (PitE)
+
+    /** @brief The kind of room a cell lies in (planRooms; LevelFloors.cpp): its floor follows it. */
+    enum RoomE : unsigned char
+    {
+        ROOM_NONE,       ///< a wall, a door
+        ROOM_HALL,       ///< a large room (a hundred cells and more)
+        ROOM_CORRIDOR,   ///< a way of up to four cells' width, and what joins nothing but it
+        ROOM_SIDE        ///< a smaller room
+    };
+    /**
+     * @brief Plans the rooms (LevelFloors.cpp; before the build): every open cell that a block of 5 x 5 open cells
+     *        covers belongs to a room (the blocks' middles that touch are one room; a hundred cells or more make a
+     *        hall), the rest to corridors; a pocket of up to three cells off a single room is that room's.
+     */
+    void planRooms();
+    /**
+     * @param[in] r  row
+     * @param[in] c  column
+     * @return the kind of room the cell lies in (RoomE)
+     */
+    int roomKind( int r, int c ) const;
+    /**
+     * @param[in] r  row
+     * @param[in] c  column
+     * @return the cell's room (-1 none; corridors are rooms of their own)
+     */
+    int roomOf( int r, int c ) const;
+    /**
+     * @param[in] r  row
+     * @param[in] c  column
+     * @return where a hall's floor cell has its band along the walls: bit d (0 north .. 3 west) along that wall, bit
+     *         4 + q round the outer corner q of a wall beside it (0 north-west .. 3 south-west); 0 none
+     */
+    unsigned bandSides( int r, int c ) const;
+    /**
+     * @param[in] band   a cell's band (bandSides)
+     * @param[in] i      a square of its top's grid along x
+     * @param[in] j      ... along z
+     * @param[in] steps  squares of the grid along each edge (the band is a quarter of them wide: half a metre)
+     * @return whether the square lies in the band
+     */
+    static bool bandSquare( unsigned band, int i, int j, int steps );
+    /**
+     * @brief The thin dark joints where a hall cell's band meets the floor (LevelFloors.cpp): along each edge of a
+     *        band's square whose neighbour (in this cell or the next) is floor without a band.
+     * @param[in]     r     row
+     * @param[in]     c     column
+     * @param[in]     band  its band (bandSides)
+     * @param[in]     s     the surfaces (the places' bands)
+     * @param[in,out] b     the builder (steel)
+     */
+    void bandJoints( int r, int c, unsigned band, const LevelSurfaces &s, MeshBuilder &b ) const;
+    /**
+     * @brief Which material of a patchwork a cell takes (as the variants were laid before they were one draw): the
+     *        floors in ragged patches of a few cells, the walls in short runs, the plain one most.
+     * @param[in] r     row
+     * @param[in] c     column
+     * @param[in] wall  a wall's (else a floor's)
+     * @param[in] n     the variants there are
+     * @return 0 .. n - 1 a variant, n or n + 1 the plain one
+     */
+    static int patchPick( int r, int c, bool wall, int n );
+    /**
+     * @brief The halls' centre motifs (LevelFloors.cpp; after the dressing): a painted mark, a mosaic or an inlay of
+     *        the place's kind in the middle of each hall, where no step, shaft, channel or thing on the floor is in the
+     *        way (under a show piece there may be one).
+     * @param[in] s  the surfaces (the decals there are)
+     */
+    void motifs( const LevelSurfaces &s );
+    /**
+     * @brief The halls' painted bay lines (LevelFloors.cpp; after the motifs, phase F4) where their place's halls take
+     *        them (LevelSurfaces::m_bays: the works' concrete): two lines along the middle of each hall's long axis (a
+     *        walkway), and in a hall wide enough a row of bays by each long wall, open to the walkway; laid in pieces of
+     *        two metres as decals (`bay_line`) only where the floor under them is the hall's own, even, with nothing on
+     *        it and the motif clear. Only seen.
+     * @param[in] s  the surfaces (the decals there are, which places take the lines)
+     */
+    void bayLines( const LevelSurfaces &s );
+    /**
+     * @brief The ways along the route (the autopilot's: through each corridor, across each room, kept to the middle
+     *        of the open floor; LevelFloors.cpp): m_way. The gardens' paths and the trodden ground out in the open.
+     */
+    void planWays();
+    /**
+     * @brief The ground's shapes out in the open at a point (LevelFloors.cpp): how trodden (along the ways) and how
+     *        much scree (at the foot of the rock), each 0 .. 1, fading over a metre and more.
+     * @param[in] p  the point
+     * @return x trodden, y scree
+     */
+    Vector2 groundShape( Vector3 p ) const;
+    std::vector<unsigned char> m_room;     ///< per cell: the kind of its room (RoomE)
+    std::vector<int>           m_roomOf;   ///< per cell: its room (-1 none)
+    std::vector<unsigned char> m_way;      ///< per cell: 1 on a way along the route (planWays)
+
     int                        m_rows = 0;
     int                        m_cols = 0;
     std::vector<Cell>          m_cells;
@@ -769,6 +1157,12 @@ private:
     std::vector<unsigned char> m_gallery;   ///< per floor cell: the walls a gallery runs along (bit d)
     std::vector<unsigned char> m_garden;    ///< per wall cell: its garden depth (0 none, 1 the edge, 2.. behind)
     std::vector<unsigned char> m_path;      ///< per floor cell: a garden's path runs over it
+    std::vector<unsigned char> m_slope;     ///< per wall cell: 1 sloped rock, 2 and all round it too (a coarse grid)
+    std::vector<unsigned char> m_rockOf;    ///< per sloped cell: the theme of its nearest open cell (ThemeE)
+    mutable std::vector<float>
+        m_relief;   ///< the relief at the grid's points ((6 cols + 1) x (6 rows + 1); NaN: not yet)
+    std::vector<std::vector<int>> m_occProps;      ///< per cell: the props over it (for the occlusion; not what breaks)
+    std::vector<float>            m_occTop;        ///< per cell: the highest that stands in it (for the occlusion)
     std::vector<std::vector<int>> m_propsByCell;   ///< during the lawn's build: the props near each cell
     std::vector<Vector3>       m_sight;     ///< per cell what is seen there: x up to where it stands from the floor,
                                             ///< y to z a crown or lintel above (y > z: none); for the camera

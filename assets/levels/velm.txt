@@ -2,7 +2,7 @@
 # drehen: die Armenklinik, die Bar „Zur Letzten Schicht“ mit der Abbautafel und einem Fenster im Boden (darunter dreht
 # sich Velm vorbei), Kiris Werkstatt, HAUSMEISTERs Terminal, der Lastenaufzug zur Achse. Kein Kampf: A / E spricht.
 #
-#   #  Haus (in der Bar: Schott)   .  Boden   +  Theke   _  Fenster im Boden   P  Start   O  Lastenaufzug
+#   #  Haus (in der Bar: verputzte Wände)   .  Boden   +  Theke   _  Fenster im Boden   P  Start   O  Lastenaufzug
 #   N  Leute (sitzen)   J  Leute (stehen beisammen)   Z  Leute (gehen umher)   M  Marktstand an der Wand
 #   A  Arbeitslicht   R  Notlicht   V  Dampf   a-z  Auslöser der Zeilen unten
 #
@@ -20,8 +20,10 @@ act      act.1hub
 gravity  7.0
 fog      0.003 0.01 0.6 0.9
 fogcolor 0.004 0.0028 0.0018
-ambient  0.06 0.05 0.045 0.035 0.03 0.028
+ambient  0.034 0.028 0.025 0.02 0.017 0.016
+lampgain 2.0 0.55
 walls    3.2
+walltex  bar plaster
 peaceful 1
 view     drums
 ambience street

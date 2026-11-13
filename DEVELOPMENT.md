@@ -48,6 +48,388 @@ waits, so its picture is drawn once and shown still (again when a setting change
 inventory) at 30 frames a second at most. Figures that cannot show (outside the camera's view by more than a shadow's
 length) are not posed: their bones cost the processor every frame, most in the hubs.
 
+**The renderer, lighter** (13.11.2026, the graphics round's first phase; `src/Gfx.cpp`, `src/Shaders.h`): every pixel
+of every surface had looped over all of the frame's point lights (up to 32) and raymarched the volumetric fog itself,
+with all that was later drawn over it. Now each lit draw gets only the lights whose reach touches its box or sphere
+(on average 5.6-11.6; no cap: eight, then sixteen left seams at the tiles' edges and darker bushes beside lamps where
+16 m and 32 m tiles reach many lights). A depth pre-pass draws the solid surfaces (not decals, stains or cut-outs) into
+the depth only, the cut-away's holes included, and the lit pass then shades each pixel once (depth EQUAL, no writes;
+both passes use `invariant` positions and the same mvp as DrawMesh). The fog is its own pass at half the scene's size
+from the depth buffer (sky: 200 m out), laid over the picture with a depth-aware upsampling after the opaque scene and
+its decals, before glass, water, particles and what glows by itself (the star, the ring, the plumes, drawn after it
+now, behind the scene by its depth); a stain keeps its darkening in the target's alpha so the fog's light under it is
+darkened as before, glass and water take the fog's mean transmittance to them. The sun's shadow map stands on a grid
+of 1.5 m in the light's axes (48 m wide instead of 46): what does not move (`m_static`) is kept in a second map and
+drawn anew only when the grid's cell, the sun or the list changes, each frame copied and what moves drawn over it; the
+lamp's map follows the hero's spine and is drawn every frame. Shadow casters and the pre-pass go straight to their
+vertex arrays (no material binding per tile). FXAA in the final pass on every quality (edges from the tone-mapped luma).
+On low and frugal the scene is drawn smaller (down to 0.55 of the picture) while the GPU's time (GL timer queries) is
+above about 23 ms and the GPU, not the processor, sets the pace; back up below 19 ms. Measured on the RTX 5090 at the
+Deck's 1280x800 low (300 frames; ±0.3-0.5 ms from run to run), the frame before → after: Mühle 4.2 → 2.5-2.9 ms,
+Sterbegärten 4.8 → 2.5, Halden 2.3 → 1.6, Velm 1.7 → 1.5 (the renderer's processor time 3.9 → 2.2-2.5, 4.4 → 2.2,
+2.1 → 1.4, 1.5 → 1.3). Where the GPU sets the pace (3840x2400 low, nine times the Deck's pixels) Halden took 3.8 ms of
+GPU time and Velm 3.7, now at most 1.9 and 1.4 (the processor sets the pace there now); Velm at 7680x4800 takes 2.7 ms.
+With the sun's map drawn every frame (walking) 180-290 more caster draws a frame. The pictures (`work/gfxA`, before,
+after, diff) differ by 0.6-2.5/255 on average with the same brightness: smoother edges, the sun shafts' fine grain at
+half size; in the gardens one wedge where two kinds of path decals lie at the same height (gardenPaths' four layers of
+2 mm) fight over the depth and the other wins now (the `invariant` positions change the last bit).
+
+**Outside, shaped** (13.11.2026, the graphics round's second phase; `src/LevelRelief.cpp`, `Level.cpp`, `Shaders.h`):
+the level's meshes carry baked occlusion in their vertex colours, worked out from the grid at load and costing nothing
+while playing. `Level::occlusion` looks from each vertex in eight directions up to 1.6 m over what stands round it
+(walls, the rock's relief, the props as 0.9 m high, not what breaks: it would leave its shadow behind) and, for a face
+that looks sideways, at the corner it makes with the floor; the colour's alpha (the ambient light) takes it whole, the
+colour 40 % of it (the direct light too, as a painted shadow). So the floor is darker at a wall's foot (0.53 at the
+wall, 0.71 a quarter metre out, 0.88 at half a metre, nothing at a metre), darkest in inner corners (0.45), round what
+stands on it, and a wall's face from 0.55 at its foot to 0.94 at 0.7 m. For that the floors' tops are grids of half
+metres, the walls are split 0.7 m over the floor, the decals are grids of three by three and Brannt's crust slabs
+grids of a metre. The gardens' lawn keeps its own shade. Out in the open (dust, snow, ice and regolith in an `outdoor`
+place) the rock is no longer upright walls with flat lids: a wall cell whose nearest open cell is such ground, with
+no door, shaft or other place beside it, is a relief (`Level::reliefAt`): from the floor at the ground's edge a steep
+face (1.1-1.3 m high within 20 cm, so that a shot at chest height strikes near it), leaning back over 1.0-1.6 m to an
+uneven top of 2.6-3.9 m, lumpy; deep in the rock its top as low hills; level with a wall's lid where it meets one that
+stands upright (by doors, shafts and other places). Its grid: six points a cell, closer by the edges; a cell with rock
+all round only its corners and middle, its edges against finer ones kept straight (no cracks); normals from the grid
+(no seams). Two to four stones lie at the foot of each face; the face carries none of an upright wall's fittings, its
+floodlights stand on posts in front of it (the same light). The boulders by the walls sit on low mounds of the
+ground. Collision, the camera's view and the floors one walks are as they were. The ground and the rock out there are
+one surface each with two of its variants blended in by the lit shader (`splatted`): a slow noise of the place gives
+the three their shares (wide soft patches over some 4 m, no hard edges), the second and third turned and scaled their
+own ways so that no tile lines up with another (Brannt's craters no longer repeat); a projection or a material whose
+share is too small is not sampled, so flat ground takes three to six samples instead of the nine of triplanar. Where
+a place lies out in the open under a sky with air, clouds' shadows drift over it with the wind (`cloudShade`: a slow
+noise in the plane the sunlight crosses, up to 42 % of the sun; none in a vacuum, none in a place with nothing out in
+the open). In the gardens each
+path decal has a height of its own among those it may overlap (sixteen in 6 mm, the second kind above the first,
+both over the other floor decals, laid from low to high as they are drawn): no two fight over the depth any more.
+Measured on the RTX 5090 at the Deck's 1280x800 low (300 frames), before → after: Brannt 1.98 → 1.56 ms a frame
+(walking 1.87 → 1.82; at three times the size the GPU's 1.82 → 1.73 ms), the Sterbegärten 2.52 → 2.50 (2.92 → 2.80;
+GPU 2.61 → 2.38): no slower, flat ground a little cheaper. Building a level takes 0.1-0.2 s more (Brannt 0.77 →
+0.95 s, Mühle 1.24 → 1.37 s); per level 2000-5700 wall cells are relief, two thirds of them deep in the rock on the
+coarse grid. The pictures: `work/gfxB` (Sterbegärten and Mühle against `work/gfxA/after`, the same moment; Brannt
+`after/brannt2*.png`).
+
+**Living outdoors** (13.11.2026, the graphics round's third phase; `src/LevelGarden.cpp`, `LevelRelief.cpp`,
+`GameWorld.cpp`, `Shaders.h`, `Gfx.cpp`): the plants sway in the wind in the lit vertex shader (`Surface::m_sway`: the
+grass's tufts at their tops, the leaf cards whole and more the higher they hang, the fir branches more at their tips),
+bent along the wind, further in gusts that travel over the place at its speed and in the game's own gusts (Halden,
+Hesper), each plant swinging in its own phase (smooth over the place, so a card's corners move together), the leaves
+fluttering across. The wind is the clouds' (`Lighting::m_wind`: the level's own or the drift's default; none in a
+vacuum). Only the cut-outs sway: they are neither in the depth pre-pass nor cast shadows, so the EQUAL test and the
+kept sun map stand; for everything else the position is the same expression in every pass. The crowns: each corner of
+a leaf card takes the crown's normal from its middle, its colour's alpha darker below and inside, and the cards are lit
+as the volume they stand for (the sun's light wrapped round it and a little through it, its shadow looked up 30 cm
+outside the crown so that the core's own does not speckle the cards, no gloss, the normal not turned round when the
+card is seen from behind); the dark cores are smaller (0.72 of the crown instead of 0.85) and darker, 2-10 cards more
+lie deeper in each crown and bush (on dice of their own: every plant stands where it stood), the forest trees fork into
+boughs under their clumps, and the cores and the gardens' other leaves are lit as softly, their bumps flatter. The
+lawn's tufts are not drawn on frugal (`Drawable::m_detail`, `Gfx::detail()`: 0 always, 1 not on frugal, 2 middle and
+high only); on middle and high two to five more lie on each lawn cell and three on each garden cell; on Halden's dust
+out in the open dry tufts in patches, more at the rock's foot, half of them on middle and high only. The gardens have
+ponds (no outdoor place had water; the Drowned Quarter's balls of water are inside): up to eight in the garden behind
+the edges, 16 m apart, where their bank keeps clear of the edge and of every walkable cell (nobody can reach them; in
+the Sterbegärten eight, 2.9-3.3 m across). The lawn sinks into a hollow there, mud under the water, dark and wet up the
+bank; reeds in clumps, stones half in the water, floating leaves with a notch and pink blooms; the water is a disc to a
+little past the wavering shore, drawn after the fog (`Gfx::pond`, `PondFs`): four trains of small waves round the
+wind, stronger in patches, a drop's ring now and then in each cell of 1.3 m, rings round whatever wades (the hero, the
+partner, enemies; the ponds lie off the paths, so it is rare), the sky's colour and the sun mirrored and darker under
+the trees' shadow, the shallows brownish, the deep dark, fading out to the shore. In the air out in the open
+(`Game::drawAir`) motes round the camera's target, without state (each a fixed point carried by the wind and wrapped into
+a box of 30 by 30 m, fading at its sides), unlit and added to the picture: pollen in the gardens, dust on dust, the
+streets and the arena, snow on ice and snow, haze over Hesper's deck, wide faint puffs of mist low over the gardens,
+the snow and the deck; 50, 120 and 260 of them on frugal, low and middle or high (snow twice as many), none in a vacuum
+or indoors. At the rock's foot out in the open (`Level::rockFoot`) a low band of the rock lies along each face over the
+floor and across each cut corner: hidden in the face, a crest 3-15 cm out and 8-22 cm up, a toe sunk a hand further
+out, wandering by a noise of the place (the same where two bands meet), the occlusion baked in as on the rock; only
+seen. Its first version (1-7 cm out, its toe under Brannt's crust) did not show in the pictures; the wider one is
+checked by its geometry only (a probe linked against the build's objects), not yet in a picture. The rubble there
+reads as small dark stones in the rock's shadow, not as balls. Measured on the RTX 5090 at 1280x800 (300 frames),
+before → after: Sterbegärten low 2.78 → 2.46 ms a frame (walking 3.18 → 2.95; the GPU's 2.75 → 2.43; at three times
+the size 2.69 → 2.67), frugal 2.44 → 2.42 (walking 3.30 → 2.85; 214 → 210 lit draws), Brannt low 1.69 → 1.64 (walking
+1.67 → 1.75), Halden low 1.31 → 1.72 in the first run of the bench but 1.37 → 1.44 walking and 1.83 → 1.63 at three
+times the size (the first run's jump is not in the others: likely the noise of ±0.3-0.5 ms). `--benchfrugal` benches
+again at frugal in the same run. The pictures: `work/gfxC` (`before`, `after`, `vergleich.png`). Still to do: the
+crowns' silhouettes are softer and more ragged now, but their leaves still speckle at the Deck's resolution (the leaf
+textures' dark gaps); the ponds' water is a little pale and its waves hardly show in a still picture; Halden's dry
+tufts look greenish and small.
+
+**Rooms lit by their own lamps** (13.11.2026, the graphics round's fourth phase; `src/LevelInterior.cpp`, `Gfx.cpp`,
+`Shaders.h`, `Level.cpp`): a fixed light no longer shines through the walls. At load each light gets a mask
+(`Level::lightMasks`): seen from above, 720 rays from it over the walls on a grid of eight points to a cell (their cut
+corners open, the filled inner corners closed; doors, counters and heat exchangers let it pass, as do a garden's hedges
+and the sloped rock out in the open, which leans back below the lamps), lit up to a wall and 0.6 m into it (its face,
+for the filtering), dark behind it; a square of 64 texels over 2.2 times its reach, softened at the edges, in one atlas.
+A light whose point lies in a wall (a fixture on it) casts its rays from the nearest open point within 0.7 m: it lights
+the room it faces; one deeper in the rock keeps none, as does one that nothing stops within its reach. Out in the open
+the lights are masked too (a lamp on a container stack in a yard does not light its far side): the Werft 109 of 156
+(before 57: the other 99 were all out in the open, none in a wall; 47 need none), the Mühle 253 of 255 (one from in
+front of its wall), the Kühlgedärme 70 of 72, Velm 74 of 74, the Sterbegärten 96 of 118, Brannt 109 of 166, Halden 217
+of 239 (`INTERIOR:` in the log says why the rest have none; 15-55 ms at load). The lit shader takes each fixed light
+times its mask, looked up 25 cm out of a face so that a wall takes the light of its own side; the fog's halos take it at
+the ray's nearest point to the light (no glow over a wall from the next room); glass, water, the ponds and the lit
+particles alike. A draw gets no fixed light whose mask's rectangle misses its box (the per-draw lists: 8.5 → 8.0 lights
+a draw in the Kühlgedärme). Flashes, shots, the plumes and the hero's own lights stay unmasked. What reflects mirrors a
+small cube map made once a level (`Gfx::environment`, 32 texels a face, its blurred levels for the rougher surfaces):
+the old hemisphere of the ambient light, the ceiling darker, the level's ten brightest lamps as soft spots of their
+colour round the horizon, where a room's lamps hang; out in the open none (the old fake environment). The floors
+(`Level::wetMap`, `Gfx::wetMap`, one texel a cell): how wet (the exchangers 1, the shafts 0.8, the streets 0.75, the
+works 0.45, service 0.35 ...; none in a vacuum, out in the open or where molten metal runs), the floor's height (only
+what faces up at its floor is wet, not a wall's lid or a crate), how polished (the vaults 0.65, the halls' marble 0.6,
+the clinic, the bridge, Tesh's obsidian). Wet floors have puddles in a slow noise of the place: darker, smooth and flat,
+a damp rim round them, and each lamp mirrored in them where the reflected ray passes it (a small bright image and a
+halo, by the angle it misses by); polished floors are smoother all over. Floors with depth (`planPits`, `pitCell`,
+`MeshBuilder::slabHole`): ducts along the corridors indoors (cables in the place's colours, a line of light in the clean
+and cold places, green in the server rooms), gutters along a street's walls (water in them, now and then a drain's
+mouth), a sump half a metre deep with pipes and a valve where a plate of grating lay on the floor before, glowing slag
+under the bars in the Mill; the floor's top has the opening left out, the grating (rust in the works, pale steel in the
+clean places, bars of 5 cm) lies flush with it, the channel's sides and bottom darker downwards; no floor decal over it.
+Only seen: the cells, walking, collision, shots and the camera are as they were (the autopilot reaches the same moment
+with the same seed before and after, `--report`). The wall lamps (`R`, `A`) are their place's: a caged bulb on an arm
+under a small cap (industrial), a lantern on a bracket (streets), a light bar under a hood (clean and cold), a cluster
+of glowing crystal (Tesh); each steady one has a soft cone of light in the haze (`Gfx::cones` hands them to the fog
+pass, which draws them right after the fog while the colour target is bound: the scene's depth read, soft where it meets
+what stands in it, fading along it and at its rims, as strong as the place's fog shows it; not on frugal). The channels
+under the gratings cast no shadow (below the floor; the gratings over them do). From the third phase: the leaf cards
+take their colour and their outline (the alpha, cut at 0.3) from a coarser level of their map (2.5 levels down) and a
+slow noise through the crown darkens the gaps between its clumps; the ponds' water is darker and more opaque, its waves
+twice as steep, mirroring the sky less head on (Fresnel from 0.05, not 0.09: from the game's height a pond is darker
+than the lawn round it); Halden's dry tufts are half as large again, their picture without its green and paler (straw,
+lighter than the dust). Measured on the RTX 5090 at the Deck's 1280x800 low (300 frames), the phase first made the frame
+slower (the Mühle 2.53 → 2.93 ms, walking 2.87 → 3.54, frugal 2.37 → 2.98; the Kühlgedärme 2.12 → 2.26), a fixed cost of
+each frame. Taken apart (`--benchparts`: in one run the frame again with each feature off and with raylib's DrawMesh;
+with `--plaininterior` the level built without the sunken floors and the lamps of their own; the BENCH line now also
+gives the triangles and the processor's and the GPU's time by part of the frame, the latter from GL timestamps):
+switching off the masks, the cones or the cube and wet maps changes nothing beyond the noise; the sunken floors and the
+lamps add 2-3 % of the triangles, two lit and five depth draws and some 0.2-0.3 ms of the GPU's time (by its timestamps:
+shadows +0.07, the lit draws +0.15-0.2), which the frame waits for; and every lit draw went through DrawMesh, which
+binds the program and unbinds it again (glUseProgram(0)), binds and unbinds each of the material's maps and sets their
+samplers, five matrices (the normal matrix inverted) and the diffuse colour, draw by draw: in the same runs 0.3-0.7 ms
+more than now. Now the lit draws go straight to GL (`Gfx::leanDraw`, `m_lean`): the program stays bound through a list,
+a map is bound only where another belongs on its unit, the surface's uniforms are set where the surface changes, the
+drawable's where they differ, the matrices where the transform does (the level's tiles all stand where they were built:
+once a list); the same values as DrawMesh's, the picture the same to the pixel (llvmpipe, `--drawmesh` against the
+default). (A change of blending flushes rlgl's batch, which unbinds the program and the vertex array: a decal or a stain
+sets its blending before the program is bound again.) The same window, the Mühle before the phase (its build, run right
+before) → now: 2.61 → 2.41 ms (walking 2.76 → 2.90, frugal 2.59 → 2.38, frugal walking 3.01 → 2.93, three times the size
+2.60 → 2.52); in the same runs DrawMesh 3.09 against 2.29 (frugal 2.91 against 2.43). The Sterbegärten now 2.25 (walking
+2.38, frugal 2.23, frugal walking 2.58; DrawMesh 2.76, frugal 2.64), against the third phase's 2.46, 2.95, 2.42, 2.85.
+The noise from run to run is large: the build before the phase gave 2.96 and 2.61 in two runs of the same window, the
+walking bench's +0.14 lies within it. The Kühlgedärme were not measured again. Test pictures without the GPU: the Linux
+build in WSL renders with Mesa's llvmpipe on the processor (`work/gfxD/cpurun.sh`, `work/gfxD2/cpurun.sh`: 15-40 s a
+picture indoors; Halden and Brannt more than 20 minutes), which also checks the shaders against Mesa. The pictures:
+`work/gfxD` (`before`, `after`, `vergleich.png`, `cpu`), `work/gfxD2` (`before`, `new`, `cpu`, `vergleich.png`). Seen in
+them: a wall lamp reads at the game's distance as its glowing bulb or bar under a dark cap, the cage's posts too thin to
+show, the cone a faint warm haze below it (`work/gfxD2/cpu/lamp7_muehle.png`, `lamp8_muehle.png`; on north walls the
+lamps hang at the picture's top edge or above it); the crowns read as soft clumps now, their dark cores' own texture
+still speckles between them; Brannt's rock foot shows as a slightly lumpy seam with its stones, the straight line of the
+cells still the stronger impression; the pond (`--at 231,91`) was a pale grey-blue sheet as bright as the lawn, and
+Halden's dry tufts (`--at 165,133`) dark brown stars like stains: both changed as above, not yet seen in a picture
+since. Still to do: the puddles read as dark patches with the lamps' glints, the env map shows mostly on metal.
+
+**Floors that follow the rooms** (13.11.2026, the graphics round's phase F1; `src/LevelFloors.cpp`, `Level.cpp`,
+`Game.cpp`, `MeshBuilder.cpp`, `Shaders.h`): every room of a place had the same floor, its two variants laid over it as
+a patchwork. Now the level sorts its open cells into rooms before it builds (`Level::planRooms`): every cell that a
+block of 5 x 5 open cells covers belongs to a room (the blocks' middles that touch are one room; walls, doors and
+shafts bound them), a room of a hundred cells and more is a hall, a smaller one a side room, what no block covers a
+corridor (a pocket of up to three cells off a single room is that room's): the Mühle 25 rooms with 3311 hall, 505 side room and 560 corridor cells, the
+Kernbank 18 (2315, 345, 307), the Werft 28 (1964, 777, 1103), Halden 19, the Kühlgedärme 6, Velm 3 (`FLOORS:` in the
+log). Each kind has its own floor in
+each place (`Game::themeSurfaces`, the table `kinds`; see "Textures"): in the works concrete with painted bay lines in
+the halls, tread plate in the corridors, rubber matting in the side rooms (grating catwalks by the exchangers and
+shafts); in the foundry, the station, the prison, on the deck, the containers and the hull the place's own plates in
+the halls, heavy riveted plates in the corridors, catwalks in the side rooms (the yard's halls concrete with bay
+lines); square paving on the streets' plazas, the old street floor in the alleys, terrazzo in the shops, boards in
+the bars; in the clean halls their own floor (the vaults' stone, the clinic's tiles, the server floor, the marble),
+composite panels in the corridors, carpet tiles in the side rooms; frosted panels in the cold store; dark slabs in
+the object of Tesh. A level that chooses a place's floor (`floortex`) keeps it everywhere. Along the walls of a hall
+lies a band half a metre wide of another material flush in the floor (dark bolted steel in the works and the plated
+places, granite in the streets, black stone with gold flecks in the clean halls; `bandSides`, `bandSquare`), round
+the outer corners of the walls and into their cut corners, a thin dark joint where it meets the floor
+(`bandJoints`); across a corridor's mouth (0.36 m), where a room meets another floor (0.16 m) and on a door's deck lies
+a threshold plate of brushed steel (granite in the streets), 8 mm high. In the middle of each hall a motif of its
+place (`Level::motifs`, the decals `motif_<kind>_<n>`): a crane ring with chevrons or a gear in the works, a landing
+mark or a sun on plates, a compass rose or rings of setts in the streets, an inlaid star or planet in the clean halls,
+a snowflake inlay in the cold; where its square has even floor of the hall with no channel, band or step under it and
+nothing stands on it but a show piece in its middle (the Mühle 15 of its 17 halls, the Werft 13 of 13, the
+Kernbank 10 of 12, Halden 6 of 10, the Kühlgedärme 3; none in Velm's bar, whose tables stand in its middle, and none
+in the gardens); 7 mm up and drawn
+before the place's other floor decals (`decals.txt` lists the motifs first), so a stain lies over it and not its clear
+rim. Out in the open the dust, the regolith and the snow follow the level's shape: their shader blends in a trodden
+ground along the ways (`planWays`: the route's ways, which the gardens' paths came from before, now for every place)
+and scree at the rock's foot (`groundShape`: the distances to the way and to the rock, carried in the ground's UVs),
+their rims ragged by a finer noise, and a few patches of each by the slow noise (`Surface::m_layerMode` 3). Only seen:
+the cells, `floorAt`, collision, the navigation and the sight lines are as they were, the props and the other decals
+lie where they lay (the autopilot reaches the same moment with the same seed, `--report`). To pay for the new floors a
+wall's or floor's two variants are no longer three draws a tile but one (`m_layerMode` 2: each triangle names its
+material in its u, set at the build's end from its cell by the same hash as before, `patchPick`, so the patchwork
+lies as it did; the shader samples the material only on the projections that count, as the ground out in the open
+does: three samples on a floor instead of the nine of triplanar). The leaves: the crowns' leaf cards are a painted
+cluster of large leaves (about ten to a card), their colour and outline a level down in the map instead of two and a
+half (`coarse`, cut at 0.42), the cores a painted canopy of soft clumps, both calmer than the hedge's boxwood they were
+cut from. All of it on every quality (a few thousand more triangles, a draw for each kind of motif). Measured on the RTX 5090 at the Deck's 1280x800 low (300 frames), the before
+and the after build in one window: the Mühle 1.93 → 1.61 ms a frame (walking 2.49 → 2.23, frugal 1.97 → 1.61, frugal
+walking 2.33 → 2.09; 225 → 218 lit draws, 443 → 423 depth draws, walking 724 → 648, 357k → 358k triangles), Halden 1.20
+→ 1.25 (walking 1.12 → 1.19, frugal 1.16 → 1.14, frugal walking 1.34 → 1.07; 118 → 120 lit draws: the ground with its
+shapes is one more surface), within the noise; the window's very first run gave the Mühle 3.17 (the GPU warming up).
+The autopilot's report (`RUN:`) is the same to the character before and after in the Mühle, the Werft, Velm, the
+Kühlgedärme and Halden. The pictures: `work/gfxF1` (`before`, `after`, `cpu`, `vergleich.png`, `texturen.png`); the
+before pictures of the Werft, Velm, the Kühlgedärme and the Kernbank's hall from the CPU (llvmpipe, the before build,
+the same settings as the game window). The after build does not finish a picture on llvmpipe within 20 minutes (likely its
+sampling with explicit gradients, which llvmpipe does pixel by pixel, now on every wall and floor, and a shader variant
+compiled for each set of bound texture formats, nine maps a patchwork; a GPU's driver has neither). Seen in them: in the Kernbank's hall the star inlay in the middle and the black band along the walls
+read as built; Velm's bar has its boards, Halden's dust its trodden way and red scree at the rock's foot instead of one
+orange sheet; the crowns show their leaves, their cores soft clumps. The halls' concrete came out far lighter than the
+plates it replaced (the Mühle's and the Kühlgedärme's halls bright as snow under the lamps, at the test window's
+brightness 1.8): its tint went from 100 to 60 after the pictures (not seen since). Still to do: the leaf cards are all
+one star-shaped rosette, which repeats and reads a little like blossom; the other light floors (pavers, terrazzo,
+composite panels, frost panels) not yet seen in a picture; the patchwork and the ground's shapes sample with explicit
+gradients (`textureGrad`), whose cost on the Deck's GPU is not measured.
+
+**Water to wade through, lamps one sees** (13.11.2026, the graphics round's phase F2; `src/LevelRelief.cpp`,
+`LevelGarden.cpp`, `LevelInterior.cpp`, `Level.cpp`, `Game.cpp`, `GameWorld.cpp`, `Shaders.h`, `tools/make_garden.py`):
+F1's halls of concrete stayed pale grey at a tint of 60 (seen at last: the Kühlgedärme, Seren, the Wanderer, Brannt's
+first hall): the plates it replaced are metal, whose light is mostly the mirrored kind and their diffuse a fifth of
+their colour, the concrete is not; its tint is 34 now (a mean of 0.033), the pavers 90, the terrazzo 64, the composite
+panels 105, the frost panels 80. The halls' motifs were pale discs that read as pools of light (the gear in the Mühle,
+at Seren, under Brannt's floodlight): each is now tinted to about its floor's lightness by its mean colour in
+`decals.txt` (0.055 linear in the works and the plated places, 0.13 in the streets, the clean and the cold ones). The
+puddles were one slow noise over the whole wet floor, which on the darker concrete read as camouflage: the wet map has
+a fourth channel, where the water gathers (by a wall, an exchanger or a counter 0.55, at a wall's face 1, round a
+drain, a channel or a grating 0.45, in a drain's cell 0.85, in a cell lower than the one beside it 0.5, in the open
+0.08), and the threshold falls with it times the wetness (`0.87 - 0.36 a w`): few puddles, by the walls and the drains,
+with a soft damp rim (0.8 instead of 0.62, twice as wide). The bright band down the Werft's picture was the
+thresholds: a one-cell corridor open to the halls on both sides along its whole length had a plate of brushed steel
+0.36 m wide down each side, in full sunlight; where floors change along more than two cells in a row there is now a
+dark joint of 2.4 cm instead, the plates stay in doorways. The leaf cards: `leafcard_albedo.png` is an atlas of four
+clumps (1024 square, `make_garden.py`'s `leaf_atlas`: three or four fans cut out of the painted cluster, each a sector of
+its leaves, scaled, turned, laid off the middle, the lower ones darker, the lit leaves' contrast cut to 0.7 so that no
+star shows), each card takes one of them and is a little lighter or darker, warmer or cooler than its crown, both by a
+hash of where it hangs (`MeshBuilder::card` with a UV window; the plants' dice are untouched). Out in the open the rock
+meets the ground in a slope of scree (`Level::screeApron`, in the ground's own surface, whose shapes make it scree):
+from inside the face out 20-46 cm over the ground, its outline and how high it heaps up the face (5-60 cm) wandering by
+noises of the place, so that the line where rock meets ground wanders too; three rows of points a third of a metre
+apart (some 25 triangles a cell's edge). Only seen: collision, `groundAt`, the paths and the sight lines are as they
+were. In Halden it shows (`work/gfxF2`, row "Halden"); on Brannt the crust's slabs lie over it, as over F1's foot. The
+gardens have shallow water one wades through (`Level::planShallows`, `m_shallows`): on the ways over the lawn, where all
+round is level lawn and nothing stands in the middle, 18 m apart and from the ponds, two to six a place (the
+Sterbegärten four, 3-5.5 m across); a disc 3 cm over the lawn (`ShallowLevel`) drawn by the ponds' shader in a shallow
+mode (`pondShallow`): the lawn shows through it darker and browner, the sky and the sun mirrored at less than half a
+pond's, light dancing where the waves gather it, a soft shore and a damp rim past it; rings round whatever wades in it
+and white flecks at its feet the faster it moves (the ripples' w), no drops' rings and no lamps' glints (cheaper); not
+drawn on frugal. The ground stays where it is. Lamps: a wall lamp (`R`, `A`) hung on the first wall of north, east,
+south, west, which put most of them on north walls at the picture's top edge or above it; where the dark does not count
+(in the dark the lamps' places decide who is seen from afar, `Game::heroLit`) it takes an east or west wall first, which
+the camera sees from the side, and every wall lamp hangs lower (2.35 m, 2.15 on a north wall, a red one 2.7 and 2.4;
+before 2.6 and 3.0); the bulbs, lanterns and light bars glow a fifth larger, the amber ones a fifth brighter, their cones
+are 40 % stronger and never fainter than 0.24 of the haze (0.15 before). Velm and the Werft are lit in pools: their
+ambient light some 0.57 of what it was, the Werft's sun 0.73, and a new level key `lampgain <gain> <reach>` makes the
+place's own lamps stronger and reach less far (Velm 1.6 and 0.7, the Werft 1.45 and 0.85); the change shows more in the
+Werft (its picture's median 84 → 70) than in Velm's bar (46 → 42), whose row of lamps along its north wall still lights it
+evenly. A level change could crash (seen as the test below went from place to place: Seren, Hesper, Halden): the
+figures' feet asked the game for the floor through a function the renderer set with the old game in it, and the next
+place's first updates called it on the freed game; `Game::shutdown` clears it now (this is the play's own level change
+too). For the pictures `--tour "a.txt;b.txt@x,z"` takes more places in the same window after `--shot`'s, each loaded
+anew with the first one's progress, its picture `<shot>_<place>.png` (`_at` when put), its `RUN` line with its name,
+benched by `--bench` too. The autopilot's report (`RUN:`) is the same to the character before and after in all fifteen
+places looked at (the Kühlgedärme, the Mühle, the Werft, Velm, the Sterbegärten, Brannt, Halden, Tesh, the Tiefen,
+Seren, Hesper, the Außenhaut, the Wanderer, the Unzu, the Kernbank). Measured on the RTX 5090 at the Deck's 1280x800
+(300 frames; before and after in one window, twice, the second time in the other order), the Mühle low 1.74 and 1.90 →
+2.03 and 1.97 ms a frame (walking 2.40, 2.01 → 2.40, 2.11; frugal 1.67, 1.97 → 1.98, 1.92; frugal walking 2.16, 1.93 →
+2.48, 2.17), the Sterbegärten low 1.97, 1.83 → 2.08, 1.92 (walking 2.47, 2.13 → 2.32, 2.30; frugal 1.87, 1.72 → 2.01,
+2.02; frugal walking 2.21, 2.28 → 2.47, 2.20; the water drawn on frugal then); in the means 0.0-0.3 ms slower, within
+the noise of ±0.3-0.5 ms but nowhere faster. The same draws and triangles (the Mühle 217 against 218 lit draws, 358k
+lit triangles); in the Mühle the processor's time in the lit pass rose by 0.3 ms in all eight runs and the fog pass's
+fell by 0.25 (a wait for the GPU moved; why, not found); the Sterbegärten's GPU took 0.07 ms more for the fog and what
+follows it (the water on the screen). The pictures: `work/gfxF2` (`before/w1` the first window's, before the phase;
+`before` and `after` the second's; `vergleich.png`). Seen in them: the concrete is a dark grey under its lamps' pools,
+the puddles few and soft by the drains and the exchangers, the Werft's band gone, the crowns irregular clumps of leaves
+(no stars), Halden's rock standing on heaps of scree, the shallow water a dark sheet over the path with the sky in its
+ripples. Still to do: Velm's bar still evenly lit (its lamps' row would want fewer, stronger lamps); the Werft's pools
+show little in its sunlit yard; on Brannt the foot hides under the crust; Hesper has bright white balls in the air
+(likely the vents' steam, not looked into); the moved lamps not yet seen up close in a picture; the shallows' cost on
+the Deck's GPU not measured.
+
+**Halls with their world's grime, walls with tops** (13.11.2026, the graphics round's phase F3, a short round of fixes;
+`tools/make_grime.py`, `src/Game.cpp`, `Gfx.cpp`, `Shaders.h`, `MeshBuilder.cpp`, `LevelGarden.cpp`, `Level.cpp`,
+`GameElements.cpp`, `GameWorld.cpp`, `Scene.cpp`; the levels `muehle`, `velm`, `werft`, `unzu`): F1's concrete made the
+works' halls a plain, washed-out tiled floor where the old rusty plating with its yellow markings had character. The
+concrete is grimed (see "Floors per room": mottled, dirty joints, worn lanes, tyre streaks, oil, a burn, the yellow
+lines laid again 7 cm wide and chipped; tint 46, a mean of 0.027, its lines twice as light), and the Mill's works take
+`foundryplate` in their halls (a level key, `hallfloor works foundryplate`: the plating sooted, burnt in tempered rings,
+spattered with slag); its corridors and side rooms keep F1's. In the gardens the shallow water's shore and damp rim
+wander by two noises of the place (the disc reaches 1.35 of its radius for it), the water is a murky brown the path and
+the lawn show through (its cover 0.42-0.6), the sky in it a fifth and half mud. The pale box with straight edges round
+it was not the water (F2's picture before the water has it at the same spot): `Game::drawAir`'s puffs of mist (phase C)
+were quads facing the camera 0.3-0.8 m over the ground, so the ground cut each off in a straight line across the
+picture, the hero's legs ghostly in what stood in front of them; they lie flat over the ground now (the same on Hesper's
+deck). Not seen in a picture since (the round's ten game runs were spent; a first guess, the helmet lamp's cone in the
+haze, did not change it and is not kept). The gardens' boulders were smooth grey blobs: `MeshBuilder::blob` takes a
+`rock` flag (their hollows by the lumps' noise down to 0.42, the underside 0.72, moss on what faces up, patchy; in the
+vertex colours, no more triangles), some lumpier than others by the cell's hash (the dice untouched), their stone's
+grain at 0.75 instead of 0.3 with its bumps at 1.9. Velm's black boxes were the bar's own walls ("Schott"): the
+bulkheads' `wall` texture is 0.039 linear, three quarters metal, tinted to 0.65 and its lid coloured 92: in effect
+black; the lamps hang at 2.35 m under the lids at 3.2 m, so a lid took only the ambient (Velm's 0.034 since F2) and, as
+metal, the cube map's dark ceiling (before phase D three times the ambient's hemisphere): 18 of 255 before the round, 12
+after F2. The bar's walls are plaster now (`walltex bar plaster`) and the lit shader gives a face looking up over a lamp
+0.12/π of its light as if thrown back by the ceiling (`Ng.y > 0.6`, the lamp 30 cm below at least; its mask looked up
+0.6 m towards the lamp, so a wall's lid takes it from its own room's side): the lids read as walls' tops. Velm's lamps
+are stronger and shorter (`lampgain 2.0 0.55`) and in a place lit in pools the hero's own fill light round them has half
+its strength (it lit the bar evenly). Hesper's white balls were the gust's wind streaks: made as steam (kind 1, lit and
+boosted six times), each grew to 40 cm in its 0.8 s and glowed; now a kind of its own (4) drawn as a faint thin streak
+along the wind (the same dice: the autopilot's run is the same). The Werft's sunny yard less hazy (the fog's sun 0.7 →
+0.3, the sun a little warmer); the Unzu's corridor between the bar and the works two wall lamps (`A`, its lamps
+`lampgain 1.25 0.65`). On Brannt the scree apron lies on the crust's slabs too (`slopeFoot` left the crust's cells out).
+A state that survived a change of place: `Gfx` measures each mesh's bounds once and kept them by its vertex array's
+address and its vertex array object for the whole run; a place's new meshes get the freed memory and the freed names of
+the last's, and one with the same count of vertices took the old one's bounds (its culling and its lights chosen for
+another place). `Gfx::newPlace` (from `Game::load` and `Scene::load`) forgets them and the sun's kept map, and a mesh's
+first vertex is compared too. (Other globals checked: the journal is the player's across games by design, the foes'
+interned names, the input's edges and the device's glyphs are no place's state.) F2's +0.3 ms in the Mühle's lit pass is
+not a cost of its own: in one window the build before F2 against F2's showed the processor's lit pass 0.23 → 0.52 ms and
+its fog pass 0.37 → 0.12, here F2's build and this phase's both 0.53-0.67 and 0.11-0.15, with the same draws and
+triangles and the frame itself unchanged; the GPU (its timer, 1.9-2.3 ms) is as busy as the processor, and the
+renderer's processor waits for the driver where its queue fills, which F2's changes moved from the fog pass into the lit
+one. Measured on the RTX 5090 at the Deck's 1280x800 (300 frames, F2's build then this phase's in one window, right
+after another session's FLUX batch: all some 0.3 ms slower than F2's own numbers), the Mühle low 2.33 → 2.03 ms a frame
+(walking 2.77 → 2.37, frugal 2.54 → 2.25, frugal walking 2.48 → 2.41), the Sterbegärten 2.18 → 2.28 (walking 2.36 →
+2.43, frugal 2.17 → 2.14, frugal walking 2.20 → 2.46): within the noise of ±0.3 ms, the same draws and triangles (the
+boulders keep their grid; the ceiling's light is a branch for faces looking up over a lamp). The pictures: `work/gfxF3`
+(`after`, `vergleich.png`; before is `work/gfxF2/after`, the same tour and moment). The autopilot's report (`RUN:`) is
+the same to the character in all nineteen places and spots of the tour. The campaign test (`--campaign --level
+gute_hoffnung.txt --autoplay --warm 900 --places 3`) finished all three places with no stalls; `--campaign --warm 1`
+loaded all 25 places of the story, the tour 19, without a crash. A wall lamp up close (`--zoom 0.55 --camrise 8`, the
+Mühle and the Tiefen): its cone reads as a soft warm beam down the wall, the fitting itself hung under the minimap in
+both pictures (not seen). Still to do: the flat mist not seen in a picture; the Werft's sunlit plates still pale (its
+thinner haze hardly shows); the concrete's bay lines are a grid of the FLUX picture's old lines (no layout of bays by
+the room); the wall lamps' fittings not yet seen up close.
+
+**Bay lines by the room, a yard in the sun** (13.11.2026, the graphics round's phase F4, a second short round of fixes;
+`src/LevelFloors.cpp`, `LevelInterior.cpp`, `Level.cpp`, `Game.cpp`, `tools/make_grime.py`, `tools/make_dress.py`,
+`decals.txt`, the level `werft`): the concrete's yellow lines came from the FLUX picture's old ones and lay over every
+hall as a grid of 3.3 m. The picture has none now, and each hall of a place whose halls are concrete
+(`LevelSurfaces::m_bays`, set where the kinds table gives a theme `concretebay`) gets painted lines that follow it
+(`Level::bayLines`, after the motifs): if its cells fill at least 0.7 of their rectangle, two lines 2.4 m apart down the
+middle of its long axis (a walkway) and, where it is 14 m wide or more, a row of bays along each long wall (a line 3 m
+out, divided every 4 m, open to the walkway); laid as decals of 2 m by 12 cm (`bay_line`: safety yellow, worn and
+chipped, its ends meeting the next piece's; tinted to some 0.08, three times the concrete) only where the floor under a
+piece is the hall's own at its height with no channel, nothing standing within 15 cm and the motif 2.6 m away; 7 mm up
+as the motifs. 87-285 pieces a place, one draw. The Werft's sunny yard read pale and flat: its hull halls were the white
+`hullplate` (0.52) in full sun, so the hull's halls take `hulldeck` (above); the sun is warmer (2.3, 1.75, 1.15), the
+picture graded (`grade 1.18 1.1 0 0.18 1.04 1.0 0.93`: more colour, contrast, a vignette, warmer), and by day in a place
+out in the open (its own `suncolor`, not `dark`) the helmet lamp has three tenths of its light: its pool, some two and a
+half times the sun's light three metres out, had lit the shade as bright as the sunlit plates. The wall lamps hung
+between the rows of pipes along the walls (at 2.35 m since F2; the pipes reach half a metre out), and from above one saw
+the pipes: where a place runs pipes, `Level::lamp` hangs the fitting 0.36 m further out on a longer arm (the lantern's
+arm, the light bar on two brackets). Seen in the pictures (`work/gfxF4`, `vergleich.png`): the yard's deck grimy and
+warm with dark shadows, the Kühlgedärme's and Seren's concrete without the grid, Brannt's first hall with its walkway
+lines, the garden's mist flat (no pale box), the Mühle's caged bulb glowing on its arm in front of the pipes. Measured
+on the RTX 5090 at the Deck's 1280x800 (300 frames, the build before and after in one window; the before run with a
+compile beside it), the Mühle low 2.64 → 2.63 ms a frame (walking 2.82 → 2.75, frugal 2.43 → 2.25, frugal walking 2.82 →
+2.32), the Sterbegärten 2.50 → 2.29 (2.52 → 2.25, 2.62 → 2.34, 2.66 → 2.19), the same draws and triangles (neither has
+concrete halls). The autopilot's report (`RUN:`) is the same to the character in all nineteen places and spots. Still to
+do: the Tiefen's wall lamp not seen up close (the hero died at the spot and woke elsewhere); halls that are no rectangle
+get no lines.
+
 Where Windows' fonts are missing (Proton on the Deck, Linux) the game writes in Barlow, which comes with it
 (`assets/fonts`, SIL Open Font License); on Windows it keeps Bahnschrift.
 
@@ -788,7 +1170,10 @@ Tests and pictures without a window (always silent):
     bin\msvc\SpaceOpera.exe --shot work\t.png --level tiefen.txt --seed 1 --dumpgen work\tiefen_1.txt --warm 1
 
 `--report` writes the run (finished, time, deaths, kills, shots) into `spaceopera.log` beside the program; `--bench n`
-renders n frames first and logs the time per frame; `--quality low|middle|high` picks the graphics (pictures are drawn
+renders n frames first and logs the time per frame (and the renderer's own time on the processor and on the GPU, its
+draws and lights; again with the sun's shadow map drawn anew every frame, as while walking), `--benchbig` again at
+three times the size, where the GPU sets the pace, `--benchfrugal` again at frugal, and `--budget ms` with it the
+dynamic resolution held to that budget at six times the size (test pictures are always drawn at their quality's full size); `--quality low|middle|high` picks the graphics (pictures are drawn
 high otherwise), `--w`/`--h` the size (1600x900, on a Steam Deck 1280x800), `--ss` the scene's scale; `--pad
 keys|xbox|ps|deck` the buttons in the texts, `--colours 0|1|2` colour vision, `--cycle n` a New Game+'s cycle,
 `--savefile FILE` writes the save a capsule makes, `--loadfile FILE` goes on from a save. `--autoplay` without `--shot` lets the autopilot play in the window. `--difficulty leicht|normal|schwer` overrides the saved setting; `--menu` puts the title menu over a `--shot` picture;
@@ -951,10 +1336,11 @@ Gemini's image model on Vertex AI (the PC's gcloud ADC, project `plenary-office-
 (404). The pictures are made seamless, the baked light removed, normal, roughness, metal and occlusion maps derived.
 Sign plates are painted once per language from the `sign_...` lines of the text files.
 
-`--local` (make_dress.py, make_items.py) paints locally instead, with no quota and no cost: FLUX.2-dev on the GPU in
-WSL2 (`tools/flux_wsl.py`, Text2Video's conda env `flux` and model cache, FLUX.2's own text encoder in 4 bits; about
-45 s per picture on an RTX 5090). Under Windows the same pipeline only paints noise. The decals and variants painted
-after 27.10.2026 come from there.
+`--local` (make_textures.py, make_dress.py, make_items.py, make_garden.py) paints locally instead, with no quota and no
+cost: FLUX.2-dev on the GPU in WSL2 (`tools/flux_wsl.py`, Text2Video's conda env `flux` and model cache, FLUX.2's own
+text encoder in 4 bits; about 45 s per picture on an RTX 5090, the model takes 15-20 minutes to load from the cache on
+G:). Under Windows the same pipeline only paints noise. The decals and variants painted after 27.10.2026 and
+everything of the floors per room (13.11.2026) come from there; `make_textures.paint_local` takes a seed per picture.
 
 The later places have walls and floors of their own (Game::themeSurfaces): plaster and alley paving in the drums,
 hull plates, the Core Bank's ceramic and polished stone, glacial ice and snow, dust and sandstone, the refinery's
@@ -962,7 +1348,8 @@ rust-red deck, the ark's padded walls, lawn and hedges on the ring, clinic tiles
 construction plating, veined stone, hoarfrost, scorched plates, regolith, slag, server racks and floors, the net's
 grid and its walls of memories; for the tales rain-dark brick and wet cobbles, a workshop's tool walls, ochre rock
 and mine floors with rails, a farm yard's soil. A level may choose others for a theme (`walltex theme texture`, `floortex theme
-texture`; the drowned quarter has algae and wet floors). The speakers have portrait paintings
+texture`; the drowned quarter has algae and wet floors), or only its halls' floor (`hallfloor theme texture`: the Mill's
+works keep their sooted plating). The speakers have portrait paintings
 (`tools/make_portraits.py`); Ilka has two, the child of the prologue and Velm (painted locally with FLUX.2) and the
 woman of thirty-nine she is in the Net (`ilka39`).
 
@@ -985,6 +1372,28 @@ rooms: a reactor column, a heap of ore under a crane, a worn drill head, a fount
 of advertising light, a model of the station, a planter with a tree, cryo tanks, a crashed shuttle's nose, a dish,
 a monolith. Corridors stay clear; the autopilot walks around them. Textures are kept from level to level and freed
 when a level does not use them.
+
+**Floors per room** (13.11.2026; `Game::themeSurfaces`'s table `kinds`, `src/LevelFloors.cpp`): a place's halls,
+corridors and side rooms each have a floor of their own, every one with its two variants: poured concrete with painted
+bay lines (`concretebay`), steel tread plate (`treadplate`), ribbed rubber matting (`rubbermat`), heavy riveted plates
+(`heavyplate`), a grating catwalk (`catwalk`), square paving (`pavers`), `terrazzo`, worn floorboards (`woodboards`),
+light composite panels (`composite`), carpet tiles (`carpet`), frosted cold-store panels (`frostplate`), dark alien
+slabs (`alienslab`); the bands along the halls' walls of dark bolted steel (`kerbsteel`), granite (`kerbstone`) or black
+stone with gold flecks (`darkstone`), the thresholds of brushed steel (`metal`, granite in the streets). Out in the open
+the ground's `dust_`, `regolith_` and `snowfield_trodden` and `_scree` (no variants: the shader blends them by the
+level's shape). Nine motifs for the halls' middles (`motif_works_1/2`, `motif_plated_1/2`, `motif_street_1/2`,
+`motif_clean_1/2`, `motif_cold_1`: `make_dress.py`'s `motif()`, painted marks keyed out of black, inlays and mosaics cut
+out of white; they belong to no place's decals, and `decals.txt` lists them first). The crowns' leaf cards and cores are
+painted too (`make_garden.py --local`: `assets/raw/garden/leafcard.jpg`, a cluster of large leaves keyed out of white,
+and `foliage.jpg`, a canopy of soft clumps; their grey calmed, `calm()`). 63 pictures painted locally
+(`work/gfxF1/paint_f1.py`, 58 in one batch, then five again: a hall floor in perspective, tyre tracks in rows, a cliff's
+edge in the snow); the lunar scree came out in rows twice and is the snow's greyed (`make_textures.DERIVED`). 1024 like
+the others, with DXT1 copies (`make_dds.py`). Phase F3 grimed the concrete (`tools/make_grime.py`, no model: its FLUX
+originals kept in `assets/raw/grime`): darker and mottled, the joints dirty, worn lanes, tyre streaks, oil, a burn
+(phase F4: the old thin yellow lines painted over; the halls' bay lines are decals, `decals/bay_line.png`, laid by the
+room); the hull's deck (`hulldeck`, phase F4: the white `hullplate` darkened to a mean of 0.07, grimed, scuffed, oil, a
+welding burn); and made the Mill's hall floor `foundryplate` (and `_v1`, `_v2`) of the common floor's rusty plating with
+its yellow markings, sooted, burnt in tempered rings, spattered with slag (`make_dds.py --force --only ...` after it).
 
 **Detail on the walls and their tops** (28.10.2026, measured against Baldur's Gate: Dark Alliance's 80–180 kinds of
 pieces per level): every wall face carries fittings of its kind of place, flat on the wall so nothing stands in the

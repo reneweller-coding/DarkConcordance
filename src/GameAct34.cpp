@@ -725,6 +725,8 @@ void Game::poseAct34( std::vector<Drawable> &out )
         Drawable s;
         s.m_mesh = m_glassMesh;
         s.m_surface = m_ownSurfaces.count( "regolith" ) ? m_ownSurfaces.at( "regolith" ) : S_ROCK;
+        // (Its variants blended in: the craters do not repeat, no patches.)
+        if ( m_splatOf.count( s.m_surface ) ) s.m_surface = m_splatOf.at( s.m_surface );
         s.m_transform = MatrixIdentity();
         out.push_back( s );
     }

@@ -170,14 +170,20 @@ void Game::rebuildGlass()
     m_glassMesh = {};
     if ( m_level.m_glass.empty() ) return;
     MeshBuilder glass;
+    // A moon's crust: slabs, their tops a grid of metres (25 corners a slab: one mesh holds 2600 of them) with the
+    // occlusion at the rock's foot baked in.
+    bool crust = m_level.m_keys.count( "crust" ) > 0 && m_level.m_glass.size() * 25 < 65000;
     for ( auto rc : m_level.m_glass )
     {
         Vector3 p = m_level.centre( rc.first, rc.second );
-        if ( m_level.m_keys.count( "crust" ) )
+        if ( crust )
+            glass.slab( p.x - CellSize * 0.5f, p.z - CellSize * 0.5f, CellSize, -0.5f, 0.0f, 2 );
+        else if ( m_level.m_keys.count( "crust" ) )
             glass.box( place( { p.x, -0.25f, p.z } ), { CellSize * 0.5f, 0.25f, CellSize * 0.5f } );   // a slab
         else
             glass.box( place( { p.x, -0.02f, p.z } ), { CellSize * 0.5f, 0.02f, CellSize * 0.5f } );
     }
+    if ( crust ) m_level.shadeOcclusion( glass );
     m_glassMesh = glass.build().front();
 }
 
@@ -345,7 +351,8 @@ void Game::updateElements( float dt )
                 f.m_pos = Vector3Add( f.m_pos, Vector3Scale( push, dt ) );
                 if ( groundAt( f.m_pos ) < -100.0f && f.m_kind != FoeE::DRONE ) f.m_ground = false;
             }
-            // Streaks of the wind, and loose stuff in it.
+            // Streaks of the wind, and loose stuff in it: faint lines along it (phase F3: as steam, kind 1, each grew
+            // to a ball of 40 cm in its 0.8 s and, lit and bright, glowed as one of Hesper's white balls in the air).
             if ( rnd() < dt * 40.0f )
             {
                 Vector3 at =
@@ -354,9 +361,9 @@ void Game::updateElements( float dt )
                                          Vector3Scale( m_level.m_windDir, 18.0f + rnd() * 8.0f ),
                                          0.8f,
                                          0.8f,
-                                         0.03f,
-                                         { 230, 220, 200, 120 },
-                                         1 } );
+                                         0.012f,
+                                         { 230, 222, 205, 40 },
+                                         4 } );
             }
         }
     }

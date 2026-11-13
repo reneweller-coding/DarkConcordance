@@ -118,13 +118,21 @@ void Level::dress( const LevelSurfaces &s, DressKit &kit )
                 const Cell &k = cell( r, c );
                 int         t = (int)theme( r, c );
                 if ( k.m_kind != CellE::FLOOR || floors[t].empty() || hash01( r, c, 201 ) > FloorShare ) continue;
+                // Not over a sunken channel's grating (LevelInterior.cpp).
+                auto pit = [&]( int pr, int pc )
+                {
+                    return pr >= 0 && pc >= 0 && pr < m_rows && pc < m_cols && !m_pit.empty() &&
+                           m_pit[(size_t)pr * m_cols + pc] != PIT_NONE;
+                };
+                if ( pit( r, c ) ) continue;
                 // It may reach into the neighbours where they are the same floor (under a wall it is hidden).
                 bool even = true;
                 for ( int d = 0; d < 4; ++d )
                 {
                     const Cell &n = cell( r + DR[d], c + DC[d] );
                     if ( n.m_kind == CellE::ROCK ) continue;
-                    if ( ( n.m_kind != CellE::FLOOR && n.m_kind != CellE::DOOR ) || n.m_height != k.m_height )
+                    if ( ( n.m_kind != CellE::FLOOR && n.m_kind != CellE::DOOR ) || n.m_height != k.m_height ||
+                         pit( r + DR[d], c + DC[d] ) )
                         even = false;
                 }
                 const DecalDef &d = defs[floors[t][hashCell( r, c, 202 ) % floors[t].size()]];

@@ -76,12 +76,17 @@ struct Options
     bool                     m_silent = false;     ///< tests: the sound runs (device, music, beds), at volume 0
     float                    m_warm = 4.0f;        ///< seconds simulated before the picture
     float                    m_exposure = -1.0f;   ///< exposure (negative: the renderer's)
-    int                      m_bench = 0;    ///< with --shot: render this many frames first and log the time per frame
-    std::string              m_difficulty;   ///< leicht, normal, schwer (else the saved setting)
-    std::string              m_language;     ///< de, en (else the saved setting)
-    bool                     m_menu = false;       ///< with --shot: the title menu over the picture
-    bool                     m_controls = false;   ///< with --shot: the controls' page over the picture
-    bool                     m_slots = false;      ///< with --shot: the list of saves over the picture
+    int                      m_bench = 0;   ///< with --shot: render this many frames first and log the time per frame
+    bool                     m_benchBig = false;      ///< with --bench: again at three times the size (the GPU's cost)
+    bool                     m_benchFrugal = false;   ///< with --bench: again at frugal (the Deck on its battery)
+    bool                     m_benchParts = false;    ///< with --bench: the interiors' features off in turn
+    bool                     m_drawMesh = false;      ///< tests: the lit draws through raylib's DrawMesh
+    float                    m_budget = 0.0f;         ///< with --benchbig: the dynamic resolution held to this (ms)
+    std::string              m_difficulty;            ///< leicht, normal, schwer (else the saved setting)
+    std::string              m_language;              ///< de, en (else the saved setting)
+    bool                     m_menu = false;          ///< with --shot: the title menu over the picture
+    bool                     m_controls = false;      ///< with --shot: the controls' page over the picture
+    bool                     m_slots = false;         ///< with --shot: the list of saves over the picture
     std::string              m_photo;   ///< with --shot: the photo mode, its camera turned, tilted, pulled ("t,p,z")
     std::vector<std::string> m_binds;   ///< tests: keys and buttons bound otherwise ("<name> <key> <pad>")
     float                    m_camYaw = 0.0f;           ///< camera turned about the hero (degrees)
@@ -126,6 +131,7 @@ struct Options
     int                      m_heroLevel = 0;   ///< tests: the hero's level at the start
     float                    m_trace = 0.0f;    ///< tests: log the run's state every so many seconds
     float                    m_clip = 0.0f;     ///< with --shot: the warm-up's last seconds as pictures (15 a second)
+    std::string              m_tour;   ///< with --shot: more places after it ("a.txt;b.txt@x,z"), one picture each
 };
 
 FILE *g_log = nullptr;   ///< the log file next to the program
@@ -194,6 +200,18 @@ Options parse( int argc, char **argv )
             o.m_exposure = (float)atof( next().c_str() );
         else if ( a == "--bench" )
             o.m_bench = atoi( next().c_str() );
+        else if ( a == "--benchbig" )
+            o.m_benchBig = true;
+        else if ( a == "--benchfrugal" )
+            o.m_benchFrugal = true;
+        else if ( a == "--benchparts" )
+            o.m_benchParts = true;
+        else if ( a == "--drawmesh" )
+            o.m_drawMesh = true;
+        else if ( a == "--plaininterior" )
+            Level::s_plainInterior = true;   // the bench's breakdown: no sunken floors, no lamps of their own
+        else if ( a == "--budget" )
+            o.m_budget = (float)atof( next().c_str() );
         else if ( a == "--difficulty" )
             o.m_difficulty = next();
         else if ( a == "--menu" )
@@ -294,6 +312,8 @@ Options parse( int argc, char **argv )
             o.m_camRise = (float)atof( next().c_str() );
         else if ( a == "--clip" )
             o.m_clip = (float)atof( next().c_str() );
+        else if ( a == "--tour" )
+            o.m_tour = next();
     }
     return o;
 }
@@ -318,17 +338,113 @@ void savePicture( Gfx &gfx, const std::string &path, const std::function<void( c
     UnloadRenderTexture( rt );
 }
 
-/** @brief Renders `frames` frames and logs the time per frame (the read-back waits for the GPU). */
+/**
+ * @brief Renders `frames` frames and logs the time per frame (the read-back waits for the GPU), the renderer's own
+ *        time on the processor and on the GPU (its timer queries) and its draws; again with the sun's shadows of what
+ *        does not move drawn every frame (as while walking: the frames of a bench all show the same moment); with
+ *        --benchbig again at three times the size, where the GPU's work outweighs the processor's (the per-pixel
+ *        cost), and with --budget at six times the size (the GPU sets the pace) the dynamic resolution's answer to
+ *        that frame budget; with --benchfrugal both again at frugal (the quality restored afterwards); with --benchparts
+ *        again with each of the interiors' features off in turn and with raylib's DrawMesh instead of the lean path.
+ */
 void bench( Gfx &gfx, int frames, const Options &o, const std::function<void( const RenderTexture2D * )> &draw )
 {
-    RenderTexture2D rt = LoadRenderTexture( gfx.m_width, gfx.m_height );
-    double          start = GetTime();
-    for ( int i = 0; i < frames; ++i ) draw( &rt );
-    Image img = LoadImageFromTexture( rt.texture );
-    TraceLog( LOG_WARNING, "BENCH: %dx%d quality %d ss %.2f: %.2f ms per frame", o.m_width, o.m_height, gfx.m_quality,
-              gfx.m_scale, ( GetTime() - start ) * 1000.0 / frames );
-    UnloadImage( img );
-    UnloadRenderTexture( rt );
+    gfx.m_stamps = true;
+    auto run = [&]( const char *what )
+    {
+        RenderTexture2D rt = LoadRenderTexture( gfx.m_width, gfx.m_height );
+        draw( &rt );   // the targets settle
+        gfx.resetStats();
+        double start = GetTime();
+        for ( int i = 0; i < frames; ++i ) draw( &rt );
+        Image      img = LoadImageFromTexture( rt.texture );
+        Gfx::Stats s = gfx.stats();
+        int        n = std::max( s.m_frames, 1 ), g = std::max( s.m_gpuFrames, 1 ), t = std::max( s.m_stampFrames, 1 );
+        TraceLog(
+            LOG_WARNING,
+            "BENCH: %s%dx%d quality %d ss %.2f: %.2f ms per frame (renderer: cpu %.2f ms, gpu %.2f ms; %ld lit "
+            "and %ld depth draws, %.1f lights a lit draw, %ld with more than 8, sun map drawn %d times, scene at %.2f; "
+            "%.0fk lit and %.0fk depth triangles; cpu by part: shadows %.2f, sky and pre-pass %.2f, lit %.2f, fog and "
+            "cones %.2f, rest %.2f; gpu by part: %.2f, %.2f, %.2f, %.2f, %.2f)",
+            what, gfx.m_width, gfx.m_height, gfx.m_quality, gfx.m_scale, ( GetTime() - start ) * 1000.0 / frames,
+            s.m_cpuMs / n, s.m_gpuMs / g, s.m_litDraws / n, s.m_depthDraws / n,
+            (double)s.m_lightSum / std::max( s.m_litDraws, 1L ), s.m_lightsOver8 / n, s.m_sunRenders,
+            gfx.m_scale * gfx.m_dynScale, s.m_litTris / n / 1000.0, s.m_depthTris / n / 1000.0, s.m_partMs[0] / n,
+            s.m_partMs[1] / n, s.m_partMs[2] / n, s.m_partMs[3] / n, s.m_partMs[4] / n, s.m_gpuPartMs[0] / t,
+            s.m_gpuPartMs[1] / t, s.m_gpuPartMs[2] / t, s.m_gpuPartMs[3] / t, s.m_gpuPartMs[4] / t );
+        UnloadImage( img );
+        UnloadRenderTexture( rt );
+    };
+    run( "" );
+    gfx.m_cacheShadows = false;
+    run( "walking " );
+    gfx.m_cacheShadows = true;
+    if ( o.m_benchFrugal && gfx.m_quality != 3 )
+    {
+        int quality = gfx.m_quality;
+        gfx.setQuality( 3, gfx.m_scaleAsked );
+        run( "frugal " );
+        gfx.m_cacheShadows = false;
+        run( "frugal walking " );
+        gfx.m_cacheShadows = true;
+        gfx.setQuality( quality, gfx.m_scaleAsked );
+    }
+    if ( o.m_benchParts )
+    {
+        // What each of the interiors' features costs: off in turn, then all of them, each with the lean lit path and
+        // with raylib's DrawMesh (as before it).
+        struct Part
+        {
+            const char *m_what;
+            int         m_off;
+            bool        m_lean;
+        };
+        const Part parts[] = { { "parts all on, DrawMesh ", 0, false },
+                               { "parts masks off ", Gfx::OFF_MASKS, true },
+                               { "parts cones off ", Gfx::OFF_CONES, true },
+                               { "parts env and wet off ", Gfx::OFF_ENV, true },
+                               { "parts all off ", Gfx::OFF_MASKS | Gfx::OFF_CONES | Gfx::OFF_ENV, true },
+                               { "parts all off, DrawMesh ", Gfx::OFF_MASKS | Gfx::OFF_CONES | Gfx::OFF_ENV, false },
+                               { "parts all on ", 0, true } };
+        for ( const Part &p : parts )
+        {
+            gfx.m_off = p.m_off;
+            gfx.m_lean = p.m_lean;
+            run( p.m_what );
+        }
+        gfx.m_off = 0;
+        gfx.m_lean = true;
+        if ( gfx.m_quality != 3 )
+        {
+            int quality = gfx.m_quality;
+            gfx.setQuality( 3, gfx.m_scaleAsked );
+            gfx.m_lean = false;
+            run( "parts frugal, DrawMesh " );
+            gfx.m_lean = true;
+            run( "parts frugal " );
+            gfx.setQuality( quality, gfx.m_scaleAsked );
+        }
+    }
+    if ( !o.m_benchBig )
+    {
+        gfx.m_stamps = false;
+        return;
+    }
+    int w = gfx.m_width, h = gfx.m_height;
+    gfx.resize( w * 3, h * 3 );
+    run( "big " );
+    if ( o.m_budget > 0.0f )
+    {
+        gfx.resize( w * 6, h * 6 );   // so large that the GPU, not the processor, sets the pace
+        gfx.m_dynamicRes = true;
+        gfx.m_frameBudget = o.m_budget;
+        run( "dynamic " );
+        gfx.m_dynamicRes = false;
+        gfx.m_frameBudget = 25.0f;
+        gfx.m_dynScale = 1.0f;
+    }
+    gfx.resize( w, h );
+    gfx.m_stamps = false;
 }
 
 /**
@@ -1621,6 +1737,56 @@ int runGame( const Options &o, Gfx &gfx )
         }
         else
             savePicture( gfx, o.m_shot, draw );
+        // Tests: more places in the same window (--tour "a.txt;b.txt@x,z"), each loaded anew with the progress the
+        // first had and warmed up as long; one with @x,z has the hero put there (no autopilot). Each picture is
+        // <shot>_<place>.png (_at.png when put), each run's report a RUN line with its place, each benched by --bench.
+        for ( size_t at = 0; at < o.m_tour.size(); )
+        {
+            size_t end = o.m_tour.find( ';', at );
+            if ( end == std::string::npos ) end = o.m_tour.size();
+            std::string entry = o.m_tour.substr( at, end - at ), place = entry;
+            at = end + 1;
+            float  x = 0.0f, z = 0.0f;
+            size_t mark = entry.find( '@' );
+            bool   put = mark != std::string::npos && sscanf( entry.c_str() + mark + 1, "%f,%f", &x, &z ) == 2;
+            if ( mark != std::string::npos ) place = entry.substr( 0, mark );
+            game->shutdown();
+            game = std::make_unique<Game>();
+            game->m_heroKind = hero;
+            Progress fresh = progress;
+            fresh.m_level = place;
+            game->m_progress = fresh;
+            game->m_genSeed = o.m_seed;
+            game->setDifficulty( settings.m_difficulty );
+            if ( !game->load( gfx, assetsDir(), place, sound ) )
+            {
+                TraceLog( LOG_ERROR, "TOUR: %s not found", place.c_str() );
+                break;
+            }
+            if ( !o.m_dumpGen.empty() && !game->generated().empty() )
+                SaveFileText( ( o.m_dumpGen.substr( 0, o.m_dumpGen.rfind( '.' ) ) + "_" + place ).c_str(),
+                              const_cast<char *>( game->generated().c_str() ) );
+            apply();
+            game->m_autoplay = o.m_autoplay && !put;
+            game->m_camYaw = o.m_camYaw * DEG2RAD;
+            if ( o.m_camRise > 0.0f ) game->m_camRise = o.m_camRise;
+            if ( put ) game->putHero( x, z, o.m_face );
+            if ( o.m_zoom > 0.0f ) game->m_zoom = o.m_zoom;
+            for ( int i = 0; i < frames && !( o.m_report && game->finished() ); ++i )
+            {
+                GameInput in;
+                game->update( dt, in );
+                game->takeStings();
+            }
+            if ( o.m_report ) TraceLog( LOG_WARNING, "RUN: %s %s", place.c_str(), game->report().c_str() );
+            if ( o.m_bench > 0 )
+            {
+                TraceLog( LOG_WARNING, "TOUR: bench %s", place.c_str() );
+                bench( gfx, o.m_bench, o, draw );
+            }
+            std::string base = o.m_shot.substr( 0, o.m_shot.rfind( '.' ) );
+            savePicture( gfx, base + "_" + place.substr( 0, place.rfind( '.' ) ) + ( put ? "_at.png" : ".png" ), draw );
+        }
         game->shutdown();
         score.shutdown();
         if ( IsAudioDeviceReady() ) CloseAudioDevice();
@@ -2500,6 +2666,9 @@ int main( int argc, char **argv )
     Gfx gfx;
     gfx.init( o.m_width, o.m_height, quality, o.m_ss );
     if ( o.m_exposure > 0.0f ) gfx.m_exposure = o.m_exposure;
+    gfx.m_lean = !o.m_drawMesh;
+    // A test's picture is drawn at its quality's full size, whatever the GPU's time.
+    gfx.m_dynamicRes = o.m_shot.empty();
     if ( !o.m_scoreTest.empty() )
     {
         int r = runScoreTest( o.m_scoreTest );

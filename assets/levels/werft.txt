@@ -9,16 +9,18 @@ name     l16.name
 act      act.3
 intro    l16.intro
 gravity  2.4
-fog      0.0015 0.005 0.4 0.7
+fog      0.0015 0.005 0.4 0.3
 fogcolor 0.0007 0.0007 0.001
-ambient  0.07 0.07 0.08 0.03 0.03 0.035
+ambient  0.04 0.04 0.046 0.018 0.018 0.02
+lampgain 1.45 0.85
 walls    3.2
 sky      nebula
 space    1
 vacuum   1
 star     3200 -5200 -9000 2600
 sundir   -0.3 -0.8 0.5
-suncolor 2.6 2.4 2.1
+suncolor 2.3 1.75 1.15
+grade    1.18 1.1 0.0 0.18 1.04 1.0 0.93
 faction  collegium
 bossvariant 6
 evidence 5 300 1000
